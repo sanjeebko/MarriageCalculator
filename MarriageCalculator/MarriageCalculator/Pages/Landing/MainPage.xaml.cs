@@ -14,7 +14,7 @@ public partial class MainPage : ContentPage
     {
         SemanticScreenReader.Announce("Closing...");
 
-        Application.Current.Quit();
+        Application.Current?.Quit();
     }
 
     private async void StartBtn_Clicked(object sender, EventArgs e)
@@ -24,8 +24,8 @@ public partial class MainPage : ContentPage
         await toast.Show();
         var fadeAnimation = new FadeAnimation();
         await fadeAnimation.Animate(StartBtn);
-        Thread.Sleep(1000);
-        await fadeAnimation.Animate(StartBtn);
+
+        await Navigation.PushAsync(new Pages.NewGame.NewGame());
     }
 
     private async void ResumeBtn_Clicked(object sender, EventArgs e)
