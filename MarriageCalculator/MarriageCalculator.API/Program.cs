@@ -27,26 +27,27 @@ app.MapGet("api/marriagegame", async (AppDbContext context) =>
 {
     var items = await context
                         .MarriageGame
-                        .Include(i => i.Players).ToListAsync();
+                        //.Include(i => i.Players)
+                        .ToListAsync();
     return Results.Ok(items);
 });
 
-app.MapPost("api/marriagegame", async (AppDbContext context, MarriageGame game) =>
+app.MapPost("api/marriagegame", async (AppDbContext context, MarriageGameModel game) =>
 {
     await context.MarriageGame.AddAsync(game);
 
     await context.SaveChangesAsync();
-    return Results.Created($"api/marriagegame/{game.Id}", game);
+    return Results.Created($"api/marriagegame/{game.MarriageGameId}", game);
 });
 
-app.MapPut("api/marriagegame/{id}", async (AppDbContext context, int id, MarriageGame game) =>
+app.MapPut("api/marriagegame/{id}", async (AppDbContext context, int id, MarriageGameModel game) =>
 {
-    var model = await context.MarriageGame.FirstOrDefaultAsync(a => a.Id == id);
+    var model = await context.MarriageGame.FirstOrDefaultAsync(a => a.MarriageGameId == id);
     if (model is null)
         return Results.NotFound();
 
     model.Name = game.Name;
-    model.Players = game.Players;
+    //model.Players = game.Players;
 
     await context.SaveChangesAsync();
     return Results.NoContent();
@@ -54,14 +55,14 @@ app.MapPut("api/marriagegame/{id}", async (AppDbContext context, int id, Marriag
 
 app.MapDelete("api/marriagegame/{id}", async (AppDbContext context, int id) =>
 {
-    var model = await context.MarriageGame.FirstOrDefaultAsync(a => a.Id == id);
+    var model = await context.MarriageGame.FirstOrDefaultAsync(a => a.MarriageGameId == id);
     if (model is null)
         return Results.NotFound();
-    foreach(var player in model.Players)
-    {
-        context.Players.Remove(player);
-    }
-    
+    //foreach(var player in model.Players)
+    //{
+    //    context.Players.Remove(player);
+    //}
+
     context.MarriageGame.Remove(model);
 
     await context.SaveChangesAsync();

@@ -1,5 +1,6 @@
 ﻿using Toast = CommunityToolkit.Maui.Alerts.Toast;
 using CommunityToolkit.Maui.Animations;
+using MarriageCalculator.Pages.NewGame;
 
 namespace MarriageCalculator;
 
@@ -25,7 +26,8 @@ public partial class MainPage : ContentPage
         var fadeAnimation = new FadeAnimation();
         await fadeAnimation.Animate(StartBtn);
 
-        await Navigation.PushAsync(new Pages.NewGame.NewGame());
+        // await Navigation.PushAsync(new Pages.NewGame.NewGame(new ViewModels.NewGameViewModel()));
+        await Shell.Current.GoToAsync(nameof(NewGame));
     }
 
     private async void ResumeBtn_Clicked(object sender, EventArgs e)
