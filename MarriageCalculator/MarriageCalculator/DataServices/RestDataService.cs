@@ -13,7 +13,7 @@ public class RestDataService : IRestDataService
         //  _baseAddress = "x";
     }
 
-    public Task AddMarriageGameAsync(MarriageGame marriageGame)
+    public Task AddMarriageGameAsync(MarriageGameModel marriageGame)
     {
         throw new NotImplementedException();
     }
@@ -23,12 +23,12 @@ public class RestDataService : IRestDataService
         throw new NotImplementedException();
     }
 
-    public Task<List<MarriageGame>> GetAllMarriageGamesAsync()
+    public Task<List<MarriageGameModel>> GetAllMarriageGamesAsync()
     {
         throw new NotImplementedException();
     }
 
-    public Task UpdateMarriageGameAsync(MarriageGame marriageGame)
+    public Task UpdateMarriageGameAsync(MarriageGameModel marriageGame)
     {
         throw new NotImplementedException();
     }

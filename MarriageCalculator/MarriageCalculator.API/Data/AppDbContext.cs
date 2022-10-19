@@ -10,15 +10,10 @@ public class AppDbContext : DbContext
     {
     }
 
-    public DbSet<Player> Players => Set<Player>();
-    public DbSet<MarriageGame> MarriageGame => Set<MarriageGame>();
+    public DbSet<PlayerModel> Players => Set<PlayerModel>();
+    public DbSet<MarriageGameModel> MarriageGame => Set<MarriageGameModel>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
-        modelBuilder.Entity<MarriageGame>()
-
-            .HasMany(p => p.Players)            ;
-            
-            
     }
 }

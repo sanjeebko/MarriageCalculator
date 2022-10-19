@@ -9,11 +9,11 @@ namespace MarriageCalculator.DataServices;
 
 public interface IRestDataService
 {
-    Task<List<MarriageGame>> GetAllMarriageGamesAsync();
+    Task<List<MarriageGameModel>> GetAllMarriageGamesAsync();
 
-    Task AddMarriageGameAsync(MarriageGame marriageGame);
+    Task AddMarriageGameAsync(MarriageGameModel marriageGame);
 
-    Task UpdateMarriageGameAsync(MarriageGame marriageGame);
+    Task UpdateMarriageGameAsync(MarriageGameModel marriageGame);
 
     Task DeleteMarriageGameAsync(int id);
 }
