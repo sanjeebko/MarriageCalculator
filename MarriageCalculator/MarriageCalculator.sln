@@ -1,13 +1,13 @@
-﻿
+
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.0.31611.283
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MarriageCalculator", "MarriageCalculator\MarriageCalculator.csproj", "{A0E1C792-2AF8-4DA5-94D8-419B41BD938D}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MarriageCalculator.API", "MarriageCalculator.API\MarriageCalculator.API.csproj", "{01DEAB3E-B45B-4155-880F-858A27BDC8E2}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MarriageCalculator.API", "MarriageCalculator.API\MarriageCalculator.API.csproj", "{01DEAB3E-B45B-4155-880F-858A27BDC8E2}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MarriageCalculator.Core", "MarriageCalculator.Core\MarriageCalculator.Core.csproj", "{69A6FC03-9B93-4353-A891-DC3C30E399D3}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MarriageCalculator.Core", "MarriageCalculator.Core\MarriageCalculator.Core.csproj", "{69A6FC03-9B93-4353-A891-DC3C30E399D3}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

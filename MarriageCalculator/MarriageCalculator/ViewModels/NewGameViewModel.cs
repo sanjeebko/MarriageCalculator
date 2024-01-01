@@ -1,7 +1,5 @@
-﻿using Android.App;
-using CommunityToolkit.Mvvm.ComponentModel;
+﻿using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
-using MarriageCalculator.Core.Models;
 using MarriageCalculator.Models;
 using MarriageCalculator.Pages.NewGame;
 using MarriageCalculator.Services;
