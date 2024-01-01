@@ -13,10 +13,10 @@
 		<Nullable>enable</Nullable>
 
 		<!-- Display name -->
-		<ApplicationTitle>MarriageCalculator</ApplicationTitle>
+		<ApplicationTitle>Marriage Calculator</ApplicationTitle>
 
 		<!-- App Identifier -->
-		<ApplicationId>com.companyname.marriagecalculator</ApplicationId>
+		<ApplicationId>np.com.sanjeebojha.marriagecalculator</ApplicationId>
 		<ApplicationIdGuid>4254B43E-538D-4404-A889-8A794FDC6142</ApplicationIdGuid>
 
 		<!-- Versions -->
@@ -33,7 +33,7 @@
 
 	<ItemGroup>
 		<!-- App Icon -->
-		<MauiIcon Include="Resources\AppIcon\appicon.svg" ForegroundFile="Resources\AppIcon\appiconfg.svg" Color="#512BD4" />
+		<MauiIcon Include="Resources\AppIcon\appicon.svg"  />
 
 		<!-- Splash Screen -->
 		<MauiSplashScreen Include="Resources\Splash\splash.svg" Color="#512BD4" BaseSize="128,128" />
@@ -54,7 +54,6 @@
 	</ItemGroup>
 
 	<ItemGroup>
-	  <Folder Include="Models\" />
 	  <Folder Include="Pages\Login\" />
 	  <Folder Include="Pages\ResumeGame\" />
 	</ItemGroup>
@@ -74,10 +73,22 @@
 	</ItemGroup>
 
 	<ItemGroup>
+	  <Compile Update="Pages\NewGame\NewGamePlayers.xaml.cs">
+	    <DependentUpon>NewGamePlayers.xaml</DependentUpon>
+	  </Compile>
+	</ItemGroup>
+
+	<ItemGroup>
 	  <MauiXaml Update="Pages\LogGame\LogGamePage.xaml">
 	    <Generator>MSBuild:Compile</Generator>
 	  </MauiXaml>
+	  <MauiXaml Update="Pages\NewGame\NewGamePlayers.xaml">
+	    <Generator>MSBuild:Compile</Generator>
+	  </MauiXaml>
 	  <MauiXaml Update="Pages\NewGame\NewGame.xaml">
+	    <Generator>MSBuild:Compile</Generator>
+	  </MauiXaml>
+	  <MauiXaml Update="Pages\NewGame\PlayGame.xaml">
 	    <Generator>MSBuild:Compile</Generator>
 	  </MauiXaml>
 	</ItemGroup>

@@ -1,0 +1,117 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="MarriageCalculator.Pages.NewGame.NewGamePlayers"
+             xmlns:local="clr-namespace:MarriageCalculator"
+             x:DataType="local:NewGameViewModel"
+             BackgroundColor="{DynamicResource Secondary}"
+             Title="New Game">
+
+    <StackLayout Orientation="Vertical" Margin="10">
+
+        <Border Stroke="{DynamicResource Primary}"
+                StrokeThickness="1"
+                Padding="5,5"
+                Margin="5"
+                HorizontalOptions="FillAndExpand">
+            <Border.StrokeShape>
+                <RoundRectangle CornerRadius="5,3,3,5" />
+            </Border.StrokeShape>
+            <Entry Placeholder="Marriage Game 2" Text="{Binding MarriageGameModel.Name}" />
+        </Border>
+
+        <ScrollView VerticalOptions="StartAndExpand"
+                    Scrolled="ScrollView_Scrolled"
+                    x:Name="PlayerScrollView">
+            <StackLayout Orientation="Vertical">
+                <Border Stroke="{DynamicResource Primary}"
+                        StrokeThickness="1"
+                        Padding="5,5"
+                        Margin="5"
+                        HorizontalOptions="FillAndExpand">
+                    <Border.StrokeShape>
+                        <RoundRectangle CornerRadius="5,3,3,5" />
+                    </Border.StrokeShape>
+                    <Entry Placeholder="Player 1 Name" FontSize="16" Text="{Binding MarriageGameModel.Player1}"  ClearButtonVisibility="WhileEditing" />
+                </Border>
+
+                <Border Stroke="{DynamicResource Primary}"
+                        StrokeThickness="1"
+                        Padding="5,5"
+                    Margin="5"
+                        HorizontalOptions="FillAndExpand">
+                    <Border.StrokeShape>
+                        <RoundRectangle CornerRadius="5,3,3,5" />
+                    </Border.StrokeShape>
+                    <Entry Placeholder="Player 2 Name" FontSize="16" Text="{Binding MarriageGameModel.Player2}"  ClearButtonVisibility="WhileEditing" />
+                </Border>
+
+                <Border Stroke="{DynamicResource Primary}"
+                        StrokeThickness="1"
+                        Padding="5,5"
+                    Margin="5"
+                        HorizontalOptions="FillAndExpand">
+                    <Border.StrokeShape>
+                        <RoundRectangle CornerRadius="5,3,3,5" />
+                    </Border.StrokeShape>
+                    <Entry Placeholder="Player 3 Name" FontSize="16"  Text="{Binding MarriageGameModel.Player3}" ClearButtonVisibility="WhileEditing" />
+                </Border>
+
+                <Border Stroke="{DynamicResource Primary}"
+                StrokeThickness="1"
+                Padding="5,5"
+                Margin="5"
+                HorizontalOptions="FillAndExpand">
+                    <Border.StrokeShape>
+                        <RoundRectangle CornerRadius="5,3,3,5" />
+                    </Border.StrokeShape>
+                    <Entry Placeholder="Player 4 Name" FontSize="16" Text="{Binding MarriageGameModel.Player4}"   ClearButtonVisibility="WhileEditing" />
+                </Border>
+
+                <Border Stroke="{DynamicResource Primary}"
+                StrokeThickness="1"
+                Padding="5,5"
+                Margin="5"
+                HorizontalOptions="FillAndExpand">
+                    <Border.StrokeShape>
+                        <RoundRectangle CornerRadius="5,3,3,5" />
+                    </Border.StrokeShape>
+                    <Entry Placeholder="Player 5 Name" FontSize="16" Text="{Binding MarriageGameModel.Player5}" ClearButtonVisibility="WhileEditing" />
+                </Border>
+
+                <Border Stroke="{DynamicResource Primary}"
+                StrokeThickness="1"
+                Padding="5,5"
+                Margin="5"
+                HorizontalOptions="FillAndExpand"
+                        x:Name="Player6Border">
+                    <Border.StrokeShape>
+                        <RoundRectangle CornerRadius="5,3,3,5" />
+                    </Border.StrokeShape>
+                    <Entry Placeholder="Player 6 Name" FontSize="16"  Text="{Binding MarriageGameModel.Player6}" ClearButtonVisibility="WhileEditing">
+                        <Entry.GestureRecognizers>
+                            <SwipeGestureRecognizer Direction="Left" Swiped="SwipeGestureRecognizer_Swiped"></SwipeGestureRecognizer>
+                            <SwipeGestureRecognizer Direction="Right" Swiped="SwipeGestureRecognizer_Swiped_Right"></SwipeGestureRecognizer>
+                        </Entry.GestureRecognizers>
+                    </Entry>
+                </Border>
+            </StackLayout>
+        </ScrollView>
+
+        <StackLayout Orientation="Horizontal">
+            <Button x:Name="BackButton"
+                Text="Back"
+                Margin="10"
+                BackgroundColor="{DynamicResource Secondary}"
+                HorizontalOptions="Start"
+                Command="{Binding BackButtonClickCommand}" />
+            <Button x:Name="StartGame"
+                Text="Next"
+                     Margin="10"
+                     HorizontalOptions="FillAndExpand"
+                BackgroundColor="{DynamicResource Primary}"
+                    Command="{Binding  StartGameClickCommand}"
+                 ></Button>
+        </StackLayout>
+    </StackLayout>
+</ContentPage>

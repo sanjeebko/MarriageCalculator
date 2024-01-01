@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="MarriageCalculator.Pages.NewGame.PlayGame"
+              xmlns:local="clr-namespace:MarriageCalculator"
+             x:DataType="local:NewGameViewModel"
+             BackgroundColor="{DynamicResource Secondary}"
+             Shell.NavBarIsVisible="False"
+
+             Title="PlayGame">
+    <Grid RowDefinitions="Auto,Auto,Auto" ColumnDefinitions="*,*">
+        <Label Grid.Row="0" Grid.Column="0" Text="{Binding MarriageGameModel.Name}"></Label>
+
+        <Button Grid.Row="0" Grid.Column="1" Text="Btn 2" BackgroundColor="Green" />
+        <Button Grid.Row="1" Grid.Column="0" Text="Btn 3" BackgroundColor="Black" />
+        <Button Grid.Row="1" Grid.Column="1" Text="Btn 4" BackgroundColor="Blue" />
+        <Button Grid.Row="2" Grid.Column="0" Text="Btn 5" BackgroundColor="SaddleBrown" />
+        <Button Clicked="Rotate_Clicked" Grid.Row="2" Grid.Column="1" Text="Btn 6" BackgroundColor="Aquamarine" />
+    </Grid>
+    <!--<VerticalStackLayout VerticalOptions="StartAndExpand">
+
+        <Label
+            Text="{Binding MarriageGameModel.Name}"
+            VerticalOptions="Center"
+            HorizontalOptions="Center" />
+        <Label
+            Text="{Binding GameSettingsModel.Currency}"
+            VerticalOptions="Center"
+            HorizontalOptions="Center" />
+        <Button Text="NewGame" />
+        <VerticalStackLayout
+            HorizontalOptions="End"
+            VerticalOptions="End"
+            Padding="10"
+            Margin="0,0,0,50"
+            Spacing="5">
+            -->
+    <!--Other components-->
+    <!--
+            <Button Text="+" />
+        </VerticalStackLayout>
+    </VerticalStackLayout>-->
+</ContentPage>

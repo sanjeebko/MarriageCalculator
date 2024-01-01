@@ -1,4 +1,45 @@
-<?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<svg width="456" height="456" viewBox="0 0 456 456" version="1.1" xmlns="http://www.w3.org/2000/svg">
-    <rect x="0" y="0" width="456" height="456" fill="#512BD4" />
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" width="445" height="445" viewBox="0 0 445 445" xml:space="preserve">
+<desc>Created with Fabric.js 3.5.0</desc>
+<defs>
+</defs>
+<rect x="0" y="0" width="100%" height="100%" fill="rgba(255,255,255,0)"/>
+<g transform="matrix(1.7187 0 0 1.7187 227.8311 214.7451)" id="249246">
+<g style="">
+		<g transform="matrix(-0.9794 0 0 -1.0561 0.0028 -22.5585)" id="887943" clip-path="url(#CLIPPATH_500)">
+<filter id="SVGID_498" y="-27.630000000000003%" height="155.26%" x="-26.17%" width="152.34%">
+	<feGaussianBlur in="SourceAlpha" stdDeviation="4"/>
+	<feOffset dx="-2" dy="-3" result="oBlur"/>
+	<feFlood flood-color="rgb(165,161,161)" flood-opacity="1"/>
+	<feComposite in2="oBlur" operator="in"/>
+	<feMerge>
+		<feMergeNode/>
+		<feMergeNode in="SourceGraphic"/>
+	</feMerge>
+</filter>
+<clipPath id="CLIPPATH_500">
+	<rect transform="matrix(1 0 0 1 0 0.0768)" id="clip0_302_50" x="-81" y="-81" rx="0" ry="0" width="162" height="162"/>
+</clipPath>
+<path style="stroke: none; stroke-width: 0; stroke-dasharray: none; stroke-linecap: butt; stroke-dashoffset: 0; stroke-linejoin: miter; stroke-miterlimit: 4; is-custom-font: none; font-file-url: none; fill: rgb(81,43,212); fill-rule: nonzero; opacity: 1;filter: url(#SVGID_498);" vector-effect="non-scaling-stroke" transform=" translate(-81, -80.9232)" d="M 149.148 22.9642 C 140.762 13.8687 129.256 8.85938 116.745 8.85938 C 107.394 8.85938 98.83 11.8158 91.2906 17.6458 C 87.4863 20.5887 84.0392 24.189 81 28.3913 C 77.962 24.1902 74.5137 20.5887 70.7081 17.6458 C 63.17 11.8158 54.606 8.85938 45.2547 8.85938 C 32.7443 8.85938 21.2363 13.8687 12.8503 22.9642 C 4.56441 31.9533 0 44.2338 0 57.5452 C 0 71.2458 5.10576 83.7871 16.0675 97.0144 C 25.8736 108.846 39.9673 120.857 56.2882 134.766 C 61.8611 139.515 68.1781 144.899 74.7374 150.634 C 76.4702 152.152 78.6937 152.987 81 152.987 C 83.3051 152.987 85.5298 152.152 87.2601 150.637 C 93.8194 144.9 100.14 139.514 105.716 134.762 C 122.034 120.856 136.128 108.846 145.934 97.0131 C 156.895 83.7871 162 71.2458 162 57.5439 C 162 44.2338 157.436 31.9533 149.148 22.9642 Z" stroke-linecap="round"/>
+</g>
+		<g transform="matrix(0.1701 0 0 0.4535 -0.0007 67.8767)" id="6707" clip-path="url(#CLIPPATH_501)">
+<filter id="SVGID_499" y="-28.1%" height="156.2%" x="-26.41%" width="152.82%">
+	<feGaussianBlur in="SourceAlpha" stdDeviation="4"/>
+	<feOffset dx="2" dy="3" result="oBlur"/>
+	<feFlood flood-color="rgb(165,161,161)" flood-opacity="1"/>
+	<feComposite in2="oBlur" operator="in"/>
+	<feMerge>
+		<feMergeNode/>
+		<feMergeNode in="SourceGraphic"/>
+	</feMerge>
+</filter>
+<clipPath id="CLIPPATH_501">
+	<rect transform="matrix(1 0 0 1 0 0.0004)" id="clip0_302_128" x="-78" y="-78" rx="0" ry="0" width="156" height="156"/>
+</clipPath>
+<path style="stroke: none; stroke-width: 0; stroke-dasharray: none; stroke-linecap: butt; stroke-dashoffset: 0; stroke-linejoin: miter; stroke-miterlimit: 4; is-custom-font: none; font-file-url: none; fill: rgb(81,43,212); fill-rule: nonzero; opacity: 1;filter: url(#SVGID_499);" vector-effect="non-scaling-stroke" transform=" translate(-78, -77.9996)" d="M 155.052 140.236 L 80.5821 11.6055 C 80.3434 11.2592 80.0435 10.9594 79.6973 10.7207 C 78.1271 9.63889 75.9771 10.0353 74.8953 11.6055 L 0.425229 140.912 C 0.154535 141.394 0.00823949 141.936 0.000305908 142.489 C -0.0266683 144.321 1.43692 145.828 3.26863 145.854 H 152.208 C 152.354 145.875 152.501 145.887 152.649 145.888 C 154.481 145.907 155.981 144.437 156 142.605 C 156.005 141.722 155.665 140.871 155.052 140.236 Z" stroke-linecap="round"/>
+</g>
+</g>
+</g>
+<g transform="matrix(1 0 0 1 227.2728 207.5717)" style="" id="443442">
+		
+<path xml:space="preserve" font-family="Acme" font-size="200" font-weight="normal" style="stroke: none; stroke-width: 0; stroke-dasharray: none; stroke-linecap: butt; stroke-dashoffset: 0; stroke-linejoin: miter; stroke-miterlimit: 4; is-custom-font: none; font-file-url: none; fill: rgb(0,0,0); fill-rule: nonzero; opacity: 1; white-space: pre;" d="M-25.90-76.57L-0.70 0.43L1.30 0.43L30.50-75.57L58.10-74.77L58.90 11.23L62.70 62.83L35.70 62.83L36.70 10.83L34.50-41.77L10.50 24.43L-14.10 25.63L-36.50-41.77L-38.30 10.83L-36.90 62.83L-61.70 62.83L-58.90 14.23L-57.70-71.57L-25.90-76.57Z"/></g>
 </svg>
