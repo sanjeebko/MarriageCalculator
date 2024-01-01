@@ -32,7 +32,7 @@ app.MapGet("api/marriagegame", async (AppDbContext context) =>
     return Results.Ok(items);
 });
 
-app.MapPost("api/marriagegame", async (AppDbContext context, MarriageGameModel game) =>
+app.MapPost("api/marriagegame", async (AppDbContext context, MarriageGame game) =>
 {
     await context.MarriageGame.AddAsync(game);
 
@@ -40,7 +40,7 @@ app.MapPost("api/marriagegame", async (AppDbContext context, MarriageGameModel g
     return Results.Created($"api/marriagegame/{game.MarriageGameId}", game);
 });
 
-app.MapPut("api/marriagegame/{id}", async (AppDbContext context, int id, MarriageGameModel game) =>
+app.MapPut("api/marriagegame/{id}", async (AppDbContext context, int id, MarriageGame game) =>
 {
     var model = await context.MarriageGame.FirstOrDefaultAsync(a => a.MarriageGameId == id);
     if (model is null)

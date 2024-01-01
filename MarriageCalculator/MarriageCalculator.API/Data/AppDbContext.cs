@@ -11,7 +11,7 @@ public class AppDbContext : DbContext
     }
 
     public DbSet<PlayerModel> Players => Set<PlayerModel>();
-    public DbSet<MarriageGameModel> MarriageGame => Set<MarriageGameModel>();
+    public DbSet<MarriageGame> MarriageGame => Set<MarriageGame>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

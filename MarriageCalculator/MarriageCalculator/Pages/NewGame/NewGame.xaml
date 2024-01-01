@@ -2,12 +2,13 @@
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              x:Class="MarriageCalculator.Pages.NewGame.NewGame"
-
-             Title="New Game">
+             xmlns:local="clr-namespace:MarriageCalculator"
+             x:DataType="local:NewGameViewModel"
+             BackgroundColor="{DynamicResource Secondary}">
 
     <StackLayout Orientation="Vertical" Margin="10">
 
-        <Border Stroke="#C49B33"
+        <Border Stroke="{DynamicResource Primary}"
                 StrokeThickness="1"
                 Padding="5,5"
                 Margin="5"
@@ -15,164 +16,64 @@
             <Border.StrokeShape>
                 <RoundRectangle CornerRadius="5,3,3,5" />
             </Border.StrokeShape>
-            <Entry Placeholder="Marriage Game 1" />
+            <Entry Placeholder="Marriage Game 2" Text="{Binding MarriageGameModel.Name}" />
         </Border>
-
         <ScrollView VerticalOptions="FillAndExpand"
-                    Scrolled="ScrollView_Scrolled">
-            <StackLayout Orientation="Vertical">
-                <Border Stroke="#C49B33"
-                        StrokeThickness="1"
-                        Padding="5,5"
-                    Margin="5"
-                        HorizontalOptions="FillAndExpand">
-                    <Border.StrokeShape>
-                        <RoundRectangle CornerRadius="5,3,3,5" />
-                    </Border.StrokeShape>
-
-                    <Entry Placeholder="Player 1 Name" FontSize="16" />
-                </Border>
-
-                <Border Stroke="#C49B33"
-                        StrokeThickness="1"
-                        Padding="5,5"
-                    Margin="5"
-                        HorizontalOptions="FillAndExpand">
-                    <Border.StrokeShape>
-                        <RoundRectangle CornerRadius="5,3,3,5" />
-                    </Border.StrokeShape>
-                    <Entry Placeholder="Player 2 Name" FontSize="16" />
-                </Border>
-
-                <Border Stroke="#C49B33"
-                        StrokeThickness="1"
-                        Padding="5,5"
-                    Margin="5"
-                        HorizontalOptions="FillAndExpand">
-                    <Border.StrokeShape>
-                        <RoundRectangle CornerRadius="5,3,3,5" />
-                    </Border.StrokeShape>
-                    <Entry Placeholder="Player 3 Name" FontSize="16" />
-                </Border>
-
-                <Border Stroke="#C49B33"
-                StrokeThickness="1"
-                Padding="5,5"
-                Margin="5"
-                HorizontalOptions="FillAndExpand">
-                    <Border.StrokeShape>
-                        <RoundRectangle CornerRadius="5,3,3,5" />
-                    </Border.StrokeShape>
-                    <Entry Placeholder="Player 4 Name" FontSize="16" />
-                </Border>
-
-                <Border Stroke="#C49B33"
-                StrokeThickness="1"
-                Padding="5,5"
-                Margin="5"
-                HorizontalOptions="FillAndExpand">
-                    <Border.StrokeShape>
-                        <RoundRectangle CornerRadius="5,3,3,5" />
-                    </Border.StrokeShape>
-                    <Entry Placeholder="Player 5 Name" FontSize="16" />
-                </Border>
-
-                <Border Stroke="#C49B33"
-                StrokeThickness="1"
-                Padding="5,5"
-                Margin="5"
-                HorizontalOptions="FillAndExpand">
-                    <Border.StrokeShape>
-                        <RoundRectangle CornerRadius="5,3,3,5" />
-                    </Border.StrokeShape>
-                    <Entry Placeholder="Player 6 Name" FontSize="16" />
-                </Border>
-                <Border Stroke="#C49B33"
-                StrokeThickness="1"
-                Padding="5,5"
-                Margin="5"
-                HorizontalOptions="FillAndExpand">
-                    <Border.StrokeShape>
-                        <RoundRectangle CornerRadius="5,3,3,5" />
-                    </Border.StrokeShape>
-                    <Entry Placeholder="Player 6 Name" FontSize="16" />
-                </Border>
-                <Border Stroke="#C49B33"
-                StrokeThickness="1"
-                Padding="5,5"
-                Margin="5"
-                HorizontalOptions="FillAndExpand">
-                    <Border.StrokeShape>
-                        <RoundRectangle CornerRadius="5,3,3,5" />
-                    </Border.StrokeShape>
-                    <Entry Placeholder="Player 6 Name" FontSize="16" />
-                </Border>
-                <Border Stroke="#C49B33"
-                StrokeThickness="1"
-                Padding="5,5"
-                Margin="5"
-                HorizontalOptions="FillAndExpand">
-                    <Border.StrokeShape>
-                        <RoundRectangle CornerRadius="5,3,3,5" />
-                    </Border.StrokeShape>
-                    <Entry Placeholder="Player 6 Name" FontSize="16" />
-                </Border>
-                <Border Stroke="#C49B33"
-                StrokeThickness="1"
-                Padding="5,5"
-                Margin="5"
-                HorizontalOptions="FillAndExpand">
-                    <Border.StrokeShape>
-                        <RoundRectangle CornerRadius="5,3,3,5" />
-                    </Border.StrokeShape>
-                    <Entry Placeholder="Player 6 Name" FontSize="16" />
-                </Border>
-                <Border Stroke="#C49B33"
-                StrokeThickness="1"
-                Padding="5,5"
-                Margin="5"
-                HorizontalOptions="FillAndExpand">
-                    <Border.StrokeShape>
-                        <RoundRectangle CornerRadius="5,3,3,5" />
-                    </Border.StrokeShape>
-                    <Entry Placeholder="Player 6 Name" FontSize="16" />
-                </Border>
-                <Border Stroke="#C49B33"
-                StrokeThickness="1"
-                Padding="5,5"
-                Margin="5"
-                HorizontalOptions="FillAndExpand">
-                    <Border.StrokeShape>
-                        <RoundRectangle CornerRadius="5,3,3,5" />
-                    </Border.StrokeShape>
-                    <Entry Placeholder="Player 6 Name" FontSize="16" />
-                </Border>
-                <Border Stroke="#C49B33"
-                StrokeThickness="1"
-                Padding="5,5"
-                Margin="5"
-                HorizontalOptions="FillAndExpand">
-                    <Border.StrokeShape>
-                        <RoundRectangle CornerRadius="5,3,3,5" />
-                    </Border.StrokeShape>
-                    <Entry Placeholder="Player 6 Name" FontSize="16" />
-                </Border>
-                <Border Stroke="#C49B33"
-                StrokeThickness="1"
-                Padding="5,5"
-                Margin="5"
-                HorizontalOptions="FillAndExpand">
-                    <Border.StrokeShape>
-                        <RoundRectangle CornerRadius="5,3,3,5" />
-                    </Border.StrokeShape>
-                    <Entry Placeholder="Player 6 Name" FontSize="16" />
-                </Border>
+                    Scrolled="ScrollView_Scrolled"
+                    x:Name="SettingScrollView">
+            <StackLayout    Orientation="Vertical">
+                <StackLayout Orientation="Horizontal" BackgroundColor="{DynamicResource Blue300Accent}" Padding="4">
+                    <Label Text="Murder" VerticalOptions="Center"></Label>
+                    <Switch IsToggled="{Binding GameSettingsModel.Murder}" HorizontalOptions="EndAndExpand"></Switch>
+                </StackLayout>
+                <StackLayout Orientation="Horizontal" BackgroundColor="{DynamicResource Blue300Accent}" Padding="4">
+                    <Label Text="Kidnap" VerticalOptions="Center"></Label>
+                    <Switch IsToggled="{Binding GameSettingsModel.Kidnap}" HorizontalOptions="EndAndExpand"></Switch>
+                </StackLayout>
+                <StackLayout Orientation="Horizontal" BackgroundColor="{DynamicResource Blue300Accent}" Padding="4">
+                    <Label Text="Seen point" VerticalOptions="Center"></Label>
+                    <Entry Keyboard="Numeric" Text="{Binding GameSettingsModel.SeenPoint}" HorizontalOptions="EndAndExpand"></Entry>
+                </StackLayout>
+                <StackLayout Orientation="Horizontal" BackgroundColor="{DynamicResource Blue300Accent}" Padding="4">
+                    <Label Text="Unseen point" VerticalOptions="Center"></Label>
+                    <Entry Keyboard="Numeric" Text="{Binding GameSettingsModel.UnseenPoint}" HorizontalOptions="EndAndExpand"></Entry>
+                </StackLayout>
+                <StackLayout Orientation="Horizontal" BackgroundColor="{DynamicResource Blue300Accent}" Padding="4">
+                    <Label Text="Point Rate" VerticalOptions="Center"></Label>
+                    <Entry Keyboard="Numeric" Text="{Binding GameSettingsModel.PointRate}" HorizontalOptions="EndAndExpand"></Entry>
+                </StackLayout>
+                <StackLayout Orientation="Horizontal" BackgroundColor="{DynamicResource Blue300Accent}" Padding="4">
+                    <Label Text="Currency" VerticalOptions="Center"></Label>
+                    <Picker Title="Select Currency" ItemsSource="{Binding GameSettingsModel.Currencies}" SelectedItem="{Binding GameSettingsModel.Currency}" HorizontalOptions="EndAndExpand">
+                    </Picker>
+                </StackLayout>
+                <StackLayout Orientation="Horizontal" BackgroundColor="{DynamicResource Blue300Accent}" Padding="4">
+                    <Label Text="Dublee" VerticalOptions="Center"></Label>
+                    <Switch IsToggled="{Binding GameSettingsModel.Dublee}" HorizontalOptions="EndAndExpand"></Switch>
+                </StackLayout>
+                <StackLayout Orientation="Horizontal" BackgroundColor="{DynamicResource Blue300Accent}" Padding="4">
+                    <Label Text="Dublee Point Less" VerticalOptions="Center"></Label>
+                    <Switch IsToggled="{Binding GameSettingsModel.DubleePointLess}" HorizontalOptions="EndAndExpand"></Switch>
+                </StackLayout>
+                <StackLayout Orientation="Horizontal" BackgroundColor="{DynamicResource Blue300Accent}" Padding="14">
+                    <Label Text="Dublee Point Bonus" VerticalOptions="Center"></Label>
+                    <Entry Keyboard="Numeric" Text="{Binding GameSettingsModel.DubleePointBonus}" HorizontalOptions="EndAndExpand"></Entry>
+                </StackLayout>
             </StackLayout>
         </ScrollView>
-
-        <Button x:Name="BackButton"
+        <StackLayout Orientation="Horizontal">
+            <Button x:Name="BackButton"
                 Text="Back"
-                BackgroundColor="Orange"
-                Clicked="BackButton_Clicked"></Button>
+                Margin="10"
+                BackgroundColor="{DynamicResource Secondary}"
+                HorizontalOptions="Start"
+                Command="{Binding BackButtonClickCommand}" />
+            <Button x:Name="NextButton"
+                Text="Next"
+                     Margin="10"
+                     HorizontalOptions="FillAndExpand"
+                BackgroundColor="{DynamicResource Primary}"
+                Clicked="NextButton_Clicked"></Button>
+        </StackLayout>
     </StackLayout>
 </ContentPage>

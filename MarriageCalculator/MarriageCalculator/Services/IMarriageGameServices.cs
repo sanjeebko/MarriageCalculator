@@ -9,11 +9,13 @@ namespace MarriageCalculator.Services;
 
 public interface IMarriageGameServices
 {
-    Task<List<MarriageGameModel>> GetMarriageGames();
+    Task<List<MarriageGame>> GetMarriageGames();
 
-    Task<int> AddMarriageGame(MarriageGameModel model);
+    Task<int> AddMarriageGame(MarriageGame model);
 
-    Task<int> DeleteMarriageGame(MarriageGameModel model);
+    Task<int> DeleteMarriageGame(MarriageGame model);
 
-    Task<int> UpdateMarriageGame(MarriageGameModel model);
+    Task<int> UpdateMarriageGame(MarriageGame model);
+
+    Task<List<string>> GetCurrency();
 }

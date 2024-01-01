@@ -1,7 +1,6 @@
 ﻿using CommunityToolkit.Maui;
 using MarriageCalculator.Pages.NewGame;
 using MarriageCalculator.Services;
-using MarriageCalculator.ViewModels;
 
 namespace MarriageCalculator;
 
@@ -27,11 +26,13 @@ public static class MauiProgram
         builder.Services.AddSingleton<IMarriageGameServices, MarriageGameServices>();
 
         //views registration
-        builder.Services.AddSingleton<NewGame>();
+        builder.Services.AddTransient<NewGame>();
         builder.Services.AddSingleton<MainPage>();
+        builder.Services.AddTransient<NewGamePlayers>();
+        builder.Services.AddTransient<PlayGame>();
 
         //view models
-        builder.Services.AddSingleton<NewGameViewModel>();
+        builder.Services.AddTransient<NewGameViewModel>();
 
         return builder.Build();
     }
