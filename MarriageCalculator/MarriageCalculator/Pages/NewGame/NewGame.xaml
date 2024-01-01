@@ -6,74 +6,77 @@
              x:DataType="local:NewGameViewModel"
              BackgroundColor="{DynamicResource Secondary}">
 
-    <StackLayout Orientation="Vertical" Margin="10">
-
-        <Border Stroke="{DynamicResource Primary}"
-                StrokeThickness="1"
-                Padding="5,5"
-                Margin="5"
-                HorizontalOptions="FillAndExpand">
-            <Border.StrokeShape>
-                <RoundRectangle CornerRadius="5,3,3,5" />
-            </Border.StrokeShape>
-            <Entry Placeholder="Marriage Game 2" Text="{Binding MarriageGameModel.Name}" />
-        </Border>
+    <StackLayout Orientation="Vertical" Margin="5">        
         <ScrollView VerticalOptions="FillAndExpand"
                     Scrolled="ScrollView_Scrolled"
                     x:Name="SettingScrollView">
+            
             <StackLayout    Orientation="Vertical">
-                <StackLayout Orientation="Horizontal" BackgroundColor="{DynamicResource Blue300Accent}" Padding="4">
+                <StackLayout Orientation="Horizontal" BackgroundColor="{DynamicResource Blue300Accent}" Padding="1">
+                    <Border Stroke="{DynamicResource Primary}"
+                StrokeThickness="1"
+                Padding="2,2"
+                Margin="2"
+                HorizontalOptions="FillAndExpand">
+                        <Border.StrokeShape>
+                            <RoundRectangle CornerRadius="5,3,3,5" />
+                        </Border.StrokeShape>
+                        <Entry Placeholder="Marriage Game 2" Text="{Binding MarriageGameModel.Name}" />
+                    </Border>
+                </StackLayout>
+                <StackLayout Orientation="Horizontal" BackgroundColor="{DynamicResource Blue300Accent}" Padding="1">
                     <Label Text="Murder" VerticalOptions="Center"></Label>
                     <Switch IsToggled="{Binding GameSettingsModel.Murder}" HorizontalOptions="EndAndExpand"></Switch>
                 </StackLayout>
-                <StackLayout Orientation="Horizontal" BackgroundColor="{DynamicResource Blue300Accent}" Padding="4">
+                <StackLayout Orientation="Horizontal" BackgroundColor="{DynamicResource Blue300Accent}" Padding="1">
                     <Label Text="Kidnap" VerticalOptions="Center"></Label>
                     <Switch IsToggled="{Binding GameSettingsModel.Kidnap}" HorizontalOptions="EndAndExpand"></Switch>
                 </StackLayout>
-                <StackLayout Orientation="Horizontal" BackgroundColor="{DynamicResource Blue300Accent}" Padding="4">
+                <StackLayout Orientation="Horizontal" BackgroundColor="{DynamicResource Blue300Accent}" Padding="1">
                     <Label Text="Seen point" VerticalOptions="Center"></Label>
                     <Entry Keyboard="Numeric" Text="{Binding GameSettingsModel.SeenPoint}" HorizontalOptions="EndAndExpand"></Entry>
                 </StackLayout>
-                <StackLayout Orientation="Horizontal" BackgroundColor="{DynamicResource Blue300Accent}" Padding="4">
+                <StackLayout Orientation="Horizontal" BackgroundColor="{DynamicResource Blue300Accent}" Padding="1">
                     <Label Text="Unseen point" VerticalOptions="Center"></Label>
                     <Entry Keyboard="Numeric" Text="{Binding GameSettingsModel.UnseenPoint}" HorizontalOptions="EndAndExpand"></Entry>
                 </StackLayout>
-                <StackLayout Orientation="Horizontal" BackgroundColor="{DynamicResource Blue300Accent}" Padding="4">
+                <StackLayout Orientation="Horizontal" BackgroundColor="{DynamicResource Blue300Accent}" Padding="1">
                     <Label Text="Point Rate" VerticalOptions="Center"></Label>
                     <Entry Keyboard="Numeric" Text="{Binding GameSettingsModel.PointRate}" HorizontalOptions="EndAndExpand"></Entry>
                 </StackLayout>
-                <StackLayout Orientation="Horizontal" BackgroundColor="{DynamicResource Blue300Accent}" Padding="4">
+                <StackLayout Orientation="Horizontal" BackgroundColor="{DynamicResource Blue300Accent}" Padding="1">
                     <Label Text="Currency" VerticalOptions="Center"></Label>
                     <Picker Title="Select Currency" ItemsSource="{Binding GameSettingsModel.Currencies}" SelectedItem="{Binding GameSettingsModel.Currency}" HorizontalOptions="EndAndExpand">
                     </Picker>
                 </StackLayout>
-                <StackLayout Orientation="Horizontal" BackgroundColor="{DynamicResource Blue300Accent}" Padding="4">
+                <StackLayout Orientation="Horizontal" BackgroundColor="{DynamicResource Blue300Accent}" Padding="1">
                     <Label Text="Dublee" VerticalOptions="Center"></Label>
                     <Switch IsToggled="{Binding GameSettingsModel.Dublee}" HorizontalOptions="EndAndExpand"></Switch>
                 </StackLayout>
-                <StackLayout Orientation="Horizontal" BackgroundColor="{DynamicResource Blue300Accent}" Padding="4">
+                <StackLayout Orientation="Horizontal" BackgroundColor="{DynamicResource Blue300Accent}" Padding="1">
                     <Label Text="Dublee Point Less" VerticalOptions="Center"></Label>
                     <Switch IsToggled="{Binding GameSettingsModel.DubleePointLess}" HorizontalOptions="EndAndExpand"></Switch>
                 </StackLayout>
-                <StackLayout Orientation="Horizontal" BackgroundColor="{DynamicResource Blue300Accent}" Padding="14">
+                <StackLayout Orientation="Horizontal" BackgroundColor="{DynamicResource Blue300Accent}" Padding="1">
                     <Label Text="Dublee Point Bonus" VerticalOptions="Center"></Label>
                     <Entry Keyboard="Numeric" Text="{Binding GameSettingsModel.DubleePointBonus}" HorizontalOptions="EndAndExpand"></Entry>
                 </StackLayout>
+                <StackLayout Orientation="Horizontal">
+                    <Button x:Name="BackButton"
+        Text="Back"
+        Margin="10"
+        BackgroundColor="{DynamicResource Secondary}"
+        HorizontalOptions="Start"
+        Command="{Binding BackButtonClickCommand}" />
+                    <Button x:Name="NextButton"
+        Text="Next"
+             Margin="10"
+             HorizontalOptions="FillAndExpand"
+        BackgroundColor="{DynamicResource Primary}"
+        Clicked="NextButton_Clicked"></Button>
+                </StackLayout>
             </StackLayout>
         </ScrollView>
-        <StackLayout Orientation="Horizontal">
-            <Button x:Name="BackButton"
-                Text="Back"
-                Margin="10"
-                BackgroundColor="{DynamicResource Secondary}"
-                HorizontalOptions="Start"
-                Command="{Binding BackButtonClickCommand}" />
-            <Button x:Name="NextButton"
-                Text="Next"
-                     Margin="10"
-                     HorizontalOptions="FillAndExpand"
-                BackgroundColor="{DynamicResource Primary}"
-                Clicked="NextButton_Clicked"></Button>
-        </StackLayout>
+        
     </StackLayout>
 </ContentPage>
