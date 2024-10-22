@@ -1,7 +1,7 @@
 using Microsoft.Maui.Devices;
 using System.Diagnostics;
 
-namespace MarriageCalculator.Pages.NewGame;
+namespace MarriageCalculator.Pages;
 
 public partial class PlayGame : ContentPage
 {

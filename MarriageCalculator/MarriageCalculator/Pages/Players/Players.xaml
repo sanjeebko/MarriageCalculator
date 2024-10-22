@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:local="clr-namespace:MarriageCalculator"
+             xmlns:core="clr-namespace:MarriageCalculator.Core.Models;assembly=MarriageCalculator.Core"
+             xmlns:page ="clr-namespace:MarriageCalculator.Pages"
+             x:DataType="local:PlayerSettingsViewModel"
+             x:Class="MarriageCalculator.Pages.Players"
+              Shell.NavBarIsVisible="False"
+             Title="Players">
+    <Grid RowDefinitions=".1*,.8*,.1*"  RowSpacing="4" Margin="10">
+        <Grid ColumnDefinitions="*,*"  >
+            <Entry Text="{Binding PlayerName}" Placeholder="Player Name" FontSize="12" VerticalOptions="Start" />
+            <Button Text="Add Player" Grid.Column="1" IsEnabled="{Binding CanAddMorePlayer}"  Command="{Binding AddPlayerCommand}" VerticalOptions="End" FontSize="12"/>            
+        </Grid>
+
+        <CollectionView x:Name="cvList" Grid.Row="1" ItemsSource="{Binding Players}"    SelectionMode="Single" Header="" >
+            <CollectionView.ItemsLayout >
+                <LinearItemsLayout ItemSpacing="2" Orientation="Vertical" ></LinearItemsLayout>
+            </CollectionView.ItemsLayout>
+            <CollectionView.HeaderTemplate>
+                <DataTemplate>
+                    <Grid ColumnDefinitions=".2*,.8*,.2*" HeightRequest="20" >
+                        <RoundRectangle  Grid.ColumnSpan="3" Fill="#3d5a80"   />
+                        <Border  
+                                Margin="5,0,0,0"
+                               
+                                HorizontalOptions="Start"
+                                StrokeShape="RoundRectangle 80,80,80,80"
+                                StrokeThickness="0"
+                                WidthRequest="100"> </Border>    
+                            <Label Text="Name"  TextColor="Black" VerticalOptions="Center" HorizontalOptions="Start" Margin="10,0,0,0" FontSize="10" />
+                        
+                        <HorizontalStackLayout VerticalOptions="Center" HorizontalOptions="Start" Grid.Column="1" Spacing="10">
+                            
+                            <Label FontSize="10" Text="Position" WidthRequest="100"/>
+                        </HorizontalStackLayout>
+                        <VerticalStackLayout Grid.Column="2" HorizontalOptions="End" >
+                             
+                        </VerticalStackLayout>
+
+                    </Grid>
+                </DataTemplate>
+            </CollectionView.HeaderTemplate>
+                <CollectionView.ItemTemplate   >
+                <DataTemplate x:DataType="core:Player" >
+                    <SwipeView>
+                        <SwipeView.RightItems>
+                            <SwipeItems SwipeBehaviorOnInvoked="Close">
+                                <SwipeItem Text="Remove" Command="{Binding BindingContext.DeletePlayerCommand, Source={x:Reference cvList}}" CommandParameter="{Binding .}" BackgroundColor="OrangeRed"></SwipeItem>
+                            </SwipeItems>
+                        </SwipeView.RightItems>
+                        
+                    <Grid ColumnDefinitions=".2*,.8*,.2*" HeightRequest="40">
+                            <RoundRectangle  Grid.ColumnSpan="3" CornerRadius="10" Fill="#5a189a"    />
+                        <Label Text="{Binding Name}"  TextColor="White" VerticalOptions="Center" Margin="10,0,0,0" FontSize="15"  FontAttributes="Bold,Italic" />                             
+                       
+                        <HorizontalStackLayout VerticalOptions="Center" HorizontalOptions="Start" Grid.Column="1" Spacing="10"  >
+                            
+                            <Label FontSize="12" Text="{Binding Position}" WidthRequest="100"/>
+                        </HorizontalStackLayout>
+                        <HorizontalStackLayout Grid.Column="2" HorizontalOptions="End"  >
+                             
+                        </HorizontalStackLayout>
+                        <Grid.GestureRecognizers>
+                            <DragGestureRecognizer DragStartingCommand="{Binding BindingContext.DragPlayerCommand, Source={x:Reference cvList}}" DragStartingCommandParameter="{Binding .}"></DragGestureRecognizer>
+                            <DropGestureRecognizer DropCommand="{Binding BindingContext.DroppedPlayerCommand, Source={x:Reference cvList}}" DropCommandParameter="{Binding .}" ></DropGestureRecognizer>
+                            <SwipeGestureRecognizer Command="{Binding BindingContext.DeletePlayerCommand, Source={x:Reference cvList}}" CommandParameter="{Binding .}" Direction="Left"></SwipeGestureRecognizer>
+                        </Grid.GestureRecognizers>
+                    </Grid>
+                    </SwipeView>
+                 
+                </DataTemplate>
+            </CollectionView.ItemTemplate>
+            <CollectionView.EmptyViewTemplate>
+                <DataTemplate>
+                    <VerticalStackLayout VerticalOptions="Center">
+                         <Label Text="{Binding NoOfPlayers}" /> 
+                        <Label Text="Please add new players." />
+                    </VerticalStackLayout>
+                </DataTemplate>
+            </CollectionView.EmptyViewTemplate>
+            <CollectionView.EmptyView>
+                <Label Text="THIS IS EMPTY!" />
+            </CollectionView.EmptyView>
+        </CollectionView>
+        <Grid Grid.Row="3" ColumnDefinitions=".8*,.2*" >
+            <HorizontalStackLayout Grid.Column="2" Spacing="4">
+                <Button Text="Katfad"   Command="{Binding ShufflePlayersCommand}"      FontSize="14" />
+                <Button Text="Ok" Command="{Binding OkCommand}"      FontSize="14" ></Button>
+            </HorizontalStackLayout>
+            
+             
+        </Grid>
+        
+    </Grid> 
+        
+    
+</ContentPage>

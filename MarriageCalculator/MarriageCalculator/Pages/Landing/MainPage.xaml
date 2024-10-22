@@ -2,44 +2,58 @@
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              xmlns:toolkit="http://schemas.microsoft.com/dotnet/2022/maui/toolkit"
-             x:Class="MarriageCalculator.MainPage"             
+             x:Class="MarriageCalculator.Pages.MainPage"             
              Shell.NavBarIsVisible="False">
 
     
         <HorizontalStackLayout
             Spacing="25"
             Padding="30,0"
-            HorizontalOptions="Start">
+            HorizontalOptions="Center">
             <VerticalStackLayout
                 VerticalOptions="Center" >
                 <Image
                 Source="cards.png"
                 SemanticProperties.Description="Marriage Calculator"
-                HeightRequest="200"
+                HeightRequest="250"
                 HorizontalOptions="Center" />
             </VerticalStackLayout>
             
-            <VerticalStackLayout Spacing="25" Padding="30,0" HorizontalOptions="Center" BackgroundColor="Red" >
-                <Button
+            <VerticalStackLayout Spacing="25" Padding="30,30" HorizontalOptions="Center" VerticalOptions="Center" BackgroundColor="Transparent" >
+            <Label Text="Hello MR. What is the problem? " />
+            <Button
                 x:Name="StartBtn"
                 Text="Start a new game"
                 SemanticProperties.Hint="Starts a brand new game"
-                BackgroundColor="Red"
-                Clicked="StartBtn_Clicked"
-                    
+                BackgroundColor="Green"
+                Clicked="StartBtn_Clicked"                    
                 ></Button>
             <Button
                 x:Name="ResumeBtn"
                 Text="Resume previous game"
                     SemanticProperties.Hint="Starts previous game and settings"
-                     BackgroundColor="Orange"
+                     BackgroundColor="Green"
                 Clicked="ResumeBtn_Clicked"
                 ></Button>
-
+            <Button
+                x:Name="SettingsBtn"
+                Text="Settings"
+                    SemanticProperties.Hint="Settings"
+                        BackgroundColor="Green"
+                 Clicked="SettingsBtn_Clicked"
+                ></Button>
+            <Button
+                x:Name="PlayersBtn"
+                Text="Players"
+                    SemanticProperties.Hint="Players"
+                        BackgroundColor="Green"
+                  Clicked="PlayersBtn_Clicked"
+                ></Button>
             <Button
                 x:Name="CloseBtn"
-                Text="Close"
+                Text="Exit"
                 SemanticProperties.Hint="Close marriage calculator app"
+                BackgroundColor="DarkOrange"
                 Clicked="OnCloseClicked" />
             </VerticalStackLayout>
             

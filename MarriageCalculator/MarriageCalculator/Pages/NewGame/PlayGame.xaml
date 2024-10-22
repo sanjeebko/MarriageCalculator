@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
-             x:Class="MarriageCalculator.Pages.NewGame.PlayGame"
+             x:Class="MarriageCalculator.Pages.PlayGame"
               xmlns:local="clr-namespace:MarriageCalculator"
              x:DataType="local:NewGameViewModel"
              BackgroundColor="{DynamicResource Secondary}"

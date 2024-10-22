@@ -60,15 +60,18 @@
     <ProjectReference Include="..\MarriageCalculator.Core\MarriageCalculator.Core.csproj" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Update="Pages\NewGame\NewGamePlayers.xaml.cs">
-      <DependentUpon>NewGamePlayers.xaml</DependentUpon>
+    <Compile Update="Pages\Settings\Settings.xaml.cs">
+      <DependentUpon>Settings.xaml</DependentUpon>
     </Compile>
   </ItemGroup>
   <ItemGroup>
     <MauiXaml Update="Pages\LogGame\LogGamePage.xaml">
       <Generator>MSBuild:Compile</Generator>
     </MauiXaml>
-    <MauiXaml Update="Pages\NewGame\NewGamePlayers.xaml">
+    <MauiXaml Update="Pages\Players\Players.xaml">
+      <Generator>MSBuild:Compile</Generator>
+    </MauiXaml>
+    <MauiXaml Update="Pages\Settings\Settings.xaml">
       <Generator>MSBuild:Compile</Generator>
     </MauiXaml>
     <MauiXaml Update="Pages\NewGame\NewGame.xaml">

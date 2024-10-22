@@ -10,7 +10,7 @@ using System.Threading.Tasks;
 
 namespace MarriageCalculator.Services;
 
-public class MarriageGameServices : IMarriageGameServices
+public partial class MarriageGameServices : IMarriageGameServices
 {
     public List<PlayerModel> Players { get; } = new();
 
@@ -55,13 +55,10 @@ public class MarriageGameServices : IMarriageGameServices
         return _dbConnection?.UpdateAsync(model) ?? Task.Run(() => { return 0; });
     }
 
-    public Task<List<string>> GetCurrency()
-    => Task.FromResult(new List<string>(){
-          "GBP-Pence",
-          "USD-Cent",
-          "NPR-Rupee",
-          "INR-Rupee",
-          "EUR-Cent",
-          "AUD-Cent"
-        });
+    public Task<List<Currency>> GetCurrency()
+    {
+        var currencyList = Enum.GetValues(typeof(Currency)).Cast<Currency>().ToList();
+        return Task.FromResult(currencyList);
+    }
+        
 }

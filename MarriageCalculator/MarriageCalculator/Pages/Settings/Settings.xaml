@@ -1,18 +1,19 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
-             x:Class="MarriageCalculator.Pages.NewGame.NewGamePlayers"
+             x:Class="MarriageCalculator.Pages.Settings"
              xmlns:local="clr-namespace:MarriageCalculator"
              x:DataType="local:NewGameViewModel"
              BackgroundColor="{DynamicResource Secondary}"
+             Shell.NavBarIsVisible="False"
              Title="New Game">
 
     <StackLayout Orientation="Vertical" Margin="10">
 
         <Border Stroke="{DynamicResource Primary}"
                 StrokeThickness="1"
-                Padding="5,5"
-                Margin="5"
+                Padding="2,2"
+                Margin="2"
                 HorizontalOptions="FillAndExpand">
             <Border.StrokeShape>
                 <RoundRectangle CornerRadius="5,3,3,5" />

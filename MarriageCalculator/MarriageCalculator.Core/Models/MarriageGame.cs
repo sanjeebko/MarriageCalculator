@@ -142,11 +142,12 @@ public class GameSettings
     public int SeenPoint { get; set; }
     public int UnseenPoint { get; set; }
     public int PointRate { get; set; }
-    public string Currency { get; set; }
+    public Currency Currency { get; set; }
 
     public bool Dublee { get; set; }
     public bool DubleePointLess { get; set; }
     public int DubleePointBonus { get; set; }
     public int FoulPoint { get; set; }
-    public int FoulPointBonus { get; set; }
+    public int FoulPointBonus { get; set; } 
+     
 }

@@ -25,7 +25,7 @@ public partial class GameSettingsModel : ObservableObject
     public int _pointRate;
 
     [ObservableProperty]
-    public string? _currency;
+    public Currency  _currency;
 
     [ObservableProperty]
     public bool _dublee;
@@ -43,7 +43,7 @@ public partial class GameSettingsModel : ObservableObject
     public FoulPointBonusType _foulPointBonus;
 
     [ObservableProperty]
-    public List<string> _currencies;
+    public List<Currency> _currencies;
 
     private readonly IMarriageGameServices _marriageGameServices;
 
@@ -61,7 +61,7 @@ public partial class GameSettingsModel : ObservableObject
         SeenPoint = 3;
         UnseenPoint = 10;
         PointRate = 10;
-        Currency = "GBP-Pence";
+        Currency =  Core.Models.Currency.GBP_Pence;        
         Dublee = true;
         DubleePointLess = true;
         FoulPoint = 15;
@@ -79,7 +79,7 @@ public static class GameSettingsModelExtension
         SeenPoint = model.SeenPoint,
         UnseenPoint = model.UnseenPoint,
         PointRate = model.PointRate,
-        Currency = model.Currency ?? string.Empty,
+        Currency = model.Currency,
         Dublee = model.Dublee,
         DubleePointLess = model.DubleePointLess,
         DubleePointBonus = model.DubleePointBonus,
@@ -98,7 +98,7 @@ public static class GameSettingsExtension
         SeenPoint = model.SeenPoint,
         UnseenPoint = model.UnseenPoint,
         PointRate = model.PointRate,
-        Currency = model.Currency ?? string.Empty,
+        Currency = model.Currency ,
         Dublee = model.Dublee,
         DubleePointLess = model.DubleePointLess,
         DubleePointBonus = model.DubleePointBonus,

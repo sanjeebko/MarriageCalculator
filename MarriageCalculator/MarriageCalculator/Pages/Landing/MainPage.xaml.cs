@@ -1,8 +1,7 @@
 ﻿using Toast = CommunityToolkit.Maui.Alerts.Toast;
 using CommunityToolkit.Maui.Animations;
-using MarriageCalculator.Pages.NewGame;
-
-namespace MarriageCalculator;
+ 
+namespace MarriageCalculator.Pages;
 
 public partial class MainPage : ContentPage
 {
@@ -24,7 +23,7 @@ public partial class MainPage : ContentPage
 
     private async void StartBtn_Clicked(object sender, EventArgs e)
     {
-        await MainPage.Animate(StartBtn);
+        await Animate(StartBtn);
 
         _newGameViewModel.Reset();
         await Shell.Current.GoToAsync(nameof(NewGame));
@@ -50,5 +49,21 @@ public partial class MainPage : ContentPage
     {
         var toast = Toast.Make(message, CommunityToolkit.Maui.Core.ToastDuration.Short);
         await toast.Show();
+    }
+
+    private async void SettingsBtn_Clicked(object sender, EventArgs e)
+    {
+        await Animate(SettingsBtn);
+
+        _newGameViewModel.Reset();
+        await Shell.Current.GoToAsync(nameof(Settings));
+    }
+
+    private async void PlayersBtn_Clicked(object sender, EventArgs e)
+    {
+        await Animate(PlayersBtn);
+
+        _newGameViewModel.Reset();
+        await Shell.Current.GoToAsync(nameof(Players));
     }
 }

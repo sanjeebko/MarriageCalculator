@@ -67,7 +67,7 @@ public partial class MarriageGameModel : ObservableObject
 
     public MarriageGameModel()
     {
-        _name = $"Game {DateTime.Now:yyyyMMdd HHmmss}";
+        _name = $"{RandomString}";
         Player1 = "Player 1";
         Player2 = "Player 2";
         Player3 = "Player 3";
@@ -80,6 +80,15 @@ public partial class MarriageGameModel : ObservableObject
     private string _winnerPlayer;
 
     public List<GameScore> GameScore { get; set; }
+
+    //create a function to return random string of length 6
+    public static string RandomString(int length)
+    {
+        const string chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+        Random random = new ();
+        return new string(Enumerable.Repeat(chars, length)
+          .Select(s => s[random.Next(s.Length)]).ToArray());
+    }
 }
 
 public class GameScore

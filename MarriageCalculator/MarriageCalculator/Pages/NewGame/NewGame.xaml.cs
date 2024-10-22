@@ -1,4 +1,4 @@
-namespace MarriageCalculator.Pages.NewGame;
+namespace MarriageCalculator.Pages;
 
 public partial class NewGame : ContentPage
 {
@@ -20,7 +20,7 @@ public partial class NewGame : ContentPage
     {
 
         
-        await Shell.Current.GoToAsync(nameof(NewGamePlayers), true, new Dictionary<string, object>()
+        await Shell.Current.GoToAsync(nameof(Settings), true, new Dictionary<string, object>()
         {
             [nameof(_viewModel.MarriageGameModel)] = _viewModel.MarriageGameModel,
             [nameof(_viewModel.GameSettingsModel)] = _viewModel.GameSettingsModel

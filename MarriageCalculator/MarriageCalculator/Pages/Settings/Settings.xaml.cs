@@ -1,12 +1,12 @@
 using MarriageCalculator.Models;
 
-namespace MarriageCalculator.Pages.NewGame;
+namespace MarriageCalculator.Pages;
 
-public partial class NewGamePlayers : ContentPage
+public partial class Settings : ContentPage
 {
     private readonly NewGameViewModel _viewModel;
 
-    public NewGamePlayers(NewGameViewModel viewModel)
+    public Settings(NewGameViewModel viewModel)
     {
         InitializeComponent();
         _viewModel = viewModel;
