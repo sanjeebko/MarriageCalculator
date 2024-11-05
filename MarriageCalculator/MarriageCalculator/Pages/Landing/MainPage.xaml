@@ -20,7 +20,7 @@
             </VerticalStackLayout>
             
             <VerticalStackLayout Spacing="25" Padding="30,30" HorizontalOptions="Center" VerticalOptions="Center" BackgroundColor="Transparent" >
-            <Label Text="Hello MR. What is the problem? " />
+             
             <Button
                 x:Name="StartBtn"
                 Text="Start a new game"
@@ -42,12 +42,12 @@
                         BackgroundColor="Green"
                  Clicked="SettingsBtn_Clicked"
                 ></Button>
-            <Button
+                 <Button
                 x:Name="PlayersBtn"
                 Text="Players"
                     SemanticProperties.Hint="Players"
                         BackgroundColor="Green"
-                  Clicked="PlayersBtn_Clicked"
+                  Clicked="PlayersBtn_Clicked"   
                 ></Button>
             <Button
                 x:Name="CloseBtn"

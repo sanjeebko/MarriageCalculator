@@ -22,7 +22,7 @@ public partial class GameSettingsModel : ObservableObject
     public int _unseenPoint;
 
     [ObservableProperty]
-    public int _pointRate;
+    public double _pointRate;
 
     [ObservableProperty]
     public Currency  _currency;
@@ -84,7 +84,7 @@ public static class GameSettingsModelExtension
         DubleePointLess = model.DubleePointLess,
         DubleePointBonus = model.DubleePointBonus,
         FoulPoint = model.FoulPoint,
-        FoulPointBonus = model.FoulPointBonus == FoulPointBonusType.NEXT_GAME ? 0 : 1,
+        FoulPointBonus = model.FoulPointBonus,
     };
 }
 
@@ -103,12 +103,7 @@ public static class GameSettingsExtension
         DubleePointLess = model.DubleePointLess,
         DubleePointBonus = model.DubleePointBonus,
         FoulPoint = model.FoulPoint,
-        FoulPointBonus = model.FoulPointBonus == 0 ? FoulPointBonusType.NEXT_GAME : FoulPointBonusType.THIS_GAME,
+        FoulPointBonus = model.FoulPointBonus 
     };
 }
 
-public enum FoulPointBonusType
-{
-    NEXT_GAME = 0,
-    THIS_GAME = 1,
-}

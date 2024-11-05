@@ -1,6 +1,4 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
-using MarriageCalculator.Core.Models;
-using System.ComponentModel.DataAnnotations;
 
 namespace MarriageCalculator.Models;
 
@@ -26,6 +24,23 @@ public partial class MarriageGameModel : ObservableObject
     [ObservableProperty]
     private string? _player6;
 
+    [ObservableProperty]
+    private int _player1Score;
+
+    [ObservableProperty]
+    private int _player2Score;
+
+    [ObservableProperty]
+    private int _player3Score;
+
+    [ObservableProperty]
+    private int _player4Score;
+
+    [ObservableProperty]
+    private int _player5Score;
+
+    [ObservableProperty]
+    private int _player6Score;
     private string _name;
 
     #endregion private variables
@@ -45,41 +60,19 @@ public partial class MarriageGameModel : ObservableObject
     public DateTime LastPlayed { get; set; }
     public DateTime Created { get; set; }
 
-    [ObservableProperty]
-    private int _player1Score;
-
-    [ObservableProperty]
-    private int _player2Score;
-
-    [ObservableProperty]
-    private int _player3Score;
-
-    [ObservableProperty]
-    private int _player4Score;
-
-    [ObservableProperty]
-    private int _player5Score;
-
-    [ObservableProperty]
-    private int _player6Score;
+   
 
     public bool IsActive { get; set; }
 
     public MarriageGameModel()
     {
-        _name = $"{RandomString}";
-        Player1 = "Player 1";
-        Player2 = "Player 2";
-        Player3 = "Player 3";
-        Player4 = "Player 4";
-        Player5 = "Player 5";
-        Player6 = "Player 6";
+        _name = $"{RandomString}";         
     }
 
     [ObservableProperty]
-    private string _winnerPlayer;
+    private int _winnerPlayer;
 
-    public List<GameScore> GameScore { get; set; }
+     
 
     //create a function to return random string of length 6
     public static string RandomString(int length)
@@ -90,64 +83,6 @@ public partial class MarriageGameModel : ObservableObject
           .Select(s => s[random.Next(s.Length)]).ToArray());
     }
 }
+ 
 
-public class GameScore
-{
-    public string Name { get; set; }
-    public string Score { get; set; }
-    public bool Seen { get; set; }
-    public bool Dublee { get; set; }
-    public bool Winner { get; set; }
-}
-
-public static class MarriageGameModelExtension
-{
-    public static MarriageGame ToMarriageGame(this MarriageGameModel model) => new()
-    {
-        Name = model.Name,
-        Player1 = model.Player1,
-        Player2 = model.Player2,
-        Player3 = model.Player3,
-        Player4 = model.Player4,
-        Player5 = model.Player5,
-        Player6 = model.Player6,
-
-        Player1Score = model.Player1Score,
-        Player2Score = model.Player2Score,
-        Player3Score = model.Player3Score,
-        Player4Score = model.Player4Score,
-        Player5Score = model.Player5Score,
-        Player6Score = model.Player6Score,
-
-        MarriageGameId = model.MarriageGameId,
-        LastPlayed = model.LastPlayed,
-        Created = model.Created,
-        IsActive = model.IsActive
-    };
-}
-
-public static class MarriageGameExtension
-{
-    public static MarriageGameModel ToMarriageGameModel(this MarriageGame model) => new()
-    {
-        Name = model.Name,
-        Player1 = model.Player1,
-        Player2 = model.Player2,
-        Player3 = model.Player3,
-        Player4 = model.Player4,
-        Player5 = model.Player5,
-        Player6 = model.Player6,
-
-        Player1Score = model.Player1Score,
-        Player2Score = model.Player2Score,
-        Player3Score = model.Player3Score,
-        Player4Score = model.Player4Score,
-        Player5Score = model.Player5Score,
-        Player6Score = model.Player6Score,
-
-        MarriageGameId = model.MarriageGameId,
-        LastPlayed = model.LastPlayed,
-        Created = model.Created,
-        IsActive = model.IsActive
-    };
-}
+  

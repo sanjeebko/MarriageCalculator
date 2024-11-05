@@ -1,7 +1,9 @@
 using MarriageCalculator.API.Data;
+using MarriageCalculator.API.Services;
 using MarriageCalculator.Core.Models;
+ 
 using Microsoft.EntityFrameworkCore;
-
+ 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
@@ -11,6 +13,8 @@ builder.Services.AddSwaggerGen();
 
 builder.Services.AddDbContext<AppDbContext>(
     opt => opt.UseSqlite(builder.Configuration.GetConnectionString("SqliteConnection")));
+
+
 
 var app = builder.Build();
 
@@ -22,6 +26,16 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+
+
+
+
+using (var scope = app.Services.CreateScope())
+{
+    var services = scope.ServiceProvider;
+    var dbInitializer = services.GetRequiredService<MarriageGameServices>();
+    await dbInitializer.SetupDB();
+}
 
 app.MapGet("api/marriagegame", async (AppDbContext context) =>
 {
@@ -37,16 +51,16 @@ app.MapPost("api/marriagegame", async (AppDbContext context, MarriageGame game) 
     await context.MarriageGame.AddAsync(game);
 
     await context.SaveChangesAsync();
-    return Results.Created($"api/marriagegame/{game.MarriageGameId}", game);
+    return Results.Created($"api/marriagegame/{game.Id}", game);
 });
 
 app.MapPut("api/marriagegame/{id}", async (AppDbContext context, int id, MarriageGame game) =>
 {
-    var model = await context.MarriageGame.FirstOrDefaultAsync(a => a.MarriageGameId == id);
+    var model = await context.MarriageGame.FirstOrDefaultAsync(a => a.Id == id);
     if (model is null)
         return Results.NotFound();
 
-    model.Name = game.Name;
+    model.DealerPlayer = game.DealerPlayer;
     //model.Players = game.Players;
 
     await context.SaveChangesAsync();
@@ -55,7 +69,7 @@ app.MapPut("api/marriagegame/{id}", async (AppDbContext context, int id, Marriag
 
 app.MapDelete("api/marriagegame/{id}", async (AppDbContext context, int id) =>
 {
-    var model = await context.MarriageGame.FirstOrDefaultAsync(a => a.MarriageGameId == id);
+    var model = await context.MarriageGame.FirstOrDefaultAsync(a => a.Id == id);
     if (model is null)
         return Results.NotFound();
     //foreach(var player in model.Players)

@@ -9,87 +9,117 @@
               Shell.NavBarIsVisible="False"
              Title="Players">
     <Grid RowDefinitions=".1*,.8*,.1*"  RowSpacing="4" Margin="10">
-        <Grid ColumnDefinitions="*,*"  >
+        <Grid ColumnDefinitions=".7*,.3*" ColumnSpacing="10" >
             <Entry Text="{Binding PlayerName}" Placeholder="Player Name" FontSize="12" VerticalOptions="Start" />
-            <Button Text="Add Player" Grid.Column="1" IsEnabled="{Binding CanAddMorePlayer}"  Command="{Binding AddPlayerCommand}" VerticalOptions="End" FontSize="12"/>            
-        </Grid>
+            <Button Text="Add Player" Grid.Column="1" IsEnabled="{Binding CanAddMorePlayer}"  Command="{Binding AddPlayerCommand}" VerticalOptions="Center" FontSize="12"/>
+             
+        </Grid>        
+        <Grid ColumnDefinitions=".3*,.7*" Grid.Row="1" ColumnSpacing="10" >
+            <ScrollView HorizontalOptions="FillAndExpand">
+                <CollectionView x:Name="cvList" ItemsSource="{Binding CurrentPlayers}"    SelectionMode="Single" Header="" >
+                    <CollectionView.ItemsLayout >
+                        <LinearItemsLayout ItemSpacing="1" Orientation="Vertical" ></LinearItemsLayout>
+                    </CollectionView.ItemsLayout>
+                    <CollectionView.HeaderTemplate>
+                        <DataTemplate>
+                            <Grid ColumnDefinitions="*,*" HeightRequest="20" >
+                                <RoundRectangle  CornerRadius="4" Grid.ColumnSpan="2" Fill="#907ad6"   />
+                                <Border Margin="3,0,0,0"  HorizontalOptions="Start" StrokeShape="RoundRectangle 80,80,80,80" StrokeThickness="0" WidthRequest="80"></Border>
+                                <Label Text="Current Players"  TextColor="Black" VerticalOptions="Center" HorizontalOptions="Center" Margin="10,0,0,0" FontSize="12" />
+                                <Label Grid.Column="1" Text="{Binding Source={RelativeSource AncestorType={x:Type ContentPage}}, Path=BindingContext.NoOfPlayers}"  TextColor="Black" VerticalOptions="Center" HorizontalOptions="Center" Margin="10,0,0,0" FontSize="12"/>
+                            </Grid>
+                        </DataTemplate>
+                    </CollectionView.HeaderTemplate>
+                    <CollectionView.ItemTemplate   >
+                        <DataTemplate x:DataType="core:Player" >
+                            <SwipeView>
+                                <SwipeView.RightItems>
+                                    <SwipeItems SwipeBehaviorOnInvoked="Close">
+                                        <SwipeItem Text="Remove" Command="{Binding BindingContext.DeletePlayerCommand, Source={x:Reference cvList}}" CommandParameter="{Binding .}" BackgroundColor="OrangeRed"></SwipeItem>
+                                    </SwipeItems>
+                                </SwipeView.RightItems>
 
-        <CollectionView x:Name="cvList" Grid.Row="1" ItemsSource="{Binding Players}"    SelectionMode="Single" Header="" >
-            <CollectionView.ItemsLayout >
-                <LinearItemsLayout ItemSpacing="2" Orientation="Vertical" ></LinearItemsLayout>
-            </CollectionView.ItemsLayout>
-            <CollectionView.HeaderTemplate>
-                <DataTemplate>
-                    <Grid ColumnDefinitions=".2*,.8*,.2*" HeightRequest="20" >
-                        <RoundRectangle  Grid.ColumnSpan="3" Fill="#3d5a80"   />
-                        <Border  
-                                Margin="5,0,0,0"
-                               
-                                HorizontalOptions="Start"
-                                StrokeShape="RoundRectangle 80,80,80,80"
-                                StrokeThickness="0"
-                                WidthRequest="100"> </Border>    
-                            <Label Text="Name"  TextColor="Black" VerticalOptions="Center" HorizontalOptions="Start" Margin="10,0,0,0" FontSize="10" />
-                        
-                        <HorizontalStackLayout VerticalOptions="Center" HorizontalOptions="Start" Grid.Column="1" Spacing="10">
-                            
-                            <Label FontSize="10" Text="Position" WidthRequest="100"/>
-                        </HorizontalStackLayout>
-                        <VerticalStackLayout Grid.Column="2" HorizontalOptions="End" >
-                             
-                        </VerticalStackLayout>
+                                <Grid ColumnDefinitions="*" HeightRequest="40">
+                                    <RoundRectangle   CornerRadius="4" Fill="#2c2a4a"    />
+                                    <Label Text="{Binding Name}"  TextColor="White" VerticalOptions="Center" Margin="5,0,0,0" FontSize="15"  FontAttributes="Bold,Italic" />
+ 
+                                    <Grid.GestureRecognizers>
+                                        <DragGestureRecognizer DragStartingCommand="{Binding BindingContext.DragPlayerCommand, Source={x:Reference cvList}}" DragStartingCommandParameter="{Binding .}"></DragGestureRecognizer>
+                                        <DropGestureRecognizer DropCommand="{Binding BindingContext.DroppedPlayerCommand, Source={x:Reference cvList}}" DropCommandParameter="{Binding .}" ></DropGestureRecognizer>
+                                        <SwipeGestureRecognizer Command="{Binding BindingContext.DeletePlayerCommand, Source={x:Reference cvList}}" CommandParameter="{Binding .}" Direction="Left"></SwipeGestureRecognizer>
+                                    </Grid.GestureRecognizers>
+                                </Grid>
+                            </SwipeView>
 
-                    </Grid>
-                </DataTemplate>
-            </CollectionView.HeaderTemplate>
-                <CollectionView.ItemTemplate   >
-                <DataTemplate x:DataType="core:Player" >
-                    <SwipeView>
-                        <SwipeView.RightItems>
-                            <SwipeItems SwipeBehaviorOnInvoked="Close">
-                                <SwipeItem Text="Remove" Command="{Binding BindingContext.DeletePlayerCommand, Source={x:Reference cvList}}" CommandParameter="{Binding .}" BackgroundColor="OrangeRed"></SwipeItem>
-                            </SwipeItems>
-                        </SwipeView.RightItems>
-                        
-                    <Grid ColumnDefinitions=".2*,.8*,.2*" HeightRequest="40">
-                            <RoundRectangle  Grid.ColumnSpan="3" CornerRadius="10" Fill="#5a189a"    />
-                        <Label Text="{Binding Name}"  TextColor="White" VerticalOptions="Center" Margin="10,0,0,0" FontSize="15"  FontAttributes="Bold,Italic" />                             
-                       
-                        <HorizontalStackLayout VerticalOptions="Center" HorizontalOptions="Start" Grid.Column="1" Spacing="10"  >
-                            
-                            <Label FontSize="12" Text="{Binding Position}" WidthRequest="100"/>
-                        </HorizontalStackLayout>
-                        <HorizontalStackLayout Grid.Column="2" HorizontalOptions="End"  >
-                             
-                        </HorizontalStackLayout>
-                        <Grid.GestureRecognizers>
-                            <DragGestureRecognizer DragStartingCommand="{Binding BindingContext.DragPlayerCommand, Source={x:Reference cvList}}" DragStartingCommandParameter="{Binding .}"></DragGestureRecognizer>
-                            <DropGestureRecognizer DropCommand="{Binding BindingContext.DroppedPlayerCommand, Source={x:Reference cvList}}" DropCommandParameter="{Binding .}" ></DropGestureRecognizer>
-                            <SwipeGestureRecognizer Command="{Binding BindingContext.DeletePlayerCommand, Source={x:Reference cvList}}" CommandParameter="{Binding .}" Direction="Left"></SwipeGestureRecognizer>
-                        </Grid.GestureRecognizers>
-                    </Grid>
-                    </SwipeView>
+                        </DataTemplate>
+                    </CollectionView.ItemTemplate>
+                    <CollectionView.EmptyViewTemplate>
+                        <DataTemplate>
+                            <VerticalStackLayout VerticalOptions="Center">
+                                <Label Text="{Binding NoOfPlayers}" />
+                                <Label Text="Please add new players." />
+                            </VerticalStackLayout>
+                        </DataTemplate>
+                    </CollectionView.EmptyViewTemplate>
+                    <CollectionView.EmptyView>
+                        <Label Text="THIS IS EMPTY!" />
+                    </CollectionView.EmptyView>
+                </CollectionView>
+            </ScrollView>
+            <RefreshView Grid.Column="1" IsRefreshing="{Binding IsRefreshing}" Command="{Binding RefreshAllPlayersCommand}"
+             HorizontalOptions="FillAndExpand" VerticalOptions="FillAndExpand" MinimumHeightRequest="250">
                  
-                </DataTemplate>
-            </CollectionView.ItemTemplate>
-            <CollectionView.EmptyViewTemplate>
-                <DataTemplate>
-                    <VerticalStackLayout VerticalOptions="Center">
-                         <Label Text="{Binding NoOfPlayers}" /> 
-                        <Label Text="Please add new players." />
-                    </VerticalStackLayout>
-                </DataTemplate>
-            </CollectionView.EmptyViewTemplate>
-            <CollectionView.EmptyView>
-                <Label Text="THIS IS EMPTY!" />
-            </CollectionView.EmptyView>
-        </CollectionView>
-        <Grid Grid.Row="3" ColumnDefinitions=".8*,.2*" >
-            <HorizontalStackLayout Grid.Column="2" Spacing="4">
-                <Button Text="Katfad"   Command="{Binding ShufflePlayersCommand}"      FontSize="14" />
-                <Button Text="Ok" Command="{Binding OkCommand}"      FontSize="14" ></Button>
-            </HorizontalStackLayout>
+                <CollectionView x:Name="AllPlayerList" ItemsSource="{Binding AllPlayers}" ItemsLayout="VerticalGrid, 3"   SelectionMode="Single" Header="" >
+                    
+                    <CollectionView.HeaderTemplate>
+                        <DataTemplate>
+                            <Grid ColumnDefinitions="*" HeightRequest="20" >
+                                <RoundRectangle  CornerRadius="4"  Fill="#907ad6"   />
+                                <Border Margin="5,0,0,0" HorizontalOptions="Start" StrokeShape="RoundRectangle 80,80,80,80" StrokeThickness="0" WidthRequest="100"></Border>
+                                <Label Text="Saved Players - (Double tap to select)"  TextColor="Black" VerticalOptions="Center" HorizontalOptions="Center" Margin="10,0,0,0" FontSize="12" />
+                            </Grid>
+                        </DataTemplate>
+                    </CollectionView.HeaderTemplate>
+                    <CollectionView.ItemTemplate >
+                        <DataTemplate x:DataType="core:Player" >
+                            <SwipeView>
+                                <SwipeView.RightItems>
+                                    <SwipeItems SwipeBehaviorOnInvoked="Close">
+                                        <SwipeItem Text="Remove" Command="{Binding BindingContext.DeletePlayerFromDbCommand, Source={x:Reference AllPlayerList}}" CommandParameter="{Binding .}" BackgroundColor="OrangeRed"></SwipeItem>
+                                    </SwipeItems>
+                                </SwipeView.RightItems>
+
+                                <Grid ColumnDefinitions="*" HeightRequest="40">
+                                    <RoundRectangle   CornerRadius="4" Fill="#5e548e"    />
+                                    <Label Text="{Binding Name}"  TextColor="White" VerticalOptions="Center" Margin="10,0,0,0" FontSize="15"  FontAttributes="Bold,Italic" />
+
+                                    <Grid.GestureRecognizers>
+                                        <SwipeGestureRecognizer Command="{Binding BindingContext.DeletePlayerCommand, Source={x:Reference AllPlayerList}}" CommandParameter="{Binding .}" Direction="Left"></SwipeGestureRecognizer>
+                                        <TapGestureRecognizer Command="{Binding BindingContext.TapPlayerCommand, Source={x:Reference AllPlayerList}}" CommandParameter="{Binding .}" NumberOfTapsRequired="2" />
+                                    </Grid.GestureRecognizers>
+                                </Grid>
+                            </SwipeView>
+
+                        </DataTemplate>
+                    </CollectionView.ItemTemplate>
+                    <CollectionView.EmptyViewTemplate>
+                        <DataTemplate>
+                            <VerticalStackLayout VerticalOptions="Center">
+                                <Label Text="{Binding NoOfPlayers}" />
+                                <Label Text="Please add new players." />
+                            </VerticalStackLayout>
+                        </DataTemplate>
+                    </CollectionView.EmptyViewTemplate>
+                    <CollectionView.EmptyView>
+                        <Label Text="THIS IS EMPTY!" />
+                    </CollectionView.EmptyView>
+                </CollectionView>
+            </RefreshView>
             
+        </Grid>
+        
+        <Grid Grid.Row="3" ColumnDefinitions=".7*,.3*" >
+             <Button Text="Ok" Grid.Column="1" Command="{Binding OkCommand}" HorizontalOptions="FillAndExpand"  FontSize="14" Padding="2" ></Button>
              
         </Grid>
         

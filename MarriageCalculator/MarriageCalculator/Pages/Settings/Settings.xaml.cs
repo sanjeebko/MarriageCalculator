@@ -1,15 +1,20 @@
+using MarriageCalculator.Core.Models;
 using MarriageCalculator.Models;
+using MarriageCalculator.Services;
 
 namespace MarriageCalculator.Pages;
 
 public partial class Settings : ContentPage
 {
     private readonly NewGameViewModel _viewModel;
-
-    public Settings(NewGameViewModel viewModel)
+    private readonly GameSettings _gameSettings;
+    public Settings(NewGameViewModel viewModel )
     {
         InitializeComponent();
+        _gameSettings = App.CurrentSettings;
+        
         _viewModel = viewModel;
+
         BindingContext = viewModel;
     }
 
