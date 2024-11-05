@@ -7,6 +7,7 @@ public partial class MainPage : ContentPage
 {
     private readonly NewGameViewModel _newGameViewModel;
 
+      
     public MainPage(NewGameViewModel newGameViewModel)
     {
         InitializeComponent();
@@ -66,4 +67,5 @@ public partial class MainPage : ContentPage
         _newGameViewModel.Reset();
         await Shell.Current.GoToAsync(nameof(Players));
     }
+     
 }

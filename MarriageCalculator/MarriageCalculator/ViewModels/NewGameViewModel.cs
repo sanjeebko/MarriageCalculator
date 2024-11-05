@@ -12,7 +12,8 @@ namespace MarriageCalculator;
 public partial class NewGameViewModel : ObservableObject
 {
     private readonly IMarriageGameServices _marriageGameServices;
-    public PlayerSettingsViewModel GameSettingsService { get; }
+    public PlayerSettingsViewModel PlayerSettingsService { get; }
+     
 
     [ObservableProperty]
     public MarriageGameModel marriageGameModel;
@@ -20,18 +21,18 @@ public partial class NewGameViewModel : ObservableObject
     [ObservableProperty]
     public GameSettingsModel gameSettingsModel;
 
-    public List<KhaalModel> khaalModels;
+     
 
     public NewGameViewModel(IMarriageGameServices marriageGameServices, PlayerSettingsViewModel gameSettingsService)
     {
         marriageGameModel = new();
         gameSettingsModel = new(marriageGameServices);
-        khaalModels = new();
+         
         _marriageGameServices = marriageGameServices;
-        GameSettingsService = gameSettingsService;
+        PlayerSettingsService = gameSettingsService;
+        
     }
-
-    
+        
 
     [RelayCommand]
     public async Task BackButtonClick()
@@ -58,4 +59,6 @@ public partial class NewGameViewModel : ObservableObject
         gameSettingsModel = new(_marriageGameServices);
         // OnPropertyChanged(nameof(gameSettingsModel));
     }
+
+     
 }

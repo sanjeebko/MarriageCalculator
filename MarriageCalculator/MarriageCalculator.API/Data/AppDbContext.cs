@@ -10,7 +10,7 @@ public class AppDbContext : DbContext
     {
     }
 
-    public DbSet<PlayerModel> Players => Set<PlayerModel>();
+    public DbSet<Player> Players => Set<Player>();
     public DbSet<MarriageGame> MarriageGame => Set<MarriageGame>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
