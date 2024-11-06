@@ -13,6 +13,12 @@ public partial class Player : ObservableObject
     public bool Deleted { get; set; } = false;
     [ObservableProperty]
     public bool selected  = false;
+    public override bool Equals(object? obj)
+    {
+        if (obj is not Player player)
+            throw new ArgumentException($" {nameof(obj)} must be of type {nameof(Player)}.", nameof(obj));
 
+        return player.Name == this.Name && player.Email == this.Email;
+    }
 }
    

@@ -1,32 +1,34 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
-             xmlns:local="clr-namespace:MarriageCalculator"
+             xmlns:local="clr-namespace:MarriageCalculator.ViewModels"
              xmlns:core="clr-namespace:MarriageCalculator.Core.Models;assembly=MarriageCalculator.Core"
              xmlns:page ="clr-namespace:MarriageCalculator.Pages"
              x:DataType="local:PlayerSettingsViewModel"
              x:Class="MarriageCalculator.Pages.Players"
+             BackgroundColor="{AppThemeBinding Light={StaticResource LightBackground}, Dark={StaticResource DarkBackground}}"
               Shell.NavBarIsVisible="False"
              Title="Players">
     <Grid RowDefinitions=".1*,.8*,.1*"  RowSpacing="4" Margin="10">
         <Grid ColumnDefinitions=".7*,.3*" ColumnSpacing="10" >
-            <Entry Text="{Binding PlayerName}" Placeholder="Player Name" FontSize="12" VerticalOptions="Start" />
-            <Button Text="Add Player" Grid.Column="1" IsEnabled="{Binding CanAddMorePlayer}"  Command="{Binding AddPlayerCommand}" VerticalOptions="Center" FontSize="12"/>
+            <Entry Text="{Binding PlayerName}" Placeholder="Player Name" Style="{StaticResource SettingsEntry}"/>
+            <Button Text="Add Player" Grid.Column="1" IsEnabled="{Binding CanAddMorePlayer}"  Command="{Binding AddPlayerCommand}" Style="{StaticResource ActionButton}"/>
              
         </Grid>        
         <Grid ColumnDefinitions=".3*,.7*" Grid.Row="1" ColumnSpacing="10" >
             <ScrollView HorizontalOptions="FillAndExpand">
                 <CollectionView x:Name="cvList" ItemsSource="{Binding CurrentPlayers}"    SelectionMode="Single" Header="" >
-                    <CollectionView.ItemsLayout >
-                        <LinearItemsLayout ItemSpacing="1" Orientation="Vertical" ></LinearItemsLayout>
+                    <CollectionView.ItemsLayout>
+                        <GridItemsLayout Orientation="Vertical" HorizontalItemSpacing="6" VerticalItemSpacing="4"   >
+                        </GridItemsLayout>
                     </CollectionView.ItemsLayout>
                     <CollectionView.HeaderTemplate>
                         <DataTemplate>
-                            <Grid ColumnDefinitions="*,*" HeightRequest="20" >
-                                <RoundRectangle  CornerRadius="4" Grid.ColumnSpan="2" Fill="#907ad6"   />
-                                <Border Margin="3,0,0,0"  HorizontalOptions="Start" StrokeShape="RoundRectangle 80,80,80,80" StrokeThickness="0" WidthRequest="80"></Border>
-                                <Label Text="Current Players"  TextColor="Black" VerticalOptions="Center" HorizontalOptions="Center" Margin="10,0,0,0" FontSize="12" />
-                                <Label Grid.Column="1" Text="{Binding Source={RelativeSource AncestorType={x:Type ContentPage}}, Path=BindingContext.NoOfPlayers}"  TextColor="Black" VerticalOptions="Center" HorizontalOptions="Center" Margin="10,0,0,0" FontSize="12"/>
+                            <Grid ColumnDefinitions="*,*" HeightRequest="30" ColumnSpacing="4" RowSpacing="4">
+                                <RoundRectangle   Grid.ColumnSpan="2" Style="{StaticResource PlayerRoundRectangle}"    />
+                                <!--<Border Margin="3,0,0,0"  HorizontalOptions="Start" StrokeShape="RoundRectangle 80,80,80,80" StrokeThickness="0" WidthRequest="80"></Border>-->
+                                <Label Text="Current Players"   Margin="10,0,0,0"  Style="{StaticResource PlayersLabel}"  FontAttributes="Italic" />
+                                <Label Grid.Column="1" Text="{Binding Source={RelativeSource AncestorType={x:Type ContentPage}}, Path=BindingContext.NoOfPlayers}"  Style="{StaticResource PlayersLabel}" FontAttributes="Italic"  Margin="10,0,0,0"  />
                             </Grid>
                         </DataTemplate>
                     </CollectionView.HeaderTemplate>
@@ -38,17 +40,16 @@
                                         <SwipeItem Text="Remove" Command="{Binding BindingContext.DeletePlayerCommand, Source={x:Reference cvList}}" CommandParameter="{Binding .}" BackgroundColor="OrangeRed"></SwipeItem>
                                     </SwipeItems>
                                 </SwipeView.RightItems>
-
-                                <Grid ColumnDefinitions="*" HeightRequest="40">
-                                    <RoundRectangle   CornerRadius="4" Fill="#2c2a4a"    />
-                                    <Label Text="{Binding Name}"  TextColor="White" VerticalOptions="Center" Margin="5,0,0,0" FontSize="15"  FontAttributes="Bold,Italic" />
  
-                                    <Grid.GestureRecognizers>
-                                        <DragGestureRecognizer DragStartingCommand="{Binding BindingContext.DragPlayerCommand, Source={x:Reference cvList}}" DragStartingCommandParameter="{Binding .}"></DragGestureRecognizer>
-                                        <DropGestureRecognizer DropCommand="{Binding BindingContext.DroppedPlayerCommand, Source={x:Reference cvList}}" DropCommandParameter="{Binding .}" ></DropGestureRecognizer>
-                                        <SwipeGestureRecognizer Command="{Binding BindingContext.DeletePlayerCommand, Source={x:Reference cvList}}" CommandParameter="{Binding .}" Direction="Left"></SwipeGestureRecognizer>
-                                    </Grid.GestureRecognizers>
-                                </Grid>
+                                    <Frame Style="{StaticResource PlayersFrameStyle}">
+                                        <Label Text="{Binding Name}"    Style="{StaticResource PlayersLabel}" />
+                                        <Frame.GestureRecognizers>
+                                            <DragGestureRecognizer DragStartingCommand="{Binding BindingContext.DragPlayerCommand, Source={x:Reference cvList}}" DragStartingCommandParameter="{Binding .}"></DragGestureRecognizer>
+                                            <DropGestureRecognizer DropCommand="{Binding BindingContext.DroppedPlayerCommand, Source={x:Reference cvList}}" DropCommandParameter="{Binding .}" ></DropGestureRecognizer>
+                                            <SwipeGestureRecognizer Command="{Binding BindingContext.DeletePlayerCommand, Source={x:Reference cvList}}" CommandParameter="{Binding .}" Direction="Left"></SwipeGestureRecognizer>
+                                        </Frame.GestureRecognizers>
+                                    </Frame>
+                                     
                             </SwipeView>
 
                         </DataTemplate>
@@ -69,14 +70,19 @@
             <RefreshView Grid.Column="1" IsRefreshing="{Binding IsRefreshing}" Command="{Binding RefreshAllPlayersCommand}"
              HorizontalOptions="FillAndExpand" VerticalOptions="FillAndExpand" MinimumHeightRequest="250">
                  
-                <CollectionView x:Name="AllPlayerList" ItemsSource="{Binding AllPlayers}" ItemsLayout="VerticalGrid, 3"   SelectionMode="Single" Header="" >
-                    
+                <CollectionView x:Name="AllPlayerList" ItemsSource="{Binding AllPlayers}"    SelectionMode="Single" Header="" >
+                    <CollectionView.ItemsLayout>
+                        <GridItemsLayout Orientation="Vertical" HorizontalItemSpacing="6" VerticalItemSpacing="4" Span="3" >
+                            
+                        </GridItemsLayout>
+                        
+                    </CollectionView.ItemsLayout>
                     <CollectionView.HeaderTemplate>
                         <DataTemplate>
-                            <Grid ColumnDefinitions="*" HeightRequest="20" >
-                                <RoundRectangle  CornerRadius="4"  Fill="#907ad6"   />
-                                <Border Margin="5,0,0,0" HorizontalOptions="Start" StrokeShape="RoundRectangle 80,80,80,80" StrokeThickness="0" WidthRequest="100"></Border>
-                                <Label Text="Saved Players - (Double tap to select)"  TextColor="Black" VerticalOptions="Center" HorizontalOptions="Center" Margin="10,0,0,0" FontSize="12" />
+                            <Grid ColumnDefinitions="*" HeightRequest="30" RowSpacing="4" ColumnSpacing="4" >
+                                <RoundRectangle  Style="{StaticResource PlayerRoundRectangle}"    />
+                                <!--<Border Margin="5,0,0,0" HorizontalOptions="Start" StrokeShape="RoundRectangle 80,80,80,80" StrokeThickness="0" WidthRequest="100"></Border>-->
+                                <Label Text="Saved Players - (Double tap to select)"    Margin="10,0,0,0"  Style="{StaticResource PlayersLabel}"  FontAttributes="Italic" />
                             </Grid>
                         </DataTemplate>
                     </CollectionView.HeaderTemplate>
@@ -85,19 +91,28 @@
                             <SwipeView>
                                 <SwipeView.RightItems>
                                     <SwipeItems SwipeBehaviorOnInvoked="Close">
-                                        <SwipeItem Text="Remove" Command="{Binding BindingContext.DeletePlayerFromDbCommand, Source={x:Reference AllPlayerList}}" CommandParameter="{Binding .}" BackgroundColor="OrangeRed"></SwipeItem>
+                                        <SwipeItem Text="Remove" Command="{Binding BindingContext.DeletePlayerFromDbCommand, Source={x:Reference AllPlayerList}}" CommandParameter="{Binding .}"
+                                                   BackgroundColor="{StaticResource Primary}"></SwipeItem>
                                     </SwipeItems>
                                 </SwipeView.RightItems>
 
-                                <Grid ColumnDefinitions="*" HeightRequest="40">
-                                    <RoundRectangle   CornerRadius="4" Fill="#5e548e"    />
-                                    <Label Text="{Binding Name}"  TextColor="White" VerticalOptions="Center" Margin="10,0,0,0" FontSize="15"  FontAttributes="Bold,Italic" />
+                                    <Frame Style="{StaticResource PlayersFrameStyle}" >
+                                    <Label Text="{Binding Name}"  Style="{StaticResource PlayersLabel}"/>
+                                        <Frame.GestureRecognizers>
+                                            <SwipeGestureRecognizer Command="{Binding BindingContext.DeletePlayerCommand, Source={x:Reference AllPlayerList}}" CommandParameter="{Binding .}" Direction="Left"></SwipeGestureRecognizer>
+                                            <TapGestureRecognizer Command="{Binding BindingContext.TapPlayerCommand, Source={x:Reference AllPlayerList}}" CommandParameter="{Binding .}" NumberOfTapsRequired="2" />
+                                        </Frame.GestureRecognizers>
+                                    </Frame>                                                                        
+                                
+                                <!--<Grid ColumnDefinitions="*" RowDefinitions="*" HeightRequest="50" >
+                                    <RoundRectangle  Style="{StaticResource PlayerRoundRectangle}"    />
+                                    <Label Text="{Binding Name}"    Style="{StaticResource PlayersLabel}" />
 
                                     <Grid.GestureRecognizers>
                                         <SwipeGestureRecognizer Command="{Binding BindingContext.DeletePlayerCommand, Source={x:Reference AllPlayerList}}" CommandParameter="{Binding .}" Direction="Left"></SwipeGestureRecognizer>
                                         <TapGestureRecognizer Command="{Binding BindingContext.TapPlayerCommand, Source={x:Reference AllPlayerList}}" CommandParameter="{Binding .}" NumberOfTapsRequired="2" />
                                     </Grid.GestureRecognizers>
-                                </Grid>
+                                </Grid>-->
                             </SwipeView>
 
                         </DataTemplate>
@@ -119,7 +134,7 @@
         </Grid>
         
         <Grid Grid.Row="3" ColumnDefinitions=".7*,.3*" >
-             <Button Text="Ok" Grid.Column="1" Command="{Binding OkCommand}" HorizontalOptions="FillAndExpand"  FontSize="14" Padding="2" ></Button>
+            <Button Text="Ok" Grid.Column="1" Command="{Binding OkCommand}" Style="{StaticResource ActionButton}" ></Button>
              
         </Grid>
         

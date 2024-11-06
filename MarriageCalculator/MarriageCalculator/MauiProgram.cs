@@ -2,7 +2,8 @@
 using MarriageCalculator.Core.Models;
 using MarriageCalculator.Pages;
 using MarriageCalculator.Services;
- 
+using MarriageCalculator.ViewModels;
+
 namespace MarriageCalculator;
 
 //simple sqlite tutorial: https://www.youtube.com/watch?v=JRNwjsywrWM&t=100s
@@ -33,10 +34,11 @@ public static class MauiProgram
         builder.Services.AddTransient<Settings>();
         builder.Services.AddTransient<Players>();
         builder.Services.AddTransient<PlayGame>();
-        
 
-       
+
+
         //view models
+        builder.Services.AddTransient<SettingsViewModel>();
         builder.Services.AddTransient<NewGameViewModel>(); 
         builder.Services.AddScoped<PlayerSettingsViewModel>();
          

@@ -1,50 +1,28 @@
-using MarriageCalculator.Core.Models;
-using MarriageCalculator.Models;
-using MarriageCalculator.Services;
-
+using Toast = CommunityToolkit.Maui.Alerts.Toast;
 namespace MarriageCalculator.Pages;
 
 public partial class Settings : ContentPage
 {
-    private readonly NewGameViewModel _viewModel;
-    private readonly GameSettings _gameSettings;
-    public Settings(NewGameViewModel viewModel )
+    private readonly SettingsViewModel _viewModel;
+    public Settings(SettingsViewModel viewModel )
     {
         InitializeComponent();
-        _gameSettings = App.CurrentSettings;
-        
         _viewModel = viewModel;
-
-        BindingContext = viewModel;
+          
+        BindingContext = _viewModel;
     }
+
+    
 
     protected override void OnNavigatedTo(NavigatedToEventArgs args)
     {
         base.OnNavigatedTo(args);
     }
-
-    private void ScrollView_Scrolled(object sender, ScrolledEventArgs e)
-    {
-    }
+     
 
     private async void NextButton_Clicked(object sender, EventArgs e)
     {
-        if (_viewModel.MarriageGameModel.Player1?.Length > 2 && _viewModel.MarriageGameModel.Player2?.Length > 2)
-        {
-            _viewModel.MarriageGameModel.IsActive = true;
-            await Shell.Current.GoToAsync("..");
-        }
+         await Shell.Current.GoToAsync("..");
     }
-
-    private void SwipeGestureRecognizer_Swiped(object sender, SwipedEventArgs e)
-    {
-        _viewModel.marriageGameModel.Player6 += "-Disabled";
-        Player6Border.BackgroundColor = Colors.Grey;
-    }
-
-    private void SwipeGestureRecognizer_Swiped_Right(object sender, SwipedEventArgs e)
-    {
-        _viewModel.marriageGameModel.Player6 = _viewModel.marriageGameModel.Player6?.Replace("-Disabled", "");
-        Player6Border.BackgroundColor = Colors.Black;
-    }
+ 
 }
