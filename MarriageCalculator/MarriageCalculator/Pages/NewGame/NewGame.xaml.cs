@@ -1,3 +1,5 @@
+using MarriageCalculator.ViewModels;
+
 namespace MarriageCalculator.Pages;
 
 public partial class NewGame : ContentPage

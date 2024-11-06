@@ -55,8 +55,7 @@ public partial class MainPage : ContentPage
     private async void SettingsBtn_Clicked(object sender, EventArgs e)
     {
         await Animate(SettingsBtn);
-
-        _newGameViewModel.Reset();
+  
         await Shell.Current.GoToAsync(nameof(Settings));
     }
 

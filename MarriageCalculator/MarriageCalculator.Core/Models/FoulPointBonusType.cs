@@ -2,6 +2,7 @@
 
 public enum FoulPointBonusType
 {
-    NEXT_GAME = 0,
-    THIS_GAME = 1,
+    NO_FOUL_POINT = 0,
+    NEXT_GAME = 1,
+    THIS_GAME = 2,
 }

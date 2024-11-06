@@ -1,11 +1,6 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
-using CommunityToolkit.Mvvm.Input;
-using MarriageCalculator.Models;
-using MarriageCalculator.Pages;
- 
-using MarriageCalculator.Services;
 
-namespace MarriageCalculator;
+namespace MarriageCalculator.ViewModels;
 
 [QueryProperty(nameof(MarriageGameModel), nameof(MarriageGameModel))]
 [QueryProperty(nameof(GameSettingsModel), nameof(GameSettingsModel))]

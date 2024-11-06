@@ -6,7 +6,7 @@ using MarriageCalculator.Services;
  
 using System.Collections.ObjectModel;
 
-namespace MarriageCalculator;
+namespace MarriageCalculator.ViewModels;
 
 public partial class PlayerSettingsViewModel : ObservableObject
 {
@@ -43,7 +43,14 @@ public partial class PlayerSettingsViewModel : ObservableObject
 
         //load allplayers to the collectionview PlayerList
         AllPlayers = new ObservableCollection<Player>(allPlayers);
+          
+        CurrentPlayers.CollectionChanged += CurrentPlayers_CollectionChanged;
+    }
+
+    private void CurrentPlayers_CollectionChanged(object? sender, System.Collections.Specialized.NotifyCollectionChangedEventArgs e)
+    {
         NoOfPlayers = CurrentPlayers.Count;
+        UpdateAddPlayerButtonState();
     }
 
     #region RelayCommands
@@ -66,13 +73,23 @@ public partial class PlayerSettingsViewModel : ObservableObject
     }
     [RelayCommand]
     private void AddPlayer()
-    {         
-        AddPlayer(new Player { Name = PlayerName.ToFirstCharUpper() });
+    {
+        string[] seperators = [",", " ", "|", ";", "-", "_", "."];
+        var players = PlayerName.Split(seperators,StringSplitOptions.TrimEntries);
+        foreach(var player in players.Where(a=>a.Length>1))
+        {
+            AddPlayer(new Player { Name = player.ToFirstCharUpper() });
+        }
+         
         PlayerName = string.Empty;
-        NoOfPlayers = CurrentPlayers.Count;
-        if (NoOfPlayers == MaxPlayers)
-            CanAddMorePlayer = false;
+         
     }
+
+    private void UpdateAddPlayerButtonState()
+    {
+        CanAddMorePlayer = NoOfPlayers < MaxPlayers;
+    }
+
     //[RelayCommand]
     //private async Task SelectPlayer()
     //{ 
@@ -95,10 +112,10 @@ public partial class PlayerSettingsViewModel : ObservableObject
     //    };
     //    await Shell.Current.GoToAsync(nameof(ListPlayer), true, navigationParams);
 
-         
+
     //}
 
-     
+
 
     public RelayCommand<Player> DeletePlayerCommand => new RelayCommand<Player>(RemovePlayer);
  public RelayCommand<Player> DeletePlayerFromDbCommand => new RelayCommand<Player>(RemovePlayerFromDb);
@@ -158,7 +175,8 @@ public partial class PlayerSettingsViewModel : ObservableObject
                     Message = "Error adding player";
                     OnError?.Invoke(this, EventArgs.Empty);
                     return;
-                }                
+                }
+                RefreshAllPlayers();
             }
             return;
         }
@@ -175,15 +193,8 @@ public partial class PlayerSettingsViewModel : ObservableObject
 
         if (CurrentPlayers.Count < MaxPlayers)
             CurrentPlayers.Add(player);
-
-        NoOfPlayers = CurrentPlayers.Count;
-
-        if (NoOfPlayers == MaxPlayers)
-            CanAddMorePlayer = false;
-        else
-            CanAddMorePlayer = true;
-
-
+         
+        UpdateAddPlayerButtonState(); 
     }
     
     private void RemovePlayer(Player? player)
@@ -192,13 +203,7 @@ public partial class PlayerSettingsViewModel : ObservableObject
             return;
         CurrentPlayers.Remove(player);
 
-        NoOfPlayers = CurrentPlayers.Count;
-         
-         
-        if (NoOfPlayers == MaxPlayers)
-            CanAddMorePlayer = false;
-        else
-            CanAddMorePlayer = true;
+        UpdateAddPlayerButtonState();
     }
     private void RemovePlayerFromDb(Player? player)
     {

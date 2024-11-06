@@ -1,0 +1,72 @@
+﻿<?xml version="1.0" encoding="UTF-8" ?>
+<?xaml-comp compile="true" ?>
+<ResourceDictionary 
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml">
+
+    <Style x:Key="CustomFrameStyle" TargetType="Frame">
+        <Setter Property="BackgroundColor" Value="{AppThemeBinding Light={StaticResource LightControlsBackground}, Dark={StaticResource DarkControlsBackground}}"  />
+        <Setter Property="BorderColor" Value="#d8e2dc" />
+        <Setter Property="Padding" Value="2"/>
+        <Setter Property="Margin" Value="2" />
+        <Setter Property="HeightRequest" Value="45" />
+        <Setter Property="HasShadow" Value="True" />
+        <Setter Property="CornerRadius" Value="4" />        
+    </Style>
+    <Style x:Key="SettingsLabel" TargetType="Label">
+        <Setter Property="BackgroundColor" Value="{AppThemeBinding Light={StaticResource LightControlsBackground}, Dark={StaticResource DarkControlsBackground}}"  />
+        <Setter Property="VerticalOptions" Value="Center"/>
+        <Setter Property="FontAttributes" Value="Bold"/>
+        <Setter Property="Padding" Value="2"/>
+        <Setter Property="Margin" Value="2" />
+    </Style>
+    <Style x:Key="SettingsNumericEntry" TargetType="Entry">         
+        <Setter Property="TextColor" Value="{AppThemeBinding Light={StaticResource LightControlsText}, Dark={StaticResource DarkControlsText}}" />
+        <Setter Property="HorizontalOptions" Value="FillAndExpand"/>
+        <Setter Property="Keyboard" Value="Numeric"/>
+    </Style>
+    <Style x:Key="SettingsEntry" TargetType="Entry">
+        <Setter Property="BackgroundColor" Value="{AppThemeBinding Light={StaticResource LightControlsBackground}, Dark={StaticResource DarkControlsBackground}}" />
+        <Setter Property="TextColor" Value="{AppThemeBinding Light={StaticResource LightControlsText}, Dark={StaticResource DarkControlsText}}" />
+        <Setter Property="HorizontalOptions" Value="FillAndExpand"/>
+        <Setter Property="Keyboard" Value="Plain"/>
+    </Style>
+    <Style x:Key="SettingsPicker" TargetType="Picker">
+        <Setter Property="TextColor" Value="{AppThemeBinding Light={StaticResource LightControlsText}, Dark={StaticResource DarkControlsText}}" />
+        <Setter Property="HorizontalOptions" Value="FillAndExpand"/>
+         
+    </Style>
+    
+    <Style x:Key="PlayerRoundRectangle" TargetType="RoundRectangle">
+        <Setter Property="BackgroundColor" Value="{AppThemeBinding Light={StaticResource LightControlsBackground}, Dark={StaticResource DarkControlsBackground}}"  />
+        <Setter Property="CornerRadius" Value="4" />
+        <Setter Property="Margin" Value="1"/>
+    </Style>
+    <Style x:Key="PlayersFrameStyle" TargetType="Frame">
+        <Setter Property="BackgroundColor" Value="{AppThemeBinding Light={StaticResource LightControlsBackground}, Dark={StaticResource DarkControlsBackground}}"  />
+        <Setter Property="BorderColor" Value="{AppThemeBinding Light={StaticResource LightControlsBorder}, Dark={StaticResource DarkControlsBorder}}"  />
+        <Setter Property="Padding" Value="10"/>
+        <Setter Property="HasShadow" Value="True" />
+        <Setter Property="CornerRadius" Value="4" />
+    </Style>
+   
+    <Style x:Key="PlayersLabel" TargetType="Label">
+        <Setter Property="BackgroundColor" Value="Transparent"/>        
+        <Setter Property="TextColor" Value="{AppThemeBinding Light={StaticResource LightControlsText}, Dark={StaticResource DarkControlsText}}"  />
+        <Setter Property="VerticalOptions" Value="CenterAndExpand"/>
+        <Setter Property="HorizontalOptions" Value="CenterAndExpand"/>
+        <Setter Property="FontAttributes" Value="Bold"/>        
+        <!--<Setter Property="Margin" Value="10,0,0,0" />-->
+    </Style>
+    
+    <Style x:Key="ActionButton" TargetType="Button">
+        <Setter Property="BackgroundColor" Value="{AppThemeBinding Light={StaticResource LightControlsBackground}, Dark={StaticResource DarkControlsBackground}}"  />
+        <Setter Property="TextColor" Value="{AppThemeBinding Light={StaticResource LightControlsText}, Dark={StaticResource DarkControlsText}}" />
+        <Setter Property="FontAttributes" Value="Bold,Italic"/>
+        <Setter Property="VerticalOptions" Value="Center"/>
+        <Setter Property="HeightRequest" Value="40"/>
+
+        <Setter Property="Margin" Value="2" />
+        <Setter Property="BorderColor" Value="{AppThemeBinding Light={StaticResource LightControlsText}, Dark={StaticResource DarkControlsText}}" />
+    </Style>
+</ResourceDictionary>

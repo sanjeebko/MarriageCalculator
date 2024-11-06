@@ -3,116 +3,122 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              x:Class="MarriageCalculator.Pages.Settings"
              xmlns:local="clr-namespace:MarriageCalculator"
-             x:DataType="local:NewGameViewModel"
-             BackgroundColor="{DynamicResource Secondary}"
+             xmlns:vm="clr-namespace:MarriageCalculator.ViewModels"
+             xmlns:converters="clr-namespace:MarriageCalculator.Core.Converter;assembly=MarriageCalculator.Core"
+             x:DataType="vm:SettingsViewModel"
+             BackgroundColor="{AppThemeBinding Light={StaticResource LightBackground}, Dark={StaticResource DarkBackground}}"
              Shell.NavBarIsVisible="False"
-             Title="New Game">
-
-    <StackLayout Orientation="Vertical" Margin="10">
-
-        <Border Stroke="{DynamicResource Primary}"
-                StrokeThickness="1"
-                Padding="2,2"
-                Margin="2"
-                HorizontalOptions="FillAndExpand">
-            <Border.StrokeShape>
-                <RoundRectangle CornerRadius="5,3,3,5" />
-            </Border.StrokeShape>
-            <Entry Placeholder="Marriage Game 2" Text="{Binding MarriageGameModel.Name}" />
-        </Border>
-
-        <ScrollView VerticalOptions="StartAndExpand"
-                    Scrolled="ScrollView_Scrolled"
-                    x:Name="PlayerScrollView">
-            <StackLayout Orientation="Vertical">
-                <Border Stroke="{DynamicResource Primary}"
-                        StrokeThickness="1"
-                        Padding="5,5"
-                        Margin="5"
-                        HorizontalOptions="FillAndExpand">
-                    <Border.StrokeShape>
-                        <RoundRectangle CornerRadius="5,3,3,5" />
-                    </Border.StrokeShape>
-                    <Entry Placeholder="Player 1 Name" FontSize="16" Text="{Binding MarriageGameModel.Player1}"  ClearButtonVisibility="WhileEditing" />
-                </Border>
-
-                <Border Stroke="{DynamicResource Primary}"
-                        StrokeThickness="1"
-                        Padding="5,5"
-                    Margin="5"
-                        HorizontalOptions="FillAndExpand">
-                    <Border.StrokeShape>
-                        <RoundRectangle CornerRadius="5,3,3,5" />
-                    </Border.StrokeShape>
-                    <Entry Placeholder="Player 2 Name" FontSize="16" Text="{Binding MarriageGameModel.Player2}"  ClearButtonVisibility="WhileEditing" />
-                </Border>
-
-                <Border Stroke="{DynamicResource Primary}"
-                        StrokeThickness="1"
-                        Padding="5,5"
-                    Margin="5"
-                        HorizontalOptions="FillAndExpand">
-                    <Border.StrokeShape>
-                        <RoundRectangle CornerRadius="5,3,3,5" />
-                    </Border.StrokeShape>
-                    <Entry Placeholder="Player 3 Name" FontSize="16"  Text="{Binding MarriageGameModel.Player3}" ClearButtonVisibility="WhileEditing" />
-                </Border>
-
-                <Border Stroke="{DynamicResource Primary}"
-                StrokeThickness="1"
-                Padding="5,5"
-                Margin="5"
-                HorizontalOptions="FillAndExpand">
-                    <Border.StrokeShape>
-                        <RoundRectangle CornerRadius="5,3,3,5" />
-                    </Border.StrokeShape>
-                    <Entry Placeholder="Player 4 Name" FontSize="16" Text="{Binding MarriageGameModel.Player4}"   ClearButtonVisibility="WhileEditing" />
-                </Border>
-
-                <Border Stroke="{DynamicResource Primary}"
-                StrokeThickness="1"
-                Padding="5,5"
-                Margin="5"
-                HorizontalOptions="FillAndExpand">
-                    <Border.StrokeShape>
-                        <RoundRectangle CornerRadius="5,3,3,5" />
-                    </Border.StrokeShape>
-                    <Entry Placeholder="Player 5 Name" FontSize="16" Text="{Binding MarriageGameModel.Player5}" ClearButtonVisibility="WhileEditing" />
-                </Border>
-
-                <Border Stroke="{DynamicResource Primary}"
-                StrokeThickness="1"
-                Padding="5,5"
-                Margin="5"
-                HorizontalOptions="FillAndExpand"
-                        x:Name="Player6Border">
-                    <Border.StrokeShape>
-                        <RoundRectangle CornerRadius="5,3,3,5" />
-                    </Border.StrokeShape>
-                    <Entry Placeholder="Player 6 Name" FontSize="16"  Text="{Binding MarriageGameModel.Player6}" ClearButtonVisibility="WhileEditing">
-                        <Entry.GestureRecognizers>
-                            <SwipeGestureRecognizer Direction="Left" Swiped="SwipeGestureRecognizer_Swiped"></SwipeGestureRecognizer>
-                            <SwipeGestureRecognizer Direction="Right" Swiped="SwipeGestureRecognizer_Swiped_Right"></SwipeGestureRecognizer>
-                        </Entry.GestureRecognizers>
-                    </Entry>
-                </Border>
-            </StackLayout>
-        </ScrollView>
-
-        <StackLayout Orientation="Horizontal">
-            <Button x:Name="BackButton"
-                Text="Back"
-                Margin="10"
-                BackgroundColor="{DynamicResource Secondary}"
-                HorizontalOptions="Start"
-                Command="{Binding BackButtonClickCommand}" />
-            <Button x:Name="StartGame"
-                Text="Next"
-                     Margin="10"
-                     HorizontalOptions="FillAndExpand"
-                BackgroundColor="{DynamicResource Primary}"
-                    Command="{Binding  StartGameClickCommand}"
-                 ></Button>
+             Title="Settings">
+    <ContentPage.Resources>
+        <ResourceDictionary>
+            <converters:CurrencyToDescriptionConverter x:Key="CurrencyToDescriptionConverter"/>
+            <converters:FoulPointBonusTypeToDescriptionConverter x:Key="FoulPointBonusTypeToDescriptionConverter"/> 
+        </ResourceDictionary>
+    </ContentPage.Resources>
+    <Grid ColumnDefinitions="*,*,*" RowDefinitions=".1*,.7*,.2*" ColumnSpacing="4" RowSpacing="4">
+        <StackLayout Orientation="Vertical" Margin="10"   Spacing="2">
+            <Label Text="Settings" VerticalOptions="Center" FontAttributes="Bold" FontSize="15"/>
         </StackLayout>
-    </StackLayout>
+        <StackLayout Grid.Column="0" Orientation="Vertical" Margin="10,0,2,0" Grid.Row="1" Spacing="4">
+
+            <Frame Style="{StaticResource CustomFrameStyle}">
+                <StackLayout Orientation="Horizontal" Margin="10,0,10,0">
+                    <Label Text="Murder:" Style="{StaticResource SettingsLabel}"/>
+                    <Switch IsToggled="{Binding GameSettingsModel.Murder}" HorizontalOptions="EndAndExpand"/>
+                </StackLayout>
+            </Frame>
+
+            <Frame Style="{StaticResource CustomFrameStyle}">
+                <StackLayout Orientation="Horizontal" Margin="10,0,10,0">
+                    <Label Text="Kidnap:" Style="{StaticResource SettingsLabel}"/>
+                    <Switch IsToggled="{Binding GameSettingsModel.Kidnap}" HorizontalOptions="EndAndExpand"/>
+                </StackLayout>
+            </Frame>
+
+            <Frame Style="{StaticResource CustomFrameStyle}">
+                <StackLayout Orientation="Horizontal" Margin="10,0,10,0">
+                    <Label Text="Dublee:" Style="{StaticResource SettingsLabel}"/>
+                    <Switch IsToggled="{Binding GameSettingsModel.Dublee}" HorizontalOptions="EndAndExpand"/>
+                </StackLayout>
+            </Frame>
+
+            <Frame Style="{StaticResource CustomFrameStyle}">
+                <StackLayout Orientation="Horizontal"  Margin="10,0,10,0">
+                    <Label Text="Dublee Point Less:" Style="{StaticResource SettingsLabel}"/>
+                    <Switch IsToggled="{Binding GameSettingsModel.DubleePointLess}" HorizontalOptions="EndAndExpand"/>
+                </StackLayout>
+            </Frame>
+            
+        </StackLayout>
+        <StackLayout  Grid.Row="1" Grid.Column="1" Orientation="Vertical" Margin="2,0,2,0"  Spacing="4">
+            <Frame Style="{StaticResource CustomFrameStyle}">
+                <StackLayout Orientation="Horizontal"  Margin="10,0,10,0">
+                    <Label Text="Seen:" Style="{StaticResource SettingsLabel}"/>
+                    <Entry Text="{Binding GameSettingsModel.SeenPoint}" Style="{StaticResource SettingsNumericEntry}"/>
+                </StackLayout>
+            </Frame>
+            <Frame Style="{StaticResource CustomFrameStyle}">
+                <StackLayout Orientation="Horizontal"  Margin="10,0,10,0">
+                    <Label Text="Unseen:" Style="{StaticResource SettingsLabel}"/>
+                    <Entry Text="{Binding GameSettingsModel.UnseenPoint}" Style="{StaticResource SettingsNumericEntry}"/>
+                </StackLayout>
+            </Frame>
+            <Frame Style="{StaticResource CustomFrameStyle}">
+                <StackLayout Orientation="Horizontal"  Margin="10,0,10,0">
+                    <Label Text="Rate:" Style="{StaticResource SettingsLabel}"/>
+                    <Entry Text="{Binding GameSettingsModel.PointRate}" Style="{StaticResource SettingsNumericEntry}"/>
+                </StackLayout>
+            </Frame>
+            <Frame Style="{StaticResource CustomFrameStyle}">
+                <StackLayout Orientation="Horizontal"  Margin="10,0,10,0">
+                    <Label Text="Duplee:" Style="{StaticResource SettingsLabel}"/>
+                    <Entry Text="{Binding GameSettingsModel.DubleePointBonus}" Style="{StaticResource SettingsNumericEntry}"/>
+                </StackLayout>
+            </Frame>
+
+        </StackLayout>
+        <StackLayout Grid.Row="1" Grid.Column="2" Orientation="Vertical" Margin="2,0,10,0"  Spacing="4">
+            
+            <Frame Style="{StaticResource CustomFrameStyle}">
+                <StackLayout Orientation="Horizontal" Margin="10,0,10,0">
+                    <Label Text="Currency:"  Style="{StaticResource SettingsLabel}"/>
+                    <Picker Style="{StaticResource SettingsPicker}" 
+                            ItemsSource="{Binding GameSettingsModel.Currencies}" 
+                            SelectedItem="{Binding GameSettingsModel.Currency}"  
+                             ItemDisplayBinding="{Binding ., Converter={StaticResource CurrencyToDescriptionConverter}}"
+                            HorizontalOptions="FillAndExpand"/>
+                </StackLayout>
+            </Frame>
+             
+            <Frame Style="{StaticResource CustomFrameStyle}">
+                <StackLayout Orientation="Horizontal"  Margin="10,0,10,0">
+                    <Label Text="Foul Point:"  Style="{StaticResource SettingsLabel}"/>                     
+                    <Entry Text="{Binding GameSettingsModel.FoulPoint}" Style="{StaticResource SettingsNumericEntry}"/>
+                </StackLayout>
+            </Frame>
+            <Frame Style="{StaticResource CustomFrameStyle}">
+                <StackLayout Orientation="Horizontal" Margin="10,0,10,0">
+                    <Label Text="Foul bonus:"  Style="{StaticResource SettingsLabel}"/>
+                    <Picker ItemsSource="{Binding FoulPointBonuses}"  Style="{StaticResource SettingsPicker}"
+                SelectedItem="{Binding GameSettingsModel.FoulPointBonus}" 
+                  ItemDisplayBinding="{Binding ., Converter={StaticResource FoulPointBonusTypeToDescriptionConverter}}"
+                 HorizontalOptions="FillAndExpand"/>
+                </StackLayout>
+            </Frame>
+            
+        </StackLayout>
+        <StackLayout Orientation="Horizontal" Grid.Row="2" Grid.Column="2" Spacing="4" Margin="4">
+            <Button x:Name="BackButton"
+                     Text="Back"                      
+                      Style="{StaticResource ActionButton}"
+                     HorizontalOptions="FillAndExpand"
+                     Command="{Binding BackButtonClickCommand}" />
+            <Button x:Name="SaveSettings"
+                     Text="Save"
+                     HorizontalOptions="FillAndExpand"
+                     Style="{StaticResource ActionButton}"
+                     Command="{Binding SaveSettingsClickCommand}" />
+        </StackLayout>
+    </Grid>
+    
 </ContentPage>
