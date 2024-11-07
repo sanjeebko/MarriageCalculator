@@ -67,6 +67,20 @@
         <Setter Property="HeightRequest" Value="40"/>
 
         <Setter Property="Margin" Value="2" />
-        <Setter Property="BorderColor" Value="{AppThemeBinding Light={StaticResource LightControlsText}, Dark={StaticResource DarkControlsText}}" />
+        <Setter Property="BorderColor" Value="{AppThemeBinding Light={StaticResource LightControlsBorder}, Dark={StaticResource DarkControlsBorder}}" />
     </Style>
+    <Style x:Key="MainPageActionButton" TargetType="Button">
+        <Setter Property="BackgroundColor" Value="{AppThemeBinding Light={StaticResource LightControlsBackground}, Dark={StaticResource DarkControlsBackground}}"  />
+        <Setter Property="TextColor" Value="{AppThemeBinding Light={StaticResource LightControlsText}, Dark={StaticResource DarkControlsText}}" />
+        <Setter Property="FontAttributes" Value="Bold,Italic"/>
+        <Setter Property="VerticalOptions" Value="Center"/>
+        <Setter Property="HeightRequest" Value="40"/>
+        <Setter Property="Margin" Value="2" />
+        <Setter Property="BorderWidth" Value="2"/>
+        <Setter Property="BorderColor" Value="{AppThemeBinding Light={StaticResource LightControlsBorder}, Dark={StaticResource DarkControlsBorder}}" />
+    </Style>
+    <Style x:Key="MainPageExitButton" TargetType="Button" BasedOn="{StaticResource MainPageActionButton}">
+        <Setter Property="BackgroundColor" Value="{AppThemeBinding Light={StaticResource LightDangerControlsBackground}, Dark={StaticResource DarkDangerControlsBackground}}"  />
+    </Style>
+
 </ResourceDictionary>

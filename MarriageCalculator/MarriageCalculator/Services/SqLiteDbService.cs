@@ -3,7 +3,7 @@ using SQLite;
 
 namespace MarriageCalculator.Services;
 
-public partial class MarriageGameServices : IMarriageGameServices
+public partial class SqLiteDbService : IDbService
 {
     public List<Player> Players { get; } = new();
     public List<MarriageGame> MarriageGames { get; } = new();
@@ -14,7 +14,7 @@ public partial class MarriageGameServices : IMarriageGameServices
 
     private SQLiteAsyncConnection? _dbConnection;
 
-    public MarriageGameServices()
+    public SqLiteDbService()
     {
         SetupDB();
     }
@@ -53,7 +53,7 @@ public partial class MarriageGameServices : IMarriageGameServices
     }
 
     //Create a function to get all players ordered by name
-    public Task<List<Player>> GetPlayers()
+    public Task<List<Player>> GetPlayersAsync()
     {
         var playerList = _dbConnection?.Table<Player>().Where(a=>!a.Deleted).ToListAsync();
 
@@ -66,8 +66,8 @@ public partial class MarriageGameServices : IMarriageGameServices
         {
             return 0;        
         }
-        var allPlayers = await GetPlayers();
-        var oldPlayer = allPlayers?.FirstOrDefault  (a => a.name.ToLower() == model.name.ToLower());
+        var allPlayers = await GetPlayersAsync();
+        var oldPlayer = allPlayers?.FirstOrDefault  (a => a.Name.ToLower() == model.Name.ToLower());
 
         if(oldPlayer is not null)
         {
@@ -82,13 +82,10 @@ public partial class MarriageGameServices : IMarriageGameServices
         }
 
         await _dbConnection.InsertAsync(model);       
-        return model.Id;
-
-       
+        return model.Id; 
     }
-
-
-    public async Task<int> DeletePlayer(Player model)
+     
+    public async Task<int> DeletePlayerAsync(Player model)
     {
         if (_dbConnection == null)
         {
@@ -99,32 +96,33 @@ public partial class MarriageGameServices : IMarriageGameServices
         return await _dbConnection.UpdateAsync(model);
     }
 
-    public Task<List<MarriageGame>> GetMarriageGames()
+    public async Task<List<MarriageGame>> GetMarriageGamesAsync()
     {
-        var marriageGameList = _dbConnection?.Table<MarriageGame>().ToListAsync();
+        var marriageGameTable =  _dbConnection?.Table<MarriageGame>() ;
+        if (marriageGameTable == null)
+        {
+            return [];
+        }
 
-        return marriageGameList ?? Task.Run(() => { return new List<MarriageGame>(); });
+        var marriageGameList = await marriageGameTable.ToListAsync();
+
+        return marriageGameList ??  [];  
     }
 
-    public Task<int> AddMarriageGame(MarriageGame model)
+    public Task<int> AddMarriageGameAsync(MarriageGame model)
     {
         return _dbConnection?.InsertAsync(model) ?? Task.Run(() => { return 0; });
     }
 
-    public Task<int> DeleteMarriageGame(MarriageGame model)
+    public Task<int> DeleteMarriageGameAsync(MarriageGame model)
     {
         return _dbConnection?.DeleteAsync(model) ?? Task.Run(() => { return 0; });
     }
 
-    public Task<int> UpdateMarriageGame(MarriageGame model)
+    public Task<int> UpdateMarriageGameAsync(MarriageGame model)
     {
         return _dbConnection?.UpdateAsync(model) ?? Task.Run(() => { return 0; });
     }
-
-    public Task<List<Currency>> GetCurrency()
-    {
-        var currencyList = Enum.GetValues(typeof(Currency)).Cast<Currency>().ToList();
-        return Task.FromResult(currencyList);
-    }
+        
         
 }

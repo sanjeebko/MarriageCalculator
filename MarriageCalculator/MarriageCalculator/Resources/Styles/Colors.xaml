@@ -8,6 +8,8 @@
     <Color x:Key="DarkBackground">#023047</Color>
     <Color x:Key="LightControlsBackground">#FEFFD2</Color>
     <Color x:Key="DarkControlsBackground">#632700</Color>
+    <Color x:Key="LightDangerControlsBackground">#C32F27</Color>
+    <Color x:Key="DarkDangerControlsBackground">#D8572A</Color>
     <Color x:Key="LightControlsBorder">#ff6400</Color>
     <Color x:Key="DarkControlsBorder">#be4f06</Color>
     <Color x:Key="LightControlsText">#2f4858</Color>

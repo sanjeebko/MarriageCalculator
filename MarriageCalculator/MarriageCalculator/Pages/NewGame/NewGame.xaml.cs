@@ -22,7 +22,7 @@ public partial class NewGame : ContentPage
     {
 
         
-        await Shell.Current.GoToAsync(nameof(Settings), true, new Dictionary<string, object>()
+        await Shell.Current.GoToAsync(nameof(SettingsPage), true, new Dictionary<string, object>()
         {
             [nameof(_viewModel.MarriageGameModel)] = _viewModel.MarriageGameModel,
             [nameof(_viewModel.GameSettingsModel)] = _viewModel.GameSettingsModel

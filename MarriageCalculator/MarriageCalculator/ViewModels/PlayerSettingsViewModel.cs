@@ -1,9 +1,5 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
-using CommunityToolkit.Mvvm.Input;
-using MarriageCalculator.Core.Models;
-using MarriageCalculator.Pages;
-using MarriageCalculator.Services;
- 
+using MarriageCalculator.Extensions;
 using System.Collections.ObjectModel;
 
 namespace MarriageCalculator.ViewModels;
@@ -32,18 +28,16 @@ public partial class PlayerSettingsViewModel : ObservableObject
     public ObservableCollection<Player> CurrentPlayers { get; set; } = new();
     public ObservableCollection<Player> AllPlayers { get; set; } = new();
       
-    public IMarriageGameServices MarriageGameServices { get; }
-    private readonly IServiceProvider _serviceProvider;
+    public IMarriageGameEngine MarriageGameEngine { get; }
 
-    public PlayerSettingsViewModel(IMarriageGameServices marriageGameServices, IServiceProvider serviceProvider)
+    public PlayerSettingsViewModel( IMarriageGameEngine marriageGameEngine)
     {
-        MarriageGameServices = marriageGameServices;
-        _serviceProvider = serviceProvider;
-        var allPlayers = marriageGameServices.GetPlayers().Result;
+        MarriageGameEngine = marriageGameEngine;
+        Console.WriteLine("PlayerSettingsViewModel: Previous Page: " + marriageGameEngine.LastPageName);
+        MarriageGameEngine.LastPageName = nameof(PlayerSettingsViewModel);
+        AllPlayers.Load(MarriageGameEngine.PlayerService.AllPlayers);
+        CurrentPlayers.Load(MarriageGameEngine.PlayerService.Players);
 
-        //load allplayers to the collectionview PlayerList
-        AllPlayers = new ObservableCollection<Player>(allPlayers);
-          
         CurrentPlayers.CollectionChanged += CurrentPlayers_CollectionChanged;
     }
 
@@ -53,23 +47,20 @@ public partial class PlayerSettingsViewModel : ObservableObject
         UpdateAddPlayerButtonState();
     }
 
-    #region RelayCommands
-    [RelayCommand]
-    public void RefreshAllPlayers()
+    private async Task RefreshAllPlayersAsync()
     {
         IsRefreshing = true;
-        var allPlayers = MarriageGameServices.GetPlayers().Result;
-        AllPlayers.Clear();
-
-        foreach (var player in allPlayers)
-        {
-            var playerFound = AllPlayers.FirstOrDefault(p => p.name == player.name);
-            if (playerFound is null)
-            {
-                AllPlayers.Add(player);
-            }
-        }
+        await MarriageGameEngine.PlayerService.RefreshAllPlayers();         
+        AllPlayers.Load(MarriageGameEngine.PlayerService.AllPlayers);         
         IsRefreshing = false;
+    }
+     
+
+    #region RelayCommands
+    [RelayCommand]
+    public async Task RefreshAllPlayers()
+    {        
+        await RefreshAllPlayersAsync();        
     }
     [RelayCommand]
     private void AddPlayer()
@@ -81,8 +72,7 @@ public partial class PlayerSettingsViewModel : ObservableObject
             AddPlayer(new Player { Name = player.ToFirstCharUpper() });
         }
          
-        PlayerName = string.Empty;
-         
+        PlayerName = string.Empty;         
     }
 
     private void UpdateAddPlayerButtonState()
@@ -90,35 +80,9 @@ public partial class PlayerSettingsViewModel : ObservableObject
         CanAddMorePlayer = NoOfPlayers < MaxPlayers;
     }
 
-    //[RelayCommand]
-    //private async Task SelectPlayer()
-    //{ 
-    //    var listPlayerViewModel = _serviceProvider.GetRequiredService<ListPlayerViewModel>();
-
-    //    var navigationParams = new Dictionary<string, object>
-    //        {
-    //            {"ListPlayerViewModel", listPlayerViewModel}
-    //        };
-    //    listPlayerViewModel. OnClosePage += (sender, selectedPlayers) =>
-    //    {
-    //        System.Diagnostics.Debug.WriteLine("OnClosePage event triggered.");
-    //        foreach (var player in selectedPlayers)
-    //        {
-    //            if (CurrentPlayers.Count < MaxPlayers && !CurrentPlayers.Any(a=>a.Name== player.Name))
-    //            {
-    //                CurrentPlayers.Add(player);
-    //            }
-    //        }
-    //    };
-    //    await Shell.Current.GoToAsync(nameof(ListPlayer), true, navigationParams);
-
-
-    //}
-
-
 
     public RelayCommand<Player> DeletePlayerCommand => new RelayCommand<Player>(RemovePlayer);
- public RelayCommand<Player> DeletePlayerFromDbCommand => new RelayCommand<Player>(RemovePlayerFromDb);
+    public AsyncRelayCommand<Player> DeletePlayerFromDbCommand => new AsyncRelayCommand<Player>(RemovePlayerFromDbAsync);
     public RelayCommand<Player?> TapPlayerCommand => new RelayCommand<Player?>(TapPlayer);
 
     public void TapPlayer(Player? player)
@@ -128,10 +92,10 @@ public partial class PlayerSettingsViewModel : ObservableObject
         AddPlayer(player);
     }
     [RelayCommand]
-    private void Ok()
+    private async Task Ok()
     {
-        Activate();
-        OnComplete?.Invoke(this, EventArgs.Empty);
+       await  Activate(); 
+        OnComplete?.Invoke(this, EventArgs.Empty);        
     }
       
 
@@ -156,47 +120,42 @@ public partial class PlayerSettingsViewModel : ObservableObject
     }
     #endregion RelayCommands
 
-    public async void Activate()
+    public async Task Activate()
     {
-        if(CurrentPlayers.Count < 2)
+        if (CurrentPlayers.Count < 2)
         {
             Message = "Please add at least 2 players";
             OnError?.Invoke(this, EventArgs.Empty);
             return;
         }
-        if(CurrentPlayers.Any(p=>p.Id == 0))
+        var oldPlayers = MarriageGameEngine.PlayerService.Players.ToArray();
+        foreach (var player in oldPlayers.Where(a => !CurrentPlayers.Contains(a)))
         {
-            foreach (var player in CurrentPlayers.Where(a => a.Id == 0))
-            {
-                await  MarriageGameServices.AddPlayerAsync(player);
-
-                if (player.Id == 0)
-                {
-                    Message = "Error adding player";
-                    OnError?.Invoke(this, EventArgs.Empty);
-                    return;
-                }
-                RefreshAllPlayers();
-            }
-            return;
+            await MarriageGameEngine.PlayerService.DeletePlayerAsync(player, false);
         }
+        foreach (var player in CurrentPlayers)
+        {
+            await MarriageGameEngine.PlayerService.AddPlayerAsync(player);
+        }
+        await RefreshAllPlayersAsync();
 
-        Message = "ready"; 
+        return;
     }
 
 
 
     public void AddPlayer(Player player)
     {
-        if (CurrentPlayers.Contains(player) || CurrentPlayers.Any(a=>a.Name==player.Name))
+        if (CurrentPlayers.Contains(player) || CurrentPlayers.Any(a => a.Name == player.Name))
             return;
 
-        if (CurrentPlayers.Count < MaxPlayers)
-            CurrentPlayers.Add(player);
-         
-        UpdateAddPlayerButtonState(); 
+        if (CurrentPlayers.Count >= MaxPlayers)
+            return;
+
+        CurrentPlayers.Add(player);
+        UpdateAddPlayerButtonState();
     }
-    
+
     private void RemovePlayer(Player? player)
     {
         if (player is null)
@@ -205,16 +164,16 @@ public partial class PlayerSettingsViewModel : ObservableObject
 
         UpdateAddPlayerButtonState();
     }
-    private void RemovePlayerFromDb(Player? player)
+    private async Task RemovePlayerFromDbAsync(Player? player)
     {
         if (player is null)
             return;
-       
-        //Delete player from database
-        MarriageGameServices.DeletePlayer(player);
-        CurrentPlayers.Remove(player);
-        RefreshAllPlayers();
+        
+        await MarriageGameEngine.PlayerService.DeletePlayerAsync(player,true);
+        RemovePlayer(player);
+         
+        await RefreshAllPlayersAsync();
     }
-    
+
    
 }

@@ -25,35 +25,35 @@
                 x:Name="StartBtn"
                 Text="Start a new game"
                 SemanticProperties.Hint="Starts a brand new game"
-                BackgroundColor="Green"
+                Style="{StaticResource MainPageActionButton}"                
                 Clicked="StartBtn_Clicked"                    
                 ></Button>
             <Button
                 x:Name="ResumeBtn"
                 Text="Resume previous game"
                     SemanticProperties.Hint="Starts previous game and settings"
-                     BackgroundColor="Green"
+                     Style="{StaticResource MainPageActionButton}"
                 Clicked="ResumeBtn_Clicked"
                 ></Button>
             <Button
                 x:Name="SettingsBtn"
                 Text="Settings"
                     SemanticProperties.Hint="Settings"
-                        BackgroundColor="Green"
+                       Style="{StaticResource MainPageActionButton}"
                  Clicked="SettingsBtn_Clicked"
                 ></Button>
                  <Button
                 x:Name="PlayersBtn"
                 Text="Players"
                     SemanticProperties.Hint="Players"
-                        BackgroundColor="Green"
+                       Style="{StaticResource MainPageActionButton}"
                   Clicked="PlayersBtn_Clicked"   
                 ></Button>
             <Button
                 x:Name="CloseBtn"
                 Text="Exit"
                 SemanticProperties.Hint="Close marriage calculator app"
-                BackgroundColor="DarkOrange"
+                Style="{StaticResource MainPageExitButton}"
                 Clicked="OnCloseClicked" />
             </VerticalStackLayout>
             

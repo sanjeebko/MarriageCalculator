@@ -1,6 +1,4 @@
-﻿using SQLite;
-
-namespace MarriageCalculator.Core.Models;
+﻿namespace MarriageCalculator.Core.Models;
 
 public class GameSettings
 { 

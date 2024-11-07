@@ -6,7 +6,6 @@ namespace MarriageCalculator.ViewModels;
 [QueryProperty(nameof(GameSettingsModel), nameof(GameSettingsModel))]
 public partial class NewGameViewModel : ObservableObject
 {
-    private readonly IMarriageGameServices _marriageGameServices;
     public PlayerSettingsViewModel PlayerSettingsService { get; }
      
 
@@ -18,12 +17,11 @@ public partial class NewGameViewModel : ObservableObject
 
      
 
-    public NewGameViewModel(IMarriageGameServices marriageGameServices, PlayerSettingsViewModel gameSettingsService)
+    public NewGameViewModel( PlayerSettingsViewModel gameSettingsService)
     {
         marriageGameModel = new();
-        gameSettingsModel = new(marriageGameServices);
+        gameSettingsModel = new();
          
-        _marriageGameServices = marriageGameServices;
         PlayerSettingsService = gameSettingsService;
         
     }
@@ -49,9 +47,9 @@ public partial class NewGameViewModel : ObservableObject
 
     internal void Reset()
     {
-        marriageGameModel = new();
+        MarriageGameModel = new();
         //OnPropertyChanged(nameof(MarriageGameModel));
-        gameSettingsModel = new(_marriageGameServices);
+        GameSettingsModel = new();
         // OnPropertyChanged(nameof(gameSettingsModel));
     }
 

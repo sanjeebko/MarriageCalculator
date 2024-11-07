@@ -5,7 +5,7 @@
              xmlns:core="clr-namespace:MarriageCalculator.Core.Models;assembly=MarriageCalculator.Core"
              xmlns:page ="clr-namespace:MarriageCalculator.Pages"
              x:DataType="local:PlayerSettingsViewModel"
-             x:Class="MarriageCalculator.Pages.Players"
+             x:Class="MarriageCalculator.Pages.PlayersPage"
              BackgroundColor="{AppThemeBinding Light={StaticResource LightBackground}, Dark={StaticResource DarkBackground}}"
               Shell.NavBarIsVisible="False"
              Title="Players">

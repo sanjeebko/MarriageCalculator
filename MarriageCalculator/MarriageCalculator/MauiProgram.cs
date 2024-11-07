@@ -25,26 +25,25 @@ public static class MauiProgram
             });
 
         //services
-        builder.Services.AddSingleton<IMarriageGameServices, MarriageGameServices>();
-
+        builder.Services.AddSingleton<IDbService, SqLiteDbService>();
+        builder.Services.AddSingleton<ISettingsService,SettingsService>();
+        builder.Services.AddSingleton<ITextToSpeechService, TextToSpeechService>();
+        builder.Services.AddSingleton<IPlayerService, PlayerService>();
+        builder.Services.AddSingleton<IMarriageGameEngine, MarriageGameEngine>();
         //views registration
-        builder.Services.AddSingleton<GameSettings>();
-        builder.Services.AddTransient<NewGame>();
+        
         builder.Services.AddSingleton<MainPage>();
-        builder.Services.AddTransient<Settings>();
-        builder.Services.AddTransient<Players>();
-        builder.Services.AddTransient<PlayGame>();
-
-
+        builder.Services.AddTransient<NewGame>();
+        builder.Services.AddTransient<PlayGame>();     
+        builder.Services.AddScoped<SettingsPage>();
+        builder.Services.AddScoped<PlayersPage>();
+         
 
         //view models
-        builder.Services.AddTransient<SettingsViewModel>();
-        builder.Services.AddTransient<NewGameViewModel>(); 
+        builder.Services.AddScoped<SettingsViewModel>();
+        builder.Services.AddScoped<NewGameViewModel>(); 
         builder.Services.AddScoped<PlayerSettingsViewModel>();
-         
-         
-       
-
+          
 
         return builder.Build();
     }
