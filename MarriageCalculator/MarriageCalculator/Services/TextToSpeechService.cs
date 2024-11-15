@@ -5,8 +5,10 @@ public class TextToSpeechService: ITextToSpeechService
 {
     private Locale? _nepaliLocale;
     private SpeechOptions? _nepaliSpeechOptions;
+    public bool Mute { get; set; }
     public async Task InitializeAsync()
     {
+        Mute = false;
         // Get available locales
         var locales = await TextToSpeech.Default.GetLocalesAsync();
         // Find the Nepali locale
@@ -24,6 +26,8 @@ public class TextToSpeechService: ITextToSpeechService
     }
     public async Task SpeakAsync(Player[] players)
     {
+        if (Mute)
+            return;
         var numberOfPlayers = players.Length;
         if (numberOfPlayers < 2)
         {
@@ -56,12 +60,13 @@ public class TextToSpeechService: ITextToSpeechService
     }
     public async Task SpeakAsync(string text)
     {
+        if (Mute) return;
         if(!string.IsNullOrEmpty(text))
             await SpeakTextInNepali(text);
     }
     private async Task SpeakTextInNepali(string text)
     {
-        
+        if (Mute) return;
         if (_nepaliSpeechOptions != null)
         { 
             await TextToSpeech.Default.SpeakAsync(text, _nepaliSpeechOptions);

@@ -1,11 +1,12 @@
-﻿using CommunityToolkit.Mvvm.Messaging;
+﻿using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.Messaging;
 using MarriageCalculator.DataServices;
 using System.Collections.ObjectModel;
 using Toast = CommunityToolkit.Maui.Alerts.Toast;
 
 namespace MarriageCalculator.ViewModels;
 
-public partial class SettingsViewModel 
+public partial class SettingsViewModel :ObservableObject
 {
     public GameSettingsModel GameSettingsModel { get; set; }
      
@@ -32,10 +33,15 @@ public partial class SettingsViewModel
         await toast.Show(); 
         await Shell.Current.GoToAsync("..");
     }
+
     [RelayCommand]
     public async Task SaveSettingsClick() {
+        MarriageGameEngine.SettingsService.Settings = GameSettingsModel.ToGameSettings();
+        
         await MarriageGameEngine.SettingsService.SaveSettingsAsync(MarriageGameEngine.CancellationTokenSource.Token);
         await MarriageGameEngine.SettingsService.LoadSettingsAsync(MarriageGameEngine.CancellationTokenSource.Token);
+        MarriageGameEngine.TextToSpeechService.Mute = !MarriageGameEngine.SettingsService.Settings.Audio;
+
         WeakReferenceMessenger.Default.Send(new NavigationReturnMessage(nameof(SettingsPage)));
         var toast = Toast.Make("Game Settings Saved", CommunityToolkit.Maui.Core.ToastDuration.Short);
         await toast.Show();

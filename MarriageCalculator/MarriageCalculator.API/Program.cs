@@ -60,7 +60,7 @@ app.MapPut("api/marriagegame/{id}", async (AppDbContext context, int id, Marriag
     if (model is null)
         return Results.NotFound();
 
-    model.DealerPlayer = game.DealerPlayer;
+    model.DealerId = game.DealerId;
     //model.Players = game.Players;
 
     await context.SaveChangesAsync();

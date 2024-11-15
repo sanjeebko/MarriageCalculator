@@ -2,42 +2,130 @@
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              x:Class="MarriageCalculator.Pages.PlayGame"
-              xmlns:local="clr-namespace:MarriageCalculator.ViewModels"
-             x:DataType="local:NewGameViewModel"
-             BackgroundColor="{DynamicResource Secondary}"
+             xmlns:local="clr-namespace:MarriageCalculator.ViewModels"
+             xmlns:sfcards="clr-namespace:Syncfusion.Maui.Cards;assembly=Syncfusion.Maui.Cards" 
+             xmlns:sfavatar="clr-namespace:Syncfusion.Maui.Core;assembly=Syncfusion.Maui.Core" 
+             xmlns:sfpopup="clr-namespace:Syncfusion.Maui.Popup;assembly=Syncfusion.Maui.Popup"
+             xmlns:xx="clr-namespace:MarriageCalculator.Core.Models;assembly=MarriageCalculator.Core"
+             x:DataType="local:MarriageGameViewModel"
+             BackgroundColor="{AppThemeBinding Light={StaticResource LightBackground}, Dark={StaticResource DarkBackground}}"
              Shell.NavBarIsVisible="False"
+             Title="PlayGame" >
 
-             Title="PlayGame">
-    <Grid RowDefinitions="Auto,Auto,Auto" ColumnDefinitions="*,*">
-        <Label Grid.Row="0" Grid.Column="0" Text="{Binding MarriageGameModel.Name}"></Label>
+    <Grid  x:Name="parentGrid" ColumnDefinitions="*" RowDefinitions="auto,*,280" Padding="10"  >
+        
+        <Grid Grid.Row="0" ColumnDefinitions="auto,*,*,*" RowDefinitions="*,*"
+              Padding="10,0,10,0"
+              VerticalOptions="Start" ColumnSpacing="5" RowSpacing="2" >
 
-        <Button Grid.Row="0" Grid.Column="1" Text="Btn 2" BackgroundColor="Green" />
-        <Button Grid.Row="1" Grid.Column="0" Text="Btn 3" BackgroundColor="Black" />
-        <Button Grid.Row="1" Grid.Column="1" Text="Btn 4" BackgroundColor="Blue" />
-        <Button Grid.Row="2" Grid.Column="0" Text="Btn 5" BackgroundColor="SaddleBrown" />
-        <Button Clicked="Rotate_Clicked" Grid.Row="2" Grid.Column="1" Text="Btn 6" BackgroundColor="Aquamarine" />
+            
+            <Label Grid.Row="0" Grid.Column="0" Text="Currency" VerticalOptions="Start" HorizontalOptions="Start" Style="{StaticResource PlayersLabel}"></Label>
+            <Label Grid.Row="1" Grid.Column="0" Text="{Binding CurrencyDescription}" VerticalOptions="Start" HorizontalOptions="Start" Style="{StaticResource PlayersLabel}"></Label>
+            <Label Grid.Row="0" Grid.Column="1" Text="Rate" VerticalOptions="Center" HorizontalOptions="Center" Style="{StaticResource PlayersLabel}"></Label>
+            <Label Grid.Row="1" Grid.Column="1" Text="{Binding GameEngine.SettingsService.Settings.PointRate}" VerticalOptions="Center"   HorizontalOptions="Center"   Style="{StaticResource PlayersLabel}"></Label>
+            <Label Grid.Row="0" Grid.Column="2" Text="Game no." VerticalOptions="Start" HorizontalOptions="Center" Style="{StaticResource PlayersLabel}"></Label>
+            <Label Grid.Row="1" Grid.Column="2" Text="{Binding GameSequence}" VerticalOptions="Start" HorizontalOptions="Center" Style="{StaticResource PlayersLabel}"></Label>
+            <Label Grid.Row="0" Grid.Column="3" Text="Total Maal" VerticalOptions="Start" HorizontalOptions="End" Style="{StaticResource PlayersLabel}"></Label>
+            <Label Grid.Row="1" Grid.Column="3" Text="{Binding TotalScore}" VerticalOptions="Start" HorizontalOptions="End" Style="{StaticResource PlayersLabel}"></Label>
+        </Grid>
+        <ScrollView Grid.Row="1">
+            <CollectionView x:Name="Root" ItemsSource="{Binding PlayerMaals}" SelectedItem="{Binding SelectedPlayer, Mode=TwoWay}" SelectionMode="Single"   >
+                <CollectionView.ItemsLayout>
+                    <LinearItemsLayout Orientation="Vertical"></LinearItemsLayout>
+                </CollectionView.ItemsLayout>
+                <CollectionView.ItemTemplate>
+                    <DataTemplate x:DataType="local:PlayerMaal">
+                        <Frame Style="{StaticResource NewGameFrameStyle}" Padding="10,0,0,0" InputTransparent="True" >
+
+                            <Grid  ColumnDefinitions="auto,*,*"  Margin="1" Padding="0" >
+                                <HorizontalStackLayout  Grid.Column="0">
+                                    <sfavatar:SfAvatarView ContentType="Initials" InitialsType="SingleCharacter" AvatarName="{Binding PlayerObject.Name}"
+                                               WidthRequest="30"
+                                               HeightRequest="30"
+                                               CornerRadius="25" AvatarColorMode="LightBackground" />
+                                    <Label Grid.Column="0" Text="{Binding PlayerObject.Name}" Style="{StaticResource PlayersLabel}" Margin="10,0,0,0" VerticalOptions="Center" />
+                                </HorizontalStackLayout>
+
+                                <HorizontalStackLayout Grid.Column="1" VerticalOptions="Center"  Padding="0" Margin="10,0,0,0" Spacing="2"  >
+                                    <Image Source="{Binding Path=BindingContext.SeenIcon, Source={x:Reference Root}}" Scale="0.8" IsVisible="{Binding Score.Seen}" />
+                                    <Image Source="{Binding Path=BindingContext.DupleeIcon, Source={x:Reference Root}}" Scale="0.8" IsVisible="{Binding Score.Duply}" />
+                                    <HorizontalStackLayout IsVisible="{Binding Score.Duply}">
+                                        <HorizontalStackLayout IsVisible="{Binding Score.Winner}">
+                                            <Label Text="{Binding Path=BindingContext.DupleeBonus, Source={x:Reference Root}}" Scale="0.7"/>
+                                        </HorizontalStackLayout>
+                                    </HorizontalStackLayout>
+                                    <Image Source="{Binding Path=BindingContext.WinnerIcon, Source={x:Reference Root}}" Scale="0.8" IsVisible="{Binding Score.Winner}" />
+                                </HorizontalStackLayout>
+
+
+
+                                <Grid RowDefinitions="auto,auto,*" ColumnDefinitions="auto,*,*" Grid.Column="2" VerticalOptions="Center" HorizontalOptions="FillAndExpand"  >
+                                    <Label Grid.Row="0" Grid.Column="0" Text="Maal:" FontSize="10" ></Label>
+                                    <Label Grid.Row="1" Grid.Column="0" Text="Point:" FontSize="10" ></Label>
+                                    <Label Grid.Row="2" Grid.Column="0" Text="Cash:" FontSize="10" ></Label>
+                                    <Label Grid.Row="0" Grid.Column="1" Text="{Binding Score.Maal}" FontSize="12" HorizontalOptions="Center"  />
+                                    <Label Grid.Row="1" Grid.Column="1"    Text="{Binding Score.Score}" FontSize="12" HorizontalOptions="Center"  IsVisible="{Binding Path=BindingContext.TotalCalculated , Source={x:Reference Root}}" />
+                                    <Label Grid.Row="2" Grid.Column="1"    Text="{Binding Score.MoneyWon}" FontSize="12" HorizontalOptions="Center"  IsVisible="{Binding Path=BindingContext.TotalCalculated , Source={x:Reference Root}}" />
+                                    <Label Grid.Row="2" Grid.Column="1"    Text="{Binding Score.MoneyWon}" FontSize="12" HorizontalOptions="Center"  IsVisible="{Binding Path=BindingContext.TotalCalculated , Source={x:Reference Root}}" />
+                                    <Label Grid.Row="0" Grid.Column="2" Text="Total:" FontSize="10"/>
+                                    <Label Grid.Row="1" Grid.Column="2" Text="{Binding TotalForRound}" FontSize="10"/>
+                                </Grid>
+                            </Grid>
+                        </Frame>
+                    </DataTemplate>
+                </CollectionView.ItemTemplate>
+
+            </CollectionView>
+        </ScrollView>
+        <Grid Grid.Row="2" RowDefinitions="auto,auto,auto" IsVisible="{Binding ShowNewGame}" Margin="0,10,0,180">
+            <Label Grid.Row="0" Text="What's next?" Style="{StaticResource PlayersLabel}" HorizontalOptions="Center" VerticalOptions="Center" />
+            <Button Grid.Row="1" Text="Start new game" Style="{StaticResource MainPageActionButton}" Command="{Binding NewGameCommand}" ></Button>
+            <Button Grid.Row="2" Text="End Round and Calculate Total" Style="{StaticResource MainPageActionButton}" Command="{Binding EndRoundCommand}"></Button>
+        </Grid>
+        <Grid Grid.Row="2" ColumnDefinitions="120,*"  x:Name="Calculator" IsVisible="{Binding ShowCalculate}" >
+            <Grid Grid.Column="0" RowDefinitions="*,*,*,*,*,*">
+                <Button Grid.Row="0" Text="Winner"    
+                     ImageSource="{Binding WinnerIcon}" Style="{StaticResource PlayGameCalculatorActionButton}"
+                     Command="{Binding ButtonClick}" CommandParameter="winner"/>
+                <Button Grid.Row="1"  Text="Seen" Style="{StaticResource PlayGameCalculatorActionButton}"
+                     ImageSource="{Binding SeenIcon}"                      
+                     Command="{Binding ButtonClick}" CommandParameter="seen"/>
+                <Button  Grid.Row="2" Text="UnSeen" Style="{StaticResource PlayGameCalculatorActionButton}" ImageSource="{Binding UnseenIcon}" Command="{Binding ButtonClick}" CommandParameter="unseen"/>
+                <Button Grid.Row="3" Text="Duplee" Style="{StaticResource PlayGameCalculatorActionButton}" ImageSource="{Binding DupleeIcon}" Command="{Binding ButtonClick}" CommandParameter="duplee"/>
+                <Button Grid.Row="4" Text="Foul" Style="{StaticResource PlayGameCalculatorActionButton}" ImageSource="{Binding FoulIcon}"/>
+                <Button Grid.Row="5" Text="Idle" Style="{StaticResource PlayGameCalculatorActionButton}" ImageSource="{Binding IdleIcon}"/>
+            </Grid>
+            <Grid RowDefinitions="auto,*" Grid.Column="1"  >
+                <Grid Grid.Row="0" Grid.Column="1" ColumnDefinitions="*,*,auto" Padding="10,0,0,0" >                    
+                    <Label Grid.Column="0" Text="{Binding SelectedPlayer.PlayerObject.Name}" HorizontalOptions="Start" Style="{StaticResource PlayersLabel}"></Label>
+                    <Label Grid.Column="1" Text="{Binding SelectedPlayer.Score.Maal}" HorizontalOptions="Center" Style="{StaticResource PlayersLabel}"/>
+                    <Button  Text="Done"   Grid.Column="2" ImageSource="{Binding DoneIcon}" Style="{StaticResource PlayGameCalculatorActionButton}"                              
+                            Command="{Binding ButtonClick}" CommandParameter="D"/>
+                </Grid>
+                <Grid  Grid.Row="1" ColumnDefinitions=".2*,.2*,.2*" RowDefinitions="*,*,*,*" ColumnSpacing="4"   >
+
+                    <Button  Text="7" Grid.Row="0" Grid.Column="0" Style="{StaticResource PlayGameCalculatorButton}" Command="{Binding ButtonClick}" CommandParameter="7" IsEnabled="{Binding EnableMaalInput}"/>
+                    <Button  Text="8" Grid.Row="0" Grid.Column="1" Style="{StaticResource PlayGameCalculatorButton}" Command="{Binding ButtonClick}" CommandParameter="8" IsEnabled="{Binding EnableMaalInput}"/>
+                    <Button  Text="9" Grid.Row="0" Grid.Column="2" Style="{StaticResource PlayGameCalculatorButton}" Command="{Binding ButtonClick}" CommandParameter="9" IsEnabled="{Binding EnableMaalInput}"/>
+                    <Button  Text="4" Grid.Row="1" Grid.Column="0" Style="{StaticResource PlayGameCalculatorButton}" Command="{Binding ButtonClick}" CommandParameter="4" IsEnabled="{Binding EnableMaalInput}"/>
+                    <Button  Text="5" Grid.Row="1" Grid.Column="1" Style="{StaticResource PlayGameCalculatorButton}" Command="{Binding ButtonClick}" CommandParameter="5" IsEnabled="{Binding EnableMaalInput}"/>
+                    <Button  Text="6" Grid.Row="1" Grid.Column="2" Style="{StaticResource PlayGameCalculatorButton}" Command="{Binding ButtonClick}" CommandParameter="6" IsEnabled="{Binding EnableMaalInput}"/>
+                    <Button  Text="1" Grid.Row="2" Grid.Column="0" Style="{StaticResource PlayGameCalculatorButton}" Command="{Binding ButtonClick}" CommandParameter="1" IsEnabled="{Binding EnableMaalInput}"/>
+                    <Button  Text="2" Grid.Row="2" Grid.Column="1" Style="{StaticResource PlayGameCalculatorButton}" Command="{Binding ButtonClick}" CommandParameter="2" IsEnabled="{Binding EnableMaalInput}"/>
+                    <Button  Text="3" Grid.Row="2" Grid.Column="2" Style="{StaticResource PlayGameCalculatorButton}" Command="{Binding ButtonClick}" CommandParameter="3" IsEnabled="{Binding EnableMaalInput}"/>
+                    <Button  Text="" Grid.Row="3" Grid.Column="2" ImageSource="{Binding BackspaceIcon}" Style="{StaticResource PlayGameCalculatorButton}" Command="{Binding ButtonClick}" CommandParameter="B" IsEnabled="{Binding EnableMaalInput}"/>
+                    <Button  Text="0" Grid.Row="3" Grid.Column="1" Style="{StaticResource PlayGameCalculatorButton}" Command="{Binding ButtonClick}" CommandParameter="0" IsEnabled="{Binding EnableMaalInput}"/>
+
+                </Grid>
+            </Grid>
+            
+           
+             
+
+            
+
+        </Grid>
+
     </Grid>
-    <!--<VerticalStackLayout VerticalOptions="StartAndExpand">
 
-        <Label
-            Text="{Binding MarriageGameModel.Name}"
-            VerticalOptions="Center"
-            HorizontalOptions="Center" />
-        <Label
-            Text="{Binding GameSettingsModel.Currency}"
-            VerticalOptions="Center"
-            HorizontalOptions="Center" />
-        <Button Text="NewGame" />
-        <VerticalStackLayout
-            HorizontalOptions="End"
-            VerticalOptions="End"
-            Padding="10"
-            Margin="0,0,0,50"
-            Spacing="5">
-            -->
-    <!--Other components-->
-    <!--
-            <Button Text="+" />
-        </VerticalStackLayout>
-    </VerticalStackLayout>-->
 </ContentPage>

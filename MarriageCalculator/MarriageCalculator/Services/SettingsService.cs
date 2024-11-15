@@ -36,7 +36,7 @@ public class SettingsService : ISettingsService
         Settings ??= new GameSettings();
 
         Settings.Id = 0;
-        Settings.MarriageGameId = 1;
+        
         Settings.Murder = true;
         Settings.Kidnap = false;
         Settings.SeenPoint = 10;

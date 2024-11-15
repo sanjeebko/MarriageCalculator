@@ -29,7 +29,7 @@
     <!-- App Icon -->
     <MauiIcon Include="Resources\AppIcon\appicon.svg" />
     <!-- Splash Screen -->
-    <MauiSplashScreen Include="Resources\Splash\splash1.svg" Color="#ffffff" BaseSize="1024,1024" />
+    <MauiSplashScreen Include="Resources\Splash\splash2.svg" Color="#000000" BaseSize="512,512" />
     <!-- Images -->
     <MauiImage Include="Resources\Images\*" />
     <MauiImage Update="Resources\Images\dotnet_bot.svg" BaseSize="168,208" />
@@ -39,6 +39,9 @@
     <MauiAsset Include="Resources\Raw\**" LogicalName="%(RecursiveDir)%(Filename)%(Extension)" />
   </ItemGroup> 
   <ItemGroup>
+    <None Remove="Resources\Fonts\fontello.ttf" />
+    <None Remove="Resources\Fonts\Poppins-Regular.ttf" />
+    <None Remove="Resources\Fonts\Poppins-SemiBold.ttf" />
     <None Remove="Resources\Images\cards.png" />
   </ItemGroup>
   <ItemGroup>
@@ -46,15 +49,17 @@
     <Folder Include="Pages\ResumeGame\" />
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="CommunityToolkit.Maui" Version="9.1.0" />
+    <PackageReference Include="CommunityToolkit.Maui" Version="9.1.1" />
     <PackageReference Include="CommunityToolkit.Mvvm" Version="8.3.2" />
     <PackageReference Include="sqlite-net-pcl" Version="1.9.172" />
     <PackageReference Include="SQLitePCLRaw.bundle_green" Version="2.1.10" />
     <PackageReference Include="SQLitePCLRaw.core" Version="2.1.10" />
     <PackageReference Include="SQLitePCLRaw.provider.dynamic_cdecl" Version="2.1.10" />
     <PackageReference Include="SQLitePCLRaw.provider.e_sqlite3" Version="2.1.10" />
-    <PackageReference Include="Microsoft.Maui.Controls" Version="8.0.92" />
-    <PackageReference Include="Microsoft.Maui.Controls.Compatibility" Version="8.0.92" />
+    <PackageReference Include="Microsoft.Maui.Controls" Version="8.0.93" />
+    <PackageReference Include="Microsoft.Maui.Controls.Compatibility" Version="8.0.93" />
+    <PackageReference Include="Syncfusion.Maui.Cards" Version="27.1.58" />
+    <PackageReference Include="Syncfusion.Maui.Popup" Version="27.1.58" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\MarriageCalculator.Core\MarriageCalculator.Core.csproj" />

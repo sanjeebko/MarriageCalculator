@@ -42,10 +42,8 @@ public class PlayerService : IPlayerService
         if (player is not null)
             Players.Remove(player);
     }
-    public void ClearPlayers()
-    {
-        Players.Clear();
-    }
+    public Player? GetPlayerById(int id) => AllPlayers.FirstOrDefault(p => p.Id == id);
+    public void ClearPlayers() => Players.Clear();
 
     public async Task<List<Player>> RefreshAllPlayers()
     {

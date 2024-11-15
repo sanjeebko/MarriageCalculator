@@ -5,8 +5,9 @@ namespace MarriageCalculator.Models;
 public partial class GameSettingsModel : ObservableObject
 {
     public int GameSettingsId { get; set; }
-    public int MarriageGameId { get; set; }
-
+     
+    [ObservableProperty]
+    private bool _audio;
     [ObservableProperty]
     private bool _murder;
 
@@ -61,6 +62,7 @@ public partial class GameSettingsModel : ObservableObject
         DubleePointLess = true;
         FoulPoint = 15;
         FoulPointBonus = FoulPointBonusType.NEXT_GAME;
+        Audio = true;
     }
 }
 
@@ -80,6 +82,7 @@ public static class GameSettingsModelExtension
         DubleePointBonus = model.DubleePointBonus,
         FoulPoint = model.FoulPoint,
         FoulPointBonus = model.FoulPointBonus,
+        Audio = model.Audio,
     };
 }
 
@@ -98,7 +101,8 @@ public static class GameSettingsExtension
         DubleePointLess = model.DubleePointLess,
         DubleePointBonus = model.DubleePointBonus,
         FoulPoint = model.FoulPoint,
-        FoulPointBonus = model.FoulPointBonus 
+        FoulPointBonus = model.FoulPointBonus ,
+        Audio= model.Audio,
     };
 }
 

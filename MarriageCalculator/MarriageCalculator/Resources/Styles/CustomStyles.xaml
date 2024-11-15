@@ -31,6 +31,9 @@
         <Setter Property="HorizontalOptions" Value="FillAndExpand"/>
         <Setter Property="Keyboard" Value="Plain"/>
     </Style>
+    <Style x:Key="NewGameEntry" TargetType="Entry" BasedOn="{StaticResource SettingsNumericEntry}">
+        <Setter Property="MinimumWidthRequest" Value="10"/>
+    </Style>
     <Style x:Key="SettingsPicker" TargetType="Picker">
         <Setter Property="TextColor" Value="{AppThemeBinding Light={StaticResource LightControlsText}, Dark={StaticResource DarkControlsText}}" />
         <Setter Property="HorizontalOptions" Value="FillAndExpand"/>
@@ -49,7 +52,13 @@
         <Setter Property="HasShadow" Value="True" />
         <Setter Property="CornerRadius" Value="4" />
     </Style>
-   
+    <Style x:Key="NewGameFrameStyle" TargetType="Frame" BasedOn="{StaticResource PlayersFrameStyle}" >
+        <Setter Property="Padding" Value="10,10,10,10"/>
+        <Setter Property="Margin" Value="5"/>
+        <Setter Property="CornerRadius" Value="6" />
+    </Style>
+
+
     <Style x:Key="PlayersLabel" TargetType="Label">
         <Setter Property="BackgroundColor" Value="Transparent"/>        
         <Setter Property="TextColor" Value="{AppThemeBinding Light={StaticResource LightControlsText}, Dark={StaticResource DarkControlsText}}"  />
@@ -65,15 +74,16 @@
         <Setter Property="FontAttributes" Value="Bold,Italic"/>
         <Setter Property="VerticalOptions" Value="Center"/>
         <Setter Property="HeightRequest" Value="40"/>
-
+        <Setter Property="FontFamily" Value="PoppinsRegular"/>
         <Setter Property="Margin" Value="2" />
         <Setter Property="BorderColor" Value="{AppThemeBinding Light={StaticResource LightControlsBorder}, Dark={StaticResource DarkControlsBorder}}" />
     </Style>
     <Style x:Key="MainPageActionButton" TargetType="Button">
         <Setter Property="BackgroundColor" Value="{AppThemeBinding Light={StaticResource LightControlsBackground}, Dark={StaticResource DarkControlsBackground}}"  />
         <Setter Property="TextColor" Value="{AppThemeBinding Light={StaticResource LightControlsText}, Dark={StaticResource DarkControlsText}}" />
-        <Setter Property="FontAttributes" Value="Bold,Italic"/>
+        <Setter Property="FontAttributes" Value="Bold"/>
         <Setter Property="VerticalOptions" Value="Center"/>
+        <Setter Property="FontFamily" Value="PoppinsRegular"/>
         <Setter Property="HeightRequest" Value="40"/>
         <Setter Property="Margin" Value="2" />
         <Setter Property="BorderWidth" Value="2"/>
@@ -81,6 +91,16 @@
     </Style>
     <Style x:Key="MainPageExitButton" TargetType="Button" BasedOn="{StaticResource MainPageActionButton}">
         <Setter Property="BackgroundColor" Value="{AppThemeBinding Light={StaticResource LightDangerControlsBackground}, Dark={StaticResource DarkDangerControlsBackground}}"  />
+    </Style>
+    <Style x:Key="PlayGameCalculatorButton" TargetType="Button" BasedOn="{StaticResource MainPageActionButton}">
+        <Setter Property="BackgroundColor" Value="{AppThemeBinding Light={StaticResource LightDangerControlsBackground}, Dark={StaticResource DarkDangerControlsBackground}}"  />
+        <Setter Property="BorderColor" Value="{AppThemeBinding Light={StaticResource LightControlsBorder}, Dark={StaticResource DarkControlsBorder}}" />
+        
+    </Style>
+    <Style x:Key="PlayGameCalculatorActionButton" TargetType="Button" BasedOn="{StaticResource MainPageActionButton}">
+        <Setter Property="BackgroundColor" Value="{AppThemeBinding Light={StaticResource LightDangerControlsActionBackground}, Dark={StaticResource DarkDangerControlsActionBackground}}"  />
+        <Setter Property="BorderColor" Value="{AppThemeBinding Light={StaticResource LightControlsBorder}, Dark={StaticResource DarkControlsBorder}}" />
+        <Setter Property="TextColor" Value="{AppThemeBinding Light={StaticResource LightControlsActionText}, Dark={StaticResource DarkControlsActionText}}" />
     </Style>
 
 </ResourceDictionary>

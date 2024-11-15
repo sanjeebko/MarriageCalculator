@@ -11,5 +11,7 @@ namespace MarriageCalculator.Services
         Task InitializeAsync();
         Task<List<Player>> RefreshAllPlayers();
         Task DeletePlayerAsync(Player player, bool removeFromDb);
+        Player? GetPlayerById(int playerId);
+        
     }
 }

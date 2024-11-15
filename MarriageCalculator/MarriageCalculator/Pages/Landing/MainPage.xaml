@@ -2,61 +2,81 @@
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              xmlns:toolkit="http://schemas.microsoft.com/dotnet/2022/maui/toolkit"
+             xmlns:vm="clr-namespace:MarriageCalculator.ViewModels"
              x:Class="MarriageCalculator.Pages.MainPage"             
-             Shell.NavBarIsVisible="False">
+             Shell.NavBarIsVisible="False"
+             x:DataType="vm:MainPageViewModel"
+             BackgroundColor="{AppThemeBinding Light={StaticResource LightBackground}, Dark={StaticResource DarkBackground}}"
+             >
 
     
-        <HorizontalStackLayout
+        <VerticalStackLayout
             Spacing="25"
-            Padding="30,0"
-            HorizontalOptions="Center">
+            Padding="20,0"
+            VerticalOptions="CenterAndExpand"
+            HorizontalOptions="FillAndExpand">
             <VerticalStackLayout
-                VerticalOptions="Center" >
+                VerticalOptions="Center" HorizontalOptions="FillAndExpand"  >
                 <Image
                 Source="cards.png"
                 SemanticProperties.Description="Marriage Calculator"
                 HeightRequest="250"
                 HorizontalOptions="Center" />
             </VerticalStackLayout>
-            
-            <VerticalStackLayout Spacing="25" Padding="30,30" HorizontalOptions="Center" VerticalOptions="Center" BackgroundColor="Transparent" >
-             
+
+        <VerticalStackLayout
+                VerticalOptions="Center" 
+                HorizontalOptions="FillAndExpand"  Spacing="30" >
+
             <Button
                 x:Name="StartBtn"
-                Text="Start a new game"
+                Text="Start a new game" 
                 SemanticProperties.Hint="Starts a brand new game"
                 Style="{StaticResource MainPageActionButton}"                
-                Clicked="StartBtn_Clicked"                    
-                ></Button>
+                IsVisible="{Binding ShowNewGame}"
+                Command="{Binding NewGameCommand}"
+                VerticalOptions="FillAndExpand"
+                />
             <Button
                 x:Name="ResumeBtn"
                 Text="Resume previous game"
                     SemanticProperties.Hint="Starts previous game and settings"
                      Style="{StaticResource MainPageActionButton}"
-                Clicked="ResumeBtn_Clicked"
-                ></Button>
+                Command="{Binding ResumeGameCommand}"
+                IsVisible="{Binding ShowResumeGame}"
+                />
+            <Button                
+                Text="Close open game"
+                SemanticProperties.Hint="Close current marriage game set"
+                    Style="{StaticResource MainPageExitButton}"
+                IsVisible="{Binding ShowResumeGame}"/>
+
             <Button
                 x:Name="SettingsBtn"
                 Text="Settings"
-                    SemanticProperties.Hint="Settings"
-                       Style="{StaticResource MainPageActionButton}"
-                 Clicked="SettingsBtn_Clicked"
-                ></Button>
-                 <Button
+                VerticalOptions="FillAndExpand"
+                SemanticProperties.Hint="Settings"
+                Style="{StaticResource MainPageActionButton}"
+                Command="{Binding GameSettingsPageCommand}"
+                IsVisible="{Binding ShowSettings}"/>
+
+
+            <Button
                 x:Name="PlayersBtn"
                 Text="Players"
                     SemanticProperties.Hint="Players"
                        Style="{StaticResource MainPageActionButton}"
-                  Clicked="PlayersBtn_Clicked"   
-                ></Button>
+                IsVisible="{Binding ShowPlayer}"
+                Command="{Binding PlayerSettingsPageCommand}"
+                />
             <Button
                 x:Name="CloseBtn"
                 Text="Exit"
                 SemanticProperties.Hint="Close marriage calculator app"
                 Style="{StaticResource MainPageExitButton}"
-                Clicked="OnCloseClicked" />
+                 Command="{Binding ExitCommand}" />
             </VerticalStackLayout>
             
-        </HorizontalStackLayout>
+        </VerticalStackLayout>
      
 </ContentPage>
