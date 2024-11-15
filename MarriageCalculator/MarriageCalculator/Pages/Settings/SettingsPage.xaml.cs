@@ -1,10 +1,11 @@
+using CommunityToolkit.Mvvm.Messaging;
 using Toast = CommunityToolkit.Maui.Alerts.Toast;
 namespace MarriageCalculator.Pages;
 
-public partial class Settings : ContentPage
+public partial class SettingsPage : ContentPage
 {
     private readonly SettingsViewModel _viewModel;
-    public Settings(SettingsViewModel viewModel )
+    public SettingsPage(SettingsViewModel viewModel )
     {
         InitializeComponent();
         _viewModel = viewModel;
@@ -22,7 +23,8 @@ public partial class Settings : ContentPage
 
     private async void NextButton_Clicked(object sender, EventArgs e)
     {
-         await Shell.Current.GoToAsync("..");
+         
+        await Shell.Current.GoToAsync("..");
     }
  
 }

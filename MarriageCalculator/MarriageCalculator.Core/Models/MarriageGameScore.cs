@@ -2,8 +2,8 @@
 using SQLite;
 
 namespace MarriageCalculator.Core.Models;
-
-public partial class MarriageGamePlayer : ObservableObject
+[Table("MarriageGameScore")]
+public partial class MarriageGameScore : ObservableObject
 {
     [PrimaryKey, AutoIncrement]
     public int Id { get; set; }
@@ -17,12 +17,20 @@ public partial class MarriageGamePlayer : ObservableObject
     [ObservableProperty]
     public int maal = 0;
     [ObservableProperty]
+    public int bonusPoint = 0;
+    [ObservableProperty]
     public bool duply = false;
-    
+    [ObservableProperty]
+    public bool winner = false;
+
     [ObservableProperty]
     public int score = 0;
+    [ObservableProperty]
+    public double moneyWon;
     [ObservableProperty]
     public bool deal = false;
     [ObservableProperty]
     public int position = 0;
+    [Ignore]
+    public MarriageGame? MarriageGame { get; set; }
 }

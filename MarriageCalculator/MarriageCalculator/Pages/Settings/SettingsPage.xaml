@@ -1,0 +1,135 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="MarriageCalculator.Pages.SettingsPage"
+             xmlns:local="clr-namespace:MarriageCalculator"
+             xmlns:vm="clr-namespace:MarriageCalculator.ViewModels"
+             xmlns:converters="clr-namespace:MarriageCalculator.Core.Converter;assembly=MarriageCalculator.Core"
+             x:DataType="vm:SettingsViewModel"
+             BackgroundColor="{AppThemeBinding Light={StaticResource LightBackground}, Dark={StaticResource DarkBackground}}"
+             Shell.NavBarIsVisible="False"
+             Title="Settings">
+    <ContentPage.Resources>
+        <ResourceDictionary>
+            <converters:CurrencyToDescriptionConverter x:Key="CurrencyToDescriptionConverter"/>
+            <converters:FoulPointBonusTypeToDescriptionConverter x:Key="FoulPointBonusTypeToDescriptionConverter"/>
+        </ResourceDictionary>
+    </ContentPage.Resources>
+    <VerticalStackLayout Spacing="10" HorizontalOptions ="FillAndExpand" VerticalOptions="FillAndExpand">
+        <StackLayout Orientation="Vertical" Margin="10"   Spacing="2">
+            <Label Text="Settings" VerticalOptions="Center" FontAttributes="Bold" FontSize="15"/>
+        
+            <Grid HorizontalOptions="FillAndExpand" >
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="*" />
+                    <!-- This makes the first row take up the remaining space -->
+                    <RowDefinition Height="30" />
+                    <!-- This gives the second row a fixed height of 30 units -->
+                </Grid.RowDefinitions>
+                <ScrollView Grid.Row="0" HorizontalOptions="FillAndExpand" >
+                <VerticalStackLayout>
+                    <Frame Style="{StaticResource CustomFrameStyle}">
+                        <StackLayout Orientation="Horizontal" Margin="10,0,10,0">
+                            <Label Text="Murder:" Style="{StaticResource SettingsLabel}"/>
+                            <Switch IsToggled="{Binding GameSettingsModel.Murder}" HorizontalOptions="EndAndExpand"/>
+                        </StackLayout>
+                    </Frame>
+
+                    <Frame Style="{StaticResource CustomFrameStyle}">
+                        <StackLayout Orientation="Horizontal" Margin="10,0,10,0">
+                            <Label Text="Kidnap:" Style="{StaticResource SettingsLabel}"/>
+                            <Switch IsToggled="{Binding GameSettingsModel.Kidnap}" HorizontalOptions="EndAndExpand"/>
+                        </StackLayout>
+                    </Frame>
+
+                    <Frame Style="{StaticResource CustomFrameStyle}">
+                        <StackLayout Orientation="Horizontal" Margin="10,0,10,0">
+                            <Label Text="Duplee:" Style="{StaticResource SettingsLabel}"/>
+                            <Switch IsToggled="{Binding GameSettingsModel.Dublee}" HorizontalOptions="EndAndExpand"/>
+                        </StackLayout>
+                    </Frame>
+                        <Frame Style="{StaticResource CustomFrameStyle}">
+                            <StackLayout Orientation="Horizontal"  Margin="10,0,10,0">
+                                <Label Text="Duplee point:" Style="{StaticResource SettingsLabel}"/>
+                                <Entry Text="{Binding GameSettingsModel.DubleePointBonus}" Style="{StaticResource SettingsNumericEntry}"/>
+                            </StackLayout>
+                        </Frame>
+                        <Frame Style="{StaticResource CustomFrameStyle}">
+                        <StackLayout Orientation="Horizontal"  Margin="10,0,10,0">
+                            <Label Text="Dublee Point Less:" Style="{StaticResource SettingsLabel}"/>
+                            <Switch IsToggled="{Binding GameSettingsModel.DubleePointLess}" HorizontalOptions="EndAndExpand"/>
+                        </StackLayout>
+                    </Frame>
+
+                    <Frame Style="{StaticResource CustomFrameStyle}">
+                        <StackLayout Orientation="Horizontal"  Margin="10,0,10,0">
+                            <Label Text="Seen:" Style="{StaticResource SettingsLabel}"/>
+                            <Entry Text="{Binding GameSettingsModel.SeenPoint}" Style="{StaticResource SettingsNumericEntry}"/>
+                        </StackLayout>
+                    </Frame>
+                    <Frame Style="{StaticResource CustomFrameStyle}">
+                        <StackLayout Orientation="Horizontal"  Margin="10,0,10,0">
+                            <Label Text="Unseen:" Style="{StaticResource SettingsLabel}"/>
+                            <Entry Text="{Binding GameSettingsModel.UnseenPoint}" Style="{StaticResource SettingsNumericEntry}"/>
+                        </StackLayout>
+                    </Frame>
+                    <Frame Style="{StaticResource CustomFrameStyle}">
+                        <StackLayout Orientation="Horizontal"  Margin="10,0,10,0">
+                            <Label Text="Rate:" Style="{StaticResource SettingsLabel}"/>
+                            <Entry Text="{Binding GameSettingsModel.PointRate}" Style="{StaticResource SettingsNumericEntry}"/>
+                        </StackLayout>
+                    </Frame>
+                   
+
+                    <Frame Style="{StaticResource CustomFrameStyle}">
+                        <StackLayout Orientation="Horizontal" Margin="10,0,10,0">
+                            <Label Text="Currency:"  Style="{StaticResource SettingsLabel}"/>
+                            <Picker Style="{StaticResource SettingsPicker}" 
+                                ItemsSource="{Binding GameSettingsModel.Currencies}" 
+                                SelectedItem="{Binding GameSettingsModel.Currency}"  
+                                 ItemDisplayBinding="{Binding ., Converter={StaticResource CurrencyToDescriptionConverter}}"
+                                HorizontalOptions="FillAndExpand"/>
+                        </StackLayout>
+                    </Frame>
+
+                    <Frame Style="{StaticResource CustomFrameStyle}">
+                        <StackLayout Orientation="Horizontal"  Margin="10,0,10,0">
+                            <Label Text="Foul Point:"  Style="{StaticResource SettingsLabel}"/>
+                            <Entry Text="{Binding GameSettingsModel.FoulPoint}" Style="{StaticResource SettingsNumericEntry}"/>
+                        </StackLayout>
+                    </Frame>
+                    <Frame Style="{StaticResource CustomFrameStyle}">
+                        <StackLayout Orientation="Horizontal" Margin="10,0,10,0">
+                            <Label Text="Foul bonus:"  Style="{StaticResource SettingsLabel}"/>
+                            <Picker ItemsSource="{Binding FoulPointBonuses}"  Style="{StaticResource SettingsPicker}"
+    SelectedItem="{Binding GameSettingsModel.FoulPointBonus}" 
+      ItemDisplayBinding="{Binding ., Converter={StaticResource FoulPointBonusTypeToDescriptionConverter}}"
+     HorizontalOptions="FillAndExpand"/>
+                        </StackLayout>
+                    </Frame>
+                    <Frame Style="{StaticResource CustomFrameStyle}">
+                        <StackLayout Orientation="Horizontal"  Margin="10,0,10,0">
+                            <Label Text="Audio:"  Style="{StaticResource SettingsLabel}"/>
+                            <Switch IsToggled="{Binding GameSettingsModel.Audio}" HorizontalOptions="EndAndExpand"/>
+                        </StackLayout>
+                    </Frame>
+                </VerticalStackLayout>
+            </ScrollView> 
+            <VerticalStackLayout Grid.Row="1" Margin="0,20,0,0" Spacing="5">
+                <Button x:Name="SaveSettings"
+                 Text="Save"
+                 HorizontalOptions="FillAndExpand"
+                 Style="{StaticResource ActionButton}"
+                 Command="{Binding SaveSettingsClickCommand}" />
+                <Button x:Name="BackButton"
+                 Text="Back"                      
+                  Style="{StaticResource ActionButton}"
+                 HorizontalOptions="FillAndExpand"
+                 Command="{Binding BackButtonClickCommand}" />
+               
+            </VerticalStackLayout>
+        </Grid>
+        </StackLayout>
+    </VerticalStackLayout>
+
+</ContentPage>

@@ -3,6 +3,7 @@ using MarriageCalculator.Core.Models;
 using MarriageCalculator.Pages;
 using MarriageCalculator.Services;
 using MarriageCalculator.ViewModels;
+using Syncfusion.Maui.Core.Hosting;
 
 namespace MarriageCalculator;
 
@@ -14,37 +15,52 @@ public static class MauiProgram
 {
     public static MauiApp CreateMauiApp()
     {
+
         var builder = MauiApp.CreateBuilder();
         builder
             .UseMauiApp<App>()
             .UseMauiCommunityToolkit()
+            .ConfigureSyncfusionCore()
             .ConfigureFonts(fonts =>
             {
                 fonts.AddFont("OpenSans-Regular.ttf", "OpenSansRegular");
                 fonts.AddFont("OpenSans-Semibold.ttf", "OpenSansSemibold");
+                fonts.AddFont("Poppins-Regular.ttf", "PoppinsRegular");
+                fonts.AddFont("Poppins-Semibold.ttf", "PoppinsSemibold");
+                fonts.AddFont("fontello.ttf", "Fontello");
             });
 
+
+
         //services
-        builder.Services.AddSingleton<IMarriageGameServices, MarriageGameServices>();
+        builder.Services.AddSingleton<IDbService, SqLiteDbService>();
 
+        // Get the SqLiteDbService instance and call SetupDB method
+        var serviceProvider = builder.Services.BuildServiceProvider();
+        var dbService = serviceProvider.GetRequiredService<IDbService>() as SqLiteDbService;
+          dbService?.SetupDB();
+         
+
+        builder.Services.AddSingleton<ISettingsService, SettingsService>();
+        builder.Services.AddSingleton<ITextToSpeechService, TextToSpeechService>();
+        builder.Services.AddSingleton<IPlayerService, PlayerService>();
+        builder.Services.AddSingleton<IMarriageGameEngine, MarriageGameEngine>();
         //views registration
-        builder.Services.AddSingleton<GameSettings>();
-        builder.Services.AddTransient<NewGame>();
-        builder.Services.AddSingleton<MainPage>();
-        builder.Services.AddTransient<Settings>();
-        builder.Services.AddTransient<Players>();
-        builder.Services.AddTransient<PlayGame>();
 
+        builder.Services.AddSingleton<MainPage>();
+        builder.Services.AddTransient<NewGame>();
+        builder.Services.AddTransient<PlayGame>();
+        builder.Services.AddScoped<SettingsPage>();
+        builder.Services.AddScoped<PlayersPage>();
 
 
         //view models
-        builder.Services.AddTransient<SettingsViewModel>();
-        builder.Services.AddTransient<NewGameViewModel>(); 
+        builder.Services.AddTransient<MainPageViewModel>();
+        builder.Services.AddScoped<SettingsViewModel>();
+        builder.Services.AddScoped<MarriageGameViewModel>();
         builder.Services.AddScoped<PlayerSettingsViewModel>();
-         
-         
-       
 
+       
 
         return builder.Build();
     }

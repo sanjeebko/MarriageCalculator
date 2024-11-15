@@ -1,14 +1,13 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
-using MarriageCalculator.Core.Models;
-using MarriageCalculator.Services;
 
 namespace MarriageCalculator.Models;
 
 public partial class GameSettingsModel : ObservableObject
 {
     public int GameSettingsId { get; set; }
-    public int MarriageGameId { get; set; }
-
+     
+    [ObservableProperty]
+    private bool _audio;
     [ObservableProperty]
     private bool _murder;
 
@@ -25,7 +24,7 @@ public partial class GameSettingsModel : ObservableObject
     public double _pointRate;
 
     [ObservableProperty]
-    public Currency  _currency;
+    public Currency _currency;
 
     [ObservableProperty]
     public bool _dublee;
@@ -45,13 +44,10 @@ public partial class GameSettingsModel : ObservableObject
     [ObservableProperty]
     public List<Currency> _currencies;
 
-    private readonly IMarriageGameServices _marriageGameServices;
-
-    public GameSettingsModel(IMarriageGameServices marriageGameServices)
+    public GameSettingsModel()
     {
+        _currencies = [.. Enum.GetValues(typeof(Currency)).Cast<Currency>().Order()];
         Defaults();
-        _marriageGameServices = marriageGameServices;
-        _currencies = _marriageGameServices.GetCurrency().Result;
     }
 
     public void Defaults()
@@ -61,11 +57,12 @@ public partial class GameSettingsModel : ObservableObject
         SeenPoint = 3;
         UnseenPoint = 10;
         PointRate = 10;
-        Currency =  Core.Models.Currency.GBP_Pence;        
+        Currency = Currency.NPR_Rupee;
         Dublee = true;
         DubleePointLess = true;
         FoulPoint = 15;
         FoulPointBonus = FoulPointBonusType.NEXT_GAME;
+        Audio = true;
     }
 }
 
@@ -85,13 +82,14 @@ public static class GameSettingsModelExtension
         DubleePointBonus = model.DubleePointBonus,
         FoulPoint = model.FoulPoint,
         FoulPointBonus = model.FoulPointBonus,
+        Audio = model.Audio,
     };
 }
 
 public static class GameSettingsExtension
 {
-    public static GameSettingsModel ToGameSettingsModel(this GameSettings model, IMarriageGameServices marriageGameServices)
-    => new(marriageGameServices)
+    public static GameSettingsModel ToGameSettingsModel(this GameSettings model)
+    => new()
     {
         Murder = model.Murder,
         Kidnap = model.Kidnap,
@@ -103,7 +101,8 @@ public static class GameSettingsExtension
         DubleePointLess = model.DubleePointLess,
         DubleePointBonus = model.DubleePointBonus,
         FoulPoint = model.FoulPoint,
-        FoulPointBonus = model.FoulPointBonus 
+        FoulPointBonus = model.FoulPointBonus ,
+        Audio= model.Audio,
     };
 }
 

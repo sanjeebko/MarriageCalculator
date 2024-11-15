@@ -4,9 +4,9 @@ namespace MarriageCalculator.Pages;
 
 public partial class NewGame : ContentPage
 {
-    public readonly NewGameViewModel _viewModel;
+    public readonly MarriageGameViewModel _viewModel;
 
-    public NewGame(NewGameViewModel viewModel)
+    public NewGame(MarriageGameViewModel viewModel)
     {
         InitializeComponent();
 
@@ -22,10 +22,6 @@ public partial class NewGame : ContentPage
     {
 
         
-        await Shell.Current.GoToAsync(nameof(Settings), true, new Dictionary<string, object>()
-        {
-            [nameof(_viewModel.MarriageGameModel)] = _viewModel.MarriageGameModel,
-            [nameof(_viewModel.GameSettingsModel)] = _viewModel.GameSettingsModel
-        });
+       
     }
 }
