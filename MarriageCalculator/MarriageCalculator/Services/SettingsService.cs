@@ -2,53 +2,68 @@
 
 namespace MarriageCalculator.Services;
 
-public class SettingsService : ISettingsService
+public class SettingsService(IDbService dbService) : ISettingsService
 {
-    private const string SettingsKey = "GameSettings";
-    public GameSettings  Settings { get; set; }
+     
+    public GameSettings?  Settings { get; set; }
+    public Dictionary<int, GameSettings> GameSettings { get; set; } = [];
+    public IDbService DbService { get; } = dbService;
 
-    public SettingsService()
-    {
-         
-    }
     public async Task InitializeAsync()
     {
-        Settings = await LoadSettingsAsync(CancellationToken.None);
+        GameSettings = await DbService.GetAllGameSettingsAsync();
+        var latestSettings = GameSettings.OrderByDescending(x => x.Key).FirstOrDefault();
+        if(latestSettings.Value != null)
+            Settings =  latestSettings.Value;
+        else
+            Settings = GetDefaultSettings();
     }
-    public async Task SaveSettingsAsync(CancellationToken cancellationToken)
+    
+    ///<summary>
+    /// Saves the current game settings asynchronously.
+    /// Throws an exception if the settings are null.
+    /// </summary> 
+    /// <returns>A task that represents the asynchronous save operation.</returns>
+    public async Task SaveSettingsAsync( )
     {
-        var json = JsonSerializer.Serialize(Settings);
-        await Task.Run(() => Preferences.Set(SettingsKey, json), cancellationToken);
+        Settings ??= Core.Models.GameSettings.Default();
+        await DbService.AddGameSettingsAsync(Settings);
     }
 
-    public async Task<GameSettings> LoadSettingsAsync(CancellationToken cancellationToken)
+    public async Task<GameSettings> LoadSettingsAsync( )
     {
-        var json = await Task.Run(() => Preferences.Get(SettingsKey, string.Empty), cancellationToken);
-        if (string.IsNullOrEmpty(json))
-            return GetDefaultSettings();
-        var settings = JsonSerializer.Deserialize<GameSettings>(json);
-        Settings = settings ?? GetDefaultSettings();
+        var settings =await DbService.GetLastGameSettingsAsync();
+        if (settings == null)
+        {
+            Settings = GetDefaultSettings();
+            await DbService.AddGameSettingsAsync(Settings); 
+            settings = Settings;
+        } 
+
+        Settings = settings;
         return Settings;
     }
 
+   
+
+public async Task<GameSettings?> GetSettingsByIdAsync(int settingsId)
+    {
+        if (GameSettings.TryGetValue(settingsId, out var settings))
+        {
+            return settings;
+        }
+
+        settings = await DbService.GetGameSettingsAsync(settingsId);
+        if (settings != null)
+        {
+            Settings = settings;
+        }
+        return settings;
+    }
+    
     private GameSettings GetDefaultSettings()
     {
-        Settings ??= new GameSettings();
-
-        Settings.Id = 0;
-        
-        Settings.Murder = true;
-        Settings.Kidnap = false;
-        Settings.SeenPoint = 10;
-        Settings.UnseenPoint = 5;
-        Settings.PointRate = 10;
-        Settings.Currency = Currency.NPR_Rupee;
-        Settings.Dublee = false;
-        Settings.DubleePointLess = true;
-        Settings.DubleePointBonus = 5;
-        Settings.FoulPoint = 15;
-        Settings.FoulPointBonus = FoulPointBonusType.THIS_GAME;
-
-        return Settings;
+      return  Core.Models.GameSettings.Default(); 
     }
+
 }

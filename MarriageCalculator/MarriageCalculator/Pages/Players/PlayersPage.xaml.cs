@@ -34,6 +34,7 @@ public partial class PlayersPage : ContentPage
     protected override void OnAppearing()
     {
         PlayerSettingsViewModel?.RefreshAllPlayers();
+        PlayerSettingsViewModel?.RefreshCurrentPlayer();
     }
 
     

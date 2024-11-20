@@ -18,7 +18,7 @@ public class MarriageGameSet
     [Ignore]
     public GameSettings GameSettings { get; set; } = GameSettings.Default();
     [Ignore]
-    public List<MarriageGameSetPlayer> GameSetPlayers { get; set; } = [];
+    public Dictionary<int,MarriageGameSetPlayer> GameSetPlayers { get; set; } = [];
     [Ignore]
     public List<MarriageGameRound> Rounds { get; set; } = [];
 

@@ -27,13 +27,13 @@
         <VerticalStackLayout
                 VerticalOptions="Center" 
                 HorizontalOptions="FillAndExpand"  Spacing="30" >
-
+            <Button Style="{StaticResource MainPageExitButton}" Command="{Binding ResetGameCommand}" IsVisible="False" />
             <Button
                 x:Name="StartBtn"
                 Text="Start a new game" 
                 SemanticProperties.Hint="Starts a brand new game"
                 Style="{StaticResource MainPageActionButton}"                
-                IsVisible="{Binding ShowNewGame}"
+                IsEnabled="{Binding ShowNewGame}"
                 Command="{Binding NewGameCommand}"
                 VerticalOptions="FillAndExpand"
                 />
@@ -43,14 +43,9 @@
                     SemanticProperties.Hint="Starts previous game and settings"
                      Style="{StaticResource MainPageActionButton}"
                 Command="{Binding ResumeGameCommand}"
-                IsVisible="{Binding ShowResumeGame}"
+                IsEnabled="{Binding ShowResumeGame}"
                 />
-            <Button                
-                Text="Close open game"
-                SemanticProperties.Hint="Close current marriage game set"
-                    Style="{StaticResource MainPageExitButton}"
-                IsVisible="{Binding ShowResumeGame}"/>
-
+              
             <Button
                 x:Name="SettingsBtn"
                 Text="Settings"
@@ -58,7 +53,7 @@
                 SemanticProperties.Hint="Settings"
                 Style="{StaticResource MainPageActionButton}"
                 Command="{Binding GameSettingsPageCommand}"
-                IsVisible="{Binding ShowSettings}"/>
+                IsEnabled="{Binding ShowSettings}"/>
 
 
             <Button

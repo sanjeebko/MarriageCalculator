@@ -21,10 +21,14 @@ public interface IMarriageGameEngine
     MarriageGameRound? CurrentMarriageGameRound { get; }
 
     Task CreateNewGameSet();
-    Task ResumeOldGameSet();
+    Task<bool> ResumePreviousGameIfAvailable();
     Task SaveGameSet();
     
     Task CloseCurrentGameSet();
-    void SaveCurrentGame();
+    Task SaveCurrentGame();
     Task<MarriageGame> CreateNewMarriageGameForGivenGameRound(MarriageGameRound marriageGameRound);
+    Task CloseCurrentGameRound();
+    Task CloseCurrentGameAsync(bool completed);
+    Task CreateNewGameRoundForGivenGameSet(int id);
+    Task CleanMarriageGameSet();
 }

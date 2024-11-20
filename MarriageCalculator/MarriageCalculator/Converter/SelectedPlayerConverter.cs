@@ -5,11 +5,14 @@ namespace MarriageCalculator.Converter
 {
     public class SelectedPlayerConverter : IValueConverter
     {
-        public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+        public object Convert(object? value, Type targetType, object? parameter, CultureInfo culture)
         {
             var selectedPlayer = value as Player;
             var currentPlayer = parameter as Player;
-
+            if(selectedPlayer is null  || currentPlayer is null)
+            {
+                return Colors.Transparent;             
+            }
             if (selectedPlayer == currentPlayer)
             {
                 return Colors.LightGreen; // Highlight color for selected player
@@ -18,7 +21,7 @@ namespace MarriageCalculator.Converter
             return Colors.Transparent; // Default color for unselected player
         }
 
-        public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+        public object ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture)
         {
             throw new NotImplementedException();
         }
