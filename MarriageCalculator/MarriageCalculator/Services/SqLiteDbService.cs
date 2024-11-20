@@ -76,7 +76,34 @@ public partial class SqLiteDbService : IDbService
             }
         }
     }
+    public async Task CleanMarriageGameSet()
+    {
+        if (_dbConnection == null)
+        {
+            return;
+        }
+        await _dbConnection.DeleteAllAsync<GameSettings>();
+        await _dbConnection.DeleteAllAsync<MarriageGame>();        
+        await _dbConnection.DeleteAllAsync<MarriageGameRound>();
+        await _dbConnection.DeleteAllAsync<MarriageGameScore>();
+        await _dbConnection.DeleteAllAsync<MarriageGameSetPlayer>();
+        await _dbConnection.DeleteAllAsync<MarriageGameSet>();
 
+        await _dbConnection.DropTableAsync<GameSettings>();
+        await _dbConnection.DropTableAsync<MarriageGame>();        
+        await _dbConnection.DropTableAsync<MarriageGameRound>();
+        await _dbConnection.DropTableAsync<MarriageGameScore>();
+        await _dbConnection.DropTableAsync<MarriageGameSetPlayer>();
+        await _dbConnection.DropTableAsync<MarriageGameSet>();
+
+        await _dbConnection.CreateTableAsync<GameSettings>();
+        await _dbConnection.CreateTableAsync<MarriageGame>();        
+        await _dbConnection.CreateTableAsync<MarriageGameRound>();
+        await _dbConnection.CreateTableAsync<MarriageGameScore>();
+        await _dbConnection.CreateTableAsync<MarriageGameSetPlayer>();
+        await _dbConnection.CreateTableAsync<MarriageGameSet>();
+
+    }
     #region Player
     public Task<List<Player>> GetPlayersAsync()
     {
@@ -178,7 +205,7 @@ public partial class SqLiteDbService : IDbService
             return null;
         }
 
-        var latestMarriageGameSet = await marriageGameSetTable
+        var latestMarriageGameSet = await marriageGameSetTable.Where(a=>a.IsActive)
             .OrderByDescending(m => m.LastPlayed)
             .FirstOrDefaultAsync();
 
@@ -207,18 +234,16 @@ public partial class SqLiteDbService : IDbService
     {
         if (_dbConnection == null)
             return 0;
-        return await _dbConnection.UpdateAsync(model);
+        var result = await _dbConnection.UpdateAsync(model);
+        if(result == 0)
+        {
+           result= await _dbConnection.InsertAsync(model);
+        }
+
+        return result;
     }
 
-    public async Task CloseLastMarriageGameSet()
-    {
-        var MarriageGameSet = await GetLatestMarriageGameSetAsync();
-        if (MarriageGameSet is not null)
-        {
-            MarriageGameSet.IsActive = false;
-            await UpdateMarriageGameSetAsync(MarriageGameSet);
-        }
-    }
+     
     public async Task CloseMarriageGameSet(MarriageGameSet model) {
 
         if (_dbConnection == null)
@@ -233,7 +258,8 @@ public partial class SqLiteDbService : IDbService
 
     public async Task<MarriageGameSetPlayer> AddMarriageGameSetPlayerAsync(MarriageGameSetPlayer model)
     {
-        var gameSetPlayer = _dbConnection?.Table<MarriageGameSetPlayer>().FirstOrDefaultAsync(a=>a.PlayerId==model.PlayerId && a.MarriageGameSetId == model.MarriageGameSetId);
+        var gameSetPlayerTable = _dbConnection?.Table<MarriageGameSetPlayer>();
+        var gameSetPlayer = await gameSetPlayerTable?.FirstOrDefaultAsync(a=>a.PlayerId==model.PlayerId && a.MarriageGameSetId == model.MarriageGameSetId);
         if(gameSetPlayer is  null)
         {
             await _dbConnection?.InsertAsync(model);
@@ -250,16 +276,77 @@ public partial class SqLiteDbService : IDbService
     #region MarriageGameSettings
     public async Task<GameSettings> AddGameSettingsAsync(GameSettings model)
     {
-         await _dbConnection?.InsertAsync(model);
+        if(_dbConnection is null)
+            throw new Exception("DB Connection is null");
+
+        await _dbConnection.InsertAsync(model);
         return model;
     }
-    public async Task<GameSettings?> GetGameSettingsAsync(int id)
+    public async Task<GameSettings?> GetGameSettingsAsync(int id )
     {
-       var result = await _dbConnection?.Table<GameSettings>().Where(a => a.Id == id).FirstOrDefaultAsync();
+         var gameSettingsTable = _dbConnection?.Table<GameSettings>();
+        if (gameSettingsTable == null)
+            return null;
+         var settings=  await gameSettingsTable.Where(a => a.Id == id).FirstOrDefaultAsync();
 
-       return result;
+       return await gameSettingsTable.Where(a => a.Id == id).FirstOrDefaultAsync();
     }
-     
+    public async Task DeleteMarriageGameSettings(GameSettings gameSettings)
+    {
+        if (_dbConnection == null)
+            return;
+
+      var result =  await _dbConnection.Table<GameSettings>().DeleteAsync(gs => gs.Id == gameSettings.Id);
+    } 
+    public async Task<Dictionary<int,GameSettings>> GetAllGameSettingsAsync()
+    {
+        var gameSettingsTable = _dbConnection?.Table<GameSettings>();
+        if (gameSettingsTable == null)
+            return new Dictionary<int, GameSettings>();
+
+        var gameSettingsList = await gameSettingsTable.ToListAsync();
+        var gameSettingsDict = new Dictionary<int, GameSettings>();
+        foreach (var gameSettings in gameSettingsList)
+        {
+            if (
+                gameSettingsDict.ContainsKey(gameSettings.Id)){
+                await DeleteMarriageGameSettings(gameSettings); 
+            }
+            else
+                gameSettingsDict.Add(gameSettings.Id, gameSettings);
+        }
+        return gameSettingsDict;
+
+    }
+    public async Task<GameSettings?> GetGameSettingsByGameSetIdAsync(int gameSetId)
+    {
+        var gameSetTable = _dbConnection?.Table<MarriageGameSet>();
+        if (gameSetTable is null)
+            return null;
+
+        var gameSet = await gameSetTable.Where(a => a.Id == gameSetId).FirstOrDefaultAsync();
+        if (gameSet is null)
+            return null;
+
+        var gameSettingsId = gameSet.GameSettingsId;
+
+        var gameSettingsTable = _dbConnection?.Table<GameSettings>();
+        if (gameSettingsTable == null)
+            return null;
+
+        return await gameSettingsTable.Where(a => a.Id == gameSettingsId).FirstOrDefaultAsync();
+    }
+    public async Task<GameSettings?> GetLastGameSettingsAsync()
+    {
+        var gameSettingsTable =   _dbConnection?.Table<GameSettings>();
+        if(gameSettingsTable == null)
+        {
+            return null;
+        }
+         
+        return await gameSettingsTable.OrderByDescending(a => a.Id).FirstOrDefaultAsync();
+    }
+
     #endregion MarriageGameSettings
 
     #region MarriageGameRound
@@ -302,46 +389,115 @@ public partial class SqLiteDbService : IDbService
     {
         return _dbConnection?.DeleteAsync(model) ?? Task.Run(() => { return 0; });
     }
+     
+    public async Task UpdateMarriageGameRoundAsync(MarriageGameRound currentMarriageGameRound)
+    {
+        await _dbConnection?.UpdateAsync(currentMarriageGameRound);
+    }
 
-    public async Task CleanMarriageGameSet()
+    //create a function that will return list of MarriageGameRound by MarriageGameSetId
+    public async Task<List<MarriageGameRound>> GetMarriageGameRoundsByMarriageGameSetIdAsync(int marriageGameSetId)
+    {
+        var marriageGameRoundTable = _dbConnection?.Table<MarriageGameRound>();
+        if (marriageGameRoundTable == null)
+            return [];
+
+
+        var marriageGameRoundList = await marriageGameRoundTable.Where(a => a.MarriageGameSetId == marriageGameSetId).ToListAsync();
+
+        return marriageGameRoundList ?? [];
+    }
+    public async Task<List<MarriageGame>> GetMarriageGamesByRoundIdAsync(int marriageRoundId)
+    {
+        var marriageGameTable = _dbConnection?.Table<MarriageGame>();
+        if (marriageGameTable == null)
+            return [];
+
+
+        var marriageGameList = await marriageGameTable.Where(a => a.MarriageGameRoundId == marriageRoundId).ToListAsync();
+
+        return marriageGameList ?? [];
+    }
+    public async Task<List<MarriageGameSetPlayer>> GetMarriageGameSetPlayersByMarriageGameSetIdAsync(int id)
+    {
+        var marriageGameSetPlayerTable = _dbConnection?.Table<MarriageGameSetPlayer>();
+        if (marriageGameSetPlayerTable == null)
+            return [];
+        var allPlayerSet = await marriageGameSetPlayerTable.ToListAsync();
+        if (allPlayerSet.Count == 0)
+        {
+            //find all game round ids
+            var allGameRoundIds = await GetMarriageGameRoundsByGameSetIdAsync(id);
+            List<int> playerSetIds = [];
+            foreach (var gameround in allGameRoundIds)
+            {
+                //find all marriagegame ids
+                var allMarriageGameIds = await GetMarriageGamesByRoundIdAsync(gameround.Id);
+                // find all scores for the game
+                foreach (var game in allMarriageGameIds)
+                {
+                    var allScores = await GetMarriageGameScoresByMarriageGameIdAsync(game.Id);
+                    foreach (var score in allScores)
+                    {
+                        
+                        if (!playerSetIds.Contains(score.PlayerId))
+                        {
+                            playerSetIds.Add(score.PlayerId);
+                        }
+                    }
+                }
+            }
+            foreach(var playerid in playerSetIds)
+            {
+                await AddMarriageGameSetPlayerAsync(new MarriageGameSetPlayer { PlayerId = playerid, MarriageGameSetId = id });
+            }
+            marriageGameSetPlayerTable = _dbConnection?.Table<MarriageGameSetPlayer>();
+        }
+        if (marriageGameSetPlayerTable == null) return [];
+
+        var marriageGameSetPlayerList = await marriageGameSetPlayerTable.Where(a => a.MarriageGameSetId == id).ToListAsync();
+
+        return marriageGameSetPlayerList ?? [];
+
+    }
+
+    public async Task<MarriageGameScore> AddMarriageGameScoreAsync(MarriageGameScore model)
     {
         if (_dbConnection == null)
         {
-            return;
+            throw new Exception("DB Connection is null");
         }
-        
-        await _dbConnection.DeleteAllAsync<MarriageGame>();
-        await _dbConnection.DeleteAllAsync<MarriageGameRound>();
-        await _dbConnection.DeleteAllAsync<MarriageGameScore>();
-        await _dbConnection.DeleteAllAsync<MarriageGameSetPlayer>();
 
-        await _dbConnection.DropTableAsync<MarriageGame>();
-        await _dbConnection.DropTableAsync<MarriageGameRound>();
-        await _dbConnection.DropTableAsync<MarriageGameScore>();
-        await _dbConnection.DropTableAsync<MarriageGameSetPlayer>();
+        var existingScore = await _dbConnection.Table<MarriageGameScore>()
+                                               .Where(s => s.MarriageGameId == model.MarriageGameId && s.PlayerId == model.PlayerId)
+                                               .FirstOrDefaultAsync();
 
-        await _dbConnection.CreateTableAsync<MarriageGame>();
-        await _dbConnection.CreateTableAsync<MarriageGameRound>();
-        await _dbConnection.CreateTableAsync<MarriageGameScore>();
-        await _dbConnection.CreateTableAsync<MarriageGameSetPlayer>();
-
-    }
-
-
-
-    #endregion MarriageGameRound
-
-    #region MarriageGameScore
-    public async Task<MarriageGameScore> AddMarriageGameScoreAsync(MarriageGameScore model)
-    {
-        await _dbConnection?.InsertAsync(model);
+        if (existingScore == null)
+        {
+            await _dbConnection.InsertAsync(model);
+        }
+        else
+        {
+            model.Id = existingScore.Id;
+            await _dbConnection.UpdateAsync(model);
+        }
 
         return model;
-    }
-    public async Task UpdateMarriageGameScoreAsync(MarriageGameScore marriageGameScore)
-    {
-        await _dbConnection?.UpdateAsync(marriageGameScore);
+    } 
 
+    public async Task<List<MarriageGameScore>> GetMarriageGameScoresByMarriageGameIdAsync(int id)
+    {
+        var marriageGameScoreTable = _dbConnection?.Table<MarriageGameScore>();
+        if (marriageGameScoreTable == null)
+            return []; 
+
+        var marriageGameScoreList = await marriageGameScoreTable.Where(a => a.MarriageGameId == id).ToListAsync();
+
+        return marriageGameScoreList  ??[];
     }
+
+  
+
+
     #endregion MarriageGameScore
 }

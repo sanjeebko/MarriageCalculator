@@ -12,7 +12,11 @@ public partial class PlayGame : ContentPage
         ViewModel = viewModel;
         BindingContext = ViewModel;
     }
-
+    protected override void OnAppearing()
+    {
+        base.OnAppearing();
+        ViewModel.LoadPlayerScores();
+    }
     private void Rotate_Clicked(object sender, EventArgs e)
     {
 

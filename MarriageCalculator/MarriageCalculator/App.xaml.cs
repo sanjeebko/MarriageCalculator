@@ -20,7 +20,7 @@ public partial class App : Application
         base.OnResume();
     }
     protected override void OnSleep() {
-        MarriageGameEngine.SettingsService.SaveSettingsAsync(MarriageGameEngine.CancellationTokenSource.Token);
+        MarriageGameEngine.SettingsService.SaveSettingsAsync();
         base.OnSleep();
     }
     public static async Task Animate(VisualElement view)

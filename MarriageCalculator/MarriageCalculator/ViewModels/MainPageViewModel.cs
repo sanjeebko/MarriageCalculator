@@ -1,9 +1,4 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace MarriageCalculator.ViewModels;
 
@@ -32,18 +27,13 @@ public partial class MainPageViewModel : ObservableObject
     {
         showSettings = true;
     }
-
-    public void Initialize(IMarriageGameEngine gameEngine)
-    {
-       GameEngine = gameEngine;
-        Refresh();
-    }
+     
 
     public void Refresh()
     {
-        IsBusy = true;        
-        ShowResumeGame = GameEngine.IsActiveGame;
-        ShowNewGame = !GameEngine.IsActiveGame && GameEngine.IsPlayersReady;
+        IsBusy = true;
+        ShowNewGame = GameEngine.IsPlayersReady;
+        ShowResumeGame = GameEngine.IsActiveGame; 
         ShowSettings = !GameEngine.IsActiveGame;
         ShowPlayer = !GameEngine.IsActiveGame;
         IsBusy = false;
@@ -60,9 +50,37 @@ public partial class MainPageViewModel : ObservableObject
     [RelayCommand]
     public async Task ResumeGame()
     {
-        await GameEngine.DbServices.CleanMarriageGameSet();
-        await GameEngine.CloseCurrentGameSet();
-        Refresh();
+        if(GameEngine.MarriageGameSet is null)
+        {
+            Refresh();
+            return;
+        }
+        var canResume =await GameEngine.ResumePreviousGameIfAvailable();
+        if (!canResume)
+        {
+            if (GameEngine.CurrentMarriageGameRound is null)
+            {
+                if (GameEngine.MarriageGameSet is null)
+                {
+                   await GameEngine.CreateNewGameSet();
+                }
+                else
+                {
+                    await GameEngine.CreateNewGameRoundForGivenGameSet(GameEngine.MarriageGameSet.Id);
+                }
+            }else
+                await GameEngine.CreateNewMarriageGameForGivenGameRound(GameEngine.CurrentMarriageGameRound);
+
+        }
+        await Shell.Current.GoToAsync(nameof(PlayGame));
+        
+    }
+    [RelayCommand]
+    public async Task ResetGame()
+    {
+       await GameEngine.CleanMarriageGameSet();
+       await GameEngine.InitializeEngineAsync();
+       Refresh();
     }
 
     [RelayCommand] 
@@ -80,6 +98,13 @@ public partial class MainPageViewModel : ObservableObject
     public void Exit()
     {
         Application.Current.Quit();
+    }
+    public async Task InitializeAsync(IMarriageGameEngine gameEngine)
+    {
+        GameEngine = gameEngine;
+        await GameEngine.InitializeEngineAsync();        
+
+        Refresh();
     }
 
 

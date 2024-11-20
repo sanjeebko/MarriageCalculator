@@ -35,8 +35,8 @@ public partial class PlayerSettingsViewModel : ObservableObject
         MarriageGameEngine = marriageGameEngine;
         Console.WriteLine("PlayerSettingsViewModel: Previous Page: " + marriageGameEngine.LastPageName);
         MarriageGameEngine.LastPageName = nameof(PlayerSettingsViewModel);
-        AllPlayers.Load(MarriageGameEngine.PlayerService.AllPlayers);
-        CurrentPlayers.Load(MarriageGameEngine.PlayerService.Players);
+        AllPlayers.Load(MarriageGameEngine.PlayerService.AllPlayers.Values);
+        CurrentPlayers.Load(MarriageGameEngine.PlayerService.Players.Values);
 
         CurrentPlayers.CollectionChanged += CurrentPlayers_CollectionChanged;
     }
@@ -50,9 +50,16 @@ public partial class PlayerSettingsViewModel : ObservableObject
     private async Task RefreshAllPlayersAsync()
     {
         IsRefreshing = true;
-        await MarriageGameEngine.PlayerService.RefreshAllPlayers();         
-        AllPlayers.Load(MarriageGameEngine.PlayerService.AllPlayers);         
+        await MarriageGameEngine.PlayerService.RefreshAllPlayers();
+        AllPlayers.Clear();
+        AllPlayers.Load(MarriageGameEngine.PlayerService.AllPlayers.Values);  
+        
         IsRefreshing = false;
+    }
+    public   void RefreshCurrentPlayer()
+    {
+        CurrentPlayers.Clear();
+        CurrentPlayers.Load(MarriageGameEngine.PlayerService.Players.Values.ToArray());
     }
      
 
@@ -128,14 +135,11 @@ public partial class PlayerSettingsViewModel : ObservableObject
             OnError?.Invoke(this, EventArgs.Empty);
             return;
         }
-        var oldPlayers = MarriageGameEngine.PlayerService.Players.ToArray();
-        foreach (var player in oldPlayers.Where(a => !CurrentPlayers.Contains(a)))
-        {
-            await MarriageGameEngine.PlayerService.DeletePlayerAsync(player, false);
-        }
+        MarriageGameEngine.PlayerService.Players.Clear(); 
+
         foreach (var player in CurrentPlayers)
         {
-            await MarriageGameEngine.PlayerService.AddPlayerAsync(player);
+           await MarriageGameEngine.PlayerService.AddPlayerAsync(player);
         }
         await RefreshAllPlayersAsync();
 

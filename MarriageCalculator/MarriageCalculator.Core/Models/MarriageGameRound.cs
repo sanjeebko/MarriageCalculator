@@ -9,6 +9,7 @@ public class MarriageGameRound
     public int Id { get; set; }
     public int Sequence { get; set; }
     public int MarriageGameSetId { get; set; }
+    public bool Completed { get; set; }
     [Ignore]
     public List<MarriageGame> MarriageGames { get; set; } = [];
 

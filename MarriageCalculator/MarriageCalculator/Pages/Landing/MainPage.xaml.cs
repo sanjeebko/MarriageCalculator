@@ -34,18 +34,7 @@ public partial class MainPage : ContentPage
      
       
 
-    private async void ResumeBtn_Clicked(object sender, EventArgs e)
-    {
-       
-
-        var toast = Toast.Make("Resume previous game", CommunityToolkit.Maui.Core.ToastDuration.Short);
-        await toast.Show();
-        var fadeAnimation = new FadeAnimation();
-        await fadeAnimation.Animate(ResumeBtn);
-        Thread.Sleep(1000);
-        await fadeAnimation.Animate(ResumeBtn);
-        
-    }
+    
 
     public static async Task ShowToast(string message)
     {
@@ -68,8 +57,8 @@ public partial class MainPage : ContentPage
         {
             await MarriageGameEngine.InitializeEngineAsync();
         }
-          MainPageViewModel.Initialize(MarriageGameEngine);
-
+        // MainPageViewModel.Initialize(MarriageGameEngine);
+        await MainPageViewModel.InitializeAsync(MarriageGameEngine);
     }
     private async Task PlayAudio(string pageName)
     {
@@ -78,8 +67,8 @@ public partial class MainPage : ContentPage
             case nameof(SettingsPage):
                 await MarriageGameEngine.TextToSpeechService.SpeakAsync("मेरिज खेलको नियमहरु सुरक्षित गरियो।");
                 break;
-            case nameof(PlayersPage):
-                await MarriageGameEngine.TextToSpeechService.SpeakAsync(MarriageGameEngine.PlayerService.Players.ToArray());
+            case nameof(PlayersPage): 
+                await MarriageGameEngine.TextToSpeechService.SpeakAsync([.. MarriageGameEngine.PlayerService.Players.Values]);
                 break;
             case nameof(NewGame):
 

@@ -77,10 +77,12 @@
 
             </CollectionView>
         </ScrollView>
-        <Grid Grid.Row="2" RowDefinitions="auto,auto,auto" IsVisible="{Binding ShowNewGame}" Margin="0,10,0,180">
+        <Grid Grid.Row="2" RowDefinitions="auto,auto,auto,auto,auto " IsVisible="{Binding ShowNewGame}" Margin="0,10,0,0" >
             <Label Grid.Row="0" Text="What's next?" Style="{StaticResource PlayersLabel}" HorizontalOptions="Center" VerticalOptions="Center" />
             <Button Grid.Row="1" Text="Start new game" Style="{StaticResource MainPageActionButton}" Command="{Binding NewGameCommand}" ></Button>
             <Button Grid.Row="2" Text="End Round and Calculate Total" Style="{StaticResource MainPageActionButton}" Command="{Binding EndRoundCommand}"></Button>
+            <Button Grid.Row="3" Text="End Game and Calculate Total" Style="{StaticResource MainPageActionButton}" Command="{Binding EndGameCommand}"></Button>
+            <Button Grid.Row="4" Text="Main Menu" Style="{StaticResource MainPageActionButton}" Command="{Binding MainMenuCommand}"></Button>
         </Grid>
         <Grid Grid.Row="2" ColumnDefinitions="120,*"  x:Name="Calculator" IsVisible="{Binding ShowCalculate}" >
             <Grid Grid.Column="0" RowDefinitions="*,*,*,*,*,*">

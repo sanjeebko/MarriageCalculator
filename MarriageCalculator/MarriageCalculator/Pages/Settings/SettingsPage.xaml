@@ -15,18 +15,18 @@
             <converters:FoulPointBonusTypeToDescriptionConverter x:Key="FoulPointBonusTypeToDescriptionConverter"/>
         </ResourceDictionary>
     </ContentPage.Resources>
-    <VerticalStackLayout Spacing="10" HorizontalOptions ="FillAndExpand" VerticalOptions="FillAndExpand">
-        <StackLayout Orientation="Vertical" Margin="10"   Spacing="2">
-            <Label Text="Settings" VerticalOptions="Center" FontAttributes="Bold" FontSize="15"/>
-        
-            <Grid HorizontalOptions="FillAndExpand" >
-                <Grid.RowDefinitions>
-                    <RowDefinition Height="*" />
-                    <!-- This makes the first row take up the remaining space -->
-                    <RowDefinition Height="30" />
-                    <!-- This gives the second row a fixed height of 30 units -->
-                </Grid.RowDefinitions>
-                <ScrollView Grid.Row="0" HorizontalOptions="FillAndExpand" >
+
+    <Grid RowDefinitions="auto,auto" Margin="10,0,10,0">
+        <Label Grid.Row="0" Text="Settings" VerticalOptions="Center" FontAttributes="Bold" FontSize="15"/>
+
+        <Grid Grid.Row="1" HorizontalOptions="FillAndExpand"   >
+            <Grid.RowDefinitions>
+                <RowDefinition Height="*" />
+                <!-- This makes the first row take up the remaining space -->
+                <RowDefinition Height="auto" />
+                <!-- This gives the second row a fixed height of 30 units -->
+            </Grid.RowDefinitions>
+            <ScrollView Grid.Row="0" HorizontalOptions="FillAndExpand" >
                 <VerticalStackLayout>
                     <Frame Style="{StaticResource CustomFrameStyle}">
                         <StackLayout Orientation="Horizontal" Margin="10,0,10,0">
@@ -48,19 +48,18 @@
                             <Switch IsToggled="{Binding GameSettingsModel.Dublee}" HorizontalOptions="EndAndExpand"/>
                         </StackLayout>
                     </Frame>
-                        <Frame Style="{StaticResource CustomFrameStyle}">
-                            <StackLayout Orientation="Horizontal"  Margin="10,0,10,0">
-                                <Label Text="Duplee point:" Style="{StaticResource SettingsLabel}"/>
-                                <Entry Text="{Binding GameSettingsModel.DubleePointBonus}" Style="{StaticResource SettingsNumericEntry}"/>
-                            </StackLayout>
-                        </Frame>
-                        <Frame Style="{StaticResource CustomFrameStyle}">
+                    <Frame Style="{StaticResource CustomFrameStyle}">
+                        <StackLayout Orientation="Horizontal"  Margin="10,0,10,0">
+                            <Label Text="Duplee point:" Style="{StaticResource SettingsLabel}"/>
+                            <Entry Text="{Binding GameSettingsModel.DubleePointBonus}" Style="{StaticResource SettingsNumericEntry}"/>
+                        </StackLayout>
+                    </Frame>
+                    <Frame Style="{StaticResource CustomFrameStyle}">
                         <StackLayout Orientation="Horizontal"  Margin="10,0,10,0">
                             <Label Text="Dublee Point Less:" Style="{StaticResource SettingsLabel}"/>
                             <Switch IsToggled="{Binding GameSettingsModel.DubleePointLess}" HorizontalOptions="EndAndExpand"/>
                         </StackLayout>
                     </Frame>
-
                     <Frame Style="{StaticResource CustomFrameStyle}">
                         <StackLayout Orientation="Horizontal"  Margin="10,0,10,0">
                             <Label Text="Seen:" Style="{StaticResource SettingsLabel}"/>
@@ -79,8 +78,6 @@
                             <Entry Text="{Binding GameSettingsModel.PointRate}" Style="{StaticResource SettingsNumericEntry}"/>
                         </StackLayout>
                     </Frame>
-                   
-
                     <Frame Style="{StaticResource CustomFrameStyle}">
                         <StackLayout Orientation="Horizontal" Margin="10,0,10,0">
                             <Label Text="Currency:"  Style="{StaticResource SettingsLabel}"/>
@@ -102,9 +99,9 @@
                         <StackLayout Orientation="Horizontal" Margin="10,0,10,0">
                             <Label Text="Foul bonus:"  Style="{StaticResource SettingsLabel}"/>
                             <Picker ItemsSource="{Binding FoulPointBonuses}"  Style="{StaticResource SettingsPicker}"
-    SelectedItem="{Binding GameSettingsModel.FoulPointBonus}" 
-      ItemDisplayBinding="{Binding ., Converter={StaticResource FoulPointBonusTypeToDescriptionConverter}}"
-     HorizontalOptions="FillAndExpand"/>
+                                    SelectedItem="{Binding GameSettingsModel.FoulPointBonus}" 
+                                    ItemDisplayBinding="{Binding ., Converter={StaticResource FoulPointBonusTypeToDescriptionConverter}}"
+                                    HorizontalOptions="FillAndExpand"/>
                         </StackLayout>
                     </Frame>
                     <Frame Style="{StaticResource CustomFrameStyle}">
@@ -114,22 +111,20 @@
                         </StackLayout>
                     </Frame>
                 </VerticalStackLayout>
-            </ScrollView> 
-            <VerticalStackLayout Grid.Row="1" Margin="0,20,0,0" Spacing="5">
-                <Button x:Name="SaveSettings"
-                 Text="Save"
-                 HorizontalOptions="FillAndExpand"
-                 Style="{StaticResource ActionButton}"
-                 Command="{Binding SaveSettingsClickCommand}" />
-                <Button x:Name="BackButton"
-                 Text="Back"                      
-                  Style="{StaticResource ActionButton}"
-                 HorizontalOptions="FillAndExpand"
-                 Command="{Binding BackButtonClickCommand}" />
-               
-            </VerticalStackLayout>
+            </ScrollView>
+            <Grid Grid.Row="1" Margin="0,20,0,0" RowDefinitions="auto,auto" RowSpacing="5"    >
+                <Button x:Name="SaveSettings"  Text="Save"
+                     HorizontalOptions="FillAndExpand"
+                     Style="{StaticResource ActionButton}"
+                     Command="{Binding SaveSettingsClickCommand}" />
+                <Button  Grid.Row="1" x:Name="BackButton"
+                     Text="Back" Style="{StaticResource ActionButton}"
+                     HorizontalOptions="FillAndExpand"
+                     Command="{Binding BackButtonClickCommand}" />
+
+            </Grid>
         </Grid>
-        </StackLayout>
-    </VerticalStackLayout>
+    </Grid>
+
 
 </ContentPage>

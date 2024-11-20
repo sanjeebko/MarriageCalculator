@@ -4,10 +4,10 @@ namespace MarriageCalculator.Services;
 
 public interface ISettingsService
 {
-    GameSettings  Settings { get; set; }
+    GameSettings?  Settings { get; set; }
 
     Task InitializeAsync();
-    Task<GameSettings> LoadSettingsAsync(CancellationToken cancellationToken);
- 
-    Task SaveSettingsAsync(CancellationToken cancellationToken);
+    Task<GameSettings> LoadSettingsAsync( );
+    Task<GameSettings?> GetSettingsByIdAsync(int settingsId);
+    Task SaveSettingsAsync( );
 }
