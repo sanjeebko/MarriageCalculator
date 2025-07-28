@@ -1,11 +1,16 @@
-﻿using SQLite;
+﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
+ 
 
 namespace MarriageCalculator.Core.Models;
+
 [Table("MarriageGame")]
 public class MarriageGame
 {
-    [PrimaryKey, AutoIncrement]
+    [Key]
+    [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
     public int Id { get; set; } 
+    
     public int Sequence { get; set; }
     public int MarriageGameRoundId { get; set; }
     public int WinnerId { get; set; }
@@ -13,8 +18,7 @@ public class MarriageGame
     public int TotalMaal { get; set; }      
     public bool ClosedRound { get; set; }
     public DateTime CreatedTime { get; set; }
-    [Ignore]
+    
+    [NotMapped]
     public Dictionary<int, MarriageGameScore> MarriageGameScores { get; set; } = []; //playerId, MarriageGameScore
-   
-   
 }

@@ -14,12 +14,7 @@
     <SupportedOSPlatformVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'windows'">10.0.17763.0</SupportedOSPlatformVersion>
     <TargetPlatformMinVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'windows'">10.0.17763.0</TargetPlatformMinVersion>    
   </PropertyGroup>
-  <ItemGroup>
-    <PackageReference Include="sqlite-net-pcl" Version="1.9.172" />
-    <PackageReference Include="SQLitePCLRaw.bundle_green" Version="2.1.10" />
-    <PackageReference Include="SQLitePCLRaw.core" Version="2.1.10" />
-    <PackageReference Include="SQLitePCLRaw.provider.dynamic_cdecl" Version="2.1.10" />
-    <PackageReference Include="SQLitePCLRaw.provider.e_sqlite3" Version="2.1.10" />
+  <ItemGroup> 
     <PackageReference Include="Microsoft.Maui.Controls" Version="8.0.92" />
     <PackageReference Include="Microsoft.Maui.Controls.Compatibility" Version="8.0.92" />
 	  <PackageReference Include="CommunityToolkit.Maui" Version="9.1.0" />

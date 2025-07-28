@@ -1,10 +1,12 @@
-﻿using SQLite;
+﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 namespace MarriageCalculator.Core.Models;
 
 [Table("GameSettings")]
 public class GameSettings
 {
-    [PrimaryKey, AutoIncrement]
+    [Key]
+    [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
     public int Id { get; set; }    
     
     public bool Murder { get; set; }
