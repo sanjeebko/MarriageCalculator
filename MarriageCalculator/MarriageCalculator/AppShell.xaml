@@ -5,7 +5,7 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
     xmlns:local="clr-namespace:MarriageCalculator.Pages"
     Shell.FlyoutBehavior="Disabled">
-   
+
     <ShellContent
         Title="Marriage Calculator"
         ContentTemplate="{DataTemplate local:MainPage}"

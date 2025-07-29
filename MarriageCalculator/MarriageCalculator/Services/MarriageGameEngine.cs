@@ -1,15 +1,13 @@
-﻿using System.Reflection.Metadata.Ecma335;
+﻿namespace MarriageCalculator.Services;
 
-namespace MarriageCalculator.Services;
-
-public class MarriageGameEngine(IDbService dbServices, ISettingsService settingsService, IPlayerService playerService, ITextToSpeechService textToSpeechService) : IMarriageGameEngine
+public class MarriageGameEngine(IDbService dbService, ISettingsService settingsService, IPlayerService playerService, ITextToSpeechService textToSpeechService) : IMarriageGameEngine
 {
 
     /// <summary>
     /// MarriageGameEngine->MarriageGameSet->MarriageGameRound->MarriageGame
     /// </summary>
     public CancellationTokenSource CancellationTokenSource { get; } = new CancellationTokenSource();
-    public IDbService DbServices { get; } = dbServices;
+    public IDbService DatabaseService { get; } = dbService;
     public ISettingsService SettingsService { get; } = settingsService;
     public IPlayerService PlayerService { get; } = playerService;
     public ITextToSpeechService TextToSpeechService { get; } = textToSpeechService;
@@ -19,9 +17,17 @@ public class MarriageGameEngine(IDbService dbServices, ISettingsService settings
     public MarriageGameRound? CurrentMarriageGameRound { get; private set; }
     public MarriageGame? CurrentMarriageGame { get; private set; }
     
+    public bool IsServerConnected { get; private set; } = false;
 
     public async Task InitializeEngineAsync()
     {
+        if (!await DatabaseService.TestConnectionAsync())
+        {
+            IsServerConnected = false;
+            Initialized = false;
+            return;
+        }
+
         await InitializeLastGameSetAsync();
         var initializePlayerServiceTask = PlayerService.InitializeAsync();
         var initializeSettingsServiceTask = SettingsService.InitializeAsync();
@@ -30,10 +36,11 @@ public class MarriageGameEngine(IDbService dbServices, ISettingsService settings
         await Task.WhenAll(initializePlayerServiceTask, initializeSettingsServiceTask, initializeTextToSpeechServiceTask);
 
         Initialized = true;
+        IsServerConnected = true;
     }
 
     private async Task InitializeLastGameSetAsync() {
-        MarriageGameSet = await DbServices.GetLatestMarriageGameSetAsync();
+        MarriageGameSet = await DatabaseService.GetLatestMarriageGameSetAsync();
 
     }
 
@@ -46,7 +53,7 @@ public class MarriageGameEngine(IDbService dbServices, ISettingsService settings
 
          
         var name = DateTime.UtcNow.ToString("yyyyMMdd HHmmss");
-        var marriageGameSetTask = DbServices.AddNewMarriageGameSetAsync(name);
+        var marriageGameSetTask = DatabaseService.AddNewMarriageGameSetAsync(name);
 
          
         if (SettingsService.Settings!.Id==0)
@@ -64,7 +71,7 @@ public class MarriageGameEngine(IDbService dbServices, ISettingsService settings
         );
 
         await AddPlayersToGameSet(marriageGameSet.GameSetPlayers);
-        var updateGameSetTask = DbServices.UpdateMarriageGameSetAsync(marriageGameSet);
+        var updateGameSetTask = DatabaseService.UpdateMarriageGameSetAsync(marriageGameSet);
         var createNewGameRoundTask = CreateNewGameRoundForGivenGameSet(marriageGameSet.Id);
 
         await Task.WhenAll( updateGameSetTask, createNewGameRoundTask);
@@ -73,14 +80,14 @@ public class MarriageGameEngine(IDbService dbServices, ISettingsService settings
     }
     public async Task CreateNewGameRoundForGivenGameSet(int id)
     {
-        var rounds =await DbServices.GetMarriageGameRoundsByMarriageGameSetIdAsync(id);
+        var rounds =await DatabaseService.GetMarriageGameRoundsByMarriageGameSetIdAsync(id);
         var latestRound = rounds.OrderByDescending(x => x.Sequence).FirstOrDefault();
         int sequence = 1;
         if (latestRound is not null)
             sequence += latestRound.Sequence+1;
 
         var marriageGameRound = new MarriageGameRound { MarriageGameSetId = id, Sequence = sequence };
-        await DbServices.AddMarriageGameRoundAsync(marriageGameRound);
+        await DatabaseService.AddMarriageGameRoundAsync(marriageGameRound);
         await CreateNewMarriageGameForGivenGameRound(marriageGameRound);
         CurrentMarriageGameRound = marriageGameRound;
 
@@ -89,12 +96,12 @@ public class MarriageGameEngine(IDbService dbServices, ISettingsService settings
     public async Task<MarriageGame> CreateNewMarriageGameForGivenGameRound(MarriageGameRound marriageGameRound)
     { 
         var sequence = 1;
-        var allMarriageGames = await DbServices.GetMarriageGamesByRoundIdAsync(marriageGameRound.Id);
+        var allMarriageGames = await DatabaseService.GetMarriageGamesByRoundIdAsync(marriageGameRound.Id);
         if(allMarriageGames.Count > 0)
             sequence = allMarriageGames.Max(x => x.Sequence) + 1;
 
         var marriageGame = new MarriageGame { MarriageGameRoundId = marriageGameRound.Id, Sequence = sequence, CreatedTime = DateTime.UtcNow };
-        await DbServices.AddMarriageGameAsync(marriageGame);
+        await DatabaseService.AddMarriageGameAsync(marriageGame);
         //add marriageGamescore to marriageGame
         int playerIndex = 0;
         foreach (var player in PlayerService.Players)
@@ -102,7 +109,7 @@ public class MarriageGameEngine(IDbService dbServices, ISettingsService settings
             playerIndex++;
             var marriageGameScore = new MarriageGameScore { PlayerId = player.Key, MarriageGameId = marriageGame.Id, MarriageGame = marriageGame, Position = playerIndex };
 
-            await DbServices.AddMarriageGameScoreAsync(marriageGameScore);
+            await DatabaseService.AddMarriageGameScoreAsync(marriageGameScore);
 
             marriageGame.MarriageGameScores
                 .Add(player.Key,marriageGameScore );
@@ -118,18 +125,18 @@ public class MarriageGameEngine(IDbService dbServices, ISettingsService settings
 
     private async Task AddPlayersToGameSet(Dictionary<int, MarriageGameSetPlayer> gameSetPlayers)
     {
-        var tasks = gameSetPlayers.Values.Select(player => DbServices.AddMarriageGameSetPlayerAsync(player));
+        var tasks = gameSetPlayers.Values.Select(player => DatabaseService.AddMarriageGameSetPlayerAsync(player));
         await Task.WhenAll(tasks);
     }
     public async Task<bool> ResumePreviousGameIfAvailable()
     {
          
-        var marriageGameSet = await DbServices.GetLatestMarriageGameSetAsync();
+        var marriageGameSet = await DatabaseService.GetLatestMarriageGameSetAsync();
         if (marriageGameSet is null)
             return false;
 
-        var marriageGameRoundsTask = DbServices.GetMarriageGameRoundsByMarriageGameSetIdAsync(marriageGameSet.Id);
-        var marriageGameSetPlayersTask = DbServices.GetMarriageGameSetPlayersByMarriageGameSetIdAsync(marriageGameSet.Id); 
+        var marriageGameRoundsTask = DatabaseService.GetMarriageGameRoundsByMarriageGameSetIdAsync(marriageGameSet.Id);
+        var marriageGameSetPlayersTask = DatabaseService.GetMarriageGameSetPlayersByMarriageGameSetIdAsync(marriageGameSet.Id); 
         var settingsTask =  SettingsService.GetSettingsByIdAsync(marriageGameSet.GameSettingsId);
 
 
@@ -163,13 +170,13 @@ public class MarriageGameEngine(IDbService dbServices, ISettingsService settings
             return false;
         }
 
-        var marriageGames = await DbServices.GetMarriageGamesByRoundIdAsync(marriageGameRound.Id);
+        var marriageGames = await DatabaseService.GetMarriageGamesByRoundIdAsync(marriageGameRound.Id);
         var marriageGame = marriageGames.FirstOrDefault(x => x.WinnerId == 0);
 
         if (marriageGame is null)
             return false;
 
-        var marriageGameScores = await DbServices.GetMarriageGameScoresByMarriageGameIdAsync(marriageGame.Id);
+        var marriageGameScores = await DatabaseService.GetMarriageGameScoresByMarriageGameIdAsync(marriageGame.Id);
         if (marriageGameScores is null || marriageGameScores.Count == 0)
         {
             if(marriageGameSet.GameSetPlayers.Count==0)
@@ -197,7 +204,7 @@ public class MarriageGameEngine(IDbService dbServices, ISettingsService settings
         if (MarriageGameSet is not null)
         {
             MarriageGameSet.IsActive = false;
-            await DbServices.UpdateMarriageGameSetAsync(MarriageGameSet);
+            await DatabaseService.UpdateMarriageGameSetAsync(MarriageGameSet);
         }
         ResetCurrentGameSet();
     }
@@ -211,8 +218,8 @@ public class MarriageGameEngine(IDbService dbServices, ISettingsService settings
 
     public async Task CleanMarriageGameSet()
     {
-        await DbServices.CleanMarriageGameSet();
-        var marriageGameSet = await DbServices.GetLatestMarriageGameSetAsync();
+        await DatabaseService.CleanMarriageGameSet();
+        var marriageGameSet = await DatabaseService.GetLatestMarriageGameSetAsync();
         if (marriageGameSet is null)
             Console.WriteLine("No marriage GameSet available!");
         ResetCurrentGameSet();
@@ -230,7 +237,7 @@ public class MarriageGameEngine(IDbService dbServices, ISettingsService settings
         {
             marriageGameScore.MarriageGameId = CurrentMarriageGame.Id;
             //Save marriageGameScore
-            tasks.Add(DbServices.AddMarriageGameScoreAsync(marriageGameScore));
+            tasks.Add(DatabaseService.AddMarriageGameScoreAsync(marriageGameScore));
         }
 
         await Task.WhenAll(tasks);
@@ -243,8 +250,8 @@ public class MarriageGameEngine(IDbService dbServices, ISettingsService settings
         }
 
         MarriageGameSet.LastPlayed = DateTime.UtcNow;
-        tasks.Add(DbServices.UpdateMarriageGameAsync(CurrentMarriageGame));
-        tasks.Add(DbServices.UpdateMarriageGameSetAsync(MarriageGameSet));
+        tasks.Add(DatabaseService.UpdateMarriageGameAsync(CurrentMarriageGame));
+        tasks.Add(DatabaseService.UpdateMarriageGameSetAsync(MarriageGameSet));
      
         await Task.WhenAll(tasks);
     }
@@ -255,7 +262,7 @@ public class MarriageGameEngine(IDbService dbServices, ISettingsService settings
         if (CurrentMarriageGameRound is not null)
         {
             CurrentMarriageGameRound.Completed = true;
-            await DbServices.UpdateMarriageGameRoundAsync(CurrentMarriageGameRound);
+            await DatabaseService.UpdateMarriageGameRoundAsync(CurrentMarriageGameRound);
         }         
     }
 

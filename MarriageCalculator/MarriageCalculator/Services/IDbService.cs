@@ -2,6 +2,7 @@
 
 public interface IDbService
 {
+    Task<bool> TestConnectionAsync();
     Task CleanMarriageGameSet();
     Task<int> AddPlayerAsync(Player model);
     Task<int> DeletePlayerAsync(Player model);

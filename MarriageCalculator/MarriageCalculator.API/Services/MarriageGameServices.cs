@@ -1,50 +1,121 @@
 ﻿using MarriageCalculator.API.Data;
+using MarriageCalculator.Core.Models;
 using Microsoft.EntityFrameworkCore;
 
 namespace MarriageCalculator.API.Services;
 
-
-public class MarriageGameServices
+public class MarriageGameServices : IMarriageGameServices
 {
+    private readonly MarriageCalculatorDbContext _context;
 
-    private readonly AppDbContext _context;
-
-    public MarriageGameServices(AppDbContext context)
+    public MarriageGameServices(MarriageCalculatorDbContext context)
     {
         _context = context;
     }
 
     public async Task SetupDB()
     {
-        // Ensure the database is created
-        await _context.Database.EnsureCreatedAsync();
-
-        // Check if the new table already exists
-        var tableExists = await _context.Database.ExecuteSqlRawAsync(
-            "SELECT name FROM sqlite_master WHERE type='table' AND name='NewMarriageGame';");
-
-        if (tableExists == 0)
+        try
         {
-            // Step 1: Create a new table with the desired schema
-            await _context.Database.ExecuteSqlRawAsync(
-                "CREATE TABLE NewMarriageGame (Id INTEGER PRIMARY KEY, MarriageGameRoundId INTEGER, DealerPlayerId INTEGER, WinnerId INTEGER, DealerPlayer INTEGER, TotalMaal BOOLEAN, ClosedRound BOOLEAN)");
-
-            // Step 2: Copy data from the old table to the new table
-            await _context.Database.ExecuteSqlRawAsync(
-                "INSERT INTO NewMarriageGame (MarriageGameRoundId, DealerPlayerId, WinnerId, DealerPlayer, TotalMaal, ClosedRound) SELECT MarriageGameRoundId, DealerPlayerId, WinnerId, DealerPlayer, TotalMaal, ClosedRound FROM MarriageGame");
-
-            // Step 3: Drop the old table
-            await _context.Database.ExecuteSqlRawAsync("DROP TABLE MarriageGame");
-
-            // Step 4: Rename the new table to the original table name
-            await _context.Database.ExecuteSqlRawAsync("ALTER TABLE NewMarriageGame RENAME TO MarriageGame");
+            // Only seed default data, don't try to create database
+            // Database creation should be handled by migrations
+            await SeedDefaultData();
         }
-
-        var tables = await _context.Database.ExecuteSqlRawAsync(
-            "SELECT name FROM sqlite_master WHERE type='table';");
-
-
-
+        catch (Exception ex)
+        {
+            // Log the exception or handle it appropriately
+            Console.WriteLine($"Error setting up database: {ex.Message}");
+            throw;
+        }
     }
 
+    public async Task SeedDefaultData()
+    {
+        try
+        {
+            // Check if we need to seed default game settings
+            if (!await _context.GameSettings.AnyAsync())
+            {
+                var defaultSettings = new GameSettings
+                {
+                    Murder = true,
+                    Kidnap = false,
+                    SeenPoint = 3,
+                    UnseenPoint = 10,
+                    PointRate = 10,
+                    Currency = Currency.NPR_Rupee,
+                    Dublee = true,
+                    DubleePointLess = true,
+                    FoulPoint = 15,
+                    FoulPointBonus = FoulPointBonusType.NEXT_GAME,
+                    Audio = true
+                };
+
+                _context.GameSettings.Add(defaultSettings);
+                await _context.SaveChangesAsync();
+                Console.WriteLine("Default game settings seeded successfully.");
+            }
+            else
+            {
+                Console.WriteLine("Game settings already exist, skipping seeding.");
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error seeding default data: {ex.Message}");
+            throw;
+        }
+    }
+
+    public async Task<DatabaseInfo> GetDatabaseInfoAsync()
+    {
+        try
+        {
+            var info = new DatabaseInfo
+            {
+                PlayerCount = await _context.Players.CountAsync(),
+                GameSettingsCount = await _context.GameSettings.CountAsync(),
+                MarriageGameSetCount = await _context.MarriageGameSets.CountAsync(),
+                MarriageGameSetPlayerCount = await _context.MarriageGameSetPlayers.CountAsync(),
+                MarriageGameRoundCount = await _context.MarriageGameRounds.CountAsync(),
+                MarriageGameCount = await _context.MarriageGames.CountAsync(),
+                MarriageGameScoreCount = await _context.MarriageGameScores.CountAsync(),
+                DatabaseCreated = await _context.Database.CanConnectAsync()
+            };
+
+            return info;
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error getting database info: {ex.Message}");
+            return new DatabaseInfo { DatabaseCreated = false };
+        }
+    }
+
+    public async Task CleanupDatabaseAsync()
+    {
+        try
+        {
+            // Delete all data in proper order to respect foreign key constraints
+            _context.MarriageGameScores.RemoveRange(_context.MarriageGameScores);
+            _context.MarriageGames.RemoveRange(_context.MarriageGames);
+            _context.MarriageGameRounds.RemoveRange(_context.MarriageGameRounds);
+            _context.MarriageGameSetPlayers.RemoveRange(_context.MarriageGameSetPlayers);
+            _context.MarriageGameSets.RemoveRange(_context.MarriageGameSets);
+            _context.GameSettings.RemoveRange(_context.GameSettings);
+            _context.Players.RemoveRange(_context.Players);
+
+            await _context.SaveChangesAsync();
+
+            // Re-seed default data
+            await SeedDefaultData();
+            
+            Console.WriteLine("Database cleanup completed successfully.");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error cleaning up database: {ex.Message}");
+            throw;
+        }
+    }
 }

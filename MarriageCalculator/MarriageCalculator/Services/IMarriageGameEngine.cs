@@ -7,7 +7,7 @@ namespace MarriageCalculator.Services;
 public interface IMarriageGameEngine
 {
     string LastPageName { get; set; }
-    IDbService DbServices { get; }
+    IDbService DatabaseService { get; }
     ISettingsService SettingsService { get; }
     IPlayerService PlayerService { get; }
     CancellationTokenSource CancellationTokenSource { get; }

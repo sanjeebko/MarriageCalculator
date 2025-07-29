@@ -4,11 +4,12 @@
              x:Class="MarriageCalculator.Pages.SettingsPage"
              xmlns:local="clr-namespace:MarriageCalculator"
              xmlns:vm="clr-namespace:MarriageCalculator.ViewModels"
-             xmlns:converters="clr-namespace:MarriageCalculator.Core.Converter;assembly=MarriageCalculator.Core"
+             xmlns:converters="clr-namespace:MarriageCalculator.Converter"
+             xmlns:toolkit="http://schemas.microsoft.com/dotnet/2022/maui/toolkit"
              x:DataType="vm:SettingsViewModel"
-             BackgroundColor="{AppThemeBinding Light={StaticResource LightBackground}, Dark={StaticResource DarkBackground}}"
              Shell.NavBarIsVisible="False"
              Title="Settings">
+    
     <ContentPage.Resources>
         <ResourceDictionary>
             <converters:CurrencyToDescriptionConverter x:Key="CurrencyToDescriptionConverter"/>
@@ -16,115 +17,345 @@
         </ResourceDictionary>
     </ContentPage.Resources>
 
-    <Grid RowDefinitions="auto,auto" Margin="10,0,10,0">
-        <Label Grid.Row="0" Text="Settings" VerticalOptions="Center" FontAttributes="Bold" FontSize="15"/>
+    <Grid RowSpacing="0">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
 
-        <Grid Grid.Row="1" HorizontalOptions="FillAndExpand"   >
-            <Grid.RowDefinitions>
-                <RowDefinition Height="*" />
-                <!-- This makes the first row take up the remaining space -->
-                <RowDefinition Height="auto" />
-                <!-- This gives the second row a fixed height of 30 units -->
-            </Grid.RowDefinitions>
-            <ScrollView Grid.Row="0" HorizontalOptions="FillAndExpand" >
-                <VerticalStackLayout>
-                    <Frame Style="{StaticResource CustomFrameStyle}">
-                        <StackLayout Orientation="Horizontal" Margin="10,0,10,0">
-                            <Label Text="Murder:" Style="{StaticResource SettingsLabel}"/>
-                            <Switch IsToggled="{Binding GameSettingsModel.Murder}" HorizontalOptions="EndAndExpand"/>
-                        </StackLayout>
-                    </Frame>
+        <!-- Single Seamless Gradient Background matching MainPage -->
+        <Rectangle Grid.RowSpan="3">
+            <Rectangle.Fill>
+                <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
+                    <GradientStop Color="{AppThemeBinding Light={StaticResource LightGradientRow0}, Dark={StaticResource DarkGradientRow0}}" 
+                                  Offset="0.0"/>
+                    <GradientStop Color="{AppThemeBinding Light={StaticResource LightGradientRow1}, Dark={StaticResource DarkGradientRow1}}" 
+                                  Offset="0.4"/>
+                    <GradientStop Color="{AppThemeBinding Light={StaticResource LightGradientRow2}, Dark={StaticResource DarkGradientRow2}}" 
+                                  Offset="1.0"/>
+                </LinearGradientBrush>
+            </Rectangle.Fill>
+        </Rectangle>
 
-                    <Frame Style="{StaticResource CustomFrameStyle}">
-                        <StackLayout Orientation="Horizontal" Margin="10,0,10,0">
-                            <Label Text="Kidnap:" Style="{StaticResource SettingsLabel}"/>
-                            <Switch IsToggled="{Binding GameSettingsModel.Kidnap}" HorizontalOptions="EndAndExpand"/>
-                        </StackLayout>
-                    </Frame>
+        <!-- Header Section -->
+        <StackLayout Grid.Row="0" Spacing="12" Margin="24,40,24,24" BackgroundColor="Transparent">
+            <!-- Game Settings Icon with Shadow -->
+            <Frame BackgroundColor="Transparent" 
+                   BorderColor="Transparent" 
+                   Padding="0"
+                   HorizontalOptions="Center">
+                <Frame.Shadow>
+                    <Shadow Brush="#000000"
+                            Offset="0,8"
+                            Radius="24"
+                            Opacity="0.4"/>
+                </Frame.Shadow>
+                <Label Text="⚙"
+                       FontSize="120"
+                       HorizontalOptions="Center"
+                       TextColor="{AppThemeBinding Light={StaticResource Black}, Dark={StaticResource White}}"/>
+            </Frame>
 
-                    <Frame Style="{StaticResource CustomFrameStyle}">
-                        <StackLayout Orientation="Horizontal" Margin="10,0,10,0">
-                            <Label Text="Duplee:" Style="{StaticResource SettingsLabel}"/>
-                            <Switch IsToggled="{Binding GameSettingsModel.Dublee}" HorizontalOptions="EndAndExpand"/>
-                        </StackLayout>
-                    </Frame>
-                    <Frame Style="{StaticResource CustomFrameStyle}">
-                        <StackLayout Orientation="Horizontal"  Margin="10,0,10,0">
-                            <Label Text="Duplee point:" Style="{StaticResource SettingsLabel}"/>
-                            <Entry Text="{Binding GameSettingsModel.DubleePointBonus}" Style="{StaticResource SettingsNumericEntry}"/>
-                        </StackLayout>
-                    </Frame>
-                    <Frame Style="{StaticResource CustomFrameStyle}">
-                        <StackLayout Orientation="Horizontal"  Margin="10,0,10,0">
-                            <Label Text="Dublee Point Less:" Style="{StaticResource SettingsLabel}"/>
-                            <Switch IsToggled="{Binding GameSettingsModel.DubleePointLess}" HorizontalOptions="EndAndExpand"/>
-                        </StackLayout>
-                    </Frame>
-                    <Frame Style="{StaticResource CustomFrameStyle}">
-                        <StackLayout Orientation="Horizontal"  Margin="10,0,10,0">
-                            <Label Text="Seen:" Style="{StaticResource SettingsLabel}"/>
-                            <Entry Text="{Binding GameSettingsModel.SeenPoint}" Style="{StaticResource SettingsNumericEntry}"/>
-                        </StackLayout>
-                    </Frame>
-                    <Frame Style="{StaticResource CustomFrameStyle}">
-                        <StackLayout Orientation="Horizontal"  Margin="10,0,10,0">
-                            <Label Text="Unseen:" Style="{StaticResource SettingsLabel}"/>
-                            <Entry Text="{Binding GameSettingsModel.UnseenPoint}" Style="{StaticResource SettingsNumericEntry}"/>
-                        </StackLayout>
-                    </Frame>
-                    <Frame Style="{StaticResource CustomFrameStyle}">
-                        <StackLayout Orientation="Horizontal"  Margin="10,0,10,0">
-                            <Label Text="Rate:" Style="{StaticResource SettingsLabel}"/>
-                            <Entry Text="{Binding GameSettingsModel.PointRate}" Style="{StaticResource SettingsNumericEntry}"/>
-                        </StackLayout>
-                    </Frame>
-                    <Frame Style="{StaticResource CustomFrameStyle}">
-                        <StackLayout Orientation="Horizontal" Margin="10,0,10,0">
-                            <Label Text="Currency:"  Style="{StaticResource SettingsLabel}"/>
-                            <Picker Style="{StaticResource SettingsPicker}" 
-                                ItemsSource="{Binding GameSettingsModel.Currencies}" 
-                                SelectedItem="{Binding GameSettingsModel.Currency}"  
-                                 ItemDisplayBinding="{Binding ., Converter={StaticResource CurrencyToDescriptionConverter}}"
-                                HorizontalOptions="FillAndExpand"/>
-                        </StackLayout>
-                    </Frame>
+            <!-- Page Title -->
+            <Label Text="Game Settings"
+                   Style="{StaticResource GameTitleLabel}"/>
+        </StackLayout>
 
-                    <Frame Style="{StaticResource CustomFrameStyle}">
-                        <StackLayout Orientation="Horizontal"  Margin="10,0,10,0">
-                            <Label Text="Foul Point:"  Style="{StaticResource SettingsLabel}"/>
-                            <Entry Text="{Binding GameSettingsModel.FoulPoint}" Style="{StaticResource SettingsNumericEntry}"/>
+        <!-- Settings Content -->
+        <ScrollView Grid.Row="1" BackgroundColor="Transparent">
+            <StackLayout Spacing="8" Padding="24,0,24,24" BackgroundColor="Transparent">
+
+                <!-- Game Rules Section -->
+                <Frame BackgroundColor="#3A3A5C"
+                       BorderColor="Transparent"
+                       CornerRadius="20"
+                       Padding="24"
+                       HasShadow="True"
+                       Margin="0,0,0,8">
+                    <Frame.Shadow>
+                        <Shadow Brush="#000000"
+                                Offset="0,8"
+                                Radius="16"
+                                Opacity="0.3"/>
+                    </Frame.Shadow>
+                    <StackLayout Spacing="16">
+                        
+                        <!-- Section Header with Icon -->
+                        <StackLayout Orientation="Horizontal" Spacing="12">
+                            <Label Text="🎯"
+                                   FontSize="24"
+                                   TextColor="{StaticResource White}"
+                                   VerticalOptions="Center"/>
+                            <Label Text="Game Rules"
+                                   FontFamily="PoppinsSemibold"
+                                   FontSize="18"
+                                   FontAttributes="Bold"
+                                   TextColor="{StaticResource White}"
+                                   VerticalOptions="Center"/>
                         </StackLayout>
-                    </Frame>
-                    <Frame Style="{StaticResource CustomFrameStyle}">
-                        <StackLayout Orientation="Horizontal" Margin="10,0,10,0">
-                            <Label Text="Foul bonus:"  Style="{StaticResource SettingsLabel}"/>
-                            <Picker ItemsSource="{Binding FoulPointBonuses}"  Style="{StaticResource SettingsPicker}"
+
+                        <!-- Game Rule Toggles -->
+                        <Grid ColumnDefinitions="*,Auto" RowDefinitions="Auto,Auto,Auto">
+                            <!-- Murder -->
+                            <Label Grid.Row="0" Grid.Column="0" 
+                                   Text="Murder:" 
+                                   TextColor="{StaticResource White}"
+                                   FontFamily="PoppinsRegular"
+                                   FontSize="16"
+                                   VerticalOptions="Center"/>
+                            <Switch Grid.Row="0" Grid.Column="1" 
+                                    IsToggled="{Binding GameSettingsModel.Murder}" 
+                                    OnColor="#6C5CE7"
+                                    ThumbColor="{StaticResource White}"/>
+
+                            <!-- Kidnap -->
+                            <Label Grid.Row="1" Grid.Column="0" 
+                                   Text="Kidnap:" 
+                                   TextColor="{StaticResource White}"
+                                   FontFamily="PoppinsRegular"
+                                   FontSize="16"
+                                   VerticalOptions="Center"/>
+                            <Switch Grid.Row="1" Grid.Column="1" 
+                                    IsToggled="{Binding GameSettingsModel.Kidnap}" 
+                                    OnColor="#6C5CE7"
+                                    ThumbColor="{StaticResource White}"/>
+
+                            <!-- Duplee -->
+                            <Label Grid.Row="2" Grid.Column="0" 
+                                   Text="Duplee:" 
+                                   TextColor="{StaticResource White}"
+                                   FontFamily="PoppinsRegular"
+                                   FontSize="16"
+                                   VerticalOptions="Center"/>
+                            <Switch Grid.Row="2" Grid.Column="1" 
+                                    IsToggled="{Binding GameSettingsModel.Dublee}" 
+                                    OnColor="#6C5CE7"
+                                    ThumbColor="{StaticResource White}"/>
+                        </Grid>
+
+                    </StackLayout>
+                </Frame>
+
+                <!-- Point System Section -->
+                <Frame BackgroundColor="#3A3A5C"
+                       BorderColor="Transparent"
+                       CornerRadius="20"
+                       Padding="24"
+                       HasShadow="True"
+                       Margin="0,0,0,8">
+                    <Frame.Shadow>
+                        <Shadow Brush="#000000"
+                                Offset="0,8"
+                                Radius="16"
+                                Opacity="0.3"/>
+                    </Frame.Shadow>
+                    <StackLayout Spacing="16">
+                        
+                        <!-- Section Header with Icon -->
+                        <StackLayout Orientation="Horizontal" Spacing="12">
+                            <Label Text="👑"
+                                   FontSize="24"
+                                   TextColor="{StaticResource White}"
+                                   VerticalOptions="Center"/>
+                            <Label Text="Point System"
+                                   FontFamily="PoppinsSemibold"
+                                   FontSize="18"
+                                   FontAttributes="Bold"
+                                   TextColor="{StaticResource White}"
+                                   VerticalOptions="Center"/>
+                        </StackLayout>
+
+                        <!-- Point Settings -->
+                        <Grid ColumnDefinitions="*,120" RowDefinitions="Auto,Auto,Auto,Auto">
+                            <!-- Duplee Point -->
+                            <Label Grid.Row="0" Grid.Column="0" 
+                                   Text="Duplee Point:" 
+                                   TextColor="{StaticResource White}"
+                                   FontFamily="PoppinsRegular"
+                                   FontSize="16"
+                                   VerticalOptions="Center"/>
+                            <Entry Grid.Row="0" Grid.Column="1" 
+                                   Text="{Binding GameSettingsModel.DubleePointBonus}" 
+                                   TextColor="{StaticResource White}"
+                                   BackgroundColor="#4A4E69"
+                                   Keyboard="Numeric"
+                                   HorizontalTextAlignment="Center"/>
+
+                            <!-- Seen -->
+                            <Label Grid.Row="1" Grid.Column="0" 
+                                   Text="Seen:" 
+                                   TextColor="{StaticResource White}"
+                                   FontFamily="PoppinsRegular"
+                                   FontSize="16"
+                                   VerticalOptions="Center"/>
+                            <Entry Grid.Row="1" Grid.Column="1" 
+                                   Text="{Binding GameSettingsModel.SeenPoint}" 
+                                   TextColor="{StaticResource White}"
+                                   BackgroundColor="#4A4E69"
+                                   Keyboard="Numeric"
+                                   HorizontalTextAlignment="Center"/>
+
+                            <!-- Unseen -->
+                            <Label Grid.Row="2" Grid.Column="0" 
+                                   Text="Unseen:" 
+                                   TextColor="{StaticResource White}"
+                                   FontFamily="PoppinsRegular"
+                                   FontSize="16"
+                                   VerticalOptions="Center"/>
+                            <Entry Grid.Row="2" Grid.Column="1" 
+                                   Text="{Binding GameSettingsModel.UnseenPoint}" 
+                                   TextColor="{StaticResource White}"
+                                   BackgroundColor="#4A4E69"
+                                   Keyboard="Numeric"
+                                   HorizontalTextAlignment="Center"/>
+
+                            <!-- Foul Point -->
+                            <Label Grid.Row="3" Grid.Column="0" 
+                                   Text="Foul Point:" 
+                                   TextColor="{StaticResource White}"
+                                   FontFamily="PoppinsRegular"
+                                   FontSize="16"
+                                   VerticalOptions="Center"/>
+                            <Entry Grid.Row="3" Grid.Column="1" 
+                                   Text="{Binding GameSettingsModel.FoulPoint}" 
+                                   TextColor="{StaticResource White}"
+                                   BackgroundColor="#4A4E69"
+                                   Keyboard="Numeric"
+                                   HorizontalTextAlignment="Center"/>
+                        </Grid>
+
+                        <!-- Toggle Settings -->
+                        <Grid ColumnDefinitions="*,Auto">
+                            <Label Grid.Column="0" 
+                                   Text="Duplee Point Less:" 
+                                   TextColor="{StaticResource White}"
+                                   FontFamily="PoppinsRegular"
+                                   FontSize="16"
+                                   VerticalOptions="Center"/>
+                            <Switch Grid.Column="1" 
+                                    IsToggled="{Binding GameSettingsModel.DubleePointLess}" 
+                                    OnColor="#6C5CE7"
+                                    ThumbColor="{StaticResource White}"/>
+                        </Grid>
+
+                    </StackLayout>
+                </Frame>
+
+                <!-- Currency and Preferences Section -->
+                <Frame BackgroundColor="#3A3A5C"
+                       BorderColor="Transparent"
+                       CornerRadius="20"
+                       Padding="24"
+                       HasShadow="True"
+                       Margin="0,0,0,8">
+                    <Frame.Shadow>
+                        <Shadow Brush="#000000"
+                                Offset="0,8"
+                                Radius="16"
+                                Opacity="0.3"/>
+                    </Frame.Shadow>
+                    <StackLayout Spacing="16">
+                        
+                        <!-- Section Header with Icon -->
+                        <StackLayout Orientation="Horizontal" Spacing="12">
+                            <Label Text="💷"
+                                   FontSize="24"
+                                   TextColor="{StaticResource White}"
+                                   VerticalOptions="Center"/>
+                            <Label Text="Currency and Preferences"
+                                   FontFamily="PoppinsSemibold"
+                                   FontSize="18"
+                                   FontAttributes="Bold"
+                                   TextColor="{StaticResource White}"
+                                   VerticalOptions="Center"/>
+                        </StackLayout>
+
+                        <!-- Currency Picker -->
+                        <Grid ColumnDefinitions="*,*">
+                            <Label Grid.Column="0" 
+                                   Text="Currency:" 
+                                   TextColor="{StaticResource White}"
+                                   FontFamily="PoppinsRegular"
+                                   FontSize="16"
+                                   VerticalOptions="Center"/>
+                            <Picker Grid.Column="1"
+                                    ItemsSource="{Binding GameSettingsModel.Currencies}" 
+                                    SelectedItem="{Binding GameSettingsModel.Currency}"  
+                                    ItemDisplayBinding="{Binding ., Converter={StaticResource CurrencyToDescriptionConverter}}"
+                                    TextColor="{StaticResource White}"
+                                    BackgroundColor="#4A4E69"/>
+                        </Grid>
+
+                        <!-- Rate -->
+                        <Grid ColumnDefinitions="*,120">
+                            <Label Grid.Column="0" 
+                                   Text="Rate:" 
+                                   TextColor="{StaticResource White}"
+                                   FontFamily="PoppinsRegular"
+                                   FontSize="16"
+                                   VerticalOptions="Center"/>
+                            <Entry Grid.Column="1" 
+                                   Text="{Binding GameSettingsModel.PointRate}" 
+                                   TextColor="{StaticResource White}"
+                                   BackgroundColor="#4A4E69"
+                                   Keyboard="Numeric"
+                                   HorizontalTextAlignment="Center"/>
+                        </Grid>
+
+                        <!-- Foul Bonus Picker -->
+                        <Grid ColumnDefinitions="*,*">
+                            <Label Grid.Column="0" 
+                                   Text="Foul Bonus:" 
+                                   TextColor="{StaticResource White}"
+                                   FontFamily="PoppinsRegular"
+                                   FontSize="16"
+                                   VerticalOptions="Center"/>
+                            <Picker Grid.Column="1"
+                                    ItemsSource="{Binding FoulPointBonuses}" 
                                     SelectedItem="{Binding GameSettingsModel.FoulPointBonus}" 
                                     ItemDisplayBinding="{Binding ., Converter={StaticResource FoulPointBonusTypeToDescriptionConverter}}"
-                                    HorizontalOptions="FillAndExpand"/>
-                        </StackLayout>
-                    </Frame>
-                    <Frame Style="{StaticResource CustomFrameStyle}">
-                        <StackLayout Orientation="Horizontal"  Margin="10,0,10,0">
-                            <Label Text="Audio:"  Style="{StaticResource SettingsLabel}"/>
-                            <Switch IsToggled="{Binding GameSettingsModel.Audio}" HorizontalOptions="EndAndExpand"/>
-                        </StackLayout>
-                    </Frame>
-                </VerticalStackLayout>
-            </ScrollView>
-            <Grid Grid.Row="1" Margin="0,20,0,0" RowDefinitions="auto,auto" RowSpacing="5"    >
-                <Button x:Name="SaveSettings"  Text="Save"
-                     HorizontalOptions="FillAndExpand"
-                     Style="{StaticResource ActionButton}"
-                     Command="{Binding SaveSettingsClickCommand}" />
-                <Button  Grid.Row="1" x:Name="BackButton"
-                     Text="Back" Style="{StaticResource ActionButton}"
-                     HorizontalOptions="FillAndExpand"
-                     Command="{Binding BackButtonClickCommand}" />
+                                    TextColor="{StaticResource White}"
+                                    BackgroundColor="#4A4E69"/>
+                        </Grid>
 
-            </Grid>
-        </Grid>
+                        <!-- Audio Toggle -->
+                        <Grid ColumnDefinitions="*,Auto">
+                            <Label Grid.Column="0" 
+                                   Text="Audio:" 
+                                   TextColor="{StaticResource White}"
+                                   FontFamily="PoppinsRegular"
+                                   FontSize="16"
+                                   VerticalOptions="Center"/>
+                            <Switch Grid.Column="1" 
+                                    IsToggled="{Binding GameSettingsModel.Audio}" 
+                                    OnColor="#6C5CE7"
+                                    ThumbColor="{StaticResource White}"/>
+                        </Grid>
+
+                    </StackLayout>
+                </Frame>
+
+            </StackLayout>
+        </ScrollView>
+
+        <!-- Action Buttons with Icons -->
+        <StackLayout Grid.Row="2" Spacing="8" Padding="24,16,24,32" BackgroundColor="Transparent">
+            
+            <!-- Save Button with Icon -->
+            <Button Text="💾 Save Settings"
+                    SemanticProperties.Hint="Save all game settings"
+                    Style="{StaticResource MainPagePrimaryButton}"
+                    Command="{Binding SaveSettingsClickCommand}"/>
+
+            <!-- Back Button with Icon -->
+            <Button Text="🔙 Back"
+                    SemanticProperties.Hint="Return to main menu"
+                    Style="{StaticResource MainPageSecondaryButton}"
+                    Command="{Binding BackButtonClickCommand}"/>
+
+        </StackLayout>
+
     </Grid>
-
 
 </ContentPage>

@@ -21,26 +21,32 @@ public partial class MainPageViewModel : ObservableObject
     [ObservableProperty]
     public bool showPlayer;
 
+    [ObservableProperty]
+    public bool isServerConnected;
 
+    [ObservableProperty]
+    public bool isConnecting;
 
     public MainPageViewModel()
     {
         showSettings = true;
+        isServerConnected = false;
+        isConnecting = true; // Start in connecting state
     }
      
 
     public void Refresh()
     {
         IsBusy = true;
-        ShowNewGame = GameEngine.IsPlayersReady;
-        ShowResumeGame = GameEngine.IsActiveGame; 
-        ShowSettings = !GameEngine.IsActiveGame;
-        ShowPlayer = !GameEngine.IsActiveGame;
+        ShowNewGame = GameEngine.IsPlayersReady && IsServerConnected;
+        ShowResumeGame = GameEngine.IsActiveGame && IsServerConnected; 
+        ShowSettings = !GameEngine.IsActiveGame && IsServerConnected;
+        ShowPlayer = !GameEngine.IsActiveGame && IsServerConnected;
         IsBusy = false;
     }
 
     [RelayCommand]     
- async Task NewGameAsync()
+    async Task NewGameAsync()
     {
         await GameEngine.CloseCurrentGameSet();
         await GameEngine.CreateNewGameSet();        
@@ -75,6 +81,7 @@ public partial class MainPageViewModel : ObservableObject
         await Shell.Current.GoToAsync(nameof(PlayGame));
         
     }
+    
     [RelayCommand]
     public async Task ResetGame()
     {
@@ -99,14 +106,62 @@ public partial class MainPageViewModel : ObservableObject
     {
         Application.Current.Quit();
     }
+
+    [RelayCommand]
+    public async Task RetryConnection()
+    {
+        IsBusy = true;
+        IsConnecting = true;
+        IsServerConnected = false;
+        
+        try
+        {
+            // Test the server connection using the DbService
+            IsServerConnected = await GameEngine.DatabaseService.TestConnectionAsync();
+            
+            if (IsServerConnected)
+            {
+                // Re-initialize the game engine if connection is successful
+                await GameEngine.InitializeEngineAsync();
+            }
+        }
+        catch (Exception)
+        {
+            IsServerConnected = false;
+        }
+        finally
+        {
+            IsConnecting = false;
+            IsBusy = false;
+            Refresh();
+        }
+    }
+
     public async Task InitializeAsync(IMarriageGameEngine gameEngine)
     {
         GameEngine = gameEngine;
-        await GameEngine.InitializeEngineAsync();        
+        IsConnecting = true;
+        IsServerConnected = false;
+        
+        try
+        {
+            // Test connection first
+            IsServerConnected = await GameEngine.DatabaseService.TestConnectionAsync();
+            
+            if (IsServerConnected)
+            {
+                await GameEngine.InitializeEngineAsync();
+            }
+        }
+        catch (Exception)
+        {
+            IsServerConnected = false;
+        }
+        finally
+        {
+            IsConnecting = false;
+        }
 
         Refresh();
     }
-
-
-
 }
