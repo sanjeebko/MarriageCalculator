@@ -23,8 +23,8 @@
     <SupportedOSPlatformVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'android'">21.0</SupportedOSPlatformVersion>
     <SupportedOSPlatformVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'windows'">10.0.17763.0</SupportedOSPlatformVersion>
     <TargetPlatformMinVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'windows'">10.0.17763.0</TargetPlatformMinVersion>
-     
   </PropertyGroup>
+  
   <ItemGroup>
     <!-- App Icon -->
     <MauiIcon Include="Resources\AppIcon\appicon.svg" />
@@ -37,33 +37,60 @@
     <MauiFont Include="Resources\Fonts\*" />
     <!-- Raw Assets (also remove the "Resources\Raw" prefix) -->
     <MauiAsset Include="Resources\Raw\**" LogicalName="%(RecursiveDir)%(Filename)%(Extension)" />
-  </ItemGroup> 
+  </ItemGroup>
+  
   <ItemGroup>
     <None Remove="Resources\Fonts\fontello.ttf" />
     <None Remove="Resources\Fonts\Poppins-Regular.ttf" />
     <None Remove="Resources\Fonts\Poppins-SemiBold.ttf" />
     <None Remove="Resources\Images\cards.png" />
+    <None Remove="appsettings.json" />
+    <None Remove="appsettings.Development.json" />
   </ItemGroup>
+  
   <ItemGroup>
     <Folder Include="Pages\Login\" />
     <Folder Include="Pages\ResumeGame\" />
   </ItemGroup>
+  
   <ItemGroup>
+    <!-- Core MAUI and UI packages -->
     <PackageReference Include="CommunityToolkit.Maui" Version="9.1.1" />
     <PackageReference Include="CommunityToolkit.Mvvm" Version="8.3.2" />
+    <PackageReference Include="Microsoft.Maui.Controls" Version="8.0.93" />
+    <PackageReference Include="Microsoft.Maui.Controls.Compatibility" Version="8.0.93" />
+    <PackageReference Include="Syncfusion.Maui.Cards" Version="27.1.58" />
+    <PackageReference Include="Syncfusion.Maui.Popup" Version="27.1.58" />
+    
+    <!-- HTTP Client and Configuration for API communication -->
+    <PackageReference Include="Microsoft.Extensions.Http" Version="8.0.1" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="8.0.1" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.Binder" Version="8.0.2" />
+    <PackageReference Include="System.Text.Json" Version="8.0.5" />
+    
+    <!-- AutoMapper for DTO mapping - using compatible versions -->
+    <PackageReference Include="AutoMapper" Version="12.0.1" />
+    <PackageReference Include="AutoMapper.Extensions.Microsoft.DependencyInjection" Version="12.0.1" />
+    
+    <!-- SQLite packages removed - no longer needed as we're using API -->
+    <!-- 
     <PackageReference Include="sqlite-net-pcl" Version="1.9.172" />
     <PackageReference Include="SQLitePCLRaw.bundle_green" Version="2.1.10" />
     <PackageReference Include="SQLitePCLRaw.core" Version="2.1.10" />
     <PackageReference Include="SQLitePCLRaw.provider.dynamic_cdecl" Version="2.1.10" />
     <PackageReference Include="SQLitePCLRaw.provider.e_sqlite3" Version="2.1.10" />
-    <PackageReference Include="Microsoft.Maui.Controls" Version="8.0.93" />
-    <PackageReference Include="Microsoft.Maui.Controls.Compatibility" Version="8.0.93" />
-    <PackageReference Include="Syncfusion.Maui.Cards" Version="27.1.58" />
-    <PackageReference Include="Syncfusion.Maui.Popup" Version="27.1.58" />
+    -->
   </ItemGroup>
+  
   <ItemGroup>
     <ProjectReference Include="..\MarriageCalculator.Core\MarriageCalculator.Core.csproj" />
   </ItemGroup>
+  
+  <ItemGroup>
+    <!-- Configuration files -->
+    <EmbeddedResource Include="appsettings.json" />
+  </ItemGroup>
+  
   <ItemGroup>
     <Compile Update="Pages\Players\PlayersPage.xaml.cs">
       <DependentUpon>PlayersPage.xaml</DependentUpon>
@@ -72,10 +99,11 @@
       <DependentUpon>SettingsPage.xaml</DependentUpon>
     </Compile>
   </ItemGroup>
+  
   <ItemGroup>
-	  <MauiXaml Update="Pages\Landing\MainPage.xaml">
-		  <Generator>MSBuild:UpdateDesignTimeXaml</Generator>
-	  </MauiXaml>
+    <MauiXaml Update="Pages\Landing\MainPage.xaml">
+      <Generator>MSBuild:UpdateDesignTimeXaml</Generator>
+    </MauiXaml>
     <MauiXaml Update="Pages\LogGame\LogGamePage.xaml">
       <Generator>MSBuild:Compile</Generator>
     </MauiXaml>
@@ -95,5 +123,10 @@
       <Generator>MSBuild:Compile</Generator>
     </MauiXaml>
   </ItemGroup>
-  <ProjectExtensions><VisualStudio><UserProperties XamarinHotReloadDebuggerTimeoutExceptionMarriageCalculatorHideInfoBar="True" /></VisualStudio></ProjectExtensions>
+  
+  <ProjectExtensions>
+    <VisualStudio>
+      <UserProperties XamarinHotReloadDebuggerTimeoutExceptionMarriageCalculatorHideInfoBar="True" />
+    </VisualStudio>
+  </ProjectExtensions>
 </Project>

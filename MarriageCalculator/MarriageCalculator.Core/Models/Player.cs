@@ -1,25 +1,22 @@
-﻿using CommunityToolkit.Mvvm.ComponentModel;
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
 namespace MarriageCalculator.Core.Models;
 
 [Table("Player")]
-public partial class Player : ObservableObject
+public class Player
 {
     [Key]
     [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
     public int Id { get; set; }
     
-    [ObservableProperty]
-    public string name = string.Empty;
+    public string Name { get; set; } = string.Empty;
     
     public string Email { get; set; } = string.Empty;
     
     public bool Deleted { get; set; } = false;
-    
-    [ObservableProperty]
-    public bool selected = false;
+     
+    public bool Selected { get; set; } = false;
     
     public override bool Equals(object? obj)
     {

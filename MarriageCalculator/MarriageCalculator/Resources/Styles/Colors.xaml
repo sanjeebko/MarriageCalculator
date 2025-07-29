@@ -4,8 +4,33 @@
     xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
     xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml">
 
+    <!-- Enhanced Background Colors with Gradients -->
     <Color x:Key="LightBackground">#ffc100</Color>
     <Color x:Key="DarkBackground">#023047</Color>
+    
+    <!-- Three-Shade Gradient Background Colors -->
+    <!-- Light Theme Gradient: Much lighter, brighter colors for better contrast -->
+    <Color x:Key="LightGradientRow0">#A8B3D9</Color>          <!-- Light Lavender-Blue (Header) -->
+    <Color x:Key="LightGradientRow1">#8A96C7</Color>          <!-- Soft Blue-Purple (Status) -->
+    <Color x:Key="LightGradientRow2">#6C79B5</Color>          <!-- Medium Blue-Purple (Content) -->
+    
+    <!-- Dark Theme Gradient: Keep the dark colors for contrast -->
+    <Color x:Key="DarkGradientRow0">#2C2F48</Color>           <!-- Darker Purple-Blue -->
+    <Color x:Key="DarkGradientRow1">#1E2139</Color>           <!-- Smoother mid-tone -->
+    <Color x:Key="DarkGradientRow2">#10132A</Color>           <!-- Nearly Black Purple -->
+    
+    <!-- Alternative Gradient Colors for future use -->
+    <!-- Warm Sunset Gradient -->
+    <Color x:Key="SunsetGradientRow0">#FFB74D</Color>         <!-- Light Orange -->
+    <Color x:Key="SunsetGradientRow1">#FF8A65</Color>         <!-- Coral -->
+    <Color x:Key="SunsetGradientRow2">#5C6BC0</Color>         <!-- Indigo -->
+    
+    <!-- Cool Ocean Gradient -->
+    <Color x:Key="OceanGradientRow0">#81C784</Color>          <!-- Light Green -->
+    <Color x:Key="OceanGradientRow1">#42A5F5</Color>          <!-- Blue -->
+    <Color x:Key="OceanGradientRow2">#3F51B5</Color>          <!-- Deep Blue -->
+    
+    <!-- Enhanced Control Colors -->
     <Color x:Key="LightControlsBackground">#FEFFD2</Color>
     <Color x:Key="DarkControlsBackground">#632700</Color>
     <Color x:Key="LightDangerControlsBackground">#C32F27</Color>
@@ -19,6 +44,77 @@
     <Color x:Key="LightControlsActionText">#fff8f0</Color>
     <Color x:Key="DarkControlsActionText">#fff8f0</Color>
 
+    <!-- ================================================= -->
+    <!-- NEW GAMING UI COLORS -->
+    <!-- ================================================= -->
+    
+    <!-- Primary Game Buttons (Start New Game) - Orange to Pink Gradient -->
+    <Color x:Key="PrimaryButtonLight">#FF6B35</Color>         <!-- Orange start -->
+    <Color x:Key="PrimaryButtonDark">#E74C3C</Color>          <!-- Red-Pink end -->
+    <Color x:Key="PrimaryShadowLight">#C0392B</Color>         <!-- Dark red shadow -->
+    <Color x:Key="PrimaryShadowDark">#A93226</Color>          <!-- Darker red shadow -->
+    
+    <!-- Secondary Game Buttons (Purple theme matching background) -->
+    <Color x:Key="SecondaryButtonLight">#6C5CE7</Color>       <!-- Medium Purple -->
+    <Color x:Key="SecondaryButtonDark">#5A4FCF</Color>        <!-- Darker Purple -->
+    <Color x:Key="SecondaryButtonTextLight">#FFFFFF</Color>   <!-- White text -->
+    <Color x:Key="SecondaryButtonTextDark">#F8F9FA</Color>    <!-- Light text -->
+    
+    <!-- Standard Game Buttons -->
+    <Color x:Key="GameButtonLight">#4A4E69</Color>            <!-- Purple background -->
+    <Color x:Key="GameButtonDark">#3A3A5C</Color>             <!-- Darker purple -->
+    <Color x:Key="GameButtonTextLight">#FFFFFF</Color>        <!-- White text -->
+    <Color x:Key="GameButtonTextDark">#F8F9FA</Color>         <!-- Light text -->
+    
+    <!-- Danger/Exit Buttons (Pink gradient) -->
+    <Color x:Key="DangerButtonLight">#E74C3C</Color>          <!-- Red-Pink -->
+    <Color x:Key="DangerButtonDark">#C0392B</Color>           <!-- Darker Red -->
+    <Color x:Key="DangerShadowLight">#A93226</Color>          <!-- Dark red shadow -->
+    <Color x:Key="DangerShadowDark">#922B21</Color>           <!-- Darker shadow -->
+    
+    <!-- Info/Retry Buttons -->
+    <Color x:Key="InfoButtonLight">#3498DB</Color>            <!-- Blue -->
+    <Color x:Key="InfoButtonDark">#2E86AB</Color>             <!-- Darker blue -->
+    
+    <!-- Connection Status Colors -->
+    <Color x:Key="ConnectedStatusLight">#27AE60</Color>       <!-- Green for connected -->
+    <Color x:Key="ConnectedStatusDark">#229954</Color>        <!-- Darker green -->
+
+    <!-- Card and Container Colors -->
+    <Color x:Key="CardBackgroundLight">#FFFFFF</Color>        <!-- Pure white -->
+    <Color x:Key="CardBackgroundDark">#2D3748</Color>         <!-- Dark slate -->
+    <Color x:Key="CardShadowLight">#000000</Color>            <!-- Black shadow -->
+    <Color x:Key="CardShadowDark">#000000</Color>             <!-- Black shadow -->
+    
+    <!-- Gaming Shadows -->
+    <Color x:Key="GameShadowLight">#6C757D</Color>            <!-- Gray shadow -->
+    <Color x:Key="GameShadowDark">#495057</Color>             <!-- Darker gray shadow -->
+    
+    <!-- Typography Colors -->
+    <Color x:Key="GameTitleLight">#2D3748</Color>             <!-- Dark slate -->
+    <Color x:Key="GameTitleDark">#F7FAFC</Color>              <!-- Light gray -->
+    <Color x:Key="GameSubtitleLight">#4A5568</Color>          <!-- Medium gray -->
+    <Color x:Key="GameSubtitleDark">#CBD5E0</Color>           <!-- Light blue-gray -->
+    
+    <!-- Error State Colors -->
+    <Color x:Key="ErrorTextLight">#E53E3E</Color>             <!-- Red text -->
+    <Color x:Key="ErrorTextDark">#FC8181</Color>              <!-- Light red -->
+    <Color x:Key="ErrorDescriptionLight">#718096</Color>      <!-- Gray text -->
+    <Color x:Key="ErrorDescriptionDark">#A0AEC0</Color>       <!-- Light gray -->
+    
+    <!-- Gradient Colors for Advanced Effects -->
+    <Color x:Key="GradientStart1">#FF6B35</Color>             <!-- Orange -->
+    <Color x:Key="GradientEnd1">#F7931E</Color>               <!-- Golden orange -->
+    <Color x:Key="GradientStart2">#667EEA</Color>             <!-- Blue -->
+    <Color x:Key="GradientEnd2">#764BA2</Color>               <!-- Purple -->
+    
+    <!-- Gaming Accent Colors -->
+    <Color x:Key="AccentGold">#FFD700</Color>                 <!-- Gold -->
+    <Color x:Key="AccentSilver">#C0C0C0</Color>               <!-- Silver -->
+    <Color x:Key="AccentCopper">#B87333</Color>               <!-- Copper -->
+    <Color x:Key="GlowColor">#FFE135</Color>                  <!-- Yellow glow -->
+    
+    <!-- Original Theme Colors (kept for compatibility) -->
     <Color x:Key="Primary">#bf3100</Color>   
     <Color x:Key="PrimaryText">#3d5a80</Color>   
     <Color x:Key="Secondary">#DFD8F7</Color>     
@@ -33,6 +129,8 @@
     <Color x:Key="Gray600">#404040</Color>
     <Color x:Key="Gray900">#212121</Color>
     <Color x:Key="Gray950">#141414</Color>
+    
+    <!-- Brushes -->
     <SolidColorBrush x:Key="PrimaryBrush" Color="{StaticResource Primary}"/>
     <SolidColorBrush x:Key="SecondaryBrush" Color="{StaticResource Secondary}"/>
     <SolidColorBrush x:Key="TertiaryBrush" Color="{StaticResource Tertiary}"/>
@@ -47,6 +145,7 @@
     <SolidColorBrush x:Key="Gray900Brush" Color="{StaticResource Gray900}"/>
     <SolidColorBrush x:Key="Gray950Brush" Color="{StaticResource Gray950}"/>
 
+    <!-- Enhanced Accent Colors -->
     <Color x:Key="Yellow100Accent">#F7B548</Color>
     <Color x:Key="Yellow200Accent">#FFD590</Color>
     <Color x:Key="Yellow300Accent">#FFE5B9</Color>

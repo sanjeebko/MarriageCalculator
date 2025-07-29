@@ -1,4 +1,4 @@
-namespace MarriageCalculator.API.DTOs;
+namespace MarriageCalculator.Core.DTOs;
 
 public class PlayerDto
 {
@@ -89,6 +89,66 @@ public class CreateMarriageGameDto
     public int DealerId { get; set; }
     public int TotalMaal { get; set; }
     public bool ClosedRound { get; set; }
+}
+
+public class MarriageGameRoundDto
+{
+    public int Id { get; set; }
+    public int Sequence { get; set; }
+    public int MarriageGameSetId { get; set; }
+    public bool Completed { get; set; }
+}
+
+public class CreateMarriageGameRoundDto
+{
+    public int Sequence { get; set; }
+    public int MarriageGameSetId { get; set; }
+    public bool Completed { get; set; }
+}
+
+public class MarriageGameScoreDto
+{
+    public int Id { get; set; }
+    public int MarriageGameId { get; set; }
+    public int PlayerId { get; set; }
+    public bool Seen { get; set; }
+    public bool Playing { get; set; }
+    public int Maal { get; set; }
+    public int BonusPoint { get; set; }
+    public bool Duply { get; set; }
+    public bool Winner { get; set; }
+    public int Score { get; set; }
+    public double MoneyWon { get; set; }
+    public bool Deal { get; set; }
+    public int Position { get; set; }
+}
+
+public class CreateMarriageGameScoreDto
+{
+    public int MarriageGameId { get; set; }
+    public int PlayerId { get; set; }
+    public bool Seen { get; set; }
+    public bool Playing { get; set; }
+    public int Maal { get; set; }
+    public int BonusPoint { get; set; }
+    public bool Duply { get; set; }
+    public bool Winner { get; set; }
+    public int Score { get; set; }
+    public double MoneyWon { get; set; }
+    public bool Deal { get; set; }
+    public int Position { get; set; }
+}
+
+public class MarriageGameSetPlayerDto
+{
+    public int MarriageGameSetId { get; set; }
+    public int PlayerId { get; set; }
+}
+
+public class CreateMarriageGameSetPlayerDto
+{
+    public int MarriageGameSetId { get; set; }
+    public int PlayerId { get; set; }
 }
 
 public class DatabaseInfoDto

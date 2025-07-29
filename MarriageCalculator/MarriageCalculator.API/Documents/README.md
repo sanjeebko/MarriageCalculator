@@ -43,6 +43,24 @@ Interface implementation documentation for the MarriageGameServices.
 - Benefits of interface implementation
 - Future extensibility options
 
+### ?? [ENHANCED_SWAGGER_UI.md](./ENHANCED_SWAGGER_UI.md)
+Documentation for the enhanced Swagger UI implementation.
+
+**Contents:**
+- Enhanced features and customizations
+- Custom CSS and JavaScript implementations
+- Keyboard shortcuts and navigation
+- Professional styling and branding
+
+### ??? [SQL_QUERY_FIX.md](./SQL_QUERY_FIX.md) ? **NEW**
+Documentation of SQL query fix for database table counting.
+
+**Contents:**
+- Issue analysis and root cause
+- Solution implementation details
+- Error handling improvements
+- Prevention strategies for future
+
 ## Quick Navigation
 
 ### ?? Getting Started
@@ -82,7 +100,7 @@ Interface implementation documentation for the MarriageGameServices.
 - `PUT /api/marriagegames/{id}` - Update game
 - `DELETE /api/marriagegames/{id}` - Delete game
 
-#### Database Management
+#### Database Management ? **FIXED**
 - `GET /api/database/info` - Get database information and connection status
 - `POST /api/database/seed` - Seed default data
 - `DELETE /api/database/cleanup` - Clean database
@@ -104,7 +122,7 @@ MarriageCalculator.API/
 - **Entity Framework Core 9.0.7** - ORM with automatic database/table creation
 - **SQL Server** - Database provider
 - **ASP.NET Core** - Web API framework
-- **Swagger/OpenAPI** - API documentation
+- **Enhanced Swagger UI** - API documentation with custom features
 - **Dependency Injection** - Service registration and lifecycle management
 
 ### ?? Development Guidelines
@@ -135,6 +153,26 @@ MarriageCalculator.API/
 - **MarriageCalculator.Core** - Shared models and business logic
 - **MarriageCalculator.API** - Web API backend (this project)
 
+## Recent Updates
+
+### ? **SQL Query Fix** (Latest)
+- **Issue**: Fixed SQL Server error in database table counting
+- **Solution**: Replaced raw SQL with Entity Framework-based approach
+- **Impact**: `/api/database/info` endpoint now works correctly
+- **Details**: See [SQL_QUERY_FIX.md](./SQL_QUERY_FIX.md)
+
+### ? **Enhanced Swagger UI**
+- **Removed**: Problematic Scalar UI that was causing JavaScript errors
+- **Enhanced**: Traditional Swagger UI with custom CSS, JavaScript, and features
+- **Features**: Keyboard shortcuts, copy-to-clipboard, response tracking
+- **Details**: See [ENHANCED_SWAGGER_UI.md](./ENHANCED_SWAGGER_UI.md)
+
+### ? **Clean Architecture Implementation**
+- **Refactored**: From minimal API to clean architecture
+- **Added**: Controllers, Services, Repositories, DTOs layers
+- **Benefits**: Better separation of concerns, testability, maintainability
+- **Details**: See [CLEAN_ARCHITECTURE.md](./CLEAN_ARCHITECTURE.md)
+
 ## Key Simplifications Made
 
 ### ? **Removed Manual Migration Management**
@@ -142,18 +180,18 @@ MarriageCalculator.API/
 - No more `dotnet ef database update` commands needed
 - Entity Framework handles everything automatically
 
-### ? **Simplified API Endpoints**
-- Removed migration status endpoints
-- Removed manual migration application endpoints
-- Focus on business functionality only
+### ? **Fixed Database Operations**
+- Resolved SQL query errors in table counting
+- Improved error handling for database operations
+- More reliable database information retrieval
 
-### ? **Streamlined Database Initialization**
-- Uses `EnsureCreatedAsync()` for automatic setup
-- Handles database and table creation automatically
-- Simplified error handling
+### ? **Streamlined Documentation Interface**
+- Enhanced Swagger UI with professional appearance
+- Custom features for better developer experience
+- Reliable and consistent API documentation
 
 ---
 
 **Last Updated:** January 2024  
-**Version:** 2.0 (Simplified)  
+**Version:** 2.1 (SQL Fix)  
 **Maintainer:** MarriageCalculator Development Team

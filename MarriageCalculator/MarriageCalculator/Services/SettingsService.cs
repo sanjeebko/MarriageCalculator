@@ -7,16 +7,25 @@ public class SettingsService(IDbService dbService) : ISettingsService
      
     public GameSettings?  Settings { get; set; }
     public Dictionary<int, GameSettings> GameSettings { get; set; } = [];
-    public IDbService DbService { get; } = dbService;
-
+    public IDbService DatabaseService { get; } = dbService;
+    public bool IsInitialized { get; private set; } = false;
     public async Task InitializeAsync()
     {
-        GameSettings = await DbService.GetAllGameSettingsAsync();
+        var isConnected = await DatabaseService.TestConnectionAsync();
+        if (!isConnected)
+        {
+            IsInitialized = false;
+            return;
+        }
+        
+        GameSettings = await DatabaseService.GetAllGameSettingsAsync();
         var latestSettings = GameSettings.OrderByDescending(x => x.Key).FirstOrDefault();
         if(latestSettings.Value != null)
             Settings =  latestSettings.Value;
         else
             Settings = GetDefaultSettings();
+
+        IsInitialized = true;
     }
     
     ///<summary>
@@ -27,16 +36,16 @@ public class SettingsService(IDbService dbService) : ISettingsService
     public async Task SaveSettingsAsync( )
     {
         Settings ??= Core.Models.GameSettings.Default();
-        await DbService.AddGameSettingsAsync(Settings);
+        await DatabaseService.AddGameSettingsAsync(Settings);
     }
 
     public async Task<GameSettings> LoadSettingsAsync( )
     {
-        var settings =await DbService.GetLastGameSettingsAsync();
+        var settings =await DatabaseService.GetLastGameSettingsAsync();
         if (settings == null)
         {
             Settings = GetDefaultSettings();
-            await DbService.AddGameSettingsAsync(Settings); 
+            await DatabaseService.AddGameSettingsAsync(Settings); 
             settings = Settings;
         } 
 
@@ -53,7 +62,7 @@ public async Task<GameSettings?> GetSettingsByIdAsync(int settingsId)
             return settings;
         }
 
-        settings = await DbService.GetGameSettingsAsync(settingsId);
+        settings = await DatabaseService.GetGameSettingsAsync(settingsId);
         if (settings != null)
         {
             Settings = settings;

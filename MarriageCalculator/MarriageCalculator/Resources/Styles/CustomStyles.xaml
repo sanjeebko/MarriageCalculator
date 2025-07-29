@@ -4,15 +4,17 @@
     xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
     xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml">
 
+    <!-- Existing styles kept as is -->
     <Style x:Key="CustomFrameStyle" TargetType="Frame">
         <Setter Property="BackgroundColor" Value="{AppThemeBinding Light={StaticResource LightControlsBackground}, Dark={StaticResource DarkControlsBackground}}"  />
-        <Setter Property="BorderColor" Value="#d8e2dc" />
+        <Setter Property="BorderColor" Value="Transparent" />
         <Setter Property="Padding" Value="2"/>
         <Setter Property="Margin" Value="2" />
         <Setter Property="HeightRequest" Value="45" />
         <Setter Property="HasShadow" Value="True" />
         <Setter Property="CornerRadius" Value="4" />        
     </Style>
+    
     <Style x:Key="SettingsLabel" TargetType="Label">
         <Setter Property="BackgroundColor" Value="{AppThemeBinding Light={StaticResource LightControlsBackground}, Dark={StaticResource DarkControlsBackground}}"  />
         <Setter Property="VerticalOptions" Value="Center"/>
@@ -20,24 +22,27 @@
         <Setter Property="Padding" Value="2"/>
         <Setter Property="Margin" Value="2" />
     </Style>
+    
     <Style x:Key="SettingsNumericEntry" TargetType="Entry">         
         <Setter Property="TextColor" Value="{AppThemeBinding Light={StaticResource LightControlsText}, Dark={StaticResource DarkControlsText}}" />
         <Setter Property="HorizontalOptions" Value="FillAndExpand"/>
         <Setter Property="Keyboard" Value="Numeric"/>
     </Style>
+    
     <Style x:Key="SettingsEntry" TargetType="Entry">
         <Setter Property="BackgroundColor" Value="{AppThemeBinding Light={StaticResource LightControlsBackground}, Dark={StaticResource DarkControlsBackground}}" />
         <Setter Property="TextColor" Value="{AppThemeBinding Light={StaticResource LightControlsText}, Dark={StaticResource DarkControlsText}}" />
         <Setter Property="HorizontalOptions" Value="FillAndExpand"/>
         <Setter Property="Keyboard" Value="Plain"/>
     </Style>
+    
     <Style x:Key="NewGameEntry" TargetType="Entry" BasedOn="{StaticResource SettingsNumericEntry}">
         <Setter Property="MinimumWidthRequest" Value="10"/>
     </Style>
+    
     <Style x:Key="SettingsPicker" TargetType="Picker">
         <Setter Property="TextColor" Value="{AppThemeBinding Light={StaticResource LightControlsText}, Dark={StaticResource DarkControlsText}}" />
         <Setter Property="HorizontalOptions" Value="FillAndExpand"/>
-         
     </Style>
     
     <Style x:Key="PlayerRoundRectangle" TargetType="RoundRectangle">
@@ -45,19 +50,20 @@
         <Setter Property="CornerRadius" Value="4" />
         <Setter Property="Margin" Value="1"/>
     </Style>
+    
     <Style x:Key="PlayersFrameStyle" TargetType="Frame">
         <Setter Property="BackgroundColor" Value="{AppThemeBinding Light={StaticResource LightControlsBackground}, Dark={StaticResource DarkControlsBackground}}"  />
-        <Setter Property="BorderColor" Value="{AppThemeBinding Light={StaticResource LightControlsBorder}, Dark={StaticResource DarkControlsBorder}}"  />
+        <Setter Property="BorderColor" Value="Transparent"  />
         <Setter Property="Padding" Value="10"/>
         <Setter Property="HasShadow" Value="True" />
         <Setter Property="CornerRadius" Value="4" />
     </Style>
+    
     <Style x:Key="NewGameFrameStyle" TargetType="Frame" BasedOn="{StaticResource PlayersFrameStyle}" >
         <Setter Property="Padding" Value="10,10,10,10"/>
         <Setter Property="Margin" Value="5"/>
         <Setter Property="CornerRadius" Value="6" />
     </Style>
-
 
     <Style x:Key="PlayersLabel" TargetType="Label">
         <Setter Property="BackgroundColor" Value="Transparent"/>        
@@ -65,7 +71,6 @@
         <Setter Property="VerticalOptions" Value="CenterAndExpand"/>
         <Setter Property="HorizontalOptions" Value="CenterAndExpand"/>
         <Setter Property="FontAttributes" Value="Bold"/>        
-        <!--<Setter Property="Margin" Value="10,0,0,0" />-->
     </Style>
     
     <Style x:Key="ActionButton" TargetType="Button">
@@ -76,27 +81,173 @@
         <Setter Property="HeightRequest" Value="40"/>
         <Setter Property="FontFamily" Value="PoppinsRegular"/>
         <Setter Property="Margin" Value="2" />
-        <Setter Property="BorderColor" Value="{AppThemeBinding Light={StaticResource LightControlsBorder}, Dark={StaticResource DarkControlsBorder}}" />
+        <Setter Property="BorderColor" Value="Transparent" />
+        <Setter Property="BorderWidth" Value="0" />
     </Style>
+
+    <!-- ================================================= -->
+    <!-- NEW ENHANCED MAIN PAGE STYLES -->
+    <!-- ================================================= -->
+    
+    <!-- Enhanced Main Page Action Button with Gaming Style -->
     <Style x:Key="MainPageActionButton" TargetType="Button">
-        <Setter Property="BackgroundColor" Value="{AppThemeBinding Light={StaticResource LightControlsBackground}, Dark={StaticResource DarkControlsBackground}}"  />
-        <Setter Property="TextColor" Value="{AppThemeBinding Light={StaticResource LightControlsText}, Dark={StaticResource DarkControlsText}}" />
+        <Setter Property="TextColor" Value="{StaticResource White}" />
         <Setter Property="FontAttributes" Value="Bold"/>
-        <Setter Property="VerticalOptions" Value="Center"/>
-        <Setter Property="FontFamily" Value="PoppinsRegular"/>
-        <Setter Property="HeightRequest" Value="40"/>
-        <Setter Property="Margin" Value="2" />
-        <Setter Property="BorderWidth" Value="2"/>
-        <Setter Property="BorderColor" Value="{AppThemeBinding Light={StaticResource LightControlsBorder}, Dark={StaticResource DarkControlsBorder}}" />
+        <Setter Property="FontFamily" Value="PoppinsSemibold"/>
+        <Setter Property="FontSize" Value="16"/>
+        <Setter Property="HeightRequest" Value="56"/>
+        <Setter Property="Margin" Value="16,8"/>
+        <Setter Property="Padding" Value="24,0"/>
+        <Setter Property="CornerRadius" Value="28"/>
+        <Setter Property="BorderWidth" Value="0"/>
+        <Setter Property="HorizontalOptions" Value="FillAndExpand"/>
+        <Setter Property="Shadow">
+            <Setter.Value>
+                <Shadow Brush="#1A1A2E"
+                        Offset="0,4"
+                        Radius="12"
+                        Opacity="0.4"/>
+            </Setter.Value>
+        </Setter>
+        <Setter Property="VisualStateManager.VisualStateGroups">
+            <VisualStateGroupList>
+                <VisualStateGroup x:Name="CommonStates">
+                    <VisualState x:Name="Normal" />
+                    <VisualState x:Name="Pressed">
+                        <VisualState.Setters>
+                            <Setter Property="Scale" Value="0.96" />
+                            <Setter Property="Opacity" Value="0.8" />
+                        </VisualState.Setters>
+                    </VisualState>
+                    <VisualState x:Name="Disabled">
+                        <VisualState.Setters>
+                            <Setter Property="Opacity" Value="0.4" />
+                        </VisualState.Setters>
+                    </VisualState>
+                </VisualStateGroup>
+            </VisualStateGroupList>
+        </Setter>
     </Style>
+
+    <!-- Primary Action Button (Start New Game) with Gradient -->
+    <Style x:Key="MainPagePrimaryButton" TargetType="Button" BasedOn="{StaticResource MainPageActionButton}">
+        <Setter Property="Background">
+            <Setter.Value>
+                <LinearGradientBrush EndPoint="1,0" StartPoint="0,0">
+                    <GradientStop Color="#FF6B35" Offset="0.0"/>
+                    <GradientStop Color="#E74C3C" Offset="1.0"/>
+                </LinearGradientBrush>
+            </Setter.Value>
+        </Setter>
+        <Setter Property="FontSize" Value="18"/>
+        <Setter Property="HeightRequest" Value="60"/>
+        <Setter Property="Shadow">
+            <Setter.Value>
+                <Shadow Brush="#C0392B"
+                        Offset="0,6"
+                        Radius="16"
+                        Opacity="0.5"/>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <!-- Secondary Action Button (Resume, Settings, Players) -->
+    <Style x:Key="MainPageSecondaryButton" TargetType="Button" BasedOn="{StaticResource MainPageActionButton}">
+        <Setter Property="BackgroundColor" Value="#6C5CE7" />
+        <Setter Property="FontSize" Value="16"/>
+        <Setter Property="HeightRequest" Value="56"/>
+    </Style>
+
+    <!-- Enhanced Exit Button with Gradient -->
     <Style x:Key="MainPageExitButton" TargetType="Button" BasedOn="{StaticResource MainPageActionButton}">
-        <Setter Property="BackgroundColor" Value="{AppThemeBinding Light={StaticResource LightDangerControlsBackground}, Dark={StaticResource DarkDangerControlsBackground}}"  />
+        <Setter Property="Background">
+            <Setter.Value>
+                <LinearGradientBrush EndPoint="1,0" StartPoint="0,0">
+                    <GradientStop Color="#E74C3C" Offset="0.0"/>
+                    <GradientStop Color="#C0392B" Offset="1.0"/>
+                </LinearGradientBrush>
+            </Setter.Value>
+        </Setter>
+        <Setter Property="HeightRequest" Value="56"/>
     </Style>
+
+    <!-- Error State Button for Connection Issues -->
+    <Style x:Key="MainPageRetryButton" TargetType="Button" BasedOn="{StaticResource MainPageActionButton}">
+        <Setter Property="BackgroundColor" Value="#3498DB" />
+        <Setter Property="HeightRequest" Value="56"/>
+    </Style>
+
+    <!-- Enhanced Game Title Style for Light/Dark Theme -->
+    <Style x:Key="GameTitleLabel" TargetType="Label">
+        <Setter Property="FontFamily" Value="PoppinsSemibold"/>
+        <Setter Property="FontSize" Value="32"/>
+        <Setter Property="FontAttributes" Value="Bold"/>
+        <Setter Property="TextColor" Value="{AppThemeBinding Light={StaticResource Black}, Dark={StaticResource White}}" />
+        <Setter Property="HorizontalOptions" Value="Center"/>
+        <Setter Property="HorizontalTextAlignment" Value="Center"/>
+        <Setter Property="Margin" Value="0,16,0,0"/>
+        <Setter Property="Shadow">
+            <Setter.Value>
+                <Shadow Brush="{AppThemeBinding Light={StaticResource White}, Dark={StaticResource Black}}"
+                        Offset="0,3"
+                        Radius="6"
+                        Opacity="0.3"/>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <!-- Connection Status Frame Style - No Shadow in Light Theme -->
+    <Style x:Key="ConnectionStatusFrame" TargetType="Frame">
+        <Setter Property="BorderColor" Value="Transparent" />
+        <Setter Property="CornerRadius" Value="25" />
+        <Setter Property="Padding" Value="20,12" />
+        <Setter Property="Margin" Value="24,16" />
+        <Setter Property="HorizontalOptions" Value="Center" />
+        <Setter Property="HasShadow" Value="{AppThemeBinding Light=False, Dark=True}" />
+        <Setter Property="Shadow">
+            <Setter.Value>
+                <Shadow Brush="{AppThemeBinding Light=Transparent, Dark=#000000}"
+                        Offset="0,4"
+                        Radius="12"
+                        Opacity="{AppThemeBinding Light=0, Dark=0.3}"/>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <!-- Full-width Partition Style Frame for Messages/Status - No Border -->
+    <Style x:Key="PartitionFrame" TargetType="Frame">
+        <Setter Property="BorderColor" Value="Transparent" />
+        <Setter Property="CornerRadius" Value="0" />
+        <Setter Property="Padding" Value="16,12" />
+        <Setter Property="Margin" Value="0" />
+        <Setter Property="HasShadow" Value="False" />
+        <Setter Property="HorizontalOptions" Value="FillAndExpand" />
+    </Style>
+
+    <!-- Enhanced Card Frame Style - No Border -->
+    <Style x:Key="GameCardFrame" TargetType="Frame">
+        <Setter Property="BackgroundColor" Value="{AppThemeBinding Light={StaticResource CardBackgroundLight}, Dark={StaticResource CardBackgroundDark}}" />
+        <Setter Property="BorderColor" Value="Transparent" />
+        <Setter Property="CornerRadius" Value="20" />
+        <Setter Property="Padding" Value="24" />
+        <Setter Property="Margin" Value="16,8" />
+        <Setter Property="HasShadow" Value="True" />
+        <Setter Property="Shadow">
+            <Setter.Value>
+                <Shadow Brush="{AppThemeBinding Light={StaticResource CardShadowLight}, Dark={StaticResource CardShadowDark}}"
+                        Offset="0,8"
+                        Radius="24"
+                        Opacity="0.15"/>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <!-- Keep existing calculator game styles -->
     <Style x:Key="PlayGameCalculatorButton" TargetType="Button" BasedOn="{StaticResource MainPageActionButton}">
         <Setter Property="BackgroundColor" Value="{AppThemeBinding Light={StaticResource LightDangerControlsBackground}, Dark={StaticResource DarkDangerControlsBackground}}"  />
         <Setter Property="BorderColor" Value="{AppThemeBinding Light={StaticResource LightControlsBorder}, Dark={StaticResource DarkControlsBorder}}" />
-        
     </Style>
+    
     <Style x:Key="PlayGameCalculatorActionButton" TargetType="Button" BasedOn="{StaticResource MainPageActionButton}">
         <Setter Property="BackgroundColor" Value="{AppThemeBinding Light={StaticResource LightDangerControlsActionBackground}, Dark={StaticResource DarkDangerControlsActionBackground}}"  />
         <Setter Property="BorderColor" Value="{AppThemeBinding Light={StaticResource LightControlsBorder}, Dark={StaticResource DarkControlsBorder}}" />

@@ -1,6 +1,21 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="colorPrimary">#C32F27</color>
-    <color name="colorPrimaryDark">#33150A</color>
-    <color name="colorAccent">#DB7C26</color>
+    <!-- Light theme colors - Updated to lighter palette -->
+    <color name="colorPrimary">#A8B3D9</color>
+    <color name="colorPrimaryDark">#A8B3D9</color>
+    <color name="colorAccent">#FF6B35</color>
+    
+    <!-- Status bar colors for light theme -->
+    <color name="colorPrimaryVariant">#A8B3D9</color>
+    <color name="colorSurface">#A8B3D9</color>
+    
+    <!-- Light Theme Gradient colors -->
+    <color name="light_gradient_row0">#A8B3D9</color>
+    <color name="light_gradient_row1">#8A96C7</color>
+    <color name="light_gradient_row2">#6C79B5</color>
+    
+    <!-- Dark Theme Gradient colors (unchanged) -->
+    <color name="dark_gradient_row0">#2C2F48</color>
+    <color name="dark_gradient_row1">#1E2139</color>
+    <color name="dark_gradient_row2">#10132A</color>
 </resources>

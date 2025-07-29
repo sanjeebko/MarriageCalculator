@@ -2,18 +2,88 @@ using MarriageCalculator.API.Data;
 using MarriageCalculator.API.Repositories;
 using MarriageCalculator.API.Services;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.OpenApi.Models;
+using Swashbuckle.AspNetCore.SwaggerUI;
+using System.Reflection;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+
+// Configure Swagger/OpenAPI with enhanced documentation
+builder.Services.AddSwaggerGen(c =>
+{
+    c.SwaggerDoc("v1", new OpenApiInfo
+    {
+        Title = "Marriage Calculator API",
+        Version = "v1",
+        Description = "A comprehensive API for managing marriage card game calculations, player management, and game statistics.",
+        Contact = new OpenApiContact
+        {
+            Name = "Marriage Calculator Team",
+            Email = "support@marriagecalculator.com"
+        },
+        License = new OpenApiLicense
+        {
+            Name = "MIT License",
+            Url = new Uri("https://opensource.org/licenses/MIT")
+        }
+    });
+
+    // Include XML documentation for better API docs
+    var xmlFile = $"{Assembly.GetExecutingAssembly().GetName().Name}.xml";
+    var xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFile);
+    if (File.Exists(xmlPath))
+    {
+        c.IncludeXmlComments(xmlPath);
+    }
+
+    // Add authorization definitions if needed in the future
+    c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+    {
+        Description = "JWT Authorization header using the Bearer scheme",
+        Name = "Authorization",
+        In = ParameterLocation.Header,
+        Type = SecuritySchemeType.ApiKey,
+        Scheme = "Bearer"
+    });
+
+    // Enable annotations for better documentation
+    c.EnableAnnotations();
+    
+    // Custom schema IDs to avoid conflicts
+    c.CustomSchemaIds(type => type.FullName);
+});
 
 // Configure SQL Server with retry logic and enhanced settings
 builder.Services.AddDbContext<MarriageCalculatorDbContext>(options =>
 {
+    // Get base connection string from configuration
     var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+    
+    // Get database configuration from environment variables (no fallback values)
+    var dbServer = Environment.GetEnvironmentVariable("MCDATABASE");
+    var dbUser = Environment.GetEnvironmentVariable("MCUSER");
+    var dbPassword = Environment.GetEnvironmentVariable("MCPASSWORD");
+    
+    // Validate that all required environment variables are set
+    if (string.IsNullOrEmpty(dbServer))
+        throw new InvalidOperationException("MCDATABASE environment variable is required but not set.");
+    
+    if (string.IsNullOrEmpty(dbUser))
+        throw new InvalidOperationException("MCUSER environment variable is required but not set.");
+    
+    if (string.IsNullOrEmpty(dbPassword))
+        throw new InvalidOperationException("MCPASSWORD environment variable is required but not set.");
+    
+    // Replace placeholders with actual environment values
+    connectionString = connectionString?
+        .Replace("{MCDATABASE}", dbServer)
+        .Replace("{MCUSER}", dbUser)
+        .Replace("{MCPASSWORD}", dbPassword);
+    
     options.UseSqlServer(connectionString, sqlOptions =>
     {
         // Enable retry on failure for transient errors
@@ -57,11 +127,46 @@ var app = builder.Build();
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
-    app.UseSwaggerUI();
+    
+    // Enhanced Swagger UI Configuration
+    app.UseSwaggerUI(c =>
+    {
+        c.SwaggerEndpoint("/swagger/v1/swagger.json", "Marriage Calculator API v1");
+        c.RoutePrefix = string.Empty; // Makes Swagger UI available at the app's root URL
+        c.DocumentTitle = "Marriage Calculator API Documentation";
+        c.DisplayRequestDuration();
+        c.EnableTryItOutByDefault();
+        c.EnableDeepLinking();
+        c.EnableFilter();
+        c.MaxDisplayedTags(10);
+        c.ShowExtensions();
+        c.ShowCommonExtensions();
+        c.EnableValidator();
+        
+        // Configure supported HTTP methods
+        c.SupportedSubmitMethods(SubmitMethod.Get, SubmitMethod.Post, SubmitMethod.Put, SubmitMethod.Delete, SubmitMethod.Patch);
+        
+        // Custom CSS for better appearance
+        c.InjectStylesheet("/swagger-ui/custom.css");
+        
+        // Custom JavaScript for enhanced functionality
+        c.InjectJavascript("/swagger-ui/custom.js");
+        
+        // Default model expansion
+        c.DefaultModelExpandDepth(2);
+        c.DefaultModelsExpandDepth(1);
+        
+        // Configure API explorer settings
+        c.DocExpansion(DocExpansion.List);
+        c.DefaultModelRendering(ModelRendering.Example);
+    });
 }
 
 app.UseHttpsRedirection();
 app.UseAuthorization();
+
+// Serve static files for custom Swagger UI assets
+app.UseStaticFiles();
 
 // Map controllers
 app.MapControllers();

@@ -1,4 +1,4 @@
-using MarriageCalculator.API.DTOs;
+using MarriageCalculator.Core.DTOs;
 using MarriageCalculator.API.Repositories;
 
 namespace MarriageCalculator.API.Services;

@@ -5,73 +5,326 @@
              xmlns:vm="clr-namespace:MarriageCalculator.ViewModels"
              x:Class="MarriageCalculator.Pages.MainPage"             
              Shell.NavBarIsVisible="False"
-             x:DataType="vm:MainPageViewModel"
-             BackgroundColor="{AppThemeBinding Light={StaticResource LightBackground}, Dark={StaticResource DarkBackground}}"
-             >
+             x:DataType="vm:MainPageViewModel">
 
-    
-        <VerticalStackLayout
-            Spacing="25"
-            Padding="20,0"
-            VerticalOptions="CenterAndExpand"
-            HorizontalOptions="FillAndExpand">
-            <VerticalStackLayout
-                VerticalOptions="Center" HorizontalOptions="FillAndExpand"  >
-                <Image
-                Source="cards.png"
-                SemanticProperties.Description="Marriage Calculator"
-                HeightRequest="250"
-                HorizontalOptions="Center" />
-            </VerticalStackLayout>
+    <Grid RowSpacing="0">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
 
-        <VerticalStackLayout
-                VerticalOptions="Center" 
-                HorizontalOptions="FillAndExpand"  Spacing="30" >
-            <Button Style="{StaticResource MainPageExitButton}" Command="{Binding ResetGameCommand}" IsVisible="False" />
-            <Button
-                x:Name="StartBtn"
-                Text="Start a new game" 
-                SemanticProperties.Hint="Starts a brand new game"
-                Style="{StaticResource MainPageActionButton}"                
-                IsEnabled="{Binding ShowNewGame}"
-                Command="{Binding NewGameCommand}"
-                VerticalOptions="FillAndExpand"
-                />
-            <Button
-                x:Name="ResumeBtn"
-                Text="Resume previous game"
-                    SemanticProperties.Hint="Starts previous game and settings"
-                     Style="{StaticResource MainPageActionButton}"
-                Command="{Binding ResumeGameCommand}"
-                IsEnabled="{Binding ShowResumeGame}"
-                />
-              
-            <Button
-                x:Name="SettingsBtn"
-                Text="Settings"
-                VerticalOptions="FillAndExpand"
-                SemanticProperties.Hint="Settings"
-                Style="{StaticResource MainPageActionButton}"
-                Command="{Binding GameSettingsPageCommand}"
-                IsEnabled="{Binding ShowSettings}"/>
+        <!-- Single Seamless Gradient Background -->
+        <Rectangle Grid.RowSpan="3">
+            <Rectangle.Fill>
+                <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
+                    <GradientStop Color="{AppThemeBinding Light={StaticResource LightGradientRow0}, Dark={StaticResource DarkGradientRow0}}" 
+                                  Offset="0.0"/>
+                    <GradientStop Color="{AppThemeBinding Light={StaticResource LightGradientRow1}, Dark={StaticResource DarkGradientRow1}}" 
+                                  Offset="0.4"/>
+                    <GradientStop Color="{AppThemeBinding Light={StaticResource LightGradientRow2}, Dark={StaticResource DarkGradientRow2}}" 
+                                  Offset="1.0"/>
+                </LinearGradientBrush>
+            </Rectangle.Fill>
+        </Rectangle>
 
+        <!-- Game Logo and Header -->
+        <StackLayout Grid.Row="0" Spacing="12" Margin="24,40,24,24" BackgroundColor="Transparent">
+            <!-- Enhanced Game Logo with Shadow -->
+            <Frame BackgroundColor="Transparent" 
+                   BorderColor="Transparent" 
+                   Padding="0"
+                   HorizontalOptions="Center">
+                <Frame.Shadow>
+                    <Shadow Brush="#000000"
+                            Offset="0,8"
+                            Radius="24"
+                            Opacity="0.4"/>
+                </Frame.Shadow>
+                <Image Source="cards.png"
+                       HeightRequest="180"
+                       HorizontalOptions="Center"
+                       Aspect="AspectFit"/>
+            </Frame>
 
-            <Button
-                x:Name="PlayersBtn"
-                Text="Players"
-                    SemanticProperties.Hint="Players"
-                       Style="{StaticResource MainPageActionButton}"
-                IsVisible="{Binding ShowPlayer}"
-                Command="{Binding PlayerSettingsPageCommand}"
-                />
-            <Button
-                x:Name="CloseBtn"
-                Text="Exit"
-                SemanticProperties.Hint="Close marriage calculator app"
-                Style="{StaticResource MainPageExitButton}"
-                 Command="{Binding ExitCommand}" />
-            </VerticalStackLayout>
-            
-        </VerticalStackLayout>
-     
+            <!-- Game Title Only -->
+            <Label Text="Marriage Calculator"
+                   Style="{StaticResource GameTitleLabel}"/>
+        </StackLayout>
+
+        <!-- Connection Status Indicator -->
+        <StackLayout Grid.Row="1" BackgroundColor="Transparent">
+            <!-- Connecting Status -->
+            <Frame Style="{StaticResource ConnectionStatusFrame}"
+                   IsVisible="{Binding IsConnecting}"
+                   BackgroundColor="#3498DB">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <Label Grid.Column="0" 
+                           Text="🔄" 
+                           TextColor="{StaticResource White}"
+                           FontSize="16"
+                           VerticalOptions="Center"
+                           Margin="0,0,12,0"/>
+                    <Label Grid.Column="1" 
+                           Text="Connecting to Server..." 
+                           TextColor="{StaticResource White}"
+                           FontFamily="PoppinsSemibold"
+                           FontSize="16"
+                           VerticalOptions="Center"/>
+                    <ActivityIndicator Grid.Column="2"
+                                     IsRunning="True"
+                                     Color="{StaticResource White}"
+                                     WidthRequest="20"
+                                     HeightRequest="20"
+                                     VerticalOptions="Center"/>
+                </Grid>
+            </Frame>
+
+            <!-- Connected Status -->
+            <Frame Style="{StaticResource ConnectionStatusFrame}"
+                   BackgroundColor="#27AE60">
+                <Frame.IsVisible>
+                    <MultiBinding Converter="{StaticResource AllTrueConverter}">
+                        <Binding Path="IsServerConnected"/>
+                        <Binding Path="IsConnecting" Converter="{StaticResource InvertedBoolConverter}"/>
+                    </MultiBinding>
+                </Frame.IsVisible>
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+                    <Ellipse Grid.Column="0" 
+                             Fill="{StaticResource White}"
+                             WidthRequest="12"
+                             HeightRequest="12"
+                             VerticalOptions="Center"
+                             Margin="0,0,12,0"/>
+                    <Label Grid.Column="1" 
+                           Text="Connected to Server" 
+                           TextColor="{StaticResource White}"
+                           FontFamily="PoppinsSemibold"
+                           FontSize="16"
+                           VerticalOptions="Center"/>
+                </Grid>
+            </Frame>
+
+            <!-- Disconnected Status -->
+            <Frame Style="{StaticResource ConnectionStatusFrame}"
+                   BackgroundColor="#E74C3C">
+                <Frame.IsVisible>
+                    <MultiBinding Converter="{StaticResource AllTrueConverter}">
+                        <Binding Path="IsServerConnected" Converter="{StaticResource InvertedBoolConverter}"/>
+                        <Binding Path="IsConnecting" Converter="{StaticResource InvertedBoolConverter}"/>
+                    </MultiBinding>
+                </Frame.IsVisible>
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <Label Grid.Column="0" 
+                           Text="⚠️" 
+                           TextColor="{StaticResource White}"
+                           FontSize="16"
+                           VerticalOptions="Center"
+                           Margin="0,0,12,0"/>
+                    <Label Grid.Column="1" 
+                           Text="Server Connection Lost" 
+                           TextColor="{StaticResource White}"
+                           FontFamily="PoppinsSemibold"
+                           FontSize="16"
+                           VerticalOptions="Center"/>
+                    <ActivityIndicator Grid.Column="2"
+                                     IsRunning="{Binding IsBusy}"
+                                     IsVisible="{Binding IsBusy}"
+                                     Color="{StaticResource White}"
+                                     WidthRequest="20"
+                                     HeightRequest="20"
+                                     VerticalOptions="Center"/>
+                </Grid>
+            </Frame>
+        </StackLayout>
+
+        <!-- Main Content Area -->
+        <ScrollView Grid.Row="2" BackgroundColor="Transparent">
+            <StackLayout Spacing="0" Padding="0,24,0,40" BackgroundColor="Transparent">
+
+                <!-- Normal Menu when Server is Connected -->
+                <StackLayout Spacing="0">
+                    <StackLayout.IsVisible>
+                        <MultiBinding Converter="{StaticResource AllTrueConverter}">
+                            <Binding Path="IsServerConnected"/>
+                            <Binding Path="IsConnecting" Converter="{StaticResource InvertedBoolConverter}"/>
+                        </MultiBinding>
+                    </StackLayout.IsVisible>
+
+                    <!-- Primary Action: Start New Game -->
+                    <Button Text="🚀 Start a New Game"
+                            SemanticProperties.Hint="Starts a brand new game"
+                            Style="{StaticResource MainPagePrimaryButton}"
+                            IsEnabled="{Binding ShowNewGame}"
+                            Command="{Binding NewGameCommand}"/>
+
+                    <!-- Secondary Actions -->
+                    <Button Text="📖 Resume Previous Game"
+                            SemanticProperties.Hint="Continue your last game"
+                            Style="{StaticResource MainPageSecondaryButton}"
+                            Command="{Binding ResumeGameCommand}"
+                            IsEnabled="{Binding ShowResumeGame}"/>
+
+                    <Button Text="⚙️ Game Settings"
+                            SemanticProperties.Hint="Configure game rules and preferences"
+                            Style="{StaticResource MainPageSecondaryButton}"
+                            Command="{Binding GameSettingsPageCommand}"
+                            IsEnabled="{Binding ShowSettings}"/>
+
+                    <Button Text="👥 Manage Players"
+                            SemanticProperties.Hint="Add, edit, or remove players"
+                            Style="{StaticResource MainPageSecondaryButton}"
+                            IsVisible="{Binding ShowPlayer}"
+                            Command="{Binding PlayerSettingsPageCommand}"/>
+
+                    <!-- Exit Button -->
+                    <Button Text="👋 Exit Game"
+                            SemanticProperties.Hint="Close the application"
+                            Style="{StaticResource MainPageExitButton}"
+                            Command="{Binding ExitCommand}"
+                            Margin="16,24,16,8"/>
+
+                </StackLayout>
+
+                <!-- Enhanced Error State when Server is Not Connected -->
+                <StackLayout Spacing="24"
+                             Margin="24,0">
+                    <StackLayout.IsVisible>
+                        <MultiBinding Converter="{StaticResource AllTrueConverter}">
+                            <Binding Path="IsServerConnected" Converter="{StaticResource InvertedBoolConverter}"/>
+                            <Binding Path="IsConnecting" Converter="{StaticResource InvertedBoolConverter}"/>
+                        </MultiBinding>
+                    </StackLayout.IsVisible>
+
+                    <!-- Error Card -->
+                    <Frame BackgroundColor="#3A3A5C"
+                           BorderColor="Transparent"
+                           CornerRadius="20"
+                           Padding="32"
+                           HasShadow="True">
+                        <Frame.Shadow>
+                            <Shadow Brush="#000000"
+                                    Offset="0,8"
+                                    Radius="16"
+                                    Opacity="0.3"/>
+                        </Frame.Shadow>
+                        <StackLayout Spacing="20">
+                            
+                            <!-- Error Icon -->
+                            <Label Text="🔌"
+                                   FontSize="64"
+                                   HorizontalOptions="Center"
+                                   TextColor="{StaticResource White}"/>
+
+                            <!-- Error Messages -->
+                            <Label Text="Connection Problem"
+                                   FontFamily="PoppinsSemibold"
+                                   FontSize="22"
+                                   FontAttributes="Bold"
+                                   TextColor="{StaticResource White}"
+                                   HorizontalOptions="Center"
+                                   HorizontalTextAlignment="Center"/>
+                            
+                            <Label Text="We're having trouble connecting to the game server. Please check your internet connection and try again."
+                                   FontFamily="PoppinsRegular"
+                                   FontSize="16"
+                                   TextColor="{StaticResource White}"
+                                   HorizontalOptions="Center"
+                                   HorizontalTextAlignment="Center"
+                                   Opacity="0.8"/>
+
+                            <!-- Action Buttons -->
+                            <StackLayout Spacing="0" Margin="0,20,0,0">
+                                <Button Text="🔄 Try Again"
+                                        SemanticProperties.Hint="Retry connection to server"
+                                        Style="{StaticResource MainPageRetryButton}"
+                                        Command="{Binding RetryConnectionCommand}"
+                                        IsEnabled="{Binding IsBusy, Converter={StaticResource InvertedBoolConverter}}"/>
+
+                                <Button Text="😊 I'll Come Back Later"
+                                        SemanticProperties.Hint="Exit the application"
+                                        Style="{StaticResource MainPageExitButton}"
+                                        Command="{Binding ExitCommand}"
+                                        IsEnabled="{Binding IsBusy, Converter={StaticResource InvertedBoolConverter}}"/>
+                            </StackLayout>
+
+                        </StackLayout>
+                    </Frame>
+
+                </StackLayout>
+
+                <!-- Connecting State -->
+                <StackLayout IsVisible="{Binding IsConnecting}" 
+                             Spacing="24"
+                             Margin="24,0">
+
+                    <!-- Connecting Card -->
+                    <Frame BackgroundColor="#3A3A5C"
+                           BorderColor="Transparent"
+                           CornerRadius="20"
+                           Padding="32"
+                           HasShadow="True">
+                        <Frame.Shadow>
+                            <Shadow Brush="#000000"
+                                    Offset="0,8"
+                                    Radius="16"
+                                    Opacity="0.3"/>
+                        </Frame.Shadow>
+                        <StackLayout Spacing="20">
+                            
+                            <!-- Connecting Icon -->
+                            <Label Text="🔄"
+                                   FontSize="64"
+                                   HorizontalOptions="Center"
+                                   TextColor="{StaticResource White}"/>
+
+                            <!-- Connecting Messages -->
+                            <Label Text="Connecting to Server"
+                                   FontFamily="PoppinsSemibold"
+                                   FontSize="22"
+                                   FontAttributes="Bold"
+                                   TextColor="{StaticResource White}"
+                                   HorizontalOptions="Center"
+                                   HorizontalTextAlignment="Center"/>
+                            
+                            <Label Text="Please wait while we establish connection to the game server..."
+                                   FontFamily="PoppinsRegular"
+                                   FontSize="16"
+                                   TextColor="{StaticResource White}"
+                                   HorizontalOptions="Center"
+                                   HorizontalTextAlignment="Center"
+                                   Opacity="0.8"/>
+
+                            <!-- Loading Indicator -->
+                            <ActivityIndicator IsRunning="True"
+                                             Color="{StaticResource White}"
+                                             WidthRequest="40"
+                                             HeightRequest="40"
+                                             HorizontalOptions="Center"
+                                             Margin="0,10,0,0"/>
+
+                        </StackLayout>
+                    </Frame>
+
+                </StackLayout>
+
+            </StackLayout>
+        </ScrollView>
+
+    </Grid>
+
 </ContentPage>

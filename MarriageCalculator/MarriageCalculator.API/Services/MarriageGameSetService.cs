@@ -1,17 +1,12 @@
-using MarriageCalculator.API.DTOs;
+using MarriageCalculator.Core.DTOs;
 using MarriageCalculator.API.Repositories;
 using MarriageCalculator.Core.Models;
 
 namespace MarriageCalculator.API.Services;
 
-public class MarriageGameSetService : IMarriageGameSetService
+public class MarriageGameSetService(IMarriageGameSetRepository gameSetRepository) : IMarriageGameSetService
 {
-    private readonly IMarriageGameSetRepository _gameSetRepository;
-
-    public MarriageGameSetService(IMarriageGameSetRepository gameSetRepository)
-    {
-        _gameSetRepository = gameSetRepository;
-    }
+    private readonly IMarriageGameSetRepository _gameSetRepository = gameSetRepository;
 
     public async Task<IEnumerable<MarriageGameSetDto>> GetAllGameSetsAsync()
     {

@@ -1,4 +1,4 @@
-using MarriageCalculator.API.DTOs;
+using MarriageCalculator.Core.DTOs;
 using MarriageCalculator.API.Services;
 using Microsoft.AspNetCore.Mvc;
 

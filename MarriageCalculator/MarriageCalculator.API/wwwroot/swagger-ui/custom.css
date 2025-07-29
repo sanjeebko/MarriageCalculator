@@ -1,0 +1,145 @@
+/* Custom Swagger UI Styles for Marriage Calculator API */
+
+/* Enhance the overall appearance */
+.swagger-ui {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+/* Custom header styling */
+.swagger-ui .info .title {
+    color: #2c3e50;
+    font-size: 2.5em;
+    font-weight: 600;
+}
+
+.swagger-ui .info .description {
+    color: #34495e;
+    font-size: 1.1em;
+    line-height: 1.6;
+}
+
+/* Enhanced operation styling */
+.swagger-ui .opblock {
+    border: none;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    margin-bottom: 15px;
+}
+
+.swagger-ui .opblock.opblock-get {
+    border-left: 4px solid #61affe;
+}
+
+.swagger-ui .opblock.opblock-post {
+    border-left: 4px solid #49cc90;
+}
+
+.swagger-ui .opblock.opblock-put {
+    border-left: 4px solid #fca130;
+}
+
+.swagger-ui .opblock.opblock-delete {
+    border-left: 4px solid #f93e3e;
+}
+
+/* Button enhancements */
+.swagger-ui .btn {
+    border-radius: 6px;
+    font-weight: 500;
+    transition: all 0.2s ease;
+}
+
+.swagger-ui .btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+/* Response section styling */
+.swagger-ui .responses-inner {
+    background-color: #f8f9fa;
+    border-radius: 6px;
+    padding: 15px;
+}
+
+/* Model section improvements */
+.swagger-ui .model-box {
+    background-color: #f8f9fa;
+    border-radius: 6px;
+    border: 1px solid #e9ecef;
+}
+
+/* Custom scrollbar */
+.swagger-ui ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+.swagger-ui ::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 4px;
+}
+
+.swagger-ui ::-webkit-scrollbar-thumb {
+    background: #c1c1c1;
+    border-radius: 4px;
+}
+
+.swagger-ui ::-webkit-scrollbar-thumb:hover {
+    background: #a8a8a8;
+}
+
+/* Tag section styling */
+.swagger-ui .opblock-tag {
+    font-size: 1.3em;
+    font-weight: 600;
+    color: #2c3e50;
+    margin: 20px 0 10px 0;
+    padding: 10px 0;
+    border-bottom: 2px solid #3498db;
+}
+
+/* Parameter table improvements */
+.swagger-ui table thead tr td,
+.swagger-ui table thead tr th {
+    background-color: #3498db;
+    color: white;
+    font-weight: 600;
+}
+
+/* Authorization section */
+.swagger-ui .auth-wrapper {
+    background-color: #e8f4f8;
+    border-radius: 6px;
+    padding: 15px;
+    margin: 15px 0;
+}
+
+/* Try it out section */
+.swagger-ui .try-out {
+    background-color: #f0f8ff;
+    border-radius: 6px;
+    padding: 15px;
+    margin: 10px 0;
+}
+
+/* Response code badges */
+.swagger-ui .response-col_status {
+    font-weight: bold;
+}
+
+/* Loading spinner customization */
+.swagger-ui .loading-container {
+    padding: 40px;
+    text-align: center;
+}
+
+/* Custom footer note */
+.swagger-ui::after {
+    content: "Marriage Calculator API - Built with ??";
+    display: block;
+    text-align: center;
+    color: #7f8c8d;
+    font-size: 0.9em;
+    margin-top: 30px;
+    padding: 20px;
+}
