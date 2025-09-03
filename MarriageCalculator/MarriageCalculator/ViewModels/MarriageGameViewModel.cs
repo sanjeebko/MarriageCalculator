@@ -1,5 +1,6 @@
 ﻿using CommunityToolkit.Maui.Alerts;
 using CommunityToolkit.Mvvm.ComponentModel;
+using MarriageCalculator.Services.Interfaces;
 using System.Collections.ObjectModel;
 using System.Windows.Input;
 
@@ -9,8 +10,8 @@ public partial class MarriageGameViewModel : ObservableObject
 {
 
     public IMarriageGameEngine GameEngine { get; }
-    public string CurrencyDescription => GameEngine.SettingsService.Settings.Currency.ToDescriptionString();
-    public string DupleeBonus => $"(+{GameEngine.SettingsService.Settings.DubleePointBonus})";
+    public string CurrencyDescription => GameEngine.SettingsService.Settings?.Currency.ToDescriptionString()??string.Empty;
+    public string DupleeBonus => $"(+{GameEngine.SettingsService.Settings?.DubleePointBonus})";
     
     public ObservableCollection<PlayerMaal> PlayerMaals { get; } = [];
 
@@ -83,7 +84,7 @@ public partial class MarriageGameViewModel : ObservableObject
     }
      private void RefreshValues()
     {
-        PlayerCount = GameEngine.PlayerService.Players.Count;
+        PlayerCount = GameEngine.PlayerService.ActivePlayers.Count;
 
         SeenIcon = GetIcon(FontelloCode.Seen);
         UnseenIcon = GetIcon(FontelloCode.Unseen);
@@ -160,7 +161,7 @@ public partial class MarriageGameViewModel : ObservableObject
             PlayerMaals.Add(playerMaal);
         }
 
-        Player? GetPlayer(int playerId)
+        Player? GetPlayer(Guid playerId)
         {
             return GameEngine.PlayerService.GetPlayerById(playerId);
         }
@@ -415,7 +416,7 @@ public partial class MarriageGameViewModel : ObservableObject
     {
         if (GameEngine.CurrentMarriageGameRound == null)
             return;
-        var playerTotalMoneyWon = new Dictionary<int, double>();
+        var playerTotalMoneyWon = new Dictionary<Guid, double>();
         for (int i = 0; i < GameEngine.CurrentMarriageGameRound.MarriageGames.Count; i++)
         {
             MarriageGame? marriageGame = GameEngine.CurrentMarriageGameRound.MarriageGames[i];

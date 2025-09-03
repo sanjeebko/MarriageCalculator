@@ -24,7 +24,7 @@ public class MarriageGameSet
     public GameSettings GameSettings { get; set; } = GameSettings.Default();
     
     [NotMapped]
-    public Dictionary<int,MarriageGameSetPlayer> GameSetPlayers { get; set; } = [];
+    public Dictionary<Guid,MarriageGameSetPlayer> GameSetPlayers { get; set; } = [];
     
     [NotMapped]
     public List<MarriageGameRound> Rounds { get; set; } = [];

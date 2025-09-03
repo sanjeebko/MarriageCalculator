@@ -1,12 +1,15 @@
 ﻿using CommunityToolkit.Maui;
-using Syncfusion.Maui.Core.Hosting;
-using System.Reflection;
 using MarriageCalculator.Mapping;
+using MarriageCalculator.Pages.Login;
+using MarriageCalculator.Repositories.Implementations;
+using MarriageCalculator.Repositories.Interfaces;
+using MarriageCalculator.Services.Implementations;
+using MarriageCalculator.Services.Interfaces;
+using Microsoft.Extensions.Logging;
+using System.Reflection;
 
 namespace MarriageCalculator;
 
-//Repository pattern implementation for connecting to MarriageCalculator.API
-//No more SQLite offline database - all data comes from API
 public static class MauiProgram
 {
     public static MauiApp CreateMauiApp()
@@ -15,51 +18,90 @@ public static class MauiProgram
         builder
             .UseMauiApp<App>()
             .UseMauiCommunityToolkit()
-            .ConfigureSyncfusionCore()
             .ConfigureFonts(fonts =>
             {
                 fonts.AddFont("OpenSans-Regular.ttf", "OpenSansRegular");
-                fonts.AddFont("OpenSans-Semibold.ttf", "OpenSansSemibold");
-                fonts.AddFont("Poppins-Regular.ttf", "PoppinsRegular");
-                fonts.AddFont("Poppins-Semibold.ttf", "PoppinsSemibold");
-                fonts.AddFont("fontello.ttf", "Fontello");
+                fonts.AddFont("Segoe-Ui-Bold.ttf", "SegoeBold");
+                fonts.AddFont("Segoe-Ui-Semibold.ttf", "SegoeSemibold");
             });
 
-        // Configuration from embedded resources
-        var assembly = Assembly.GetExecutingAssembly();
-        using var stream = assembly.GetManifestResourceStream("MarriageCalculator.appsettings.json");
-        
-        var configurationBuilder = new ConfigurationBuilder();
-        if (stream != null)
-        {
-            configurationBuilder.AddJsonStream(stream);
-        }
-        
 #if DEBUG
-        using var devStream = assembly.GetManifestResourceStream("MarriageCalculator.appsettings.Development.json");
-        if (devStream != null)
-        {
-            configurationBuilder.AddJsonStream(devStream);
-        }
+        builder.Logging.AddDebug();
 #endif
+
+        // Add configuration - Check multiple possible locations for appsettings.json
+        var configLoaded = false;
         
-        var configuration = configurationBuilder.Build();
-        builder.Services.AddSingleton<IConfiguration>(configuration);
-
-        // AutoMapper configuration - use explicit assembly method to avoid ambiguity
-        builder.Services.AddAutoMapper(Assembly.GetExecutingAssembly());
-
-        // HTTP Client for API communication
-        builder.Services.AddHttpClient<IApiService, ApiService>(client =>
+        // Try different paths for appsettings.json
+        var possiblePaths = new[]
         {
-            var baseUrl = configuration.GetValue<string>("ApiSettings:BaseUrl") ?? "https://localhost:7294";
+            "appsettings.json",
+            Path.Combine(AppContext.BaseDirectory, "appsettings.json"),
+            Path.Combine(FileSystem.AppDataDirectory, "appsettings.json"),
+            Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "appsettings.json")
+        };
+
+        foreach (var path in possiblePaths)
+        {
+            try
+            {
+                if (File.Exists(path))
+                {
+                    builder.Configuration.AddJsonFile(path, optional: false, reloadOnChange: false);
+                    configLoaded = true;
+                    break;
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Failed to load config from {path}: {ex.Message}");
+            }
+        }
+
+        // Fallback: Use in-memory configuration if file not found
+        if (!configLoaded)
+        {
+            builder.Configuration.AddInMemoryCollection(new Dictionary<string, string?>
+            {
+                {"ApiSettings:BaseUrl", "https://mcapi.sanjeebojha.com.np/"},
+                {"ApiSettings:Timeout", "30"},
+                {"ApiSettings:RetryCount", "3"},
+                {"Logging:LogLevel:Default", "Information"},
+                {"Logging:LogLevel:Microsoft", "Warning"},
+                {"Logging:LogLevel:Microsoft.Hosting.Lifetime", "Information"}
+            });
+        }
+
+        // AutoMapper configuration
+        builder.Services.AddAutoMapper(typeof(MappingProfile));
+
+        // HTTP Client and API Service
+        builder.Services.AddHttpClient<IApiService, ApiService>((serviceProvider, client) =>
+        {
+            var cfg = serviceProvider.GetRequiredService<IConfiguration>();
+            var baseUrl = cfg.GetValue<string>("ApiSettings:BaseUrl") ?? "https://localhost:7294";
+            var timeout = cfg.GetValue<int>("ApiSettings:Timeout", 30);
             client.BaseAddress = new Uri(baseUrl);
+            client.Timeout = TimeSpan.FromSeconds(timeout);
             client.DefaultRequestHeaders.Add("Accept", "application/json");
-            client.Timeout = TimeSpan.FromSeconds(configuration.GetValue<int>("ApiSettings:Timeout", 30));
+        });
+
+        // Alternative registration for scenarios where you need to create HttpClient manually
+        builder.Services.AddSingleton<IApiService>(serviceProvider =>
+        {
+            var cfg = serviceProvider.GetRequiredService<IConfiguration>();
+            var baseUrl = cfg.GetValue<string>("ApiSettings:BaseUrl") ?? "https://localhost:7294";
+            var timeout = cfg.GetValue<int>("ApiSettings:Timeout", 30);
+            var httpClient = new HttpClient
+            {
+                BaseAddress = new Uri(baseUrl),
+                Timeout = TimeSpan.FromSeconds(timeout)
+            };
+            httpClient.DefaultRequestHeaders.Add("Accept", "application/json");
+            return new ApiService(httpClient, cfg);
         });
 
         // Register Repository Services (replaces SQLite)
-        builder.Services.AddTransient<IApiService, ApiService>();
         builder.Services.AddTransient<IPlayerRepository, PlayerRepository>();
         builder.Services.AddTransient<IGameSettingsRepository, GameSettingsRepository>();
         builder.Services.AddTransient<IMarriageGameSetRepository, MarriageGameSetRepository>();
@@ -69,17 +111,40 @@ public static class MauiProgram
         builder.Services.AddTransient<IMarriageGameSetPlayerRepository, MarriageGameSetPlayerRepository>();
         builder.Services.AddTransient<IDatabaseRepository, DatabaseRepository>();
 
-        // Register Database Service (API-based instead of SQLite)
-        builder.Services.AddSingleton<IDbService, ApiDbService>();
 
         // Connection service for API monitoring
         builder.Services.AddSingleton<IConnectionService, ConnectionService>();
+
+        // Authentication service
+        builder.Services.AddSingleton<IAuthenticationService, AuthenticationService>();
 
         // Other services
         builder.Services.AddSingleton<ISettingsService, SettingsService>();
         builder.Services.AddSingleton<ITextToSpeechService, TextToSpeechService>();
         builder.Services.AddSingleton<IPlayerService, PlayerService>();
-        builder.Services.AddSingleton<IMarriageGameEngine, MarriageGameEngine>();
+        builder.Services.AddSingleton<IMarriageGameEngine>(serviceProvider =>
+        {
+            var authService = serviceProvider.GetRequiredService<IAuthenticationService>();
+            var settingsService = serviceProvider.GetRequiredService<ISettingsService>();
+            var playerService = serviceProvider.GetRequiredService<IPlayerService>();
+            var marriageGameSetRepository = serviceProvider.GetRequiredService<IMarriageGameSetRepository>();
+            var marriageGameRoundRepository = serviceProvider.GetRequiredService<IMarriageGameRoundRepository>();
+            var marriageGameRepository = serviceProvider.GetRequiredService<IMarriageGameRepository>();
+            var marriageGameScoreRepository = serviceProvider.GetRequiredService<IMarriageGameScoreRepository>();
+            var marriageGameSetPlayerRepository = serviceProvider.GetRequiredService<IMarriageGameSetPlayerRepository>();
+            var textToSpeechService = serviceProvider.GetRequiredService<ITextToSpeechService>();
+            
+            return new MarriageGameEngine(
+                authService,
+                settingsService,
+                playerService,
+                marriageGameSetRepository,
+                marriageGameRoundRepository,
+                marriageGameRepository,
+                marriageGameScoreRepository,
+                marriageGameSetPlayerRepository,
+                textToSpeechService);
+        });
 
         // Views registration
         builder.Services.AddSingleton<MainPage>();
@@ -87,12 +152,20 @@ public static class MauiProgram
         builder.Services.AddTransient<PlayGame>();
         builder.Services.AddScoped<SettingsPage>();
         builder.Services.AddScoped<PlayersPage>();
+        builder.Services.AddTransient<LoginPage>();
+        builder.Services.AddTransient<RegisterPage>();
+        builder.Services.AddTransient<EmailVerificationPage>();
+        builder.Services.AddTransient<GameSetupPage>();
 
         // View models
         builder.Services.AddTransient<MainPageViewModel>();
-        builder.Services.AddScoped<SettingsViewModel>();
-        builder.Services.AddScoped<MarriageGameViewModel>();
-        builder.Services.AddScoped<PlayerSettingsViewModel>();
+        builder.Services.AddTransient<MarriageGameViewModel>();
+        builder.Services.AddTransient<SettingsViewModel>();
+        builder.Services.AddTransient<PlayerSettingsViewModel>();
+        builder.Services.AddTransient<LoginViewModel>();
+        builder.Services.AddTransient<RegisterViewModel>();
+        builder.Services.AddTransient<EmailVerificationViewModel>();
+        builder.Services.AddTransient<GameSetupViewModel>();
 
         return builder.Build();
     }

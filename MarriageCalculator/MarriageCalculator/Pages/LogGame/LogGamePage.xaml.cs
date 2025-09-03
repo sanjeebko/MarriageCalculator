@@ -1,4 +1,4 @@
-namespace MarriageCalculator.Pages.LogGame;
+namespace MarriageCalculator.Pages;
 
 public partial class LogGamePage : ContentPage
 {

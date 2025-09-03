@@ -17,6 +17,11 @@ public class MarriageCalculatorDbContext : DbContext
     public DbSet<MarriageGameRound> MarriageGameRounds => Set<MarriageGameRound>();
     public DbSet<MarriageGame> MarriageGames => Set<MarriageGame>();
     public DbSet<MarriageGameScore> MarriageGameScores => Set<MarriageGameScore>();
+    
+    // User Authentication
+    public DbSet<User> Users => Set<User>();
+    public DbSet<UserEmailVerification> UserEmailVerifications => Set<UserEmailVerification>();
+    public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -27,11 +32,27 @@ public class MarriageCalculatorDbContext : DbContext
         {
             entity.ToTable("Player");
             entity.HasKey(e => e.Id);
-            entity.Property(e => e.Id).ValueGeneratedOnAdd();
-            entity.Property(e => e.Name).IsRequired().HasMaxLength(100);
-            entity.Property(e => e.Email).HasMaxLength(255);
-            entity.Ignore(e => e.Selected); // Ignore ObservableProperty
+            entity.Property(e => e.Id).HasColumnName("Id").ValueGeneratedOnAdd();
+            entity.Property(e => e.Name).HasColumnName("Name").IsRequired().HasMaxLength(100);
+            entity.Property(e => e.Email).HasColumnName("Email").IsRequired().HasMaxLength(255);
+            entity.Property(e => e.Deleted).HasColumnName("Deleted").HasDefaultValue(false);
+            entity.Property(e => e.CreatedAt).HasColumnName("CreatedAt").HasDefaultValueSql("GETUTCDATE()");
+            entity.Property(e => e.CreatedByUserId).HasColumnName("CreatedByUserId");
+            
+            // Handle the Selected column if it exists in database but is ignored in the model
+            // This prevents SQL errors when Selected column exists but model doesn't have it
+            entity.Property(e => e.Selected).HasColumnName("Selected").HasDefaultValue(false);
+            
             entity.HasIndex(e => new { e.Name, e.Email }).IsUnique();
+
+            // Index for creator user id (GUID)
+            entity.HasIndex(e => e.CreatedByUserId);
+
+            // Configure optional relationship from Player.CreatedByUserId (GUID) -> User.Id (GUID)
+            entity.HasOne(e => e.CreatedByUser)
+                  .WithMany(u => u.CreatedPlayers)
+                  .HasForeignKey(e => e.CreatedByUserId)
+                  .OnDelete(DeleteBehavior.SetNull);
         });
 
         // Configure GameSettings entity
@@ -43,6 +64,13 @@ public class MarriageCalculatorDbContext : DbContext
             entity.Property(e => e.PointRate).HasPrecision(18, 2);
             entity.Property(e => e.Currency).HasConversion<int>();
             entity.Property(e => e.FoulPointBonus).HasConversion<int>();
+            entity.Property(e => e.CreatedAt).HasDefaultValueSql("GETUTCDATE()");
+            
+            // Foreign key to User
+            entity.HasOne(e => e.User)
+                  .WithMany(u => u.GameSettings)
+                  .HasForeignKey(e => e.UserId)
+                  .OnDelete(DeleteBehavior.Cascade);
         });
 
         // Configure MarriageGameSet entity
@@ -53,7 +81,7 @@ public class MarriageCalculatorDbContext : DbContext
             entity.Property(e => e.Id).ValueGeneratedOnAdd();
             entity.Property(e => e.Name).IsRequired().HasMaxLength(100);
             entity.Property(e => e.Created).HasDefaultValueSql("GETUTCDATE()");
-            entity.Property(e => e.LastPlayed).HasDefaultValueSql("GETUTCDATE()");
+            entity.Property(e => e.LastPlayed).HasDefaultValueSql("GETUTCDATE()" );
             entity.Ignore(e => e.GameSettings); // Ignore navigation property
             entity.Ignore(e => e.GameSetPlayers); // Ignore navigation property
             entity.Ignore(e => e.Rounds); // Ignore navigation property
@@ -69,24 +97,19 @@ public class MarriageCalculatorDbContext : DbContext
         modelBuilder.Entity<MarriageGameSetPlayer>(entity =>
         {
             entity.ToTable("MarriageGameSetPlayer");
-            entity.HasKey(e => e.Id);
-            entity.Property(e => e.Id).ValueGeneratedOnAdd();
-            entity.Ignore(e => e.Player); // Ignore navigation property
-            
-            // Foreign key to MarriageGameSet
-            entity.HasOne<MarriageGameSet>()
+            // Composite primary key
+            entity.HasKey(e => new { e.MarriageGameSetId, e.PlayerId });
+
+            // Relationships with proper navigation mapping
+            entity.HasOne(e => e.MarriageGameSet)
                   .WithMany()
                   .HasForeignKey(e => e.MarriageGameSetId)
                   .OnDelete(DeleteBehavior.Cascade);
             
-            // Foreign key to Player
-            entity.HasOne<Player>()
+            entity.HasOne(e => e.Player)
                   .WithMany()
                   .HasForeignKey(e => e.PlayerId)
                   .OnDelete(DeleteBehavior.Cascade);
-            
-            // Unique constraint to prevent duplicate player-gameset combinations
-            entity.HasIndex(e => new { e.MarriageGameSetId, e.PlayerId }).IsUnique();
         });
 
         // Configure MarriageGameRound entity
@@ -168,6 +191,74 @@ public class MarriageCalculatorDbContext : DbContext
             
             // Unique constraint to prevent duplicate player-game score combinations
             entity.HasIndex(e => new { e.MarriageGameId, e.PlayerId }).IsUnique();
+        });
+
+        // Configure User entity
+        modelBuilder.Entity<User>(entity =>
+        {
+            entity.ToTable("User");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Id).HasColumnName("Id").ValueGeneratedOnAdd();
+            entity.Property(e => e.DisplayName).HasColumnName("DisplayName").IsRequired().HasMaxLength(100);
+            entity.Property(e => e.Email).HasColumnName("Email").IsRequired().HasMaxLength(255);
+            entity.Property(e => e.PasswordHash).HasColumnName("PasswordHash").IsRequired();
+            entity.Property(e => e.Salt).HasColumnName("Salt").IsRequired();
+            entity.Property(e => e.IsEmailVerified).HasColumnName("IsEmailVerified");
+            entity.Property(e => e.IsActive).HasColumnName("IsActive");
+            entity.Property(e => e.CreatedAt).HasColumnName("CreatedAt").HasDefaultValueSql("GETUTCDATE()");
+            entity.Property(e => e.LastLoginAt).HasColumnName("LastLoginAt");
+            
+            // Unique email constraint
+            entity.HasIndex(e => e.Email).IsUnique();
+        });
+
+        // Configure UserEmailVerification entity
+        modelBuilder.Entity<UserEmailVerification>(entity =>
+        {
+            entity.ToTable("UserEmailVerification");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Id).HasColumnName("Id").ValueGeneratedOnAdd();
+            entity.Property(e => e.UserId).HasColumnName("UserId");
+            entity.Property(e => e.VerificationCode).HasColumnName("VerificationCode").IsRequired().HasMaxLength(5);
+            entity.Property(e => e.ExpiresAt).HasColumnName("ExpiresAt");
+            entity.Property(e => e.IsUsed).HasColumnName("IsUsed");
+            entity.Property(e => e.CreatedAt).HasColumnName("CreatedAt").HasDefaultValueSql("GETUTCDATE()");
+            entity.Property(e => e.UsedAt).HasColumnName("UsedAt");
+            
+            // Foreign key to User
+            entity.HasOne(e => e.User)
+                  .WithMany(u => u.EmailVerifications)
+                  .HasForeignKey(e => e.UserId)
+                  .OnDelete(DeleteBehavior.Cascade);
+                  
+            // Index for faster lookups
+            entity.HasIndex(e => new { e.UserId, e.VerificationCode, e.IsUsed });
+        });
+
+        // Configure RefreshToken entity
+        modelBuilder.Entity<RefreshToken>(entity =>
+        {
+            entity.ToTable("RefreshToken");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Id).HasColumnName("Id").ValueGeneratedOnAdd();
+            entity.Property(e => e.UserId).HasColumnName("UserId");
+            entity.Property(e => e.Token).HasColumnName("Token").IsRequired().HasMaxLength(256);
+            entity.Property(e => e.ExpiresAt).HasColumnName("ExpiresAt");
+            entity.Property(e => e.IsActive).HasColumnName("IsActive");
+            entity.Property(e => e.RevokedAt).HasColumnName("RevokedAt");
+            entity.Property(e => e.ReplacedByToken).HasColumnName("ReplacedByToken").HasMaxLength(256);
+            entity.Property(e => e.RevokedReason).HasColumnName("RevokedReason").HasMaxLength(100);
+            entity.Property(e => e.CreatedAt).HasColumnName("CreatedAt").HasDefaultValueSql("GETUTCDATE()");
+            
+            // Foreign key to User
+            entity.HasOne(e => e.User)
+                  .WithMany(u => u.RefreshTokens)
+                  .HasForeignKey(e => e.UserId)
+                  .OnDelete(DeleteBehavior.Cascade);
+                  
+            // Index for faster token lookups
+            entity.HasIndex(e => e.Token).IsUnique();
+            entity.HasIndex(e => new { e.UserId, e.IsActive });
         });
     }
 }

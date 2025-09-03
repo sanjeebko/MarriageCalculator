@@ -6,13 +6,11 @@ namespace MarriageCalculator.Core.Models;
 [Table("MarriageGameSetPlayer")]
 public class MarriageGameSetPlayer
 {
-    [Key]
-    [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
-    public int Id { get; set; }
-    
+    // Composite key will be configured in DbContext: (MarriageGameSetId, PlayerId)
     public int MarriageGameSetId { get; set; }
-    public int PlayerId { get; set; }
-    
-    [NotMapped]
-    public Player Player { get; set; }
+    public Guid PlayerId { get; set; }
+
+    // Navigation properties (mapped)
+    public Player Player { get; set; } = default!;
+    public MarriageGameSet MarriageGameSet  { get; set; } = default!;
 }

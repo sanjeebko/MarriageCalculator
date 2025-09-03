@@ -1,11 +1,14 @@
 using MarriageCalculator.Core.DTOs;
-using MarriageCalculator.API.Services;
+using MarriageCalculator.API.Services.Interfaces;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
 
 namespace MarriageCalculator.API.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
+[Authorize]
 public class GameSettingsController : ControllerBase
 {
     private readonly IGameSettingsService _gameSettingsService;
@@ -19,13 +22,22 @@ public class GameSettingsController : ControllerBase
 
     /// <summary>
     /// Get all game settings
+    /// Endpoint: GET api/GameSettings
     /// </summary>
     [HttpGet]
     public async Task<ActionResult<IEnumerable<GameSettingsDto>>> GetGameSettings()
     {
         try
         {
-            var settings = await _gameSettingsService.GetAllGameSettingsAsync();
+            // Get userId from JWT claims as Guid
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            
+            if (string.IsNullOrEmpty(userIdClaim) || !Guid.TryParse(userIdClaim, out var userId))
+            {
+                return Unauthorized("Invalid user token");
+            }
+
+            var settings = await _gameSettingsService.GetAllGameSettingsAsync(userId);
             return Ok(settings);
         }
         catch (Exception ex)
@@ -37,6 +49,7 @@ public class GameSettingsController : ControllerBase
 
     /// <summary>
     /// Get game settings by ID
+    /// Endpoint: GET api/GameSettings/{id}
     /// </summary>
     [HttpGet("{id}")]
     public async Task<ActionResult<GameSettingsDto>> GetGameSettings(int id)
@@ -60,6 +73,7 @@ public class GameSettingsController : ControllerBase
 
     /// <summary>
     /// Create new game settings
+    /// Endpoint: POST api/GameSettings
     /// </summary>
     [HttpPost]
     public async Task<ActionResult<GameSettingsDto>> CreateGameSettings([FromBody] CreateGameSettingsDto createDto)
@@ -71,7 +85,14 @@ public class GameSettingsController : ControllerBase
                 return BadRequest(ModelState);
             }
 
-            var settings = await _gameSettingsService.CreateGameSettingsAsync(createDto);
+            // Get userId from JWT claims as Guid
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(userIdClaim) || !Guid.TryParse(userIdClaim, out var userId))
+            {
+                return Unauthorized("Invalid user token");
+            }
+
+            var settings = await _gameSettingsService.CreateGameSettingsAsync(createDto, userId);
             return CreatedAtAction(nameof(GetGameSettings), new { id = settings.Id }, settings);
         }
         catch (Exception ex)
@@ -83,6 +104,7 @@ public class GameSettingsController : ControllerBase
 
     /// <summary>
     /// Update existing game settings
+    /// Endpoint: PUT api/GameSettings/{id}
     /// </summary>
     [HttpPut("{id}")]
     public async Task<ActionResult<GameSettingsDto>> UpdateGameSettings(int id, [FromBody] CreateGameSettingsDto updateDto)
@@ -111,6 +133,7 @@ public class GameSettingsController : ControllerBase
 
     /// <summary>
     /// Delete game settings
+    /// Endpoint: DELETE api/GameSettings/{id}
     /// </summary>
     [HttpDelete("{id}")]
     public async Task<ActionResult> DeleteGameSettings(int id)

@@ -4,11 +4,66 @@
     xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
     xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
     xmlns:local="clr-namespace:MarriageCalculator.Pages"
+    xmlns:login="clr-namespace:MarriageCalculator.Pages.Login"
     Shell.FlyoutBehavior="Disabled">
 
+    <!-- Login page as the default startup page -->
+    <ShellContent
+        Title="Login"
+        ContentTemplate="{DataTemplate login:LoginPage}"
+        Route="LoginPage" />
+
+    <!-- Main page routing -->
     <ShellContent
         Title="Marriage Calculator"
         ContentTemplate="{DataTemplate local:MainPage}"
         Route="MainPage" />
- 
+
+    <!-- Register page routing -->
+    <ShellContent
+        Title="Register"
+        ContentTemplate="{DataTemplate login:RegisterPage}"
+        Route="RegisterPage" />
+
+    <!-- Email Verification page routing -->
+    <ShellContent
+        Title="Email Verification"
+        ContentTemplate="{DataTemplate login:EmailVerificationPage}"
+        Route="EmailVerificationPage" />
+    <!-- Game Setup page routing -->
+    <ShellContent
+    Title="Game Setup"
+    ContentTemplate="{DataTemplate local:GameSetupPage}"
+    Route="GameSetupPage" />
+
+    <!-- New Game page routing -->
+    <ShellContent
+    Title="New Game"
+    ContentTemplate="{DataTemplate local:NewGame}"
+    Route="NewGame" />
+
+    <!-- Play Game page routing -->
+    <ShellContent
+    Title="Play Game"
+    ContentTemplate="{DataTemplate local:PlayGame}"
+    Route="PlayGame" />
+
+    <!-- Players page routing -->
+    <ShellContent
+    Title="Players"
+    ContentTemplate="{DataTemplate local:PlayersPage}"
+    Route="PlayersPage" />
+
+    <!-- Settings page routing -->
+    <ShellContent
+    Title="Settings"
+    ContentTemplate="{DataTemplate local:SettingsPage}"
+    Route="SettingsPage" />
+
+    <!-- Log Game page routing -->
+    <ShellContent
+    Title="Log Game"
+    ContentTemplate="{DataTemplate local:LogGamePage}"
+    Route="LogGamePage" />
+    
 </Shell>

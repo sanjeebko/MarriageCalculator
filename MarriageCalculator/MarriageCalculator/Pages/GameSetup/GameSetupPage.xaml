@@ -1,0 +1,230 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage x:Class="MarriageCalculator.Pages.GameSetupPage"
+             xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:viewmodels="clr-namespace:MarriageCalculator.ViewModels"
+             xmlns:behaviors="clr-namespace:MarriageCalculator.Behaviors"
+             xmlns:models="clr-namespace:MarriageCalculator.Core.Models;assembly=MarriageCalculator.Core"
+             x:DataType="viewmodels:GameSetupViewModel"
+             Shell.NavBarIsVisible="False"
+             Title="Game Setup">
+
+    <Grid RowSpacing="0">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <!-- Seamless Gradient Background -->
+        <Rectangle Grid.RowSpan="3">
+            <Rectangle.Fill>
+                <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
+                    <GradientStop Color="{AppThemeBinding Light={StaticResource LightGradientRow0}, Dark={StaticResource DarkGradientRow0}}" Offset="0.0"/>
+                    <GradientStop Color="{AppThemeBinding Light={StaticResource LightGradientRow1}, Dark={StaticResource DarkGradientRow1}}" Offset="0.4"/>
+                    <GradientStop Color="{AppThemeBinding Light={StaticResource LightGradientRow2}, Dark={StaticResource DarkGradientRow2}}" Offset="1.0"/>
+                </LinearGradientBrush>
+            </Rectangle.Fill>
+        </Rectangle>
+
+        <!-- Header Section (Empty/Minimal) -->
+        <StackLayout Grid.Row="0" Spacing="8" Margin="25,5,5,5" BackgroundColor="Transparent">
+            <Grid Grid.Row="0" ColumnDefinitions="Auto,*" ColumnSpacing="12">
+             
+            <Ellipse Grid.Column="0"
+         Fill="{Binding PlayerStatusColor}"
+         WidthRequest="12"
+         HeightRequest="12"
+         VerticalOptions="Center"/>
+            
+            <Label Grid.Column="1"
+               Text="Game Settings"
+               FontFamily="PoppinsSemibold"
+               FontSize="25"
+               TextColor="{AppThemeBinding Light={StaticResource GameTitleLight}, Dark={StaticResource GameTitleDark}}"
+               VerticalOptions="Center"/>
+            </Grid>
+            
+        </StackLayout>
+
+        <!-- Player Status Section -->
+        <StackLayout Grid.Row="1" BackgroundColor="Transparent" Spacing="8" Padding="5,0,5,5">
+            
+            <!-- Player Status -->
+            <Frame Style="{StaticResource GameCardFrame}" 
+                   Padding="15,10">
+                <Grid RowDefinitions="Auto,Auto" RowSpacing="8">
+                    
+                    <!-- Header Row: Status Dot + Title -->
+                    
+
+                        <Label Grid.Row="0" Grid.Column="1"
+                               Text="👥 Selected Players"
+                               FontFamily="PoppinsSemibold"
+                               FontSize="16"
+                               TextColor="{AppThemeBinding Light={StaticResource GameTitleLight}, Dark={StaticResource GameTitleDark}}"
+                               VerticalOptions="Center" HorizontalOptions="Center" />
+                    
+                    
+                    <!-- Players CollectionView Row -->
+                    <CollectionView Grid.Row="1"
+                                    ItemsSource="{Binding SelectedPlayers}"
+                                    VerticalOptions="Fill"
+                                    HeightRequest="70"
+                                    BackgroundColor="Transparent">
+                        <CollectionView.ItemsLayout>
+                            <GridItemsLayout Orientation="Vertical"
+                                           Span="2"
+                                           HorizontalItemSpacing="4"
+                                           VerticalItemSpacing="2"/>
+                        </CollectionView.ItemsLayout>
+                        <CollectionView.ItemTemplate>
+                            <DataTemplate x:DataType="models:Player">
+                                <Frame BackgroundColor="Transparent"
+                                       BorderColor="Transparent"
+                                       Padding="6,2"
+                                       HasShadow="False">
+                                    <Label Text="{Binding Name, Converter={StaticResource FirstCharUpperConverter}}"
+                                           FontFamily="OpenSansRegular"
+                                           FontSize="12"
+                                           TextColor="{AppThemeBinding Light={StaticResource GameTitleLight}, Dark={StaticResource GameTitleDark}}"
+                                           VerticalOptions="Center"
+                                           HorizontalOptions="Start"
+                                           LineBreakMode="TailTruncation"/>
+                                </Frame>
+                            </DataTemplate>
+                        </CollectionView.ItemTemplate>
+                        <CollectionView.EmptyView>
+                            <StackLayout VerticalOptions="Center" HorizontalOptions="Center" Spacing="4" Padding="12">                              
+                                <Label Text="🎭 No players selected"
+                                       FontFamily="PoppinsRegular"
+                                       FontSize="12"
+                                       TextColor="{AppThemeBinding Light={StaticResource GameTitleLight}, Dark={StaticResource GameTitleDark}}"
+                                       HorizontalOptions="Center"
+                                       Opacity="0.8"/>
+                                <Label Text="Please select players to start game"
+                                       FontFamily="PoppinsRegular"
+                                       FontSize="10"
+                                       TextColor="{AppThemeBinding Light={StaticResource Gray500}, Dark={StaticResource Gray400}}"
+                                       HorizontalOptions="Center"
+                                       Opacity="0.6"/>
+                            </StackLayout>
+                        </CollectionView.EmptyView>
+                    </CollectionView>
+                    
+                </Grid>
+            </Frame>
+
+        </StackLayout>
+
+        <!-- Main Content Area -->
+        <ScrollView Grid.Row="2" BackgroundColor="Transparent">
+            <StackLayout Spacing="24" Padding="5,0,5,5" BackgroundColor="Transparent">
+
+                <!-- Game Setup Options Card -->
+                <Frame Style="{StaticResource GameCardFrame}" 
+                       Padding="15,10">
+                    <StackLayout Spacing="20">
+
+                        <!-- Section Title -->
+                        <Label Text="Game Configuration"
+                               FontFamily="PoppinsSemibold"
+                               FontSize="18"
+                               TextColor="{AppThemeBinding Light={StaticResource GameTitleLight}, Dark={StaticResource GameTitleDark}}"
+                               HorizontalOptions="Center"
+                               Margin="0,0,0,8"/>
+
+                        <!-- Game Settings Button -->
+                        <Button Text="⚙️ Game Settings"
+                                Command="{Binding GameSettingsCommand}"
+                                Style="{StaticResource MainPageSecondaryButton}"
+                                SemanticProperties.Hint="Configure game rules and settings"/>
+
+                        <!-- Manage Players Button -->
+                        <Button Text="👥 Manage Players"
+                                Command="{Binding ManagePlayersCommand}"
+                                Style="{StaticResource MainPageSecondaryButton}"
+                                SemanticProperties.Hint="Add, remove, or modify players"/>
+
+                    </StackLayout>
+                </Frame>
+
+                <!-- Action Buttons -->
+                <StackLayout Spacing="16">
+                    
+                    <!-- Start/Resume Game Button -->
+                    <Button x:Name="StartGameButton"
+                            Text="🎮 Start Game"
+                            Command="{Binding ReadyCommand}"
+                            Style="{StaticResource MainPagePrimaryButton}"
+                            IsEnabled="{Binding CanStartGame}"
+                            SemanticProperties.Hint="Start or resume the game">
+                        <Button.Triggers>
+                            <DataTrigger TargetType="Button" Binding="{Binding IsNewGame}" Value="True">
+                                <Setter Property="Text" Value="🎮 Start New Game" />
+                            </DataTrigger>
+                            <DataTrigger TargetType="Button" Binding="{Binding IsNewGame}" Value="False">
+                                <Setter Property="Text" Value="▶️ Resume Game" />
+                            </DataTrigger>
+                        </Button.Triggers>
+                    </Button>
+
+                    <!-- Disabled state hint -->
+                    <Label Text="Need at least 2 players to start"
+                           IsVisible="{Binding CanStartGame, Converter={StaticResource InvertedBoolConverter}}"
+                           FontFamily="PoppinsRegular"
+                           FontSize="12"
+                           TextColor="{AppThemeBinding Light={StaticResource Gray500}, Dark={StaticResource Gray300}}"
+                           HorizontalOptions="Center"
+                           HorizontalTextAlignment="Center"
+                           Opacity="0.8"/>
+
+                    <!-- Back Button -->
+                    <Button Text="🔙 Back to Main Menu"
+                            Command="{Binding BackCommand}"
+                            Style="{StaticResource MainPageSecondaryButton}"
+                            SemanticProperties.Hint="Return to main menu"/>
+
+                </StackLayout>
+
+            </StackLayout>
+        </ScrollView>
+
+        <!-- Loading Overlay -->
+        <Frame Grid.RowSpan="3"
+               IsVisible="{Binding IsBusy}"
+               BackgroundColor="{AppThemeBinding Light=#80000000, Dark=#80000000}"
+               BorderColor="Transparent"
+               Padding="0"
+               HorizontalOptions="Fill"
+               VerticalOptions="Fill">
+            
+            <Grid HorizontalOptions="Center" VerticalOptions="Center">
+                <Frame Style="{StaticResource GameCardFrame}"
+                       Padding="32,24"
+                       WidthRequest="300"
+                       HorizontalOptions="Center"
+                       VerticalOptions="Center">
+                    
+                    <StackLayout Spacing="20" HorizontalOptions="Center">
+                        <!-- Loading Indicator -->
+                        <ActivityIndicator IsRunning="{Binding IsBusy}"
+                                         Color="{StaticResource SecondaryButtonLight}"
+                                         WidthRequest="40"
+                                         HeightRequest="40"
+                                         HorizontalOptions="Center"/>
+                        
+                        <!-- Loading Text -->
+                        <Label Text="Setting up game..."
+                               FontFamily="PoppinsSemibold"
+                               FontSize="16"
+                               TextColor="{AppThemeBinding Light={StaticResource GameTitleLight}, Dark={StaticResource GameTitleDark}}"
+                               HorizontalOptions="Center"
+                               HorizontalTextAlignment="Center"/>
+                    </StackLayout>
+                </Frame>
+            </Grid>
+        </Frame>
+
+    </Grid>
+</ContentPage>

@@ -1,0 +1,267 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:toolkit="http://schemas.microsoft.com/dotnet/2022/maui/toolkit"
+             xmlns:vm="clr-namespace:MarriageCalculator.ViewModels"
+             x:Class="MarriageCalculator.Pages.Login.RegisterPage"
+             Shell.NavBarIsVisible="False"
+             x:DataType="vm:RegisterViewModel"
+             Title="Register">
+
+    <Grid RowSpacing="0">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <!-- Seamless Gradient Background -->
+        <Rectangle Grid.RowSpan="2">
+            <Rectangle.Fill>
+                <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
+                    <GradientStop Color="{AppThemeBinding Light={StaticResource LightGradientRow0}, Dark={StaticResource DarkGradientRow0}}" 
+                                  Offset="0.0"/>
+                    <GradientStop Color="{AppThemeBinding Light={StaticResource LightGradientRow1}, Dark={StaticResource DarkGradientRow1}}" 
+                                  Offset="0.4"/>
+                    <GradientStop Color="{AppThemeBinding Light={StaticResource LightGradientRow2}, Dark={StaticResource DarkGradientRow2}}" 
+                                  Offset="1.0"/>
+                </LinearGradientBrush>
+            </Rectangle.Fill>
+        </Rectangle>
+
+        <!-- Header Section -->
+        <StackLayout Grid.Row="0" Spacing="16" Margin="24,40,24,24" BackgroundColor="Transparent">
+            <!-- App Logo -->
+            <Frame BackgroundColor="Transparent" 
+                   BorderColor="Transparent" 
+                   Padding="0"
+                   HorizontalOptions="Center">
+                <Frame.Shadow>
+                    <Shadow Brush="#000000"
+                            Offset="0,8"
+                            Radius="24"
+                            Opacity="0.4"/>
+                </Frame.Shadow>
+                <Image Source="cards.png"
+                       HeightRequest="100"
+                       HorizontalOptions="Center"
+                       Aspect="AspectFit"/>
+            </Frame>
+
+            <!-- Welcome Text -->
+            <Label Text="Create Account"
+                   Style="{StaticResource GameTitleLabel}"
+                   FontSize="28"
+                   Margin="0,8,0,0"/>
+            
+            <Label Text="Join us and start playing!"
+                   FontFamily="PoppinsRegular"
+                   FontSize="16"
+                   TextColor="{AppThemeBinding Light={StaticResource GameSubtitleLight}, Dark={StaticResource GameSubtitleDark}}"
+                   HorizontalOptions="Center"
+                   HorizontalTextAlignment="Center"
+                   Opacity="0.8"/>
+        </StackLayout>
+
+        <!-- Main Content - Registration Form -->
+        <ScrollView Grid.Row="1" BackgroundColor="Transparent">
+            <StackLayout Spacing="24" Padding="24,0,24,40" BackgroundColor="Transparent">
+
+                <!-- Registration Form Card -->
+                <Frame Style="{StaticResource GameCardFrame}" 
+                       Padding="32,24">
+                    <StackLayout Spacing="20">
+
+                        <!-- Display Name Field -->
+                        <StackLayout Spacing="8">
+                            <Label Text="Display Name"
+                                   FontFamily="PoppinsSemibold"
+                                   FontSize="14"
+                                   TextColor="{AppThemeBinding Light={StaticResource GameTitleLight}, Dark={StaticResource GameTitleDark}}"/>
+                            
+                            <Frame BackgroundColor="{AppThemeBinding Light={StaticResource LightControlsBackground}, Dark={StaticResource DarkControlsBackground}}"
+                                   BorderColor="Transparent"
+                                   CornerRadius="12"
+                                   Padding="0"
+                                   HasShadow="False">
+                                <Entry x:Name="DisplayNameEntry"
+                                       Text="{Binding DisplayName}"
+                                       Placeholder="Enter your display name"
+                                       FontFamily="PoppinsRegular"
+                                       FontSize="16"
+                                       TextColor="{AppThemeBinding Light={StaticResource LightControlsText}, Dark={StaticResource DarkControlsText}}"
+                                       PlaceholderColor="{AppThemeBinding Light={StaticResource Gray400}, Dark={StaticResource Gray300}}"
+                                       BackgroundColor="Transparent"
+                                       Keyboard="Default"
+                                       ReturnType="Next"
+                                       Margin="16,12"/>
+                            </Frame>
+                        </StackLayout>
+
+                        <!-- Email Field -->
+                        <StackLayout Spacing="8">
+                            <Label Text="Email Address"
+                                   FontFamily="PoppinsSemibold"
+                                   FontSize="14"
+                                   TextColor="{AppThemeBinding Light={StaticResource GameTitleLight}, Dark={StaticResource GameTitleDark}}"/>
+                            
+                            <Frame BackgroundColor="{AppThemeBinding Light={StaticResource LightControlsBackground}, Dark={StaticResource DarkControlsBackground}}"
+                                   BorderColor="Transparent"
+                                   CornerRadius="12"
+                                   Padding="0"
+                                   HasShadow="False">
+                                <Entry x:Name="EmailEntry"
+                                       Text="{Binding Email}"
+                                       Placeholder="Enter your email address"
+                                       FontFamily="PoppinsRegular"
+                                       FontSize="16"
+                                       TextColor="{AppThemeBinding Light={StaticResource LightControlsText}, Dark={StaticResource DarkControlsText}}"
+                                       PlaceholderColor="{AppThemeBinding Light={StaticResource Gray400}, Dark={StaticResource Gray300}}"
+                                       BackgroundColor="Transparent"
+                                       Keyboard="Email"
+                                       ReturnType="Next"
+                                       Margin="16,12"/>
+                            </Frame>
+                        </StackLayout>
+
+                        <!-- Password Field -->
+                        <StackLayout Spacing="8">
+                            <Label Text="Password"
+                                   FontFamily="PoppinsSemibold"
+                                   FontSize="14"
+                                   TextColor="{AppThemeBinding Light={StaticResource GameTitleLight}, Dark={StaticResource GameTitleDark}}"/>
+                            
+                            <Frame BackgroundColor="{AppThemeBinding Light={StaticResource LightControlsBackground}, Dark={StaticResource DarkControlsBackground}}"
+                                   BorderColor="Transparent"
+                                   CornerRadius="12"
+                                   Padding="0"
+                                   HasShadow="False">
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+                                    
+                                    <Entry x:Name="PasswordEntry"
+                                           Grid.Column="0"
+                                           Text="{Binding Password}"
+                                           Placeholder="Enter your password"
+                                           IsPassword="{Binding IsPasswordHidden}"
+                                           FontFamily="PoppinsRegular"
+                                           FontSize="16"
+                                           TextColor="{AppThemeBinding Light={StaticResource LightControlsText}, Dark={StaticResource DarkControlsText}}"
+                                           PlaceholderColor="{AppThemeBinding Light={StaticResource Gray400}, Dark={StaticResource Gray300}}"
+                                           BackgroundColor="Transparent"
+                                           ReturnType="Done"
+                                           Margin="16,12,0,12"/>
+                                    
+                                    <Button Grid.Column="1"
+                                            Text="{Binding PasswordToggleIcon}"
+                                            Command="{Binding TogglePasswordVisibilityCommand}"
+                                            BackgroundColor="Transparent"
+                                            TextColor="{AppThemeBinding Light={StaticResource Gray500}, Dark={StaticResource Gray300}}"
+                                            FontSize="16"
+                                            Padding="12"
+                                            BorderWidth="0"/>
+                                </Grid>
+                            </Frame>
+                        </StackLayout>
+
+                        <!-- Password Requirements -->
+                        <StackLayout Spacing="4">
+                            <Label Text="Password Requirements:"
+                                   FontFamily="PoppinsSemibold"
+                                   FontSize="12"
+                                   TextColor="{AppThemeBinding Light={StaticResource GameSubtitleLight}, Dark={StaticResource GameSubtitleDark}}"/>
+                            
+                            <Label Text="At least 8 characters long&#x0a;At least 1 capital letter&#x0a;At least 1 number or symbol"
+                                   FontFamily="PoppinsRegular"
+                                   FontSize="11"
+                                   TextColor="{AppThemeBinding Light={StaticResource GameSubtitleLight}, Dark={StaticResource GameSubtitleDark}}"
+                                   Opacity="0.8"/>
+                        </StackLayout>
+
+                        <!-- Terms and Conditions -->
+                        <StackLayout Spacing="8" Orientation="Horizontal">
+                            <CheckBox x:Name="AgreeTermsCheckBox"
+                                    IsChecked="{Binding AgreeToTerms}"
+                                    Color="{StaticResource SecondaryButtonLight}"
+                                    VerticalOptions="Center"/>
+                            <Label Text="I agree to the Terms and Conditions and Privacy Policy"
+                                   FontFamily="PoppinsRegular"
+                                   FontSize="12"
+                                   TextColor="{AppThemeBinding Light={StaticResource GameSubtitleLight}, Dark={StaticResource GameSubtitleDark}}"
+                                   VerticalOptions="Center"
+                                   HorizontalOptions="FillAndExpand"/>
+                        </StackLayout>
+
+                        <!-- Error Message -->
+                        <Label Text="{Binding ErrorMessage}"
+                               IsVisible="{Binding HasError}"
+                               FontFamily="PoppinsRegular"
+                               FontSize="14"
+                               TextColor="{AppThemeBinding Light={StaticResource ErrorTextLight}, Dark={StaticResource ErrorTextDark}}"
+                               HorizontalOptions="Center"
+                               HorizontalTextAlignment="Center"
+                               Margin="0,8,0,0"/>
+
+                        <!-- Success Message -->
+                        <Label Text="{Binding SuccessMessage}"
+                               IsVisible="{Binding HasSuccess}"
+                               FontFamily="PoppinsRegular"
+                               FontSize="14"
+                               TextColor="{StaticResource ConnectedStatusLight}"
+                               HorizontalOptions="Center"
+                               HorizontalTextAlignment="Center"
+                               Margin="0,8,0,0"/>
+
+                        <!-- Loading Indicator -->
+                        <ActivityIndicator IsRunning="{Binding IsLoading}"
+                                         IsVisible="{Binding IsLoading}"
+                                         Color="{StaticResource SecondaryButtonLight}"
+                                         WidthRequest="30"
+                                         HeightRequest="30"
+                                         HorizontalOptions="Center"
+                                         Margin="0,16,0,0"/>
+
+                    </StackLayout>
+                </Frame>
+
+                <!-- Action Buttons -->
+                <StackLayout Spacing="16">
+                    <!-- Register Button -->
+                    <Button Text="?? Create Account"
+                            Command="{Binding RegisterCommand}"
+                            Style="{StaticResource MainPagePrimaryButton}"
+                            IsEnabled="{Binding CanRegister}"
+                            SemanticProperties.Hint="Create your new account"/>
+
+                    <!-- Back to Login Button -->
+                    <Button Text="?? Already have an account? Sign In"
+                            Command="{Binding BackToLoginCommand}"
+                            Style="{StaticResource MainPageSecondaryButton}"
+                            IsEnabled="{Binding IsNotLoading}"
+                            SemanticProperties.Hint="Go back to login page"/>
+                </StackLayout>
+
+                <!-- Footer -->
+                <StackLayout Spacing="8" Margin="0,24,0,0">
+                    <Label Text="Marriage Calculator"
+                           FontFamily="PoppinsSemibold"
+                           FontSize="16"
+                           TextColor="{AppThemeBinding Light={StaticResource GameTitleLight}, Dark={StaticResource GameTitleDark}}"
+                           HorizontalOptions="Center"/>
+                    
+                    <Label Text="Your favorite card game companion"
+                           FontFamily="PoppinsRegular"
+                           FontSize="12"
+                           TextColor="{AppThemeBinding Light={StaticResource GameSubtitleLight}, Dark={StaticResource GameSubtitleDark}}"
+                           HorizontalOptions="Center"
+                           Opacity="0.7"/>
+                </StackLayout>
+
+            </StackLayout>
+        </ScrollView>
+
+    </Grid>
+
+</ContentPage>

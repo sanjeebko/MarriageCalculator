@@ -1,11 +1,13 @@
+using MarriageCalculator.API.Services.Interfaces;
 using MarriageCalculator.Core.DTOs;
-using MarriageCalculator.API.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace MarriageCalculator.API.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
+[Authorize]
 public class MarriageGamesController : ControllerBase
 {
     private readonly IMarriageGameService _gameService;

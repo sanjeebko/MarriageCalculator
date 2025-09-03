@@ -1,5 +1,6 @@
 using MarriageCalculator.Core.DTOs;
-using MarriageCalculator.API.Services;
+using MarriageCalculator.API.Services.Interfaces;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace MarriageCalculator.API.Controllers;
@@ -11,6 +12,7 @@ namespace MarriageCalculator.API.Controllers;
 [Route("api/[controller]")]
 [Produces("application/json")]
 [Tags("Database Management")]
+[Authorize]
 public class DatabaseController : ControllerBase
 {
     private readonly IDatabaseService _databaseService;

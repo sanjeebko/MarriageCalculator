@@ -86,42 +86,90 @@
     </Style>
 
     <!-- ================================================= -->
-    <!-- NEW ENHANCED MAIN PAGE STYLES -->
+    <!-- ENHANCED MAIN PAGE STYLES WITH ADVANCED EFFECTS -->
     <!-- ================================================= -->
     
-    <!-- Enhanced Main Page Action Button with Gaming Style -->
+    <!-- Enhanced Main Page Action Button with Gaming Style and Advanced Effects -->
     <Style x:Key="MainPageActionButton" TargetType="Button">
         <Setter Property="TextColor" Value="{StaticResource White}" />
         <Setter Property="FontAttributes" Value="Bold"/>
         <Setter Property="FontFamily" Value="PoppinsSemibold"/>
         <Setter Property="FontSize" Value="16"/>
         <Setter Property="HeightRequest" Value="56"/>
-        <Setter Property="Margin" Value="16,8"/>
+        <Setter Property="Margin" Value="16,12,16,16"/>
         <Setter Property="Padding" Value="24,0"/>
         <Setter Property="CornerRadius" Value="28"/>
         <Setter Property="BorderWidth" Value="0"/>
         <Setter Property="HorizontalOptions" Value="FillAndExpand"/>
         <Setter Property="Shadow">
             <Setter.Value>
-                <Shadow Brush="#1A1A2E"
-                        Offset="0,4"
-                        Radius="12"
-                        Opacity="0.4"/>
+                <Shadow Brush="#40000000"
+                        Offset="0,3"
+                        Radius="8"
+                        Opacity="0.3"/>
             </Setter.Value>
         </Setter>
         <Setter Property="VisualStateManager.VisualStateGroups">
             <VisualStateGroupList>
                 <VisualStateGroup x:Name="CommonStates">
-                    <VisualState x:Name="Normal" />
+                    <!-- Normal State with Enhanced Effects -->
+                    <VisualState x:Name="Normal">
+                        <VisualState.Setters>
+                            <Setter Property="Scale" Value="1.0" />
+                            <Setter Property="Opacity" Value="1.0" />
+                            <Setter Property="Rotation" Value="0" />
+                            <Setter Property="TranslationY" Value="0" />
+                        </VisualState.Setters>
+                        <VisualState.StateTriggers>
+                            <StateTrigger IsActive="True" />
+                        </VisualState.StateTriggers>
+                    </VisualState>
+                    
+                    <!-- Pressed State with Bounce Effect -->
                     <VisualState x:Name="Pressed">
                         <VisualState.Setters>
-                            <Setter Property="Scale" Value="0.96" />
-                            <Setter Property="Opacity" Value="0.8" />
+                            <Setter Property="Scale" Value="0.92" />
+                            <Setter Property="Opacity" Value="0.85" />
+                            <Setter Property="TranslationY" Value="2" />
                         </VisualState.Setters>
                     </VisualState>
+                    
+                    <!-- Disabled State with Fade Effect -->
                     <VisualState x:Name="Disabled">
                         <VisualState.Setters>
                             <Setter Property="Opacity" Value="0.4" />
+                            <Setter Property="Scale" Value="0.98" />
+                        </VisualState.Setters>
+                    </VisualState>
+                    
+                    <!-- Focused State with Glow Effect -->
+                    <VisualState x:Name="Focused">
+                        <VisualState.Setters>
+                            <Setter Property="Scale" Value="1.02" />
+                            <Setter Property="Shadow">
+                                <Setter.Value>
+                                    <Shadow Brush="#60000000"
+                                            Offset="0,5"
+                                            Radius="15"
+                                            Opacity="0.5"/>
+                                </Setter.Value>
+                            </Setter>
+                        </VisualState.Setters>
+                    </VisualState>
+                    
+                    <!-- PointerOver State with Lift Effect -->
+                    <VisualState x:Name="PointerOver">
+                        <VisualState.Setters>
+                            <Setter Property="Scale" Value="1.05" />
+                            <Setter Property="TranslationY" Value="-2" />
+                            <Setter Property="Shadow">
+                                <Setter.Value>
+                                    <Shadow Brush="#50000000"
+                                            Offset="0,6"
+                                            Radius="12"
+                                            Opacity="0.4"/>
+                                </Setter.Value>
+                            </Setter>
                         </VisualState.Setters>
                     </VisualState>
                 </VisualStateGroup>
@@ -129,7 +177,7 @@
         </Setter>
     </Style>
 
-    <!-- Primary Action Button (Start New Game) with Gradient -->
+    <!-- Primary Action Button with Pulsing and Gradient Animation Effects -->
     <Style x:Key="MainPagePrimaryButton" TargetType="Button" BasedOn="{StaticResource MainPageActionButton}">
         <Setter Property="Background">
             <Setter.Value>
@@ -141,24 +189,107 @@
         </Setter>
         <Setter Property="FontSize" Value="18"/>
         <Setter Property="HeightRequest" Value="60"/>
+        <Setter Property="Margin" Value="16,12,16,20"/>
         <Setter Property="Shadow">
             <Setter.Value>
-                <Shadow Brush="#C0392B"
-                        Offset="0,6"
-                        Radius="16"
-                        Opacity="0.5"/>
+                <Shadow Brush="#60C0392B"
+                        Offset="0,4"
+                        Radius="10"
+                        Opacity="0.4"/>
             </Setter.Value>
+        </Setter>
+        <Setter Property="VisualStateManager.VisualStateGroups">
+            <VisualStateGroupList>
+                <VisualStateGroup x:Name="CommonStates">
+                    <VisualState x:Name="Normal">
+                        <VisualState.Setters>
+                            <Setter Property="Scale" Value="1.0" />
+                            <Setter Property="Opacity" Value="1.0" />
+                        </VisualState.Setters>
+                    </VisualState>
+                    <VisualState x:Name="Pressed">
+                        <VisualState.Setters>
+                            <Setter Property="Scale" Value="0.88" />
+                            <Setter Property="Opacity" Value="0.8" />
+                            <Setter Property="Background">
+                                <Setter.Value>
+                                    <LinearGradientBrush EndPoint="1,0" StartPoint="0,0">
+                                        <GradientStop Color="#E74C3C" Offset="0.0"/>
+                                        <GradientStop Color="#C0392B" Offset="1.0"/>
+                                    </LinearGradientBrush>
+                                </Setter.Value>
+                            </Setter>
+                        </VisualState.Setters>
+                    </VisualState>
+                    <VisualState x:Name="PointerOver">
+                        <VisualState.Setters>
+                            <Setter Property="Scale" Value="1.08" />
+                            <Setter Property="TranslationY" Value="-3" />
+                            <Setter Property="Shadow">
+                                <Setter.Value>
+                                    <Shadow Brush="#80C0392B"
+                                            Offset="0,8"
+                                            Radius="20"
+                                            Opacity="0.6"/>
+                                </Setter.Value>
+                            </Setter>
+                        </VisualState.Setters>
+                    </VisualState>
+                </VisualStateGroup>
+            </VisualStateGroupList>
         </Setter>
     </Style>
 
-    <!-- Secondary Action Button (Resume, Settings, Players) -->
+    <!-- Secondary Action Button with Ripple Effect -->
     <Style x:Key="MainPageSecondaryButton" TargetType="Button" BasedOn="{StaticResource MainPageActionButton}">
         <Setter Property="BackgroundColor" Value="#6C5CE7" />
         <Setter Property="FontSize" Value="16"/>
         <Setter Property="HeightRequest" Value="56"/>
+        <Setter Property="Margin" Value="16,8,16,12"/>
+        <Setter Property="Shadow">
+            <Setter.Value>
+                <Shadow Brush="#406C5CE7"
+                        Offset="0,2"
+                        Radius="6"
+                        Opacity="0.25"/>
+            </Setter.Value>
+        </Setter>
+        <Setter Property="VisualStateManager.VisualStateGroups">
+            <VisualStateGroupList>
+                <VisualStateGroup x:Name="CommonStates">
+                    <VisualState x:Name="Normal">
+                        <VisualState.Setters>
+                            <Setter Property="Scale" Value="1.0" />
+                            <Setter Property="Opacity" Value="1.0" />
+                            <Setter Property="BackgroundColor" Value="#6C5CE7" />
+                        </VisualState.Setters>
+                    </VisualState>
+                    <VisualState x:Name="Pressed">
+                        <VisualState.Setters>
+                            <Setter Property="Scale" Value="0.94" />
+                            <Setter Property="Opacity" Value="0.85" />
+                            <Setter Property="BackgroundColor" Value="#5A4FCF" />
+                        </VisualState.Setters>
+                    </VisualState>
+                    <VisualState x:Name="PointerOver">
+                        <VisualState.Setters>
+                            <Setter Property="Scale" Value="1.03" />
+                            <Setter Property="BackgroundColor" Value="#7C6CE7" />
+                            <Setter Property="TranslationY" Value="-1" />
+                        </VisualState.Setters>
+                    </VisualState>
+                    <VisualState x:Name="Disabled">
+                        <VisualState.Setters>
+                            <Setter Property="Opacity" Value="0.3" />
+                            <Setter Property="BackgroundColor" Value="#9CA3AF" />
+                        </VisualState.Setters>
+                    </VisualState>
+                </VisualStateGroup>
+            </VisualStateGroupList>
+        </Setter>
     </Style>
 
-    <!-- Enhanced Exit Button with Gradient -->
+    <!-- Enhanced Exit Button with Warning Animation -->
     <Style x:Key="MainPageExitButton" TargetType="Button" BasedOn="{StaticResource MainPageActionButton}">
         <Setter Property="Background">
             <Setter.Value>
@@ -169,15 +300,88 @@
             </Setter.Value>
         </Setter>
         <Setter Property="HeightRequest" Value="56"/>
+        <Setter Property="Margin" Value="16,16,16,24"/>
+        <Setter Property="Shadow">
+            <Setter.Value>
+                <Shadow Brush="#60C0392B"
+                        Offset="0,3"
+                        Radius="8"
+                        Opacity="0.35"/>
+            </Setter.Value>
+        </Setter>
+        <Setter Property="VisualStateManager.VisualStateGroups">
+            <VisualStateGroupList>
+                <VisualStateGroup x:Name="CommonStates">
+                    <VisualState x:Name="Normal">
+                        <VisualState.Setters>
+                            <Setter Property="Scale" Value="1.0" />
+                            <Setter Property="Opacity" Value="1.0" />
+                        </VisualState.Setters>
+                    </VisualState>
+                    <VisualState x:Name="Pressed">
+                        <VisualState.Setters>
+                            <Setter Property="Scale" Value="0.92" />
+                            <Setter Property="Opacity" Value="0.8" />
+                            <Setter Property="Rotation" Value="1" />
+                        </VisualState.Setters>
+                    </VisualState>
+                    <VisualState x:Name="PointerOver">
+                        <VisualState.Setters>
+                            <Setter Property="Scale" Value="1.05" />
+                            <Setter Property="Shadow">
+                                <Setter.Value>
+                                    <Shadow Brush="#80E74C3C"
+                                            Offset="0,6"
+                                            Radius="15"
+                                            Opacity="0.5"/>
+                                </Setter.Value>
+                            </Setter>
+                        </VisualState.Setters>
+                    </VisualState>
+                </VisualStateGroup>
+            </VisualStateGroupList>
+        </Setter>
     </Style>
 
-    <!-- Error State Button for Connection Issues -->
+    <!-- Error State Button for Connection Issues with Pulse Effect -->
     <Style x:Key="MainPageRetryButton" TargetType="Button" BasedOn="{StaticResource MainPageActionButton}">
         <Setter Property="BackgroundColor" Value="#3498DB" />
         <Setter Property="HeightRequest" Value="56"/>
+        <Setter Property="Shadow">
+            <Setter.Value>
+                <Shadow Brush="#403498DB"
+                        Offset="0,2"
+                        Radius="6"
+                        Opacity="0.3"/>
+            </Setter.Value>
+        </Setter>
+        <Setter Property="VisualStateManager.VisualStateGroups">
+            <VisualStateGroupList>
+                <VisualStateGroup x:Name="CommonStates">
+                    <VisualState x:Name="Normal">
+                        <VisualState.Setters>
+                            <Setter Property="Scale" Value="1.0" />
+                            <Setter Property="Opacity" Value="1.0" />
+                        </VisualState.Setters>
+                    </VisualState>
+                    <VisualState x:Name="Pressed">
+                        <VisualState.Setters>
+                            <Setter Property="Scale" Value="0.95" />
+                            <Setter Property="BackgroundColor" Value="#2980B9" />
+                        </VisualState.Setters>
+                    </VisualState>
+                    <VisualState x:Name="PointerOver">
+                        <VisualState.Setters>
+                            <Setter Property="Scale" Value="1.02" />
+                            <Setter Property="BackgroundColor" Value="#5DADE2" />
+                        </VisualState.Setters>
+                    </VisualState>
+                </VisualStateGroup>
+            </VisualStateGroupList>
+        </Setter>
     </Style>
 
-    <!-- Enhanced Game Title Style for Light/Dark Theme -->
+    <!-- Enhanced Game Title Style with Glow Effect -->
     <Style x:Key="GameTitleLabel" TargetType="Label">
         <Setter Property="FontFamily" Value="PoppinsSemibold"/>
         <Setter Property="FontSize" Value="32"/>
@@ -189,10 +393,22 @@
         <Setter Property="Shadow">
             <Setter.Value>
                 <Shadow Brush="{AppThemeBinding Light={StaticResource White}, Dark={StaticResource Black}}"
-                        Offset="0,3"
-                        Radius="6"
-                        Opacity="0.3"/>
+                        Offset="0,2"
+                        Radius="4"
+                        Opacity="0.2"/>
             </Setter.Value>
+        </Setter>
+        <Setter Property="VisualStateManager.VisualStateGroups">
+            <VisualStateGroupList>
+                <VisualStateGroup x:Name="CommonStates">
+                    <VisualState x:Name="Normal">
+                        <VisualState.Setters>
+                            <Setter Property="Scale" Value="1.0" />
+                            <Setter Property="Opacity" Value="1.0" />
+                        </VisualState.Setters>
+                    </VisualState>
+                </VisualStateGroup>
+            </VisualStateGroupList>
         </Setter>
     </Style>
 

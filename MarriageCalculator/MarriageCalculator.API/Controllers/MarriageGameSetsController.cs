@@ -1,11 +1,13 @@
+using MarriageCalculator.API.Services.Interfaces;
 using MarriageCalculator.Core.DTOs;
-using MarriageCalculator.API.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace MarriageCalculator.API.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
+[Authorize]
 public class MarriageGameSetsController : ControllerBase
 {
     private readonly IMarriageGameSetService _gameSetService;
@@ -18,14 +20,14 @@ public class MarriageGameSetsController : ControllerBase
     }
 
     /// <summary>
-    /// Get all marriage game sets
+    /// Get marriage game sets for a specific GameSettingsId
     /// </summary>
     [HttpGet]
-    public async Task<ActionResult<IEnumerable<MarriageGameSetDto>>> GetMarriageGameSets()
+    public async Task<ActionResult<IEnumerable<MarriageGameSetDto>>> GetMarriageGameSets([FromQuery] int gameSettingsId)
     {
         try
         {
-            var gameSets = await _gameSetService.GetAllGameSetsAsync();
+            var gameSets = await _gameSetService.GetAllGameSetsAsync(gameSettingsId);
             return Ok(gameSets);
         }
         catch (Exception ex)

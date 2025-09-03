@@ -15,9 +15,19 @@
             <!-- Converters -->
             <converters:InvertedBoolConverter x:Key="InvertedBoolConverter" />
             <converters:SelectedPlayerConverter x:Key="SelectedPlayerConverter" />
+            <converters:PlayerSelectionStatusConverter x:Key="PlayerSelectionStatusConverter" />
+            <converters:PlayerInActivePlayersMultiConverter x:Key="PlayerInActivePlayersMultiConverter" />
+            <converters:SimplePlayerSelectionConverter x:Key="SimplePlayerSelectionConverter" />
+            <converters:PlayerNameInListConverter x:Key="PlayerNameInListConverter" />
+            <converters:DirectPlayerBackgroundConverter x:Key="DirectPlayerBackgroundConverter" />
+            <converters:FirstCharUpperConverter x:Key="FirstCharUpperConverter" />
             <converters:CurrencyToDescriptionConverter x:Key="CurrencyToDescriptionConverter" />
             <converters:FoulPointBonusTypeToDescriptionConverter x:Key="FoulPointBonusTypeToDescriptionConverter" />
             <converters:AllTrueConverter x:Key="AllTrueConverter" />
+            <converters:StringNotNullOrEmptyConverter x:Key="StringNotNullOrEmptyConverter" />
+            <converters:BoolToColorConverter x:Key="BoolToColorConverter" />
+            <converters:BoolToStringConverter x:Key="BoolToStringConverter" />
+            <converters:ConnectionStatusToColorConverter x:Key="ConnectionStatusToColorConverter" />
         </ResourceDictionary>
         
     </Application.Resources>

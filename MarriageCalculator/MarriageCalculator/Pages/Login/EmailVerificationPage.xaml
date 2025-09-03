@@ -1,0 +1,226 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:vm="clr-namespace:MarriageCalculator.ViewModels"
+             x:Class="MarriageCalculator.Pages.Login.EmailVerificationPage"
+             Shell.NavBarIsVisible="False"
+             x:DataType="vm:EmailVerificationViewModel"
+             Title="Email Verification">
+
+    <Grid RowSpacing="0">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <!-- Seamless Gradient Background -->
+        <Rectangle Grid.RowSpan="2">
+            <Rectangle.Fill>
+                <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
+                    <GradientStop Color="{AppThemeBinding Light={StaticResource LightGradientRow0}, Dark={StaticResource DarkGradientRow0}}" 
+                                  Offset="0.0"/>
+                    <GradientStop Color="{AppThemeBinding Light={StaticResource LightGradientRow1}, Dark={StaticResource DarkGradientRow1}}" 
+                                  Offset="0.4"/>
+                    <GradientStop Color="{AppThemeBinding Light={StaticResource LightGradientRow2}, Dark={StaticResource DarkGradientRow2}}" 
+                                  Offset="1.0"/>
+                </LinearGradientBrush>
+            </Rectangle.Fill>
+        </Rectangle>
+
+        <!-- Header Section -->
+        <StackLayout Grid.Row="0" Spacing="16" Margin="24,40,24,24" BackgroundColor="Transparent">
+            <!-- App Logo -->
+            <Frame BackgroundColor="Transparent" 
+                   BorderColor="Transparent" 
+                   Padding="0"
+                   HorizontalOptions="Center">
+                <Frame.Shadow>
+                    <Shadow Brush="#000000"
+                            Offset="0,8"
+                            Radius="24"
+                            Opacity="0.4"/>
+                </Frame.Shadow>
+                <Image Source="cards.png"
+                       HeightRequest="100"
+                       HorizontalOptions="Center"
+                       Aspect="AspectFit"/>
+            </Frame>
+
+            <!-- Welcome Text -->
+            <Label Text="?? Email Verification"
+                   Style="{StaticResource GameTitleLabel}"
+                   FontSize="28"
+                   Margin="0,8,0,0"/>
+            
+            <Label Text="Enter the verification code sent to your email"
+                   FontFamily="PoppinsRegular"
+                   FontSize="16"
+                   TextColor="{AppThemeBinding Light={StaticResource GameSubtitleLight}, Dark={StaticResource GameSubtitleDark}}"
+                   HorizontalOptions="Center"
+                   HorizontalTextAlignment="Center"
+                   Opacity="0.8"/>
+        </StackLayout>
+
+        <!-- Main Content - Verification Form -->
+        <ScrollView Grid.Row="1" BackgroundColor="Transparent">
+            <StackLayout Spacing="24" Padding="24,0,24,40" BackgroundColor="Transparent">
+
+                <!-- Verification Form Card -->
+                <Frame Style="{StaticResource GameCardFrame}" 
+                       Padding="32,24">
+                    <StackLayout Spacing="20">
+
+                        <!-- Email Field -->
+                        <StackLayout Spacing="8">
+                            <Label Text="Email Address"
+                                   FontFamily="PoppinsSemibold"
+                                   FontSize="14"
+                                   TextColor="{AppThemeBinding Light={StaticResource GameTitleLight}, Dark={StaticResource GameTitleDark}}"/>
+                            
+                            <Frame BackgroundColor="{AppThemeBinding Light={StaticResource LightControlsBackground}, Dark={StaticResource DarkControlsBackground}}"
+                                   BorderColor="Transparent"
+                                   CornerRadius="12"
+                                   Padding="0"
+                                   HasShadow="False">
+                                <Entry x:Name="EmailEntry"
+                                       Text="{Binding Email}"
+                                       Placeholder="Enter your email address"
+                                       FontFamily="PoppinsRegular"
+                                       FontSize="16"
+                                       TextColor="{AppThemeBinding Light={StaticResource LightControlsText}, Dark={StaticResource DarkControlsText}}"
+                                       PlaceholderColor="{AppThemeBinding Light={StaticResource Gray400}, Dark={StaticResource Gray300}}"
+                                       BackgroundColor="Transparent"
+                                       Keyboard="Email"
+                                       ReturnType="Next"
+                                       Margin="16,12"/>
+                            </Frame>
+                        </StackLayout>
+
+                        <!-- Verification Code Field -->
+                        <StackLayout Spacing="8">
+                            <Label Text="Verification Code"
+                                   FontFamily="PoppinsSemibold"
+                                   FontSize="14"
+                                   TextColor="{AppThemeBinding Light={StaticResource GameTitleLight}, Dark={StaticResource GameTitleDark}}"/>
+                            
+                            <Frame BackgroundColor="{AppThemeBinding Light={StaticResource LightControlsBackground}, Dark={StaticResource DarkControlsBackground}}"
+                                   BorderColor="Transparent"
+                                   CornerRadius="12"
+                                   Padding="0"
+                                   HasShadow="False">
+                                <Entry x:Name="VerificationCodeEntry"
+                                       Text="{Binding VerificationCode}"
+                                       Placeholder="Enter 5-digit code"
+                                       FontFamily="PoppinsRegular"
+                                       FontSize="18"
+                                       TextColor="{AppThemeBinding Light={StaticResource LightControlsText}, Dark={StaticResource DarkControlsText}}"
+                                       PlaceholderColor="{AppThemeBinding Light={StaticResource Gray400}, Dark={StaticResource Gray300}}"
+                                       BackgroundColor="Transparent"
+                                       Keyboard="Numeric"
+                                       MaxLength="5"
+                                       ReturnType="Done"
+                                       HorizontalTextAlignment="Center"
+                                       Margin="16,12"/>
+                            </Frame>
+                        </StackLayout>
+
+                        <!-- Success Message -->
+                        <Label Text="{Binding SuccessMessage}"
+                               IsVisible="{Binding HasSuccess}"
+                               FontFamily="PoppinsRegular"
+                               FontSize="14"
+                               TextColor="{AppThemeBinding Light=#059669, Dark=#10B981}"
+                               HorizontalOptions="Center"
+                               HorizontalTextAlignment="Center"
+                               Margin="0,8,0,0"/>
+
+                        <!-- Error Message -->
+                        <Label Text="{Binding ErrorMessage}"
+                               IsVisible="{Binding HasError}"
+                               FontFamily="PoppinsRegular"
+                               FontSize="14"
+                               TextColor="{AppThemeBinding Light={StaticResource ErrorTextLight}, Dark={StaticResource ErrorTextDark}}"
+                               HorizontalOptions="Center"
+                               HorizontalTextAlignment="Center"
+                               Margin="0,8,0,0"/>
+
+                        <!-- Loading Indicator -->
+                        <ActivityIndicator IsRunning="{Binding IsLoading}"
+                                         IsVisible="{Binding IsLoading}"
+                                         Color="{StaticResource SecondaryButtonLight}"
+                                         WidthRequest="30"
+                                         HeightRequest="30"
+                                         HorizontalOptions="Center"
+                                         Margin="0,16,0,0"/>
+
+                    </StackLayout>
+                </Frame>
+
+                <!-- Action Buttons -->
+                <StackLayout Spacing="16">
+                    <!-- Verify Button -->
+                    <Button Text="? Verify Email"
+                            Command="{Binding VerifyEmailCommand}"
+                            Style="{StaticResource MainPagePrimaryButton}"
+                            IsEnabled="{Binding IsNotLoading}"
+                            SemanticProperties.Hint="Verify your email address"/>
+
+                    <!-- Resend Code Button -->
+                    <Grid>
+                        <Button Text="?? Resend Verification Code"
+                                Command="{Binding ResendVerificationCodeCommand}"
+                                Style="{StaticResource MainPageSecondaryButton}"
+                                IsEnabled="{Binding IsNotResendLoading}"
+                                IsVisible="{Binding IsNotResendLoading}"
+                                SemanticProperties.Hint="Resend verification code to your email"/>
+                        
+                        <StackLayout Orientation="Horizontal" 
+                                   HorizontalOptions="Center"
+                                   IsVisible="{Binding IsResendLoading}"
+                                   Spacing="8">
+                            <ActivityIndicator IsRunning="{Binding IsResendLoading}"
+                                             Color="{StaticResource SecondaryButtonLight}"
+                                             WidthRequest="20"
+                                             HeightRequest="20"/>
+                            <Label Text="Sending..."
+                                   FontFamily="PoppinsRegular"
+                                   FontSize="16"
+                                   TextColor="{AppThemeBinding Light={StaticResource GameSubtitleLight}, Dark={StaticResource GameSubtitleDark}}"
+                                   VerticalOptions="Center"/>
+                        </StackLayout>
+                    </Grid>
+
+                    <!-- Back to Login Button -->
+                    <Button Text="? Back to Login"
+                            Command="{Binding BackToLoginCommand}"
+                            BackgroundColor="Transparent"
+                            TextColor="{AppThemeBinding Light={StaticResource Gray500}, Dark={StaticResource Gray300}}"
+                            BorderColor="Transparent"
+                            FontFamily="PoppinsRegular"
+                            FontSize="16"
+                            IsEnabled="{Binding IsNotLoading}"
+                            SemanticProperties.Hint="Go back to login page"/>
+                </StackLayout>
+
+                <!-- Footer -->
+                <StackLayout Spacing="8" Margin="0,24,0,0">
+                    <Label Text="Didn't receive the code?"
+                           FontFamily="PoppinsRegular"
+                           FontSize="14"
+                           TextColor="{AppThemeBinding Light={StaticResource GameSubtitleLight}, Dark={StaticResource GameSubtitleDark}}"
+                           HorizontalOptions="Center"/>
+                    
+                    <Label Text="Check your spam folder or try resending"
+                           FontFamily="PoppinsRegular"
+                           FontSize="12"
+                           TextColor="{AppThemeBinding Light={StaticResource GameSubtitleLight}, Dark={StaticResource GameSubtitleDark}}"
+                           HorizontalOptions="Center"
+                           Opacity="0.7"/>
+                </StackLayout>
+
+            </StackLayout>
+        </ScrollView>
+
+    </Grid>
+
+</ContentPage>

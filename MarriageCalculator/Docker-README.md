@@ -22,16 +22,17 @@ cd /path/to/MarriageCalculator/
 
 ```bash
 # Build Docker image (clean .NET 8 build)
-docker build -f MarriageCalculator.API/Dockerfile -t sanjeebojha/marriagecalculatorapi:1.0.1 .
+docker build -f MarriageCalculator.API/Dockerfile -t sanjeebojha/marriagecalculatorapi:1.0.1.5 .
 
 # Tag as latest and stable
-docker tag sanjeebojha/marriagecalculatorapi:1.0.1 sanjeebojha/marriagecalculatorapi:latest
-docker tag sanjeebojha/marriagecalculatorapi:1.0.1 sanjeebojha/marriagecalculatorapi:stable
+docker tag sanjeebojha/marriagecalculatorapi:1.0.1.5 sanjeebojha/marriagecalculatorapi:latest
+docker tag sanjeebojha/marriagecalculatorapi:1.0.1.5 sanjeebojha/marriagecalculatorapi:stable
 
 # Push to Docker Hub
-docker push sanjeebojha/marriagecalculatorapi:1.0.1
+docker push sanjeebojha/marriagecalculatorapi:1.0.1.5
 docker push sanjeebojha/marriagecalculatorapi:latest
 docker push sanjeebojha/marriagecalculatorapi:stable
+
 ```
 
 ## ?? Running the Container

@@ -11,7 +11,7 @@ public class MarriageGameScore
     public int Id { get; set; }
 
     public int MarriageGameId { get; set; }
-    public int PlayerId { get; set; }
+    public Guid PlayerId { get; set; }
 
     public bool Seen { get; set; } = false;
 

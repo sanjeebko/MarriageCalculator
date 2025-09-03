@@ -15,12 +15,12 @@ public class MappingProfile : Profile
             .ForMember(dest => dest.FoulPointBonus, opt => opt.MapFrom(src => ParseFoulPointBonus(src.FoulPointBonus)));
 
         CreateMap<GameSettings, GameSettingsDto>()
-            .ForMember(dest => dest.Currency, opt => opt.MapFrom(src => src.Currency.ToString()))
-            .ForMember(dest => dest.FoulPointBonus, opt => opt.MapFrom(src => src.FoulPointBonus.ToString()));
+            .ForMember(dest => dest.Currency, opt => opt.MapFrom(src => src.Currency))
+            .ForMember(dest => dest.FoulPointBonus, opt => opt.MapFrom(src => src.FoulPointBonus));
 
         CreateMap<GameSettings, CreateGameSettingsDto>()
-            .ForMember(dest => dest.Currency, opt => opt.MapFrom(src => src.Currency.ToString()))
-            .ForMember(dest => dest.FoulPointBonus, opt => opt.MapFrom(src => src.FoulPointBonus.ToString()));
+            .ForMember(dest => dest.Currency, opt => opt.MapFrom(src => src.Currency))
+            .ForMember(dest => dest.FoulPointBonus, opt => opt.MapFrom(src => src.FoulPointBonus));
 
         // Player mappings
         CreateMap<PlayerDto, Player>();
@@ -57,16 +57,16 @@ public class MappingProfile : Profile
     /// <summary>
     /// Parse Currency enum from string with fallback
     /// </summary>
-    private static Currency ParseCurrency(string currencyString)
+    private static Currency ParseCurrency(Currency currency)
     {
-        return Enum.TryParse<Currency>(currencyString, out var currency) ? currency : Currency.NPR_Rupee;
+        return currency;
     }
 
     /// <summary>
     /// Parse FoulPointBonusType enum from string with fallback
     /// </summary>
-    private static FoulPointBonusType ParseFoulPointBonus(string foulBonusString)
+    private static FoulPointBonusType ParseFoulPointBonus(FoulPointBonusType foulBonus)
     {
-        return Enum.TryParse<FoulPointBonusType>(foulBonusString, out var foulBonus) ? foulBonus : FoulPointBonusType.NO_FOUL_POINT;
+        return foulBonus;
     }
 }

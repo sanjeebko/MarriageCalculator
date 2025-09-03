@@ -31,7 +31,7 @@
         </Rectangle>
 
         <!-- Header Section -->
-        <StackLayout Grid.Row="0" Spacing="8" Margin="24,40,24,16" BackgroundColor="Transparent">
+        <StackLayout Grid.Row="0" Spacing="8" Margin="24,0,24,0" BackgroundColor="Transparent">
             <!-- Compact Header with Icon and Title on Same Line -->
             <StackLayout Orientation="Horizontal" Spacing="12" HorizontalOptions="Center">
                 <Label Text="👥"
@@ -47,7 +47,7 @@
 
         <!-- Content Area -->
         <ScrollView Grid.Row="1" BackgroundColor="Transparent">
-            <StackLayout Spacing="16" Padding="24,0,24,24" BackgroundColor="Transparent">
+            <StackLayout Spacing="10" Padding="10,0,10,24" BackgroundColor="Transparent">
 
                 <!-- Add Player Section -->
                 <Frame BackgroundColor="#3A3A5C"
@@ -66,7 +66,7 @@
                         <!-- Section Header with Icon -->
                         <StackLayout Orientation="Horizontal" Spacing="12">
                             <Label Text="➕"
-                                   FontSize="24"
+                                   FontSize="20"
                                    TextColor="{StaticResource White}"
                                    VerticalOptions="Center"/>
                             <Label Text="Add New Players"
@@ -86,7 +86,8 @@
                                    TextColor="{StaticResource White}"
                                    BackgroundColor="#4A4E69"
                                    FontFamily="PoppinsRegular"
-                                   FontSize="16"
+                                   FontSize="14"
+                                   
                                    HeightRequest="48"/>
                             <Button Grid.Column="1" 
                                     Text="Add"
@@ -121,7 +122,7 @@
                 <Frame BackgroundColor="#3A3A5C"
                        BorderColor="Transparent"
                        CornerRadius="20"
-                       Padding="24"
+                       Padding="10"
                        HasShadow="True">
                     <Frame.Shadow>
                         <Shadow Brush="#000000"
@@ -129,7 +130,7 @@
                                 Radius="16"
                                 Opacity="0.3"/>
                     </Frame.Shadow>
-                    <StackLayout Spacing="16">
+                    <StackLayout Spacing="10">
                         
                         <!-- Section Header with Icon -->
                         <StackLayout Orientation="Horizontal" Spacing="12">
@@ -147,11 +148,14 @@
 
                         <!-- Current Players List -->
                         <CollectionView x:Name="cvList" 
-                                        ItemsSource="{Binding CurrentPlayers}"
+                                        ItemsSource="{Binding ActivePlayers}"
                                         BackgroundColor="Transparent"
                                         SelectionMode="None">
                             <CollectionView.ItemsLayout>
-                                <LinearItemsLayout Orientation="Vertical" ItemSpacing="8"/>
+                                <GridItemsLayout Orientation="Vertical" 
+                                                 HorizontalItemSpacing="5" 
+                                                 VerticalItemSpacing="5" 
+                                                 Span="2"/>
                             </CollectionView.ItemsLayout>
                             <CollectionView.ItemTemplate>
                                 <DataTemplate x:DataType="core:Player">
@@ -168,7 +172,7 @@
                                         <Frame BackgroundColor="#4A4E69"
                                                BorderColor="Transparent"
                                                CornerRadius="12"
-                                               Padding="16,12"
+                                               Padding="6,5"
                                                HasShadow="False"
                                                Margin="0">
                                             <Grid ColumnDefinitions="Auto,*,Auto">
@@ -182,7 +186,7 @@
                                                        Text="{Binding Name}"
                                                        TextColor="{StaticResource White}"
                                                        FontFamily="PoppinsRegular"
-                                                       FontSize="16"
+                                                       FontSize="14"
                                                        VerticalOptions="Center"/>
                                                 <Label Grid.Column="2"
                                                        Text="⋮"
@@ -228,7 +232,7 @@
                 <Frame BackgroundColor="#3A3A5C"
                        BorderColor="Transparent"
                        CornerRadius="20"
-                       Padding="24"
+                       Padding="10"
                        HasShadow="True">
                     <Frame.Shadow>
                         <Shadow Brush="#000000"
@@ -236,7 +240,7 @@
                                 Radius="16"
                                 Opacity="0.3"/>
                     </Frame.Shadow>
-                    <StackLayout Spacing="16">
+                    <StackLayout Spacing="10">
                         
                         <!-- Section Header with Icon -->
                         <StackLayout Orientation="Horizontal" Spacing="12">
@@ -270,68 +274,64 @@
                         </StackLayout>
 
                         <!-- Previous Players List -->
-                        <RefreshView IsRefreshing="{Binding IsRefreshing}" 
-                                     Command="{Binding RefreshAllPlayersCommand}">
-                            <CollectionView x:Name="AllPlayerList" 
-                                            ItemsSource="{Binding AllPlayers}"
-                                            BackgroundColor="Transparent"
-                                            SelectionMode="None"
-                                            MaximumHeightRequest="300">
-                                <CollectionView.ItemsLayout>
-                                    <GridItemsLayout Orientation="Vertical" 
-                                                     HorizontalItemSpacing="8" 
-                                                     VerticalItemSpacing="8" 
-                                                     Span="2"/>
-                                </CollectionView.ItemsLayout>
-                                <CollectionView.ItemTemplate>
-                                    <DataTemplate x:DataType="core:Player">
-                                        <SwipeView>
-                                            <SwipeView.RightItems>
-                                                <SwipeItems SwipeBehaviorOnInvoked="Close">
-                                                    <SwipeItem Text="Delete" 
-                                                              Command="{Binding BindingContext.DeletePlayerFromDbCommand, Source={x:Reference AllPlayerList}}" 
-                                                              CommandParameter="{Binding .}"
-                                                              BackgroundColor="#E74C3C"/>
-                                                </SwipeItems>
-                                            </SwipeView.RightItems>
+                        <CollectionView x:Name="AllPlayerList" 
+                                        ItemsSource="{Binding AllPlayersWithStatus}"
+                                        BackgroundColor="Transparent"
+                                        SelectionMode="None"
+                                        MaximumHeightRequest="300">
+                            <CollectionView.ItemsLayout>
+                                <GridItemsLayout Orientation="Vertical" 
+                                                 HorizontalItemSpacing="8" 
+                                                 VerticalItemSpacing="8" 
+                                                 Span="2"/>
+                            </CollectionView.ItemsLayout>
+                            <CollectionView.ItemTemplate>
+                                <DataTemplate x:DataType="local:PlayerWithStatus">
+                                    <SwipeView>
+                                        <SwipeView.RightItems>
+                                            <SwipeItems SwipeBehaviorOnInvoked="Close">
+                                                <SwipeItem Text="Delete" 
+                                                          Command="{Binding BindingContext.DeletePlayerWithStatusFromDbCommand, Source={x:Reference AllPlayerList}}" 
+                                                          CommandParameter="{Binding .}"
+                                                          BackgroundColor="#E74C3C"/>
+                                            </SwipeItems>
+                                        </SwipeView.RightItems>
 
-                                            <Frame BackgroundColor="#4A4E69"
-                                                   BorderColor="Transparent"
-                                                   CornerRadius="12"
-                                                   Padding="12,10"
-                                                   HasShadow="False"
-                                                   Margin="0">
-                                                <Label Text="{Binding Name}"
-                                                       TextColor="{StaticResource White}"
-                                                       FontFamily="PoppinsRegular"
-                                                       FontSize="14"
-                                                       HorizontalOptions="Center"
-                                                       VerticalOptions="Center"/>
-                                                <Frame.GestureRecognizers>
-                                                    <TapGestureRecognizer Command="{Binding BindingContext.TapPlayerCommand, Source={x:Reference AllPlayerList}}" 
-                                                                         CommandParameter="{Binding .}" 
-                                                                         NumberOfTapsRequired="2"/>
-                                                </Frame.GestureRecognizers>
-                                            </Frame>
-                                        </SwipeView>
-                                    </DataTemplate>
-                                </CollectionView.ItemTemplate>
-                                <CollectionView.EmptyView>
-                                    <StackLayout VerticalOptions="Center" HorizontalOptions="Center" Spacing="8" Padding="24">
-                                        <Label Text="📝"
-                                               FontSize="32"
-                                               HorizontalOptions="Center"
-                                               TextColor="#B0B0B0"/>
-                                        <Label Text="No previous players found"
-                                               TextColor="#B0B0B0"
-                                               FontFamily="PoppinsRegular"
-                                               FontSize="14"
-                                               HorizontalOptions="Center"/>
-                                    </StackLayout>
-                                </CollectionView.EmptyView>
-                            </CollectionView>
-                        </RefreshView>
-
+                                        <Frame BorderColor="Transparent"
+                                               CornerRadius="12"
+                                               Padding="5,10"
+                                               HasShadow="False"
+                                               Margin="0"
+                                               BackgroundColor="{Binding BackgroundColor}">
+                                            <Label Text="{Binding Player.Name}"
+                                                   TextColor="{StaticResource White}"
+                                                   FontFamily="PoppinsRegular"
+                                                   FontSize="14"
+                                                   HorizontalOptions="Center"
+                                                   VerticalOptions="Center"/>
+                                            <Frame.GestureRecognizers>
+                                                <TapGestureRecognizer Command="{Binding BindingContext.TapPlayerWithStatusCommand, Source={x:Reference AllPlayerList}}" 
+                                                                     CommandParameter="{Binding .}" 
+                                                                     NumberOfTapsRequired="2"/>
+                                            </Frame.GestureRecognizers>
+                                        </Frame>
+                                    </SwipeView>
+                                </DataTemplate>
+                            </CollectionView.ItemTemplate>
+                            <CollectionView.EmptyView>
+                                <StackLayout VerticalOptions="Center" HorizontalOptions="Center" Spacing="8" Padding="24">
+                                    <Label Text="📝"
+                                           FontSize="32"
+                                           HorizontalOptions="Center"
+                                           TextColor="#B0B0B0"/>
+                                    <Label Text="No previous players found"
+                                           TextColor="#B0B0B0"
+                                           FontFamily="PoppinsRegular"
+                                           FontSize="14"
+                                           HorizontalOptions="Center"/>
+                                </StackLayout>
+                            </CollectionView.EmptyView>
+                        </CollectionView>
                     </StackLayout>
                 </Frame>
 

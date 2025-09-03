@@ -2,6 +2,7 @@
 using CommunityToolkit.Maui.Animations;
 using CommunityToolkit.Mvvm.Messaging;
 using MarriageCalculator.DataServices;
+using MarriageCalculator.Services.Interfaces;
 
 namespace MarriageCalculator.Pages;
 
@@ -53,12 +54,13 @@ public partial class MainPage : ContentPage
     #region Private Functions
     private async Task InitializeGameEngineAsync()
     {
+        // Ensure authentication is properly initialized before initializing game engine
+        await MainPageViewModel.InitializeAsync();
+        
         if (!MarriageGameEngine.Initialized)
         {
             await MarriageGameEngine.InitializeEngineAsync();
         }
-        // MainPageViewModel.Initialize(MarriageGameEngine);
-        await MainPageViewModel.InitializeAsync(MarriageGameEngine);
     }
     private async Task PlayAudio(string pageName)
     {
@@ -68,7 +70,7 @@ public partial class MainPage : ContentPage
                 await MarriageGameEngine.TextToSpeechService.SpeakAsync("मेरिज खेलको नियमहरु सुरक्षित गरियो।");
                 break;
             case nameof(PlayersPage): 
-                await MarriageGameEngine.TextToSpeechService.SpeakAsync([.. MarriageGameEngine.PlayerService.Players.Values]);
+                await MarriageGameEngine.TextToSpeechService.SpeakAsync([.. MarriageGameEngine.PlayerService.ActivePlayers.Values]);
                 break;
             case nameof(NewGame):
 

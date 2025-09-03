@@ -3,6 +3,7 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              xmlns:toolkit="http://schemas.microsoft.com/dotnet/2022/maui/toolkit"
              xmlns:vm="clr-namespace:MarriageCalculator.ViewModels"
+             xmlns:behaviors="clr-namespace:MarriageCalculator.Behaviors"
              x:Class="MarriageCalculator.Pages.MainPage"             
              Shell.NavBarIsVisible="False"
              x:DataType="vm:MainPageViewModel">
@@ -30,6 +31,97 @@
 
         <!-- Game Logo and Header -->
         <StackLayout Grid.Row="0" Spacing="12" Margin="24,40,24,24" BackgroundColor="Transparent">
+            
+            <!-- User Info and Logout Control - Single Frame -->
+            <Frame IsVisible="{Binding IsUserAuthenticated}"
+                   CornerRadius="50"
+                   BackgroundColor="#F0F0F0"
+                   HasShadow="False"
+                   HeightRequest="50"
+                   HorizontalOptions="FillAndExpand"
+                   Margin="5,0,5,0">
+                
+                <Grid ColumnDefinitions="Auto,Auto,Auto,*,Auto,Auto" HeightRequest="30" VerticalOptions="Center">
+                    
+                    <!-- Connection Status Dot -->
+                    <Ellipse Grid.Column="0"
+                             WidthRequest="12"
+                             HeightRequest="12"
+                             VerticalOptions="Center"
+                             Margin="0,0,8,0">
+                        <Ellipse.Fill>
+                            <MultiBinding Converter="{StaticResource ConnectionStatusToColorConverter}">
+                                <Binding Path="IsServerConnected"/>
+                                <Binding Path="IsConnecting"/>
+                            </MultiBinding>
+                        </Ellipse.Fill>
+                    </Ellipse>
+                    
+                    <!-- First Partition -->
+                    <BoxView Grid.Column="1"
+                             WidthRequest="1"
+                             BackgroundColor="LightGray"
+                             VerticalOptions="Fill"
+                             Margin="0,0,8,0" />
+                    
+                    <!-- User Icon -->
+                    <Label Grid.Column="2"
+                           Text="👤" 
+                           FontSize="18" 
+                           VerticalOptions="Center" 
+                           TextColor="{StaticResource Black}"
+                           Margin="0,0,5,0"/>
+                    
+                    <!-- Username -->
+                    <Label Grid.Column="3"
+                           Text="{Binding CurrentUserDisplayName}" 
+                           FontSize="18" 
+                           FontAttributes="Bold" 
+                           VerticalOptions="Center" 
+                           TextColor="{StaticResource Black}"/>
+
+                    <!-- Second Partition -->
+                    <BoxView Grid.Column="4"
+                             WidthRequest="1"
+                             BackgroundColor="LightGray"
+                             VerticalOptions="Fill"
+                             Margin="10,0" />
+
+                    <!-- Right Side: Logout Button -->
+                    <StackLayout Grid.Column="5" 
+                                 Orientation="Horizontal" 
+                                 VerticalOptions="Center"
+                                 IsEnabled="{Binding IsLoggingOut, Converter={StaticResource InvertedBoolConverter}}">
+                        
+                        <StackLayout.GestureRecognizers>
+                            <TapGestureRecognizer Command="{Binding LogoutCommand}" />
+                        </StackLayout.GestureRecognizers>
+                        
+                        <!-- Logout Icon or Loading -->
+                        <Grid VerticalOptions="Center">
+                            <Label Text="↗" 
+                                   FontSize="18" 
+                                   VerticalOptions="Center"
+                                   TextColor="{StaticResource Black}"
+                                   IsVisible="{Binding IsLoggingOut, Converter={StaticResource InvertedBoolConverter}}"/>
+                            
+                            <ActivityIndicator IsRunning="{Binding IsLoggingOut}"
+                                             IsVisible="{Binding IsLoggingOut}"
+                                             Color="{StaticResource Black}"
+                                             WidthRequest="18"
+                                             HeightRequest="18"
+                                             VerticalOptions="Center"/>
+                        </Grid>
+                        
+                        <Label Text="Logout" 
+                               FontSize="16" 
+                               VerticalOptions="Center" 
+                               Margin="5,0,0,0"
+                               TextColor="{StaticResource Black}"/>
+                    </StackLayout>
+                </Grid>
+            </Frame>
+
             <!-- Enhanced Game Logo with Shadow -->
             <Frame BackgroundColor="Transparent" 
                    BorderColor="Transparent" 
@@ -52,9 +144,9 @@
                    Style="{StaticResource GameTitleLabel}"/>
         </StackLayout>
 
-        <!-- Connection Status Indicator -->
+        <!-- Connection Status Indicator - Removed unnecessary message boxes -->
         <StackLayout Grid.Row="1" BackgroundColor="Transparent">
-            <!-- Connecting Status -->
+            <!-- Only keep connecting status for initial loading -->
             <Frame Style="{StaticResource ConnectionStatusFrame}"
                    IsVisible="{Binding IsConnecting}"
                    BackgroundColor="#3498DB">
@@ -84,72 +176,6 @@
                                      VerticalOptions="Center"/>
                 </Grid>
             </Frame>
-
-            <!-- Connected Status -->
-            <Frame Style="{StaticResource ConnectionStatusFrame}"
-                   BackgroundColor="#27AE60">
-                <Frame.IsVisible>
-                    <MultiBinding Converter="{StaticResource AllTrueConverter}">
-                        <Binding Path="IsServerConnected"/>
-                        <Binding Path="IsConnecting" Converter="{StaticResource InvertedBoolConverter}"/>
-                    </MultiBinding>
-                </Frame.IsVisible>
-                <Grid>
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="Auto"/>
-                        <ColumnDefinition Width="*"/>
-                    </Grid.ColumnDefinitions>
-                    <Ellipse Grid.Column="0" 
-                             Fill="{StaticResource White}"
-                             WidthRequest="12"
-                             HeightRequest="12"
-                             VerticalOptions="Center"
-                             Margin="0,0,12,0"/>
-                    <Label Grid.Column="1" 
-                           Text="Connected to Server" 
-                           TextColor="{StaticResource White}"
-                           FontFamily="PoppinsSemibold"
-                           FontSize="16"
-                           VerticalOptions="Center"/>
-                </Grid>
-            </Frame>
-
-            <!-- Disconnected Status -->
-            <Frame Style="{StaticResource ConnectionStatusFrame}"
-                   BackgroundColor="#E74C3C">
-                <Frame.IsVisible>
-                    <MultiBinding Converter="{StaticResource AllTrueConverter}">
-                        <Binding Path="IsServerConnected" Converter="{StaticResource InvertedBoolConverter}"/>
-                        <Binding Path="IsConnecting" Converter="{StaticResource InvertedBoolConverter}"/>
-                    </MultiBinding>
-                </Frame.IsVisible>
-                <Grid>
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="Auto"/>
-                        <ColumnDefinition Width="*"/>
-                        <ColumnDefinition Width="Auto"/>
-                    </Grid.ColumnDefinitions>
-                    <Label Grid.Column="0" 
-                           Text="⚠️" 
-                           TextColor="{StaticResource White}"
-                           FontSize="16"
-                           VerticalOptions="Center"
-                           Margin="0,0,12,0"/>
-                    <Label Grid.Column="1" 
-                           Text="Server Connection Lost" 
-                           TextColor="{StaticResource White}"
-                           FontFamily="PoppinsSemibold"
-                           FontSize="16"
-                           VerticalOptions="Center"/>
-                    <ActivityIndicator Grid.Column="2"
-                                     IsRunning="{Binding IsBusy}"
-                                     IsVisible="{Binding IsBusy}"
-                                     Color="{StaticResource White}"
-                                     WidthRequest="20"
-                                     HeightRequest="20"
-                                     VerticalOptions="Center"/>
-                </Grid>
-            </Frame>
         </StackLayout>
 
         <!-- Main Content Area -->
@@ -165,38 +191,70 @@
                         </MultiBinding>
                     </StackLayout.IsVisible>
 
-                    <!-- Primary Action: Start New Game -->
+                    <!-- Primary Action: Start New Game with Enhanced Effects -->
                     <Button Text="🚀 Start a New Game"
                             SemanticProperties.Hint="Starts a brand new game"
                             Style="{StaticResource MainPagePrimaryButton}"
                             IsEnabled="{Binding ShowNewGame}"
-                            Command="{Binding NewGameCommand}"/>
+                            Command="{Binding NewGameCommand}">
+                        <Button.Behaviors>
+                            <behaviors:ButtonAnimationBehavior AnimationType="Pulse" 
+                                                             Duration="250" 
+                                                             ScaleTo="0.92" />
+                            <behaviors:LoadingButtonBehavior IsLoading="{Binding IsBusy}" 
+                                                           LoadingText="Starting Game..." 
+                                                           LoadingAnimationType="Spinner" />
+                        </Button.Behaviors>
+                    </Button>
 
-                    <!-- Secondary Actions -->
+                    <!-- Secondary Actions with Different Animation Effects -->
                     <Button Text="📖 Resume Previous Game"
                             SemanticProperties.Hint="Continue your last game"
                             Style="{StaticResource MainPageSecondaryButton}"
                             Command="{Binding ResumeGameCommand}"
-                            IsEnabled="{Binding ShowResumeGame}"/>
+                            IsEnabled="{Binding ShowResumeGame}">
+                        <Button.Behaviors>
+                            <behaviors:ButtonAnimationBehavior AnimationType="Bounce" 
+                                                             Duration="200" 
+                                                             ScaleTo="0.94" />
+                        </Button.Behaviors>
+                    </Button>
 
                     <Button Text="⚙️ Game Settings"
                             SemanticProperties.Hint="Configure game rules and preferences"
                             Style="{StaticResource MainPageSecondaryButton}"
                             Command="{Binding GameSettingsPageCommand}"
-                            IsEnabled="{Binding ShowSettings}"/>
+                            IsEnabled="{Binding ShowSettings}">
+                        <Button.Behaviors>
+                            <behaviors:ButtonAnimationBehavior AnimationType="Glow" 
+                                                             Duration="180" 
+                                                             ScaleTo="0.96" />
+                        </Button.Behaviors>
+                    </Button>
 
                     <Button Text="👥 Manage Players"
                             SemanticProperties.Hint="Add, edit, or remove players"
-                            Style="{StaticResource MainPageSecondaryButton}"
-                            IsVisible="{Binding ShowPlayer}"
-                            Command="{Binding PlayerSettingsPageCommand}"/>
+                            Style="{StaticResource MainPageSecondaryButton}"                            
+                            Command="{Binding PlayerSettingsPageCommand}">
+                        <Button.Behaviors>
+                            <behaviors:ButtonAnimationBehavior AnimationType="Flip" 
+                                                             Duration="300" 
+                                                             ScaleTo="0.95" />
+                        </Button.Behaviors>
+                    </Button>
 
-                    <!-- Exit Button -->
+                    <!-- Exit Button with Shake Effect -->
                     <Button Text="👋 Exit Game"
                             SemanticProperties.Hint="Close the application"
                             Style="{StaticResource MainPageExitButton}"
                             Command="{Binding ExitCommand}"
-                            Margin="16,24,16,8"/>
+                            Margin="16,24,16,8">
+                        <Button.Behaviors>
+                            <behaviors:ButtonAnimationBehavior AnimationType="Shake" 
+                                                             Duration="300" 
+                                                             ScaleTo="0.93" />
+                        </Button.Behaviors>
+                    </Button>
 
                 </StackLayout>
 
@@ -247,19 +305,34 @@
                                    HorizontalTextAlignment="Center"
                                    Opacity="0.8"/>
 
-                            <!-- Action Buttons -->
+                            <!-- Action Buttons with Enhanced Effects -->
                             <StackLayout Spacing="0" Margin="0,20,0,0">
                                 <Button Text="🔄 Try Again"
                                         SemanticProperties.Hint="Retry connection to server"
                                         Style="{StaticResource MainPageRetryButton}"
                                         Command="{Binding RetryConnectionCommand}"
-                                        IsEnabled="{Binding IsBusy, Converter={StaticResource InvertedBoolConverter}}"/>
+                                        IsEnabled="{Binding IsBusy, Converter={StaticResource InvertedBoolConverter}}">
+                                    <Button.Behaviors>
+                                        <behaviors:ButtonAnimationBehavior AnimationType="Rotate" 
+                                                                         Duration="400" 
+                                                                         ScaleTo="0.95" />
+                                        <behaviors:LoadingButtonBehavior IsLoading="{Binding IsConnecting}" 
+                                                                       LoadingText="Connecting..." 
+                                                                       LoadingAnimationType="Dots" />
+                                    </Button.Behaviors>
+                                </Button>
 
                                 <Button Text="😊 I'll Come Back Later"
                                         SemanticProperties.Hint="Exit the application"
                                         Style="{StaticResource MainPageExitButton}"
                                         Command="{Binding ExitCommand}"
-                                        IsEnabled="{Binding IsBusy, Converter={StaticResource InvertedBoolConverter}}"/>
+                                        IsEnabled="{Binding IsBusy, Converter={StaticResource InvertedBoolConverter}}">
+                                    <Button.Behaviors>
+                                        <behaviors:ButtonAnimationBehavior AnimationType="Glow" 
+                                                                         Duration="250" 
+                                                                         ScaleTo="0.93" />
+                                    </Button.Behaviors>
+                                </Button>
                             </StackLayout>
 
                         </StackLayout>

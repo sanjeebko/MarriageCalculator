@@ -1,5 +1,4 @@
-﻿
-using CommunityToolkit.Mvvm.Messaging;
+﻿using CommunityToolkit.Mvvm.Messaging;
 using MarriageCalculator.DataServices;
 
 namespace MarriageCalculator.Pages;
@@ -31,10 +30,19 @@ public partial class PlayersPage : ContentPage
     public PlayerSettingsViewModel PlayerSettingsViewModel { get; }
    
 
-    protected override void OnAppearing()
+    protected override async void OnAppearing()
     {
-        PlayerSettingsViewModel?.RefreshAllPlayers();
-        PlayerSettingsViewModel?.RefreshCurrentPlayer();
+        base.OnAppearing();
+        // Ensure players are loaded when the page appears
+        try
+        {
+            await PlayerSettingsViewModel.RefreshAllPlayersAsync();
+            await PlayerSettingsViewModel.RefreshCurrentPlayerAsync();
+        }
+        catch (Exception ex)
+        {
+            // Log error without debug output in production
+        }
     }
 
     

@@ -9,6 +9,11 @@ public class GameSettings
     [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
     public int Id { get; set; }    
     
+    /// <summary>
+    /// Foreign key to User - each GameSetting belongs to a specific user
+    /// </summary>
+    public Guid UserId { get; set; }
+    
     public bool Murder { get; set; }
     public bool Kidnap { get; set; }
     public int SeenPoint { get; set; }
@@ -21,11 +26,20 @@ public class GameSettings
     public int FoulPoint { get; set; }
     public FoulPointBonusType FoulPointBonus { get; set; }      
     public bool Audio { get; set; }
+    
+    /// <summary>
+    /// When this settings record was created
+    /// </summary>
+    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+    
+    // Navigation property
+    public virtual User? User { get; set; }
 
-    public static GameSettings Default() {
+    public static GameSettings Default(Guid userId = default)
+    {
         return new GameSettings()
         {
-
+            UserId = userId,
             Murder = true,
             Kidnap = false,
             SeenPoint = 3,
