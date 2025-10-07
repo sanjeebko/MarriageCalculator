@@ -75,4 +75,24 @@ public class MarriageGameSetRepository : IMarriageGameSetRepository
             .OrderByDescending(gs => gs.LastPlayed)
             .FirstOrDefaultAsync();
     }
+
+    public async Task<MarriageGameSet?> GetLatestActiveForUserAsync(Guid userId)
+    {
+        return await _context.MarriageGameSets
+            .Join(_context.GameSettings,
+                gs => gs.GameSettingsId,
+                settings => settings.Id,
+                (gs, settings) => new { GameSet = gs, Settings = settings })
+            .Where(joined => joined.Settings.UserId == userId && joined.GameSet.IsActive)
+            .OrderByDescending(joined => joined.GameSet.LastPlayed)
+            .Select(joined => joined.GameSet)
+            .FirstOrDefaultAsync();
+    }
+
+    public async Task<MarriageGameSet?> GetActiveByGameSettingsIdAsync(int gameSettingsId)
+    {
+        return await _context.MarriageGameSets
+            .Where(gs => gs.GameSettingsId == gameSettingsId && gs.IsActive)
+            .FirstOrDefaultAsync();
+    }
 }

@@ -35,7 +35,7 @@ public class GameSettings
     // Navigation property
     public virtual User? User { get; set; }
 
-    public static GameSettings Default(Guid userId = default)
+    public static GameSettings Default(Guid userId)
     {
         return new GameSettings()
         {

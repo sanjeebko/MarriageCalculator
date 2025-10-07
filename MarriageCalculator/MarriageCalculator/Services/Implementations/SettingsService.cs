@@ -1,6 +1,7 @@
 using MarriageCalculator.Repositories.Interfaces;
-using MarriageCalculator.Core.Models;
 using MarriageCalculator.Services.Interfaces;
+using System.Threading.Tasks;
+
 
 namespace MarriageCalculator.Services.Implementations;
 
@@ -10,7 +11,8 @@ public class SettingsService(IGameSettingsRepository settingsRepository) : ISett
     public GameSettings? Settings { get; set; }
     public Dictionary<int, GameSettings> GameSettings { get; set; } = [];
     public bool IsInitialized { get; private set; } = false;
-    public async Task InitializeAsync()
+    public Guid UserId  { get; set; } = Guid.Empty;
+    public async Task InitializeAsync(Guid userId)
     {
         try
         {
@@ -78,12 +80,12 @@ public class SettingsService(IGameSettingsRepository settingsRepository) : ISett
         if (Settings is null)
             return;
 
-        await settingsRepository.UpdateGameSettingsAsync(Settings);
+      Settings =   await settingsRepository.UpdateGameSettingsAsync(Settings);
     }
 
     public async Task<GameSettings?> LoadSettingsAsync()
     {
-        await InitializeAsync();
+        await InitializeAsync(UserId);
 
         return Settings;
     }  
@@ -114,7 +116,43 @@ public class SettingsService(IGameSettingsRepository settingsRepository) : ISett
         
         return null;
     }
+    /// <summary>
+    /// Creates and returns new default game settings for a new game set.
+    /// This method ALWAYS creates a new settings record in the database with auto-incremented ID.
+    /// </summary>
+    /// <returns>Newly created GameSettings with valid database ID</returns>
+    public async Task<GameSettings?> GetDefaultSettingsForNewGameSet()
+    {
+        // Always create new default settings (with Id = 0, which will be auto-incremented by database)
+        var newSettings = GetDefaultSettings();
+        
+        // Create the settings in the database - API will return the settings with auto-incremented ID
+        try
+        {
+            var createdSettings = await settingsRepository.CreateGameSettingsAsync(newSettings);
+            if (createdSettings != null && createdSettings.Id > 0)
+            {
+                // Add the newly created settings to our cache
+                GameSettings[createdSettings.Id] = createdSettings;
+                
+                // Update current settings reference
+                Settings = createdSettings;
+                
+                System.Diagnostics.Debug.WriteLine($"Created new default settings with ID: {createdSettings.Id}");
+                return createdSettings;
+            }
+            else
+            {
+                throw new InvalidOperationException("API returned settings without a valid ID");
+            }
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"Failed to create default settings: {ex.Message}");
+            throw new InvalidOperationException("Cannot create game set without valid game settings. Please ensure the API is accessible and you are authenticated.", ex);
+        }
+    }
 
-    private GameSettings GetDefaultSettings() => Core.Models.GameSettings.Default();
+    private GameSettings GetDefaultSettings() => Core.Models.GameSettings.Default(UserId);
 
 }

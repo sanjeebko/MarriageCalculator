@@ -9,10 +9,14 @@ namespace MarriageCalculator.ViewModels;
 public partial class LoginViewModel : ObservableObject
 {
     private readonly IApiService _apiService;
+    private readonly IAuthenticationService _authenticationService;
+    private readonly IAuthenticationManager _authenticationManager;
 
-    public LoginViewModel(IApiService apiService)
+    public LoginViewModel(IApiService apiService, IAuthenticationService authenticationService, IAuthenticationManager authenticationManager)
     {
         _apiService = apiService;
+        _authenticationService = authenticationService;
+        _authenticationManager = authenticationManager;
         IsPasswordHidden = true;
         PasswordToggleIcon = "??";
         RememberMe = true;
@@ -109,20 +113,16 @@ public partial class LoginViewModel : ObservableObject
 
             if (response?.Success == true && response.Data != null)
             {
-                // Store authentication token and user info
+                // Store authentication token and user info using AuthenticationService
                 if (!string.IsNullOrEmpty(response.Data.Token))
                 {
-                    await SecureStorage.SetAsync("access_token", response.Data.Token);
-                    await SecureStorage.SetAsync("token_expires", response.Data.Expires.ToString());
-                    
-                    // ?? CRITICAL FIX: Set the token in ApiService for future authenticated requests
-                    await _apiService.SetAuthTokenAsync(response.Data.Token);
+                    await _authenticationService.SetAuthenticationTokenAsync(response.Data.Token);
+                    await _authenticationService.SetTokenExpirationAsync(response.Data.Expires);
                 }
 
                 if (!string.IsNullOrEmpty(response.Data.RefreshToken))
                 {
-                    await SecureStorage.SetAsync("refresh_token", response.Data.RefreshToken);
-                    await SecureStorage.SetAsync("refresh_token_expires", response.Data.RefreshTokenExpires.ToString());
+                    await _authenticationService.SetRefreshTokenAsync(response.Data.RefreshToken);
                 }
 
                 // Store user info
@@ -153,6 +153,10 @@ public partial class LoginViewModel : ObservableObject
                     SecureStorage.Remove("remember_me");
                     SecureStorage.Remove("saved_username");
                 }
+
+                // ? START AUTHENTICATION MANAGER AFTER SUCCESSFUL LOGIN
+                System.Diagnostics.Debug.WriteLine("LoginViewModel: Starting AuthenticationManager after successful login");
+                await _authenticationManager.StartAsync();
 
                 // Navigate to main page
                 await Shell.Current.GoToAsync("//MainPage");
@@ -261,12 +265,9 @@ public partial class LoginViewModel : ObservableObject
                     SecureStorage.Remove("saved_username");
                 }
 
-                // ?? CRITICAL FIX: Also set the token in ApiService after email verification
-                var currentToken = await SecureStorage.GetAsync("access_token");
-                if (!string.IsNullOrEmpty(currentToken))
-                {
-                    await _apiService.SetAuthTokenAsync(currentToken);
-                }
+                // ? START AUTHENTICATION MANAGER AFTER EMAIL VERIFICATION
+                System.Diagnostics.Debug.WriteLine("LoginViewModel: Starting AuthenticationManager after email verification");
+                await _authenticationManager.StartAsync();
 
                 // Navigate to main page
                 await Shell.Current.GoToAsync("//MainPage");

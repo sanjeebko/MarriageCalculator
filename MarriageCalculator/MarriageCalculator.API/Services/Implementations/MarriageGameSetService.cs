@@ -65,6 +65,18 @@ public class MarriageGameSetService(IMarriageGameSetRepository gameSetRepository
         return gameSet != null ? MapToDto(gameSet) : null;
     }
 
+    public async Task<MarriageGameSetDto?> GetLatestActiveGameSetForUserAsync(Guid userId)
+    {
+        var gameSet = await _gameSetRepository.GetLatestActiveForUserAsync(userId);
+        return gameSet != null ? MapToDto(gameSet) : null;
+    }
+
+    public async Task<MarriageGameSetDto?> GetActiveGameSetByGameSettingsIdAsync(int gameSettingsId)
+    {
+        var gameSet = await _gameSetRepository.GetActiveByGameSettingsIdAsync(gameSettingsId);
+        return gameSet != null ? MapToDto(gameSet) : null;
+    }
+
     private static MarriageGameSetDto MapToDto(MarriageGameSet gameSet)
     {
         return new MarriageGameSetDto

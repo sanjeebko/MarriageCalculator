@@ -15,17 +15,15 @@ public partial class SettingsViewModel :ObservableObject
 
     public ObservableCollection<Currency> Currencies { get; set; } = [Currency.GBP_Pence, Currency.USD_Cent, Currency.NPR_Rupee, Currency.INR_Rupee, Currency.EUR_Cent, Currency.AUD_Cent];
     public ObservableCollection<FoulPointBonusType> FoulPointBonuses { get; set; } = [FoulPointBonusType.NO_FOUL_POINT, FoulPointBonusType.THIS_GAME,FoulPointBonusType.NEXT_GAME];
-
-    
+        
     public event EventHandler? OnCloseButtonClick;
 
-
-
-    public SettingsViewModel(IMarriageGameEngine marriageGameEngine  )
+    public SettingsViewModel(IMarriageGameEngine marriageGameEngine )
     {
         MarriageGameEngine = marriageGameEngine;
         GameSettingsModel = marriageGameEngine.SettingsService.Settings!.ToGameSettingsModel( ) as GameSettingsModel;
     }
+
     [RelayCommand]
     public static async Task BackButtonClick()
     {

@@ -6,7 +6,27 @@ using Microsoft.AspNetCore.Mvc;
 namespace MarriageCalculator.API.Controllers;
 
 /// <summary>
-/// Manages database operations, connectivity testing, and data seeding
+/// Database Controller - Manages database operations, connectivity testing, and data management
+/// 
+/// ENDPOINTS SUMMARY:
+/// ==================
+/// GET    /api/database/info     - Get comprehensive database connection and status information
+/// GET    /api/database/health   - Check if database is connected and operational (health check)
+/// POST   /api/database/seed     - Seed database with default game settings and initial data
+/// DELETE /api/database/cleanup  - Remove all data and reset database to initial state (DESTRUCTIVE)
+/// 
+/// AUTHENTICATION:
+/// - All endpoints require authentication ([Authorize])
+/// - Administrative operations for database management
+/// 
+/// KEY FEATURES:
+/// - Database connectivity and health monitoring
+/// - Safe data seeding with duplicate protection
+/// - Complete database cleanup and reset functionality
+/// - Comprehensive error handling and logging
+/// - Detailed response types with database information
+/// - Production-ready health checks for monitoring systems
+/// - WARNING: Cleanup operation is destructive and irreversible
 /// </summary>
 [ApiController]
 [Route("api/[controller]")]

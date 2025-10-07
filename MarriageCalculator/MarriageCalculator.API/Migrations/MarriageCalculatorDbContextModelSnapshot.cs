@@ -98,7 +98,7 @@ namespace MarriageCalculator.API.Migrations
                         .HasColumnType("datetime2")
                         .HasDefaultValueSql("GETUTCDATE()");
 
-                    b.Property<Guid>("DealerId")
+                    b.Property<Guid?>("DealerId")
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<int>("MarriageGameRoundId")
@@ -110,7 +110,7 @@ namespace MarriageCalculator.API.Migrations
                     b.Property<int>("TotalMaal")
                         .HasColumnType("int");
 
-                    b.Property<Guid>("WinnerId")
+                    b.Property<Guid?>("WinnerId")
                         .HasColumnType("uniqueidentifier");
 
                     b.HasKey("Id");
@@ -309,9 +309,6 @@ namespace MarriageCalculator.API.Migrations
 
                     b.HasIndex("CreatedByUserId");
 
-                    b.HasIndex("Name", "Email")
-                        .IsUnique();
-
                     b.ToTable("Player", (string)null);
                 });
 
@@ -487,8 +484,7 @@ namespace MarriageCalculator.API.Migrations
                     b.HasOne("MarriageCalculator.Core.Models.Player", null)
                         .WithMany()
                         .HasForeignKey("DealerId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.HasOne("MarriageCalculator.Core.Models.MarriageGameRound", null)
                         .WithMany()
@@ -499,8 +495,7 @@ namespace MarriageCalculator.API.Migrations
                     b.HasOne("MarriageCalculator.Core.Models.Player", null)
                         .WithMany()
                         .HasForeignKey("WinnerId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
+                        .OnDelete(DeleteBehavior.Restrict);
                 });
 
             modelBuilder.Entity("MarriageCalculator.Core.Models.MarriageGameRound", b =>

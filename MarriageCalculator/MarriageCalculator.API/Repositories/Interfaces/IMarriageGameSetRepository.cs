@@ -15,4 +15,6 @@ public interface IMarriageGameSetRepository
     Task<bool> DeleteAsync(int id);
     Task<bool> ExistsAsync(int id);
     Task<MarriageGameSet?> GetLatestActiveAsync();
+    Task<MarriageGameSet?> GetLatestActiveForUserAsync(Guid userId);
+    Task<MarriageGameSet?> GetActiveByGameSettingsIdAsync(int gameSettingsId);
 }

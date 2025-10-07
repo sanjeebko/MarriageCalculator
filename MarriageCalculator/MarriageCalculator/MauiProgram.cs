@@ -1,11 +1,13 @@
 ﻿using CommunityToolkit.Maui;
 using MarriageCalculator.Mapping;
+using MarriageCalculator.Pages.Game;
 using MarriageCalculator.Pages.Login;
 using MarriageCalculator.Repositories.Implementations;
 using MarriageCalculator.Repositories.Interfaces;
 using MarriageCalculator.Services.Implementations;
 using MarriageCalculator.Services.Interfaces;
 using Microsoft.Extensions.Logging;
+using Syncfusion.Maui.Core.Hosting;
 using System.Reflection;
 
 namespace MarriageCalculator;
@@ -14,6 +16,9 @@ public static class MauiProgram
 {
     public static MauiApp CreateMauiApp()
     {
+        string syncFusionKey = "Ngo9BigBOggjHTQxAR8/V1JFaF5cXGRCf1FpRmJGdld5fUVHYVZUTXxaS00DNHVRdkdmWXZccHVSR2JfWUVyW0JWYEg=";
+        Syncfusion.Licensing.SyncfusionLicenseProvider.RegisterLicense(syncFusionKey);
+
         var builder = MauiApp.CreateBuilder();
         builder
             .UseMauiApp<App>()
@@ -23,8 +28,18 @@ public static class MauiProgram
                 fonts.AddFont("OpenSans-Regular.ttf", "OpenSansRegular");
                 fonts.AddFont("Segoe-Ui-Bold.ttf", "SegoeBold");
                 fonts.AddFont("Segoe-Ui-Semibold.ttf", "SegoeSemibold");
+                fonts.AddFont("fontello.ttf", "Fontello");
+                
+                // Platform-specific emoji font registration
+#if ANDROID
+                fonts.AddFont("NotoColorEmoji.ttf", "emoji");
+#elif IOS
+                fonts.AddFont("AppleColorEmoji.ttc", "emoji");
+#else
+                fonts.AddFont("OpenSans-Regular.ttf", "emoji"); // Fallback
+#endif
             });
-
+        builder.ConfigureSyncfusionCore();
 #if DEBUG
         builder.Logging.AddDebug();
 #endif
@@ -61,15 +76,25 @@ public static class MauiProgram
         // Fallback: Use in-memory configuration if file not found
         if (!configLoaded)
         {
+#if DEBUG
+            // For debugging - change this to switch between local and production API
+            var useLocalApi = false; // Set to true to use local API for debugging
+            var apiUrl = useLocalApi ? "https://localhost:7294/" : "https://mcapi.sanjeebojha.com.np/";
+#else
+            var apiUrl = "https://mcapi.sanjeebojha.com.np/";
+#endif
+            
             builder.Configuration.AddInMemoryCollection(new Dictionary<string, string?>
             {
-                {"ApiSettings:BaseUrl", "https://mcapi.sanjeebojha.com.np/"},
+                {"ApiSettings:BaseUrl", apiUrl},
                 {"ApiSettings:Timeout", "30"},
                 {"ApiSettings:RetryCount", "3"},
                 {"Logging:LogLevel:Default", "Information"},
                 {"Logging:LogLevel:Microsoft", "Warning"},
                 {"Logging:LogLevel:Microsoft.Hosting.Lifetime", "Information"}
             });
+            
+            System.Diagnostics.Debug.WriteLine($"Using API URL: {apiUrl}");
         }
 
         // AutoMapper configuration
@@ -117,14 +142,17 @@ public static class MauiProgram
 
         // Authentication service
         builder.Services.AddSingleton<IAuthenticationService, AuthenticationService>();
+        
+        // Background authentication manager
+        builder.Services.AddSingleton<IAuthenticationManager, AuthenticationManager>();
 
         // Other services
         builder.Services.AddSingleton<ISettingsService, SettingsService>();
         builder.Services.AddSingleton<ITextToSpeechService, TextToSpeechService>();
         builder.Services.AddSingleton<IPlayerService, PlayerService>();
+
         builder.Services.AddSingleton<IMarriageGameEngine>(serviceProvider =>
         {
-            var authService = serviceProvider.GetRequiredService<IAuthenticationService>();
             var settingsService = serviceProvider.GetRequiredService<ISettingsService>();
             var playerService = serviceProvider.GetRequiredService<IPlayerService>();
             var marriageGameSetRepository = serviceProvider.GetRequiredService<IMarriageGameSetRepository>();
@@ -135,7 +163,6 @@ public static class MauiProgram
             var textToSpeechService = serviceProvider.GetRequiredService<ITextToSpeechService>();
             
             return new MarriageGameEngine(
-                authService,
                 settingsService,
                 playerService,
                 marriageGameSetRepository,
@@ -156,9 +183,11 @@ public static class MauiProgram
         builder.Services.AddTransient<RegisterPage>();
         builder.Services.AddTransient<EmailVerificationPage>();
         builder.Services.AddTransient<GameSetupPage>();
+        builder.Services.AddSingleton<ScoreBoardPage>();
 
         // View models
         builder.Services.AddTransient<MainPageViewModel>();
+
         builder.Services.AddTransient<MarriageGameViewModel>();
         builder.Services.AddTransient<SettingsViewModel>();
         builder.Services.AddTransient<PlayerSettingsViewModel>();
@@ -166,6 +195,7 @@ public static class MauiProgram
         builder.Services.AddTransient<RegisterViewModel>();
         builder.Services.AddTransient<EmailVerificationViewModel>();
         builder.Services.AddTransient<GameSetupViewModel>();
+        builder.Services.AddTransient<ScoreBoardViewModel>();
 
         return builder.Build();
     }

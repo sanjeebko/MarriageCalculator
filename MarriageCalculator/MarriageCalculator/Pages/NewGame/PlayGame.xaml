@@ -3,6 +3,8 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              x:Class="MarriageCalculator.Pages.PlayGame"
              xmlns:local="clr-namespace:MarriageCalculator.ViewModels"
+             xmlns:converters="clr-namespace:MarriageCalculator.Converter"
+             xmlns:behaviors="clr-namespace:MarriageCalculator.Behaviors"
              xmlns:sfcards="clr-namespace:Syncfusion.Maui.Cards;assembly=Syncfusion.Maui.Cards" 
              xmlns:sfavatar="clr-namespace:Syncfusion.Maui.Core;assembly=Syncfusion.Maui.Core" 
              xmlns:sfpopup="clr-namespace:Syncfusion.Maui.Popup;assembly=Syncfusion.Maui.Popup"
@@ -10,124 +12,328 @@
              x:DataType="local:MarriageGameViewModel"
              BackgroundColor="{AppThemeBinding Light={StaticResource LightBackground}, Dark={StaticResource DarkBackground}}"
              Shell.NavBarIsVisible="False"
-             Title="PlayGame" >
+             Title="PlayGame">
 
-    <Grid  x:Name="parentGrid" ColumnDefinitions="*" RowDefinitions="auto,*,280" Padding="10"  >
-        
-        <Grid Grid.Row="0" ColumnDefinitions="auto,*,*,*" RowDefinitions="*,*"
-              Padding="10,0,10,0"
-              VerticalOptions="Start" ColumnSpacing="5" RowSpacing="2" >
+    <ContentPage.Resources>
+        <ResourceDictionary>
+            <converters:BoolToStringConverter x:Key="BoolToStringConverter" />
+            <converters:IsSelectedPlayerConverter x:Key="IsSelectedPlayerConverter" />
 
-            
-            <Label Grid.Row="0" Grid.Column="0" Text="Currency" VerticalOptions="Start" HorizontalOptions="Start" Style="{StaticResource PlayersLabel}"></Label>
-            <Label Grid.Row="1" Grid.Column="0" Text="{Binding CurrencyDescription}" VerticalOptions="Start" HorizontalOptions="Start" Style="{StaticResource PlayersLabel}"></Label>
-            <Label Grid.Row="0" Grid.Column="1" Text="Rate" VerticalOptions="Center" HorizontalOptions="Center" Style="{StaticResource PlayersLabel}"></Label>
-            <Label Grid.Row="1" Grid.Column="1" Text="{Binding GameEngine.SettingsService.Settings.PointRate}" VerticalOptions="Center"   HorizontalOptions="Center"   Style="{StaticResource PlayersLabel}"></Label>
-            <Label Grid.Row="0" Grid.Column="2" Text="Game no." VerticalOptions="Start" HorizontalOptions="Center" Style="{StaticResource PlayersLabel}"></Label>
-            <Label Grid.Row="1" Grid.Column="2" Text="{Binding GameSequence}" VerticalOptions="Start" HorizontalOptions="Center" Style="{StaticResource PlayersLabel}"></Label>
-            <Label Grid.Row="0" Grid.Column="3" Text="Total Maal" VerticalOptions="Start" HorizontalOptions="End" Style="{StaticResource PlayersLabel}"></Label>
-            <Label Grid.Row="1" Grid.Column="3" Text="{Binding TotalScore}" VerticalOptions="Start" HorizontalOptions="End" Style="{StaticResource PlayersLabel}"></Label>
-        </Grid>
-        <ScrollView Grid.Row="1">
-            <CollectionView x:Name="Root" ItemsSource="{Binding PlayerMaals}" SelectedItem="{Binding SelectedPlayer, Mode=TwoWay}" SelectionMode="Single"   >
+            <!-- Compact Header Frame Style with minimal padding for space efficiency -->
+            <Style x:Key="CompactHeaderFrame" TargetType="Frame" BasedOn="{StaticResource GameCardFrame}">
+                <Setter Property="Padding" Value="12,6" />
+                <Setter Property="Margin" Value="4,4,4,2" />
+            </Style>
+        </ResourceDictionary>
+    </ContentPage.Resources>
+
+    <Grid x:Name="parentGrid" RowDefinitions="Auto,*,Auto" Padding="5">
+
+        <!-- Header Information Section -->
+        <Frame Grid.Row="0" Style="{StaticResource CompactHeaderFrame}">
+            <Grid RowDefinitions="Auto,Auto" RowSpacing="4">
+                <!-- Compact Header Row -->
+                <Grid Grid.Row="0" ColumnDefinitions="*,Auto" ColumnSpacing="8">
+                    <HorizontalStackLayout Grid.Column="0" Spacing="4" VerticalOptions="Center">
+                        <Label Text="Game" FontSize="12" 
+                               TextColor="{AppThemeBinding Light={StaticResource GameSubtitleLight}, Dark={StaticResource GameSubtitleDark}}" />
+                        <Label Text="{Binding GameSequence}" FontSize="12" FontAttributes="Bold"
+                               TextColor="{AppThemeBinding Light={StaticResource GameTitleLight}, Dark={StaticResource GameTitleDark}}" />
+                        <Label Text="•" FontSize="12" 
+                               TextColor="{AppThemeBinding Light={StaticResource GameSubtitleLight}, Dark={StaticResource GameSubtitleDark}}" />
+                        <Label Text="Total Maal:" FontSize="12" 
+                               TextColor="{AppThemeBinding Light={StaticResource GameSubtitleLight}, Dark={StaticResource GameSubtitleDark}}" />
+                        <Label Text="{Binding TotalScore}" FontSize="12" FontAttributes="Bold"
+                               TextColor="{AppThemeBinding Light={StaticResource GameTitleLight}, Dark={StaticResource GameTitleDark}}" />
+                    </HorizontalStackLayout>
+
+                    <Button Grid.Column="1" 
+                            Text="{Binding IsExpanded, Converter={StaticResource BoolToStringConverter}, ConverterParameter='▲|▼'}"
+                            FontSize="14"
+                            BackgroundColor="Transparent"
+                            TextColor="{AppThemeBinding Light={StaticResource GameSubtitleLight}, Dark={StaticResource GameSubtitleDark}}"
+                            HeightRequest="30" WidthRequest="30"
+                            Padding="0"
+                            Command="{Binding ToggleExpandCommand}" />
+                </Grid>
+
+                <!-- Expanded Details -->
+                <Grid Grid.Row="1" ColumnDefinitions="*,*" RowDefinitions="Auto,Auto" 
+                      ColumnSpacing="4" RowSpacing="2"
+                      x:Name="ExpandedDetailsGrid">
+
+                    <Label Grid.Row="0" Grid.Column="0" Text="Currency" 
+                           FontSize="12" FontAttributes="Bold" 
+                           TextColor="{AppThemeBinding Light={StaticResource GameSubtitleLight}, Dark={StaticResource GameSubtitleDark}}" />
+                    <Label Grid.Row="1" Grid.Column="0" Text="{Binding CurrencyDescription}" 
+                           FontSize="14" FontAttributes="Bold" 
+                           TextColor="{AppThemeBinding Light={StaticResource GameTitleLight}, Dark={StaticResource GameTitleDark}}" />
+
+                    <Label Grid.Row="0" Grid.Column="1" Text="Rate" 
+                           FontSize="12" FontAttributes="Bold" HorizontalOptions="Center"
+                           TextColor="{AppThemeBinding Light={StaticResource GameSubtitleLight}, Dark={StaticResource GameSubtitleDark}}" />
+                    <Label Grid.Row="1" Grid.Column="1" Text="{Binding GameEngine.SettingsService.Settings.PointRate}" 
+                           FontSize="14" FontAttributes="Bold" HorizontalOptions="Center"
+                           TextColor="{AppThemeBinding Light={StaticResource GameTitleLight}, Dark={StaticResource GameTitleDark}}" />
+                </Grid>
+            </Grid>
+        </Frame>
+
+        <!-- Players List Section -->
+        <ScrollView Grid.Row="1" Margin="8,4">
+            <CollectionView x:Name="Root" ItemsSource="{Binding PlayerMaals}" 
+                          SelectedItem="{Binding SelectedPlayer, Mode=TwoWay}" 
+                          SelectionMode="Single"
+                            SelectionChangedCommand="{Binding SelectPlayerCommand}"
+                            SelectionChangedCommandParameter="{Binding SelectedItem,Source={x:Reference Root} }" Background="Transparent">
+                <!-- Add this to remove default selection visual -->
+                <CollectionView.Resources>
+                    <Style TargetType="Grid">
+                        <Setter Property="VisualStateManager.VisualStateGroups">
+                            <VisualStateGroupList>
+                                <VisualStateGroup x:Name="CommonStates">
+                                    <VisualState x:Name="Normal" />
+                                    <VisualState x:Name="Selected">
+                                        <VisualState.Setters>
+                                            <Setter Property="BackgroundColor" Value="Transparent" />
+                                        </VisualState.Setters>
+                                    </VisualState>
+                                </VisualStateGroup>
+                            </VisualStateGroupList>
+                        </Setter>
+                    </Style>
+                </CollectionView.Resources>
                 <CollectionView.ItemsLayout>
-                    <LinearItemsLayout Orientation="Vertical"></LinearItemsLayout>
+                    <LinearItemsLayout Orientation="Vertical" ItemSpacing="1"/>
                 </CollectionView.ItemsLayout>
                 <CollectionView.ItemTemplate>
                     <DataTemplate x:DataType="local:PlayerMaal">
-                        <Frame Style="{StaticResource NewGameFrameStyle}" Padding="10,0,0,0" InputTransparent="True" >
+                        <Grid BackgroundColor="Transparent">
+                            <Frame Style="{StaticResource GameCardFrame}" Padding="16,5" Margin="3,3"
+                               InputTransparent="True">
+                                <Frame.Triggers>
+                                    <DataTrigger TargetType="Frame" Binding="{Binding IsSelected}" Value="True">
 
-                            <Grid  ColumnDefinitions="auto,*,*"  Margin="1" Padding="0" >
-                                <HorizontalStackLayout  Grid.Column="0">
-                                    <sfavatar:SfAvatarView ContentType="Initials" InitialsType="SingleCharacter" AvatarName="{Binding PlayerObject.Name}"
-                                               WidthRequest="30"
-                                               HeightRequest="30"
-                                               CornerRadius="25" AvatarColorMode="LightBackground" />
-                                    <Label Grid.Column="0" Text="{Binding PlayerObject.Name}" Style="{StaticResource PlayersLabel}" Margin="10,0,0,0" VerticalOptions="Center" />
-                                </HorizontalStackLayout>
+                                        <Setter Property="BorderColor" Value="{AppThemeBinding Light={StaticResource Primary}, Dark={StaticResource Primary}}" />
 
-                                <HorizontalStackLayout Grid.Column="1" VerticalOptions="Center"  Padding="0" Margin="10,0,0,0" Spacing="2"  >
-                                    <Image Source="{Binding Path=BindingContext.SeenIcon, Source={x:Reference Root}}" Scale="0.8" IsVisible="{Binding Score.Seen}" />
-                                    <Image Source="{Binding Path=BindingContext.DupleeIcon, Source={x:Reference Root}}" Scale="0.8" IsVisible="{Binding Score.Duply}" />
-                                    <HorizontalStackLayout IsVisible="{Binding Score.Duply}">
-                                        <HorizontalStackLayout IsVisible="{Binding Score.Winner}">
-                                            <Label Text="{Binding Path=BindingContext.DupleeBonus, Source={x:Reference Root}}" Scale="0.7"/>
-                                        </HorizontalStackLayout>
+                                    </DataTrigger>
+                                    <DataTrigger TargetType="Frame" Binding="{Binding Seen}" Value="True">
+                                        <Setter Property="BackgroundColor" Value="#90EE90"/>
+                                    </DataTrigger>
+                                    <DataTrigger TargetType="Frame" Binding="{Binding Seen}" Value="False">
+                                        <Setter Property="BackgroundColor" Value="#D3D3D3"/>
+                                    </DataTrigger>
+                                </Frame.Triggers>
+
+                                <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="12">
+
+                                    <!-- Player Info Section -->
+                                    <HorizontalStackLayout Grid.Column="0" Spacing="8">
+                                        <sfavatar:SfAvatarView ContentType="Initials" InitialsType="SingleCharacter" 
+                                                         AvatarName="{Binding PlayerObject.Name}"
+                                                         WidthRequest="36" HeightRequest="36"
+                                                         CornerRadius="18" AvatarColorMode="LightBackground" />
+                                        <Label Text="{Binding PlayerObject.Name}" 
+                                           FontSize="16" FontAttributes="Bold" 
+                                           VerticalOptions="Center"
+                                           TextColor="{AppThemeBinding Light={StaticResource GameTitleLight}, Dark={StaticResource GameTitleDark}}" />
                                     </HorizontalStackLayout>
-                                    <Image Source="{Binding Path=BindingContext.WinnerIcon, Source={x:Reference Root}}" Scale="0.8" IsVisible="{Binding Score.Winner}" />
-                                </HorizontalStackLayout>
 
+                                    <!-- Status Icons Section -->
+                                    <HorizontalStackLayout Grid.Column="1" VerticalOptions="Center" 
+                                                     HorizontalOptions="Center" Spacing="4">
+                                        <Image Source="{Binding Path=BindingContext.SeenIcon, Source={x:Reference Root}}" 
+                                           WidthRequest="20" HeightRequest="20" IsVisible="{Binding Seen}" />
+                                        <Image Source="{Binding Path=BindingContext.DupleeIcon, Source={x:Reference Root}}" 
+                                           WidthRequest="20" HeightRequest="20" IsVisible="{Binding Score.Duply}" />
+                                        <HorizontalStackLayout IsVisible="{Binding Score.Duply}">
+                                            <HorizontalStackLayout IsVisible="{Binding Score.Winner}">
+                                                <Label Text="{Binding Path=BindingContext.DupleeBonus, Source={x:Reference Root}}" 
+                                                   FontSize="12" TextColor="{AppThemeBinding Light={StaticResource AccentGold}, Dark={StaticResource AccentGold}}"/>
+                                            </HorizontalStackLayout>
+                                        </HorizontalStackLayout>
+                                        <Image Source="{Binding Path=BindingContext.WinnerIcon, Source={x:Reference Root}}" 
+                                           WidthRequest="20" HeightRequest="20" IsVisible="{Binding Score.Winner}" />
+                                    </HorizontalStackLayout>
 
+                                    <!-- Score Section -->
+                                    <Grid Grid.Column="2" RowDefinitions="Auto,Auto,Auto" ColumnDefinitions="Auto,Auto,Auto" 
+                                      RowSpacing="2" ColumnSpacing="8">
+                                        <Label Grid.Row="0" Grid.Column="0" Text="Maal:" FontSize="10" 
+                                           TextColor="{AppThemeBinding Light={StaticResource GameSubtitleLight}, Dark={StaticResource GameSubtitleDark}}" />
+                                        <Label Grid.Row="1" Grid.Column="0" Text="Point:" FontSize="10" 
+                                           TextColor="{AppThemeBinding Light={StaticResource GameSubtitleLight}, Dark={StaticResource GameSubtitleDark}}" />
+                                        <Label Grid.Row="2" Grid.Column="0" Text="Cash:" FontSize="10" 
+                                           TextColor="{AppThemeBinding Light={StaticResource GameSubtitleLight}, Dark={StaticResource GameSubtitleDark}}" />
 
-                                <Grid RowDefinitions="auto,auto,*" ColumnDefinitions="auto,*,*" Grid.Column="2" VerticalOptions="Center" HorizontalOptions="FillAndExpand"  >
-                                    <Label Grid.Row="0" Grid.Column="0" Text="Maal:" FontSize="10" ></Label>
-                                    <Label Grid.Row="1" Grid.Column="0" Text="Point:" FontSize="10" ></Label>
-                                    <Label Grid.Row="2" Grid.Column="0" Text="Cash:" FontSize="10" ></Label>
-                                    <Label Grid.Row="0" Grid.Column="1" Text="{Binding Score.Maal}" FontSize="12" HorizontalOptions="Center"  />
-                                    <Label Grid.Row="1" Grid.Column="1"    Text="{Binding Score.Score}" FontSize="12" HorizontalOptions="Center"  IsVisible="{Binding Path=BindingContext.TotalCalculated , Source={x:Reference Root}}" />
-                                    <Label Grid.Row="2" Grid.Column="1"    Text="{Binding Score.MoneyWon}" FontSize="12" HorizontalOptions="Center"  IsVisible="{Binding Path=BindingContext.TotalCalculated , Source={x:Reference Root}}" />
-                                    <Label Grid.Row="2" Grid.Column="1"    Text="{Binding Score.MoneyWon}" FontSize="12" HorizontalOptions="Center"  IsVisible="{Binding Path=BindingContext.TotalCalculated , Source={x:Reference Root}}" />
-                                    <Label Grid.Row="0" Grid.Column="2" Text="Total:" FontSize="10"/>
-                                    <Label Grid.Row="1" Grid.Column="2" Text="{Binding TotalForRound}" FontSize="10"/>
+                                        <Label Grid.Row="0" Grid.Column="1" Text="{Binding Maal}" 
+                                           FontSize="12" FontAttributes="Bold" HorizontalOptions="Center"
+                                           TextColor="{AppThemeBinding Light={StaticResource GameTitleLight}, Dark={StaticResource GameTitleDark}}" />
+                                        <Label Grid.Row="1" Grid.Column="1" Text="{Binding Score.Score}" 
+                                           FontSize="12" FontAttributes="Bold" HorizontalOptions="Center"  
+                                           IsVisible="{Binding Path=BindingContext.TotalCalculated, Source={x:Reference Root}}"
+                                           TextColor="{AppThemeBinding Light={StaticResource GameTitleLight}, Dark={StaticResource GameTitleDark}}" />
+                                        <Label Grid.Row="2" Grid.Column="1" Text="{Binding Score.MoneyWon}" 
+                                           FontSize="12" FontAttributes="Bold" HorizontalOptions="Center"  
+                                           IsVisible="{Binding Path=BindingContext.TotalCalculated, Source={x:Reference Root}}"
+                                           TextColor="{AppThemeBinding Light={StaticResource AccentGold}, Dark={StaticResource AccentGold}}" />
+
+                                        <Label Grid.Row="0" Grid.Column="2" Text="Total:" FontSize="10" 
+                                           TextColor="{AppThemeBinding Light={StaticResource GameSubtitleLight}, Dark={StaticResource GameSubtitleDark}}" />
+                                        <Label Grid.Row="1" Grid.Column="2" Text="{Binding TotalForRound}" 
+                                           FontSize="12" FontAttributes="Bold"
+                                           TextColor="{AppThemeBinding Light={StaticResource GameTitleLight}, Dark={StaticResource GameTitleDark}}" />
+                                    </Grid>
                                 </Grid>
-                            </Grid>
-                        </Frame>
+                            </Frame>
+                        </Grid>
                     </DataTemplate>
                 </CollectionView.ItemTemplate>
-
             </CollectionView>
         </ScrollView>
-        <Grid Grid.Row="2" RowDefinitions="auto,auto,auto,auto,auto " IsVisible="{Binding ShowNewGame}" Margin="0,10,0,0" >
-            <Label Grid.Row="0" Text="What's next?" Style="{StaticResource PlayersLabel}" HorizontalOptions="Center" VerticalOptions="Center" />
-            <Button Grid.Row="1" Text="Start new game" Style="{StaticResource MainPageActionButton}" Command="{Binding NewGameCommand}" ></Button>
-            <Button Grid.Row="2" Text="End Round and Calculate Total" Style="{StaticResource MainPageActionButton}" Command="{Binding EndRoundCommand}"></Button>
-            <Button Grid.Row="3" Text="End Game and Calculate Total" Style="{StaticResource MainPageActionButton}" Command="{Binding EndGameCommand}"></Button>
-            <Button Grid.Row="4" Text="Main Menu" Style="{StaticResource MainPageActionButton}" Command="{Binding MainMenuCommand}"></Button>
-        </Grid>
-        <Grid Grid.Row="2" ColumnDefinitions="120,*"  x:Name="Calculator" IsVisible="{Binding ShowCalculate}" >
-            <Grid Grid.Column="0" RowDefinitions="*,*,*,*,*,*">
-                <Button Grid.Row="0" Text="Winner"    
-                     ImageSource="{Binding WinnerIcon}" Style="{StaticResource PlayGameCalculatorActionButton}"
-                     Command="{Binding ButtonClick}" CommandParameter="winner"/>
-                <Button Grid.Row="1"  Text="Seen" Style="{StaticResource PlayGameCalculatorActionButton}"
-                     ImageSource="{Binding SeenIcon}"                      
-                     Command="{Binding ButtonClick}" CommandParameter="seen"/>
-                <Button  Grid.Row="2" Text="UnSeen" Style="{StaticResource PlayGameCalculatorActionButton}" ImageSource="{Binding UnseenIcon}" Command="{Binding ButtonClick}" CommandParameter="unseen"/>
-                <Button Grid.Row="3" Text="Duplee" Style="{StaticResource PlayGameCalculatorActionButton}" ImageSource="{Binding DupleeIcon}" Command="{Binding ButtonClick}" CommandParameter="duplee"/>
-                <Button Grid.Row="4" Text="Foul" Style="{StaticResource PlayGameCalculatorActionButton}" ImageSource="{Binding FoulIcon}"/>
-                <Button Grid.Row="5" Text="Idle" Style="{StaticResource PlayGameCalculatorActionButton}" ImageSource="{Binding IdleIcon}"/>
-            </Grid>
-            <Grid RowDefinitions="auto,*" Grid.Column="1"  >
-                <Grid Grid.Row="0" Grid.Column="1" ColumnDefinitions="*,*,auto" Padding="10,0,0,0" >                    
-                    <Label Grid.Column="0" Text="{Binding SelectedPlayer.PlayerObject.Name}" HorizontalOptions="Start" Style="{StaticResource PlayersLabel}"></Label>
-                    <Label Grid.Column="1" Text="{Binding SelectedPlayer.Score.Maal}" HorizontalOptions="Center" Style="{StaticResource PlayersLabel}"/>
-                    <Button  Text="Done"   Grid.Column="2" ImageSource="{Binding DoneIcon}" Style="{StaticResource PlayGameCalculatorActionButton}"                              
-                            Command="{Binding ButtonClick}" CommandParameter="D"/>
+
+        <!-- Action Buttons Section (End Game Options) -->
+        <Frame Grid.Row="2" Style="{StaticResource GameCardFrame}" 
+               IsVisible="{Binding ShowNewGame}" Margin="8,4,8,8">
+            <StackLayout Spacing="8">
+                <Label Text="What's next?" 
+                       FontSize="18" FontAttributes="Bold" 
+                       HorizontalOptions="Center" 
+                       TextColor="{AppThemeBinding Light={StaticResource GameTitleLight}, Dark={StaticResource GameTitleDark}}" />
+                <Button Text="Start New Game" 
+                        Style="{StaticResource MainPagePrimaryButton}" 
+                        Command="{Binding NewGameCommand}" />
+                <Button Text="End Round and Calculate Total" 
+                        Style="{StaticResource MainPageSecondaryButton}" 
+                        Command="{Binding EndRoundCommand}" />
+                <Button Text="End Game and Calculate Total" 
+                        Style="{StaticResource MainPageSecondaryButton}" 
+                        Command="{Binding EndGameCommand}" />
+                <Button Text="Main Menu" 
+                        Style="{StaticResource MainPageActionButton}" 
+                        Command="{Binding MainMenuCommand}" />
+            </StackLayout>
+        </Frame>
+
+        <!-- Calculator Section -->
+        <Frame Grid.Row="2" Style="{StaticResource GameCardFrame}" 
+               IsVisible="{Binding ShowCalculate}" Margin="8,4,8,8">
+            <Grid RowDefinitions="Auto,*" RowSpacing="16">
+
+                <!-- Selected Player Header -->
+                <Grid Grid.Row="0" ColumnDefinitions="*,Auto" ColumnSpacing="8">
+                    <Grid Grid.Column="0" ColumnDefinitions="*,Auto,Auto" ColumnSpacing="8" VerticalOptions="Center">
+                        <Label Grid.Column="0" Text="{Binding SelectedPlayer.PlayerObject.Name}" 
+                               FontSize="16" FontAttributes="Bold"
+                               TextColor="{AppThemeBinding Light={StaticResource GameTitleLight}, Dark={StaticResource GameTitleDark}}" />
+                        <Label Grid.Column="1" Text="Maal:" FontSize="12"
+                               TextColor="{AppThemeBinding Light={StaticResource GameSubtitleLight}, Dark={StaticResource GameSubtitleDark}}" />
+                        <Label Grid.Column="2" Text="{Binding SelectedPlayer.Maal}" 
+                               FontSize="16" FontAttributes="Bold"
+                               TextColor="{AppThemeBinding Light={StaticResource AccentGold}, Dark={StaticResource AccentGold}}" />
+                    </Grid>
+                    
                 </Grid>
-                <Grid  Grid.Row="1" ColumnDefinitions=".2*,.2*,.2*" RowDefinitions="*,*,*,*" ColumnSpacing="4"   >
 
-                    <Button  Text="7" Grid.Row="0" Grid.Column="0" Style="{StaticResource PlayGameCalculatorButton}" Command="{Binding ButtonClick}" CommandParameter="7" IsEnabled="{Binding EnableMaalInput}"/>
-                    <Button  Text="8" Grid.Row="0" Grid.Column="1" Style="{StaticResource PlayGameCalculatorButton}" Command="{Binding ButtonClick}" CommandParameter="8" IsEnabled="{Binding EnableMaalInput}"/>
-                    <Button  Text="9" Grid.Row="0" Grid.Column="2" Style="{StaticResource PlayGameCalculatorButton}" Command="{Binding ButtonClick}" CommandParameter="9" IsEnabled="{Binding EnableMaalInput}"/>
-                    <Button  Text="4" Grid.Row="1" Grid.Column="0" Style="{StaticResource PlayGameCalculatorButton}" Command="{Binding ButtonClick}" CommandParameter="4" IsEnabled="{Binding EnableMaalInput}"/>
-                    <Button  Text="5" Grid.Row="1" Grid.Column="1" Style="{StaticResource PlayGameCalculatorButton}" Command="{Binding ButtonClick}" CommandParameter="5" IsEnabled="{Binding EnableMaalInput}"/>
-                    <Button  Text="6" Grid.Row="1" Grid.Column="2" Style="{StaticResource PlayGameCalculatorButton}" Command="{Binding ButtonClick}" CommandParameter="6" IsEnabled="{Binding EnableMaalInput}"/>
-                    <Button  Text="1" Grid.Row="2" Grid.Column="0" Style="{StaticResource PlayGameCalculatorButton}" Command="{Binding ButtonClick}" CommandParameter="1" IsEnabled="{Binding EnableMaalInput}"/>
-                    <Button  Text="2" Grid.Row="2" Grid.Column="1" Style="{StaticResource PlayGameCalculatorButton}" Command="{Binding ButtonClick}" CommandParameter="2" IsEnabled="{Binding EnableMaalInput}"/>
-                    <Button  Text="3" Grid.Row="2" Grid.Column="2" Style="{StaticResource PlayGameCalculatorButton}" Command="{Binding ButtonClick}" CommandParameter="3" IsEnabled="{Binding EnableMaalInput}"/>
-                    <Button  Text="" Grid.Row="3" Grid.Column="2" ImageSource="{Binding BackspaceIcon}" Style="{StaticResource PlayGameCalculatorButton}" Command="{Binding ButtonClick}" CommandParameter="B" IsEnabled="{Binding EnableMaalInput}"/>
-                    <Button  Text="0" Grid.Row="3" Grid.Column="1" Style="{StaticResource PlayGameCalculatorButton}" Command="{Binding ButtonClick}" CommandParameter="0" IsEnabled="{Binding EnableMaalInput}"/>
+                <!-- Calculator Layout -->
+                <Grid Grid.Row="1" ColumnDefinitions="Auto,*" ColumnSpacing="16">
 
+                    <!-- Action Buttons -->
+                    <StackLayout Grid.Column="0" Spacing="6">
+                        <Button Text="Winner" Style="{StaticResource PlayGameCalculatorActionButton}"
+                                ImageSource="{Binding WinnerIcon}" HeightRequest="44" WidthRequest="80"
+                                FontSize="11" Command="{Binding ButtonClick}" CommandParameter="winner"/>
+                        <Button Text="Seen" Style="{StaticResource PlayGameCalculatorActionButton}"
+                                ImageSource="{Binding SeenIcon}" HeightRequest="44" WidthRequest="80"
+                                FontSize="11" Command="{Binding ButtonClick}" CommandParameter="seen"/>
+                        <Button Text="UnSeen" Style="{StaticResource PlayGameCalculatorActionButton}" 
+                                ImageSource="{Binding UnseenIcon}" HeightRequest="44" WidthRequest="80"
+                                FontSize="11" Command="{Binding ButtonClick}" CommandParameter="unseen"/>
+                        <Button Text="Duplee" Style="{StaticResource PlayGameCalculatorActionButton}" 
+                                ImageSource="{Binding DupleeIcon}" HeightRequest="44" WidthRequest="80"
+                                FontSize="11" Command="{Binding ButtonClick}" CommandParameter="duplee"/>
+                        <Button Text="Foul" Style="{StaticResource PlayGameCalculatorActionButton}" 
+                                ImageSource="{Binding FoulIcon}" HeightRequest="44" WidthRequest="80"
+                                FontSize="11"/>
+                        <Button Text="Idle" Style="{StaticResource PlayGameCalculatorActionButton}" 
+                                ImageSource="{Binding IdleIcon}" HeightRequest="44" WidthRequest="80"
+                                FontSize="11"/>
+                    </StackLayout>
+
+                    <!-- Number Pad -->
+                    <Grid Grid.Column="1" RowDefinitions="*,*,*,*" ColumnDefinitions="*,*,*" 
+                          RowSpacing="8" ColumnSpacing="8">
+                        <Button Text="7" Grid.Row="0" Grid.Column="0" 
+                                Style="{StaticResource PlayGameCalculatorButton}" 
+                                HeightRequest="60" FontSize="18" FontAttributes="Bold"
+                                Command="{Binding ButtonClick}" CommandParameter="7" 
+                                IsEnabled="{Binding EnableMaalInput}"/>
+                        <Button Text="8" Grid.Row="0" Grid.Column="1" 
+                                Style="{StaticResource PlayGameCalculatorButton}" 
+                                HeightRequest="60" FontSize="18" FontAttributes="Bold"
+                                Command="{Binding ButtonClick}" CommandParameter="8" 
+                                IsEnabled="{Binding EnableMaalInput}"/>
+                        <Button Text="9" Grid.Row="0" Grid.Column="2" 
+                                Style="{StaticResource PlayGameCalculatorButton}" 
+                                HeightRequest="60" FontSize="18" FontAttributes="Bold"
+                                Command="{Binding ButtonClick}" CommandParameter="9" 
+                                IsEnabled="{Binding EnableMaalInput}"/>
+
+                        <Button Text="4" Grid.Row="1" Grid.Column="0" 
+                                Style="{StaticResource PlayGameCalculatorButton}" 
+                                HeightRequest="60" FontSize="18" FontAttributes="Bold"
+                                Command="{Binding ButtonClick}" CommandParameter="4" 
+                                IsEnabled="{Binding EnableMaalInput}"/>
+                        <Button Text="5" Grid.Row="1" Grid.Column="1" 
+                                Style="{StaticResource PlayGameCalculatorButton}" 
+                                HeightRequest="60" FontSize="18" FontAttributes="Bold"
+                                Command="{Binding ButtonClick}" CommandParameter="5" 
+                                IsEnabled="{Binding EnableMaalInput}"/>
+                        <Button Text="6" Grid.Row="1" Grid.Column="2" 
+                                Style="{StaticResource PlayGameCalculatorButton}" 
+                                HeightRequest="60" FontSize="18" FontAttributes="Bold"
+                                Command="{Binding ButtonClick}" CommandParameter="6" 
+                                IsEnabled="{Binding EnableMaalInput}"/>
+
+                        <Button Text="1" Grid.Row="2" Grid.Column="0" 
+                                Style="{StaticResource PlayGameCalculatorButton}" 
+                                HeightRequest="60" FontSize="18" FontAttributes="Bold"
+                                Command="{Binding ButtonClick}" CommandParameter="1" 
+                                IsEnabled="{Binding EnableMaalInput}"/>
+                        <Button Text="2" Grid.Row="2" Grid.Column="1" 
+                                Style="{StaticResource PlayGameCalculatorButton}" 
+                                HeightRequest="60" FontSize="18" FontAttributes="Bold"
+                                Command="{Binding ButtonClick}" CommandParameter="2" 
+                                IsEnabled="{Binding EnableMaalInput}"/>
+                        <Button Text="3" Grid.Row="2" Grid.Column="2" 
+                                Style="{StaticResource PlayGameCalculatorButton}" 
+                                HeightRequest="60" FontSize="18" FontAttributes="Bold"
+                                Command="{Binding ButtonClick}" CommandParameter="3" 
+                                IsEnabled="{Binding EnableMaalInput}"/>
+
+                        <!--<Button Text="" Grid.Row="3" Grid.Column="0" 
+                                Style="{StaticResource PlayGameCalculatorButton}" 
+                                HeightRequest="60"/>-->
+                        <Button Text="0" Grid.Row="3" Grid.Column="0"  
+                                Style="{StaticResource PlayGameCalculatorButton}" 
+                                HeightRequest="60" FontSize="18" FontAttributes="Bold"
+                                Command="{Binding ButtonClick}" CommandParameter="0" 
+                                IsEnabled="{Binding EnableMaalInput}"/>
+                        <Button Text="" Grid.Row="3" Grid.Column="1" 
+                                ImageSource="{Binding BackspaceIcon}" 
+                                Style="{StaticResource PlayGameCalculatorButton}" 
+                                HeightRequest="60"
+                                Command="{Binding ButtonClick}" CommandParameter="B" 
+                                IsEnabled="{Binding EnableMaalInput}"/>
+                        <Button Grid.Column="3" Grid.Row="3" Text="Done" 
+                                Style="{StaticResource PlayGameCalculatorActionButton}"
+                                HeightRequest="60" 
+                                FontSize="17" 
+                                Command="{Binding ButtonClick}" CommandParameter="D" />
+                        
+                    </Grid>
                 </Grid>
             </Grid>
-            
-           
-             
-
-            
-
-        </Grid>
-
+        </Frame>
     </Grid>
-
 </ContentPage>

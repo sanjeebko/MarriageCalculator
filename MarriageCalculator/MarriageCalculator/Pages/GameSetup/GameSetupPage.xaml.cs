@@ -1,6 +1,5 @@
 using CommunityToolkit.Mvvm.Messaging;
 using MarriageCalculator.DataServices;
-using MarriageCalculator.ViewModels;
 
 namespace MarriageCalculator.Pages;
 
@@ -43,7 +42,17 @@ public partial class GameSetupPage : ContentPage
         
         try
         {
-            await _viewModel.InitializeAsync();
+            if (_viewModel.IsInitialized)
+            {
+                System.Diagnostics.Debug.WriteLine("GameSetupPage ViewModel already initialized, refreshing...");
+                await _viewModel.RefreshAsync();
+                return;
+            }
+            else
+            {
+                await _viewModel.InitializeAsync();
+            }
+                
             System.Diagnostics.Debug.WriteLine("GameSetupPage ViewModel initialized successfully");
         }
         catch (Exception ex)
@@ -59,3 +68,4 @@ public partial class GameSetupPage : ContentPage
         WeakReferenceMessenger.Default.UnregisterAll(this);
     }
 }
+

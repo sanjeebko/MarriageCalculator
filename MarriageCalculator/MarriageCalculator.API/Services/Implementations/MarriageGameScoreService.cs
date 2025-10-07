@@ -2,6 +2,7 @@ using MarriageCalculator.Core.DTOs;
 using MarriageCalculator.API.Repositories.Interfaces;
 using MarriageCalculator.Core.Models;
 using MarriageCalculator.API.Services.Interfaces;
+using Microsoft.EntityFrameworkCore;
 
 namespace MarriageCalculator.API.Services.Implementations;
 
@@ -28,24 +29,41 @@ public class MarriageGameScoreService : IMarriageGameScoreService
 
     public async Task<MarriageGameScoreDto> CreateScoreAsync(CreateMarriageGameScoreDto createDto)
     {
-        var score = new MarriageGameScore
+        // Check if a score already exists for this player-game combination
+        var existingScores = await _scoreRepository.GetByGameIdAsync(createDto.MarriageGameId);
+        var existingScore = existingScores.FirstOrDefault(s => s.PlayerId == createDto.PlayerId);
+        
+        if (existingScore != null)
         {
-            MarriageGameId = createDto.MarriageGameId,
-            PlayerId = createDto.PlayerId,
-            Seen = createDto.Seen,
-            Playing = createDto.Playing,
-            Maal = createDto.Maal,
-            BonusPoint = createDto.BonusPoint,
-            Duply = createDto.Duply,
-            Winner = createDto.Winner,
-            Score = createDto.Score,
-            MoneyWon = createDto.MoneyWon,
-            Deal = createDto.Deal,
-            Position = createDto.Position
-        };
+            throw new InvalidOperationException($"A score already exists for player {createDto.PlayerId} in game {createDto.MarriageGameId}. Use update instead of create.");
+        }
 
-        var createdScore = await _scoreRepository.CreateAsync(score);
-        return MapToDto(createdScore);
+        try
+        {
+            var score = new MarriageGameScore
+            {
+                MarriageGameId = createDto.MarriageGameId,
+                PlayerId = createDto.PlayerId,
+                Seen = createDto.Seen,
+                Playing = createDto.Playing,
+                Maal = createDto.Maal,
+                BonusPoint = createDto.BonusPoint,
+                Duply = createDto.Duply,
+                Winner = createDto.Winner,
+                Score = createDto.Score,
+                MoneyWon = createDto.MoneyWon,
+                Deal = createDto.Deal,
+                Position = createDto.Position
+            };
+
+            var createdScore = await _scoreRepository.CreateAsync(score);
+            return MapToDto(createdScore);
+        }
+        catch (DbUpdateException ex) when (ex.InnerException?.Message?.Contains("duplicate key") == true || 
+                                           ex.InnerException?.Message?.Contains("UNIQUE KEY constraint") == true)
+        {
+            throw new InvalidOperationException($"A score already exists for player {createDto.PlayerId} in game {createDto.MarriageGameId}. Use update instead of create.", ex);
+        }
     }
 
     public async Task<MarriageGameScoreDto?> UpdateScoreAsync(int id, CreateMarriageGameScoreDto updateDto)

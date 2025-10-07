@@ -18,7 +18,7 @@ public class MarriageGameSetPlayerRepository : IMarriageGameSetPlayerRepository
     public async Task<List<MarriageGameSetPlayer>> GetPlayersByGameSetIdAsync(int gameSetId)
     {
         var players = await _apiService.GetAsync<List<MarriageGameSetPlayer>>($"api/marriagegamesetplayers/gameset/{gameSetId}/players");
-        return players ?? new List<MarriageGameSetPlayer>();
+        return players ?? [];
     }
 
     public async Task<MarriageGameSetPlayer?> GetGameSetPlayerByIdAsync(int gameSetId, Guid playerId)
@@ -30,12 +30,37 @@ public class MarriageGameSetPlayerRepository : IMarriageGameSetPlayerRepository
     {
         var createDto = new
         {
-            MarriageGameSetId = gameSetPlayer.MarriageGameSetId,
-            PlayerId = gameSetPlayer.PlayerId
+            gameSetPlayer.MarriageGameSetId,
+            gameSetPlayer.PlayerId
         };
         
-        var result = await _apiService.PostAsync<MarriageGameSetPlayer>("api/marriagegamesetplayers", createDto);
-        return result ?? throw new Exception("Failed to create game set player");
+        try
+        {
+            var result = await _apiService.PostAsync<MarriageGameSetPlayer>("api/marriagegamesetplayers", createDto);
+            
+            if (result != null)
+            {
+                return result; // 201 Created - success case
+            }
+            
+            throw new Exception("Failed to create game set player - no data returned");
+        }
+        catch (HttpRequestException ex) when (ex.Message.Contains("400"))
+        {
+            throw new ArgumentException("Invalid request data provided for creating game set player", ex);
+        }
+        catch (HttpRequestException ex) when (ex.Message.Contains("409"))
+        {
+            return gameSetPlayer;
+        }
+        catch (HttpRequestException ex) when (ex.Message.Contains("500"))
+        {
+            throw new Exception("Server error occurred while creating game set player", ex);
+        }
+        catch (Exception ex)
+        {
+            throw new Exception("Failed to create game set player", ex);
+        }
     }
 
     public async Task<bool> DeleteGameSetPlayerAsync(int GameSetId,Guid playerId)

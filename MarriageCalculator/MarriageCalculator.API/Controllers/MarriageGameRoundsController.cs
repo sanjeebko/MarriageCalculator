@@ -5,6 +5,28 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace MarriageCalculator.API.Controllers;
 
+/// <summary>
+/// Marriage Game Rounds Controller - Manages individual game rounds within game sets
+/// 
+/// ENDPOINTS SUMMARY:
+/// ==================
+/// GET    /api/marriagegamerounds                - Get all marriage game rounds
+/// GET    /api/marriagegamerounds/{id}           - Get specific marriage game round by ID
+/// GET    /api/marriagegamerounds/gameset/{id}   - Get all rounds for a specific game set
+/// POST   /api/marriagegamerounds                - Create new marriage game round
+/// PUT    /api/marriagegamerounds/{id}           - Update existing marriage game round by ID
+/// DELETE /api/marriagegamerounds/{id}           - Delete marriage game round by ID
+/// 
+/// AUTHENTICATION:
+/// - All endpoints require authentication ([Authorize])
+/// 
+/// KEY FEATURES:
+/// - Integer-based round identification
+/// - Round-to-gameset relationship management
+/// - Full CRUD operations with proper error handling and logging
+/// - Model validation on create and update operations
+/// - Filtered retrieval by game set ID
+/// </summary>
 [ApiController]
 [Route("api/[controller]")]
 [Authorize]
@@ -20,8 +42,10 @@ public class MarriageGameRoundsController : ControllerBase
     }
 
     /// <summary>
-    /// Get all marriage game rounds
+    /// GET /api/marriagegamerounds - Get all marriage game rounds
+    /// Returns a list of all marriage game rounds in the system
     /// </summary>
+    /// <returns>200 OK with list of MarriageGameRoundDto objects, or 500 on error</returns>
     [HttpGet]
     public async Task<ActionResult<IEnumerable<MarriageGameRoundDto>>> GetMarriageGameRounds()
     {
@@ -38,8 +62,11 @@ public class MarriageGameRoundsController : ControllerBase
     }
 
     /// <summary>
-    /// Get marriage game round by ID
+    /// GET /api/marriagegamerounds/{id} - Get specific marriage game round by ID
+    /// Retrieves a specific marriage game round by its unique integer identifier
     /// </summary>
+    /// <param name="id">The integer ID of the marriage game round to retrieve</param>
+    /// <returns>200 OK with MarriageGameRoundDto object, 404 Not Found if round doesn't exist, or 500 on error</returns>
     [HttpGet("{id}")]
     public async Task<ActionResult<MarriageGameRoundDto>> GetMarriageGameRound(int id)
     {
@@ -61,8 +88,11 @@ public class MarriageGameRoundsController : ControllerBase
     }
 
     /// <summary>
-    /// Get marriage game rounds by game set ID
+    /// GET /api/marriagegamerounds/gameset/{gameSetId} - Get all rounds for a specific game set
+    /// Retrieves all marriage game rounds that belong to a specific game set
     /// </summary>
+    /// <param name="gameSetId">The integer ID of the game set to get rounds for</param>
+    /// <returns>200 OK with list of MarriageGameRoundDto objects, or 500 on error</returns>
     [HttpGet("gameset/{gameSetId}")]
     public async Task<ActionResult<IEnumerable<MarriageGameRoundDto>>> GetMarriageGameRoundsByGameSet(int gameSetId)
     {
@@ -79,8 +109,11 @@ public class MarriageGameRoundsController : ControllerBase
     }
 
     /// <summary>
-    /// Create a new marriage game round
+    /// POST /api/marriagegamerounds - Create new marriage game round
+    /// Creates a new marriage game round within a game set
     /// </summary>
+    /// <param name="createDto">The marriage game round data to create</param>
+    /// <returns>201 Created with MarriageGameRoundDto object and location header, 400 Bad Request if validation fails, or 500 on error</returns>
     [HttpPost]
     public async Task<ActionResult<MarriageGameRoundDto>> CreateMarriageGameRound([FromBody] CreateMarriageGameRoundDto createDto)
     {
@@ -102,8 +135,12 @@ public class MarriageGameRoundsController : ControllerBase
     }
 
     /// <summary>
-    /// Update an existing marriage game round
+    /// PUT /api/marriagegamerounds/{id} - Update existing marriage game round
+    /// Updates an existing marriage game round identified by integer ID with new data
     /// </summary>
+    /// <param name="id">The integer ID of the marriage game round to update</param>
+    /// <param name="updateDto">The updated marriage game round data</param>
+    /// <returns>200 OK with updated MarriageGameRoundDto object, 400 Bad Request if validation fails, 404 Not Found if round doesn't exist, or 500 on error</returns>
     [HttpPut("{id}")]
     public async Task<ActionResult<MarriageGameRoundDto>> UpdateMarriageGameRound(int id, [FromBody] CreateMarriageGameRoundDto updateDto)
     {
@@ -130,8 +167,11 @@ public class MarriageGameRoundsController : ControllerBase
     }
 
     /// <summary>
-    /// Delete a marriage game round
+    /// DELETE /api/marriagegamerounds/{id} - Delete marriage game round
+    /// Permanently deletes a marriage game round identified by integer ID from the system
     /// </summary>
+    /// <param name="id">The integer ID of the marriage game round to delete</param>
+    /// <returns>204 No Content if successfully deleted, 404 Not Found if round doesn't exist, or 500 on error</returns>
     [HttpDelete("{id}")]
     public async Task<ActionResult> DeleteMarriageGameRound(int id)
     {

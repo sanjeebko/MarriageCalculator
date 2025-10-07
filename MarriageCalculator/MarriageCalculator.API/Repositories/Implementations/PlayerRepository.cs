@@ -22,7 +22,7 @@ public class PlayerRepository : IPlayerRepository
     public async Task<IEnumerable<Player>> GetByCreatorAsync(Guid userId)
     {
         return await _context.Players
-            .Where(p => !p.Deleted && p.CreatedByUserId == userId)
+            .Where(p => p.CreatedByUserId == userId)
             .OrderBy(p => p.Name)
             .ToListAsync();
     }
@@ -55,7 +55,15 @@ public class PlayerRepository : IPlayerRepository
         }
 
         _context.Players.Add(player);
-        await _context.SaveChangesAsync();
+        try
+        {
+            await _context.SaveChangesAsync();
+        }catch(Exception ex)
+        {
+            var reason = ex.Message;
+            var more = ex.InnerException;
+            Console.WriteLine($"{ex}");
+        }
         return player;
     }
 
@@ -92,6 +100,7 @@ public class PlayerRepository : IPlayerRepository
         if (player == null) return false;
 
         player.Deleted = true; // Soft delete
+        player.Name = $"{player.Name} (Deleted-{DateTime.UtcNow:yyyyMMddHHmmss})";
         await _context.SaveChangesAsync();
         return true;
     }

@@ -18,28 +18,38 @@
     <ApplicationDisplayVersion>1.0</ApplicationDisplayVersion>
     <ApplicationVersion>1</ApplicationVersion>
     <SupportedOSPlatformVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'ios'">14.2</SupportedOSPlatformVersion>
-    <SupportedOSPlatformVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'android'">34.0</SupportedOSPlatformVersion>    
+    <SupportedOSPlatformVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'android'">34.0</SupportedOSPlatformVersion>
+     
   </PropertyGroup>
   
   <ItemGroup>
     <!-- App Icon -->
-    <MauiIcon Include="Resources\AppIcon\appicon.svg" />
+    <MauiIcon Include="Resources\AppIcon\appicon.svg" Color="#512BD4" />
+
     <!-- Splash Screen -->
-    <MauiSplashScreen Include="Resources\Splash\splash2.svg" Color="#000000" BaseSize="512,512" />
+    <MauiSplashScreen Include="Resources\Splash\splash.svg" Color="#512BD4" BaseSize="128,128" />
+
     <!-- Images -->
     <MauiImage Include="Resources\Images\*" />
-    <MauiImage Update="Resources\Images\dotnet_bot.svg" BaseSize="168,208" />
+    <MauiImage Update="Resources\Images\dotnet_bot.png" Resize="True" BaseSize="300,185" />
+
     <!-- Custom Fonts -->
     <MauiFont Include="Resources\Fonts\*" />
+
     <!-- Raw Assets (also remove the "Resources\Raw" prefix) -->
     <MauiAsset Include="Resources\Raw\**" LogicalName="%(RecursiveDir)%(Filename)%(Extension)" />
   </ItemGroup>
-  
+
+  <ItemGroup>
+    <Compile Update="Converter\IsSelectedPlayerConverter.cs">
+      <ExcludeFromCurrentConfiguration>false</ExcludeFromCurrentConfiguration>
+    </Compile>
+  </ItemGroup>
+
   <ItemGroup>
     <None Remove="Resources\Fonts\fontello.ttf" />
     <None Remove="Resources\Fonts\Poppins-Regular.ttf" />
     <None Remove="Resources\Fonts\Poppins-SemiBold.ttf" />
-    <None Remove="Resources\Images\cards.png" />
     <None Remove="appsettings.json" />
     <None Remove="appsettings.Development.json" />
   </ItemGroup>
@@ -50,14 +60,16 @@
   
   <ItemGroup>
     <!-- Core MAUI and UI packages -->
-    <PackageReference Include="CommunityToolkit.Maui" Version="9.1.1" />
-    <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.0" />
+    <PackageReference Include="CommunityToolkit.Maui" Version="9.0.1" />
+    <PackageReference Include="CommunityToolkit.Mvvm" Version="8.2.2" />
     <PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="9.0.8" />
     <PackageReference Include="Microsoft.Maui.Controls" Version="8.0.93" />
     <PackageReference Include="Microsoft.Maui.Controls.Compatibility" Version="8.0.93" />
     <PackageReference Include="Refractored.MvvmHelpers" Version="1.6.2" />
-    <PackageReference Include="Syncfusion.Maui.Cards" Version="27.1.58" />
-    <PackageReference Include="Syncfusion.Maui.Popup" Version="27.1.58" />
+    <PackageReference Include="Syncfusion.Licensing" Version="31.1.20" />
+    <PackageReference Include="Syncfusion.Maui.Cards" Version="31.1.20" />
+    <PackageReference Include="Syncfusion.Maui.DataGrid" Version="31.1.20" />
+    <PackageReference Include="Syncfusion.Maui.Popup" Version="31.1.20" />
     
     <!-- HTTP Client and Configuration for API communication -->
     <PackageReference Include="Microsoft.Extensions.Http" Version="8.0.1" />
@@ -85,9 +97,9 @@
   
   <ItemGroup>
     <!-- Configuration files -->
-    <Content Include="appsettings.json">
+    <EmbeddedResource Include="appsettings.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
+    </EmbeddedResource>
   </ItemGroup>
   
   <ItemGroup>
@@ -101,6 +113,9 @@
   
   <ItemGroup>
     <MauiXaml Update="Pages\GameSetup\GameSetupPage.xaml">
+      <Generator>MSBuild:Compile</Generator>
+    </MauiXaml>
+    <MauiXaml Update="Pages\Game\ScoreBoardPage.xaml">
       <Generator>MSBuild:Compile</Generator>
     </MauiXaml>
     <MauiXaml Update="Pages\Landing\MainPage.xaml">

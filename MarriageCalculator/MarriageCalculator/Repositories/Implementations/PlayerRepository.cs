@@ -1,6 +1,3 @@
-using MarriageCalculator.Core.Models;
-using MarriageCalculator.Core.DTOs;
-using AutoMapper;
 using MarriageCalculator.Repositories.Interfaces;
 using MarriageCalculator.Services.Interfaces;
 
@@ -13,8 +10,8 @@ public class PlayerRepository(IApiService apiService, IMapper mapper) : IPlayerR
 
     public async Task<List<Player>> GetAllPlayersAsync()
     {
-        var playersDto = await _apiService.GetAsync<List<PlayerDto>>("api/players/my");
-        return playersDto?.Select(_mapper.Map<Player>).ToList() ?? new List<Player>();
+        var playersDto = await _apiService.GetAsync<List<PlayerDto>>("api/players");
+        return playersDto?.Select(_mapper.Map<Player>).ToList() ?? [];
     }
 
     public async Task<Player?> GetPlayerByIdAsync(Guid id)

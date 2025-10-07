@@ -7,7 +7,27 @@ using Swashbuckle.AspNetCore.Annotations;
 namespace MarriageCalculator.API.Controllers;
 
 /// <summary>
-/// Manages user registration, email verification, and related operations
+/// User Registration Controller - Manages user registration, email verification, and account setup
+/// 
+/// ENDPOINTS SUMMARY:
+/// ==================
+/// POST   /api/userregistration/register            - Register a new user account
+/// POST   /api/userregistration/verify-email        - Verify user email address with verification code
+/// POST   /api/userregistration/resend-verification - Resend email verification code
+/// 
+/// AUTHENTICATION:
+/// - All endpoints are public (no authentication required)
+/// - Email verification required before full account access
+/// 
+/// KEY FEATURES:
+/// - Secure user registration with email verification
+/// - 5-digit verification codes with 2-hour expiration
+/// - Password validation (minimum 8 characters, one capital letter, one number/symbol)
+/// - Automatic verification email sending
+/// - Code regeneration and resending capability
+/// - Comprehensive validation and error handling
+/// - Swagger/OpenAPI documentation with detailed response types
+/// - Proper HTTP status code usage (201 Created, 404 Not Found, etc.)
 /// </summary>
 [ApiController]
 [Route("api/[controller]")]

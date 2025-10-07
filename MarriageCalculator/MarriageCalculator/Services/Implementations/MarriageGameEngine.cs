@@ -1,12 +1,10 @@
-using MarriageCalculator.Core.Models;
 using MarriageCalculator.Repositories.Interfaces;
 using MarriageCalculator.Services.Interfaces;
-using System.Collections.Generic;
+using MarriageCalculator.Helpers;
 
 namespace MarriageCalculator.Services.Implementations;
 
 public class MarriageGameEngine( 
-                                IAuthenticationService authenticationService,
                                 ISettingsService settingsService,
                                 IPlayerService playerService,
                                 IMarriageGameSetRepository marriageGameSetRepository,
@@ -21,147 +19,223 @@ public class MarriageGameEngine(
     /// MarriageGameEngine->MarriageGameSet->MarriageGameRound->MarriageGame
     /// </summary>
     public CancellationTokenSource CancellationTokenSource { get; } = new CancellationTokenSource();
-     
-    public IAuthenticationService AuthenticationService { get; } = authenticationService;
+    public Guid? UserId { get; set; } 
     public ISettingsService SettingsService { get; } = settingsService;
     public IPlayerService PlayerService { get; } = playerService;
-
-    public IMarriageGameSetRepository MarriageGameSetRepository { get; } = marriageGameSetRepository;
-    public IMarriageGameRoundRepository MarriageGameRoundRepository { get; } = marriageGameRoundRepository;
-    public IMarriageGameRepository MarriageGameRepository { get; } = marriageGameRepository;
-    public IMarriageGameScoreRepository MarriageGameScoreRepository { get; } = marriageGameScoreRepository;
-    public IMarriageGameSetPlayerRepository MarriageGameSetPlayerRepository { get; } = marriageGameSetPlayerRepository;
     public ITextToSpeechService TextToSpeechService { get; } = textToSpeechService;
     public bool Initialized { get; private set; } = false;
-    public string LastPageName { get; set; } = nameof(MarriageGameEngine);
-    public MarriageGameSet? MarriageGameSet { get; private set; }
-    public MarriageGameRound? CurrentMarriageGameRound { get; private set; }
-    public MarriageGame? CurrentMarriageGame { get; private set; }
-    
+    public bool IsActiveGame => MarriageGameSet is { IsActive: true };
+    public string LastPageName { get; set; } = string.Empty;
+    public List<MarriageGameSet> MarriageGameSets { get; set; } = [];
+    public MarriageGameSet? MarriageGameSet { get; set; }
+    public MarriageGameRound? CurrentMarriageGameRound => MarriageGameSet?.Rounds?.FirstOrDefault(r => !r.Completed);
+    public MarriageGame? CurrentMarriageGame => CurrentMarriageGameRound?.MarriageGames.FirstOrDefault(g => g.ClosedRound == false && (g.WinnerId == null || g.WinnerId == Guid.Empty));
+    public List<MarriageGameScore>? CurrentMarriageGameScores => CurrentMarriageGame?.MarriageGameScores;
     public bool IsServerConnected { get; private set; } = false;
 
     public async Task InitializeEngineAsync()
-    {  
-        if (Initialized && SettingsService.IsInitialized && PlayerService.IsInitialized) 
+    {
+        // Prevent re-initialization if already done
+        if (Initialized)
             return;
-    
-        var initializeSettingsServiceTask = SettingsService.InitializeAsync();
-        var initializePlayerServiceTask = PlayerService.InitializeAsync();
-        var initializeTextToSpeechServiceTask = TextToSpeechService.InitializeAsync();
-        
-        var initializeLastGameSetTask = InitializeLastGameSetAsync(); 
 
-        await Task.WhenAll(initializePlayerServiceTask, initializeSettingsServiceTask, initializeTextToSpeechServiceTask, initializeLastGameSetTask);
+        // Check server connection status before proceeding
+        if (!IsServerConnected)
+        {
+            System.Diagnostics.Debug.WriteLine("MarriageGameEngine: Server not connected, skipping initialization.");
+            return;
+        }
+
+        // Ensure dependent services are ready
+        if (!SettingsService.IsInitialized && UserId is not null)
+        {
+            await SettingsService.InitializeAsync(UserId.Value);
+        }
+
+        var initializeTextToSpeechServiceTask = TextToSpeechService.InitializeAsync();        
+        var initializePlayerServiceTask = PlayerService.InitializeAsync();
+        var initializedGameSetTask =    InitializeMarriageGameSet();
+        
+
+        await Task.WhenAll(initializeTextToSpeechServiceTask, initializePlayerServiceTask, initializedGameSetTask);
 
         Initialized = true;
-        IsServerConnected = true;
+        System.Diagnostics.Debug.WriteLine("MarriageGameEngine: Engine initialized successfully.");
     }
-
-    private async Task InitializeLastGameSetAsync()
+    private async Task InitializeMarriageGameSet()
     {
-        MarriageGameSet = await MarriageGameSetRepository.GetLatestGameSetAsync();
-        PlayerService.ActivePlayers.Clear();
-        if (MarriageGameSet is not null)
+        //step1: get All MarriageGameSets
+        MarriageGameSets = await marriageGameSetRepository.GetAllGameSetsAsync();
+        if (MarriageGameSets is null)
         {
-            var players = await MarriageGameSetPlayerRepository.GetPlayersByGameSetIdAsync(MarriageGameSet.Id);
-            foreach (var player in players)
-            {
-                MarriageGameSet.GameSetPlayers.TryAdd(player.PlayerId, player);
-                PlayerService.ActivePlayers.TryAdd(player.PlayerId, player.Player);
-            }            
+            MarriageGameSets = [];
+            return;
         }
-        
-        
+         
+    }
+    public void SetUserId(Guid userId)
+    {
+        if (UserId != userId)
+        {
+            UserId = userId;             
+            Initialized = false; // Mark as not initialized to allow re-initialization with new UserId
+        }
+    }
+    public async Task<List<MarriageGameSetPlayer>> GetGameSetPlayersByIdAsync(int id) => await marriageGameSetPlayerRepository.GetPlayersByGameSetIdAsync(id);
+    public async Task LoadGameSetAsync(int gameSetId)
+    {
+        //Step2: Get current MarriageGameSet if available.
+        MarriageGameSet = MarriageGameSets
+            .Where(m => m.Id == gameSetId)
+            .FirstOrDefault();
+
+        //Step3: If gameset is not available, then create new gameset;
+        if (MarriageGameSet is null)
+            await CreateNewGameSet();
+
+        //Step4: if it can not create new gameset, there's something wrong so return uninitialized. 
+        if (MarriageGameSet == null)
+        {
+            return;
+        }
+
+        // If available load Players selected for gameset
+        var gamesetPlayers = await marriageGameSetPlayerRepository.GetPlayersByGameSetIdAsync(MarriageGameSet.Id);
+
+        if (gamesetPlayers is not null && gamesetPlayers.Count > 0)
+        {
+            MarriageGameSet.GameSetPlayers = gamesetPlayers.ToDictionary(player => player.PlayerId,
+                                                                         player => Convert(PlayerService.AllPlayers[player.PlayerId], MarriageGameSet));
+        }
+        var rounds = await marriageGameRoundRepository.GetRoundsByGameSetIdAsync(MarriageGameSet!.Id);
+        MarriageGameSet.Rounds = rounds;
+
+        //Foreach rounds I want to Load Marriage Game
+         foreach(var round in MarriageGameSet.Rounds)
+         {
+             var games = await marriageGameRepository.GetGamesByRoundIdAsync(round.Id);
+             round.MarriageGames = games;
+             //Foreach game I want to Load Marriage Game Scores
+             foreach(var game in round.MarriageGames)
+             {
+                 var scores = await marriageGameScoreRepository.GetScoresByGameIdAsync(game.Id);
+                 game.MarriageGameScores = scores;
+             }
+        }
+
+
+    } 
+
+    private MarriageGameSetPlayer Convert(Player player, MarriageGameSet marriageGameSet)
+    {
+        return MarriageGameSetPlayerHelper.FromPlayer(player, marriageGameSet);
     }
 
     public async Task CreateNewGameSet()
     {
-        if (MarriageGameSet is not null && MarriageGameSet.IsActive)
-        {
-            await CloseCurrentGameSet();
-        }
+        System.Diagnostics.Debug.WriteLine("MarriageGameEngine: CreateNewGameSet called");
+
+        //Create Default Settings and assign default settings to the new gameset. 
+        var defaultSettings = await SettingsService.GetDefaultSettingsForNewGameSet();
+        if (defaultSettings is null || defaultSettings.Id == 0)
+            throw new Exception("Cannot create game set without valid game settings. Please ensure the API is accessible and you are authenticated.");
 
         var name = DateTime.UtcNow.ToString("yyyyMMdd HHmmss");
-        var marriageGameSetTask = MarriageGameSetRepository.CreateGameSetAsync(new MarriageGameSet
+        var marriageGameSetTask = marriageGameSetRepository.CreateGameSetAsync(new MarriageGameSet
         {
             Name = name,
             Created = DateTime.UtcNow,
             LastPlayed = DateTime.UtcNow,
             IsActive = true,
-            GameSettingsId = SettingsService.Settings!.Id
+            GameSettingsId = defaultSettings.Id,
+            GameSettings  = defaultSettings
         });
 
-        if (SettingsService.Settings!.Id==0)
-        {
-            await SettingsService.SaveSettingsAsync();
-            await SettingsService.LoadSettingsAsync();
-        }
-        var gameSettings = SettingsService.Settings;
 
         var marriageGameSet = await marriageGameSetTask ?? throw new Exception("Failed to create new game set");
-        marriageGameSet.GameSettingsId = gameSettings.Id;
-        marriageGameSet.GameSetPlayers = PlayerService.ActivePlayers.ToDictionary(
-            player => player.Key,
-            player => new MarriageGameSetPlayer { PlayerId = player.Key, MarriageGameSetId = marriageGameSet.Id }
-        );
-
-        await AddPlayersToGameSetAsync(marriageGameSet.GameSetPlayers);
-        var updateGameSetTask = MarriageGameSetRepository.UpdateGameSetAsync(marriageGameSet);
-        var createNewGameRoundTask = CreateNewGameRoundForGivenGameSet(marriageGameSet.Id);
-
-        await Task.WhenAll(updateGameSetTask, createNewGameRoundTask);
-
         MarriageGameSet = marriageGameSet;
+        MarriageGameSets.Add(marriageGameSet);
+        System.Diagnostics.Debug.WriteLine($"MarriageGameEngine: Created new game set with ID {marriageGameSet.Id}");
     }
-    
+
     public async Task CreateNewGameRoundForGivenGameSet(int id)
     {
-        var rounds = await MarriageGameRoundRepository.GetRoundsByGameSetIdAsync(id);
+        // Validate that we have an active game set and it matches the provided id
+        if (MarriageGameSet == null)
+        {
+            throw new InvalidOperationException("No active game set available. Please create or load a game set first.");
+        }
+
+        if (MarriageGameSet.Id != id)
+        {
+            throw new UnauthorizedAccessException("Cannot create round for a game set that is not currently active.");
+        }
+
+        var rounds = await marriageGameRoundRepository.GetRoundsByGameSetIdAsync(id);
         var latestRound = rounds.OrderByDescending(x => x.Sequence).FirstOrDefault();
         int sequence = 1;
         if (latestRound is not null)
-            sequence += latestRound.Sequence+1;
+            sequence = latestRound.Sequence + 1;
 
-        var marriageGameRound = new MarriageGameRound { MarriageGameSetId = id, Sequence = sequence };
-        await MarriageGameRoundRepository.CreateRoundAsync(marriageGameRound);
-        await CreateNewMarriageGameForGivenGameRound(marriageGameRound);
-        CurrentMarriageGameRound = marriageGameRound;
+        var marriageGameRoundObject = new MarriageGameRound { MarriageGameSetId = id, Sequence = sequence };
+        var marriageGameRound = await marriageGameRoundRepository.CreateRoundAsync(marriageGameRoundObject);
+
+        if (MarriageGameSet.Rounds is null)
+            MarriageGameSet.Rounds = [];
+
+        if (!MarriageGameSet.Rounds.Any(a => a.Id == marriageGameRound.Id))
+            MarriageGameSet.Rounds.Add(marriageGameRound);
+
+        await CreateNewMarriageGame();
     }
     
-    public async Task<MarriageGame> CreateNewMarriageGameForGivenGameRound(MarriageGameRound marriageGameRound)
+    public async Task CreateNewMarriageGame()
     { 
+        if(MarriageGameSet is null)
+            throw new Exception("No active MarriageGameSet available!");
+        if (MarriageGameSet.GameSetPlayers.Count < 2)
+                throw new Exception("At least two players are required to start a new game!");
+        if(CurrentMarriageGameRound is null)
+            throw new Exception("No active MarriageGameRound available! Please create a new round first.");
+        
+        var marriageGameRound = CurrentMarriageGameRound;
         var sequence = 1;
-        var allMarriageGames = await MarriageGameRepository.GetGamesByRoundIdAsync(marriageGameRound.Id);
+        var allMarriageGames = await marriageGameRepository.GetGamesByRoundIdAsync(marriageGameRound.Id);
         if(allMarriageGames.Count > 0)
             sequence = allMarriageGames.Max(x => x.Sequence) + 1;
 
-        var marriageGame = new MarriageGame { MarriageGameRoundId = marriageGameRound.Id, Sequence = sequence, CreatedTime = DateTime.UtcNow };
-        await MarriageGameRepository.CreateGameAsync(marriageGame);
+        var marriageGameObject = new MarriageGame { MarriageGameRoundId = marriageGameRound.Id, Sequence = sequence, CreatedTime = DateTime.UtcNow };
+       var marriageGame = await marriageGameRepository.CreateGameAsync(marriageGameObject);
         //add marriageGamescore to marriageGame
+        await CreateMarriageGameScoresForGameAsync(marriageGame);
+
+        CurrentMarriageGameRound!.MarriageGames.Add(marriageGame);         
+    }
+
+    private async Task CreateMarriageGameScoresForGameAsync(MarriageGame marriageGame)
+    {
+        if (MarriageGameSet is null)
+            throw new Exception("No active MarriageGameSet available!");
+        if (MarriageGameSet.GameSetPlayers.Count < 2)
+            throw new Exception("At least two players are required to start a new game!");
+        marriageGame.MarriageGameScores ??= [];
         int playerIndex = 0;
-        foreach (var player in PlayerService.ActivePlayers)
+        foreach (var player in MarriageGameSet.GameSetPlayers)
         {
             playerIndex++;
-            var marriageGameScore = new MarriageGameScore { PlayerId = player.Key, MarriageGameId = marriageGame.Id, MarriageGame = marriageGame, Position = playerIndex };
-
-            await MarriageGameScoreRepository.CreateScoreAsync(marriageGameScore);
-
-            marriageGame.MarriageGameScores
-                .Add(player.Key,marriageGameScore );
+            var marriageGameScoreObject = new MarriageGameScore { PlayerId = player.Key, MarriageGameId = marriageGame.Id, MarriageGame = marriageGame, Position = playerIndex };
+            var marriageGameScore = await marriageGameScoreRepository.CreateScoreAsync(marriageGameScoreObject);
+            marriageGame.MarriageGameScores.Add(marriageGameScore);
         }
-
-        CurrentMarriageGame = marriageGame;
-        marriageGameRound.MarriageGames.Add(marriageGame);
-        return marriageGame;
     }
-    
+
     private async Task AddPlayersToGameSetAsync(Dictionary<Guid, MarriageGameSetPlayer> gameSetPlayers)
     {
-        var existingPlayers = await MarriageGameSetPlayerRepository.GetPlayersByGameSetIdAsync(MarriageGameSet!.Id);
+        var existingPlayers = await marriageGameSetPlayerRepository.GetPlayersByGameSetIdAsync(MarriageGameSet!.Id);
 
         // select all players from existingplayers whose PlayerId is not in new Players list
         var playersToRemove = existingPlayers.Where(ep => !gameSetPlayers.ContainsKey(ep.PlayerId)).ToList();
-        var removeTasks = playersToRemove.Select(player => MarriageGameSetPlayerRepository.DeleteGameSetPlayerAsync(MarriageGameSet.Id, player.PlayerId));
+        var removeTasks = playersToRemove.Select(player => marriageGameSetPlayerRepository.DeleteGameSetPlayerAsync(MarriageGameSet.Id, player.PlayerId));
 
         await Task.WhenAll(removeTasks);
 
@@ -170,57 +244,87 @@ public class MarriageGameEngine(
             .Where(gp => !existingPlayers.Any(ep => ep.PlayerId == gp.Key))
             .ToDictionary(gp => gp.Key, gp => gp.Value);
 
-        var tasks = completelyNewGameSetPlayers.Values.Select(player => MarriageGameSetPlayerRepository.CreateGameSetPlayerAsync(player));
+        var tasks = completelyNewGameSetPlayers.Values.Select(player => marriageGameSetPlayerRepository.CreateGameSetPlayerAsync(player));
         await Task.WhenAll(tasks);
     }
 
+    public async Task AddPlayerToGameSetAsync(MarriageGameSetPlayer player)
+    {
+        await marriageGameSetPlayerRepository.CreateGameSetPlayerAsync(player);
+    }
+    public async Task RemovePlayerFromGameSetAsync(Guid playerId)
+    {
+        if (MarriageGameSet is not null)
+        { 
+            await marriageGameSetPlayerRepository.DeleteGameSetPlayerAsync(MarriageGameSet.Id, playerId);
+            if (MarriageGameSet.GameSetPlayers.ContainsKey(playerId))
+                MarriageGameSet.GameSetPlayers.Remove(playerId);
+
+        }
+    }
+
     /// <summary>
-    ///     Adds players to the marriage game set asynchronously.
+    ///     Synchronizes the current marriage game set players with the database.
     /// </summary>
-    /// <remarks>This method retrieves the players for the marriage game set and adds them to the game
-    /// set.</remarks>
+    /// <remarks>This method updates the database to match the current GameSetPlayers collection,
+    /// adding new players and removing players that are no longer in the game set.</remarks>
     /// <returns>A task that represents the asynchronous operation.</returns>
     public async Task AddMarriageGameSetPlayerAsync()
     {
-        await AddPlayersToGameSetAsync(GetMarriageGameSetPlayers());
+        await AddPlayersToGameSetAsync(MarriageGameSet!.GameSetPlayers);
     }
-    private Dictionary<Guid, MarriageGameSetPlayer> GetMarriageGameSetPlayers()
-    {
-        if (MarriageGameSet is null)
-            return new Dictionary<Guid, MarriageGameSetPlayer>();
 
-        // 
-        DebugPlayerServiceState("testing active players!");
-
-        return PlayerService.ActivePlayers.ToDictionary(
-           player => player.Key,
-           player => new MarriageGameSetPlayer { PlayerId = player.Key, MarriageGameSetId = MarriageGameSet.Id }
-       );
-    }
-    private void DebugPlayerServiceState(string context)
-    {
-        System.Diagnostics.Debug.WriteLine($"=== PlayerService Debug - {context} ===");
-        System.Diagnostics.Debug.WriteLine($"IsInitialized: {PlayerService.IsInitialized}");
-        System.Diagnostics.Debug.WriteLine($"AllPlayers count: {PlayerService.AllPlayers?.Count ?? 0}");
-        System.Diagnostics.Debug.WriteLine($"ActivePlayers count: {PlayerService.ActivePlayers?.Count ?? 0}");
-
-        if (PlayerService.ActivePlayers?.Count > 0)
-        {
-            foreach (var player in PlayerService.ActivePlayers)
-            {
-                System.Diagnostics.Debug.WriteLine($"  Active Player: {player.Key} - {player.Value?.Name ?? "No Name"}");
-            }
-        }
-        System.Diagnostics.Debug.WriteLine("=====================================");
-    }
     public async Task<bool> ResumePreviousGameIfAvailable()
     {
-        var marriageGameSet = await MarriageGameSetRepository.GetLatestGameSetAsync();
+        var marriageGameSet = MarriageGameSet;
         if (marriageGameSet is null)
             return false;
+        if (marriageGameSet.GameSetPlayers.Count == 0)
+            return false;
+         
+        var marriageGameRounds = marriageGameSet.Rounds;
+        var marriageGameSetPlayers = marriageGameSet.GameSetPlayers;
+        var settings = SettingsService.Settings ?? throw new Exception("Game settings not found for the current game set.");
 
-        var marriageGameRoundsTask = MarriageGameRoundRepository.GetRoundsByGameSetIdAsync(marriageGameSet.Id);
-        var marriageGameSetPlayersTask = MarriageGameSetPlayerRepository.GetPlayersByGameSetIdAsync(marriageGameSet.Id); 
+        if (marriageGameRounds is null || marriageGameSetPlayers.Count == 0 || settings is null)
+            return false;
+
+        marriageGameSet.GameSetPlayers = marriageGameSetPlayers ;
+        marriageGameSet.Rounds = marriageGameRounds;
+        marriageGameSet.GameSettings = settings;
+        MarriageGameSet = marriageGameSet;
+
+
+        var marriageGameRound = marriageGameRounds.FirstOrDefault(x => x.Completed == false);
+        if (marriageGameRound is null)
+        {
+            return false;
+        }
+
+        var marriageGames = marriageGameRound.MarriageGames;
+        var marriageGame = marriageGames.FirstOrDefault(x => x.ClosedRound == false && (x.WinnerId == null || x.WinnerId == Guid.Empty));
+
+        if (marriageGame is null)
+            return false;
+
+        var marriageGameScores = marriageGame.MarriageGameScores; // await marriageGameScoreRepository.GetScoresByGameIdAsync(marriageGame.Id);
+        if (marriageGameScores is null || marriageGameScores.Count == 0)
+        {
+            await CreateMarriageGameScoresForGameAsync(marriageGame);
+        }
+         
+
+        return true;
+    }
+    public async Task<bool> ResumePreviousGameIfAvailable_old()
+    {
+        var marriageGameSet = await marriageGameSetRepository.GetLatestGameSetAsync();
+        if (marriageGameSet is null)
+            return false;
+        if (marriageGameSet.GameSetPlayers.Count == 0)
+            return false;
+        var marriageGameRoundsTask = marriageGameRoundRepository.GetRoundsByGameSetIdAsync(marriageGameSet.Id);
+        var marriageGameSetPlayersTask = marriageGameSetPlayerRepository.GetPlayersByGameSetIdAsync(marriageGameSet.Id); 
         var settingsTask = SettingsService.GetGameSettingsByIdAsync(marriageGameSet.GameSettingsId);
 
         await Task.WhenAll(marriageGameRoundsTask, marriageGameSetPlayersTask, settingsTask);
@@ -230,7 +334,7 @@ public class MarriageGameEngine(
         var settings = await settingsTask;
         if (settings is null)
         { 
-            settings = SettingsService.Settings??GameSettings.Default();
+            settings = SettingsService.Settings??GameSettings.Default(UserId!.Value);
             await SettingsService.SaveSettingsAsync();
             marriageGameSet.GameSettingsId = settings.Id;
         }
@@ -242,8 +346,7 @@ public class MarriageGameEngine(
         marriageGameSet.Rounds = marriageGameRounds;
         marriageGameSet.GameSettings = settings;
         MarriageGameSet = marriageGameSet;
-        if(marriageGameSet.GameSetPlayers.Count > 0)
-            PlayerService.SelectPlayerByIds([.. marriageGameSet.GameSetPlayers.Keys]);
+         
 
         var marriageGameRound = marriageGameRounds.FirstOrDefault(x => x.Completed == false);
         if (marriageGameRound is null)
@@ -251,23 +354,22 @@ public class MarriageGameEngine(
             return false;
         }
 
-        var marriageGames = await MarriageGameRepository.GetGamesByRoundIdAsync(marriageGameRound.Id);
-        var marriageGame = marriageGames.FirstOrDefault(x => x.WinnerId == Guid.Empty);
+        var marriageGames = await marriageGameRepository.GetGamesByRoundIdAsync(marriageGameRound.Id);
+        var marriageGame = marriageGames.FirstOrDefault(x => x.ClosedRound == false && (x.WinnerId == null || x.WinnerId == Guid.Empty));
 
         if (marriageGame is null)
             return false;
 
-        var marriageGameScores = await MarriageGameScoreRepository.GetScoresByGameIdAsync(marriageGame.Id);
+        var marriageGameScores = await marriageGameScoreRepository.GetScoresByGameIdAsync(marriageGame.Id);
         if (marriageGameScores is null || marriageGameScores.Count == 0)
         {
-            if(marriageGameSet.GameSetPlayers.Count==0)
-                return false;
+            await CreateMarriageGameScoresForGameAsync(marriageGame);
         }
-        marriageGame.MarriageGameScores = marriageGameScores?.ToDictionary(x => x.PlayerId, x => x)??[];
-
-        CurrentMarriageGameRound = marriageGameRound;
-        CurrentMarriageGame = marriageGame;
-
+        else
+        {
+            marriageGame.MarriageGameScores = marriageGameScores;
+        }
+               
         return true;
     }
 
@@ -281,21 +383,19 @@ public class MarriageGameEngine(
         if (MarriageGameSet is not null)
         {
             MarriageGameSet.IsActive = false;
-            await MarriageGameSetRepository.UpdateGameSetAsync(MarriageGameSet);
+            await marriageGameSetRepository.UpdateGameSetAsync(MarriageGameSet);
         }
         ResetCurrentGameSet();
     }
 
     private void ResetCurrentGameSet()
     {
-        MarriageGameSet = null;
-        CurrentMarriageGameRound = null;
-        CurrentMarriageGame = null;
+        MarriageGameSet = null;        
     }
 
     public async Task CleanMarriageGameSet()
     {
-        var marriageGameSet = await MarriageGameSetRepository.GetLatestGameSetAsync();
+        var marriageGameSet = await marriageGameSetRepository.GetLatestGameSetAsync();
         if (marriageGameSet is null)
             Console.WriteLine("No marriage GameSet available!");
         ResetCurrentGameSet();
@@ -310,25 +410,25 @@ public class MarriageGameEngine(
         }
         List<Task> tasks = [];
         //Save all the MarriageGameScores
-        foreach (var marriageGameScore in CurrentMarriageGame.MarriageGameScores.Values)
+        foreach (var marriageGameScore in CurrentMarriageGame.MarriageGameScores)
         {
             marriageGameScore.MarriageGameId = CurrentMarriageGame.Id;
             //Save marriageGameScore
-            tasks.Add(MarriageGameScoreRepository.UpdateScoreAsync(marriageGameScore));
+            tasks.Add(marriageGameScoreRepository.UpdateScoreAsync(marriageGameScore));
         }
 
         await Task.WhenAll(tasks);
 
-        CurrentMarriageGame.TotalMaal = CurrentMarriageGame.MarriageGameScores.Values.Sum(x => x.Maal);
-        var winnerId = CurrentMarriageGame.MarriageGameScores.Values.FirstOrDefault(x => x.Winner)?.PlayerId;
+        CurrentMarriageGame.TotalMaal = CurrentMarriageGame.MarriageGameScores.Sum(x => x.Maal);
+        var winnerId = CurrentMarriageGame.MarriageGameScores.FirstOrDefault(x => x.Winner)?.PlayerId;
         if (winnerId.HasValue && winnerId.Value != Guid.Empty)
         {
             CurrentMarriageGame.WinnerId = winnerId.Value;
         }
 
         MarriageGameSet.LastPlayed = DateTime.UtcNow;
-        tasks.Add(MarriageGameRepository.UpdateGameAsync(CurrentMarriageGame));
-        tasks.Add(MarriageGameSetRepository.UpdateGameSetAsync(MarriageGameSet));
+        tasks.Add(marriageGameRepository.UpdateGameAsync(CurrentMarriageGame));
+        tasks.Add(marriageGameSetRepository.UpdateGameSetAsync(MarriageGameSet));
      
         await Task.WhenAll(tasks);
     }
@@ -339,32 +439,38 @@ public class MarriageGameEngine(
         if (CurrentMarriageGameRound is not null)
         {
             CurrentMarriageGameRound.Completed = true;
-            await MarriageGameRoundRepository.UpdateRoundAsync(CurrentMarriageGameRound);
+            await marriageGameRoundRepository.UpdateRoundAsync(CurrentMarriageGameRound);
         }         
     }
 
     public async Task CloseCurrentGameAsync(bool completed)
     {
-        if(completed)
+        if (completed)
         {
             await SaveCurrentGame();
-            CurrentMarriageGame = null;
             return;
         }
-        CurrentMarriageGame = null;
+
     }
 
-    public bool IsActiveGame
+    public async Task RefreshPlayers()
     {
-        get
+        var players = await marriageGameSetPlayerRepository.GetPlayersByGameSetIdAsync(MarriageGameSet!.Id);
+        if (players is not null)
         {
-            if (MarriageGameSet is not null)
-            {
-                return MarriageGameSet.IsActive;
-            }
-            return false;
+            MarriageGameSet!.GameSetPlayers = players.ToDictionary(player => player.PlayerId, player => player);
         }
     }
 
-    public bool IsPlayersReady => PlayerService.ActivePlayers.Count >= 2;
+   
+
+    public bool IsPlayersReady => MarriageGameSet?.GameSetPlayers.Count >= 2;
+
+    public void SetServerConnectedStatus(bool isConnected)
+    {
+        IsServerConnected = isConnected;
+        System.Diagnostics.Debug.WriteLine($"MarriageGameEngine: Server connection status set to {IsServerConnected}");
+    }
+
+   
 }

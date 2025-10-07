@@ -1,5 +1,6 @@
 ﻿using CommunityToolkit.Maui.Alerts;
 using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.Input;
 using MarriageCalculator.Services.Interfaces;
 using System.Collections.ObjectModel;
 using System.Windows.Input;
@@ -49,6 +50,10 @@ public partial class MarriageGameViewModel : ObservableObject
     [ObservableProperty]
     private int gameId;
     
+    // Add the missing IsExpanded property for the expandable header
+    [ObservableProperty]
+    private bool isExpanded = false;
+    
     private PlayerMaal? selectedPlayer;
     public PlayerMaal? SelectedPlayer
     {
@@ -57,6 +62,12 @@ public partial class MarriageGameViewModel : ObservableObject
         {
             if (SetProperty(ref selectedPlayer, value))
             {
+                // Update IsSelected for all players
+                foreach (var player in PlayerMaals)
+                {
+                    player.IsSelected = (player == value);
+                }
+                
                 if (value is not null)
                     OnPlayerSelected(value);
             }
@@ -70,21 +81,18 @@ public partial class MarriageGameViewModel : ObservableObject
         GameEngine = gameEngine;
 
         ButtonClick = new RelayCommand<string?>(OnButtonClick);
-       
+
         //Load DynamicGrid with player/score. Columns are MarriageGameID and all the playersIds and rows are MarriageGames (id,Player1score,player2score...) 
         //PlayerId  is available in GameEngine.MarriageGameSet.GameSetPlayers.
         //Score information is available in GameEngine.MarriageGameSet.Rounds.MarriageGames.MarriageGameScores
         LoadPlayerScores();
 
-
-        RefreshValues();
-
-
-        HandleCalculate( false);
+        // Await the async method in a fire-and-forget safe way to avoid CS4014
+        _ = HandleCalculate(false);
     }
      private void RefreshValues()
     {
-        PlayerCount = GameEngine.PlayerService.ActivePlayers.Count;
+        PlayerCount = GameEngine.MarriageGameSet?.GameSetPlayers.Count ??0;
 
         SeenIcon = GetIcon(FontelloCode.Seen);
         UnseenIcon = GetIcon(FontelloCode.Unseen);
@@ -123,8 +131,8 @@ public partial class MarriageGameViewModel : ObservableObject
         {
             Glyph = icon,
             FontFamily = "Fontello",
-            Color = Color.FromArgb("336699"),
-            Size = 18
+            Color = Colors.White,
+            Size = 24
         };
     }
     #endregion IconSource
@@ -141,43 +149,89 @@ public partial class MarriageGameViewModel : ObservableObject
 
     public void LoadPlayerScores()
     {
+        System.Diagnostics.Debug.WriteLine("LoadPlayerScores called");
+        
         RefreshValues();
-        var playersScoreInOrder = GameEngine.CurrentMarriageGame?.MarriageGameScores.OrderBy(x => x.Value.Position).ToArray();
-        if (playersScoreInOrder is null) return;
+        
+        // Add comprehensive debugging
+        System.Diagnostics.Debug.WriteLine($"LoadPlayerScores - MarriageGameSet: {GameEngine.MarriageGameSet?.Id}");
+        System.Diagnostics.Debug.WriteLine($"LoadPlayerScores - CurrentMarriageGame: {GameEngine.CurrentMarriageGame?.Id}");
+        System.Diagnostics.Debug.WriteLine($"LoadPlayerScores - GameSetPlayers count: {GameEngine.MarriageGameSet?.GameSetPlayers?.Count ?? 0}");
+        System.Diagnostics.Debug.WriteLine($"LoadPlayerScores - MarriageGameScores count: {GameEngine.CurrentMarriageGame?.MarriageGameScores?.Count ?? 0}");
+        
+        var playersScoreInOrder = GameEngine.CurrentMarriageGame?.MarriageGameScores.OrderBy(x => x.Position).ToArray();
+        if (playersScoreInOrder is null) 
+        {
+            System.Diagnostics.Debug.WriteLine("LoadPlayerScores - No game scores found, PlayerMaals will be empty");
+            return;
+        }
+        
         PlayerMaals.Clear();
         Players.Clear();
 
         foreach (var playerScoreInOrder in playersScoreInOrder)
         {
-            var player = GetPlayer(playerScoreInOrder.Key);
+            var player = GetPlayer(playerScoreInOrder.PlayerId);
             if (player is not null)
-                Players.Add(player);
-            PlayerMaal playerMaal = new PlayerMaal
             {
-                PlayerObject = player ?? throw new Exception($"Player not found {playerScoreInOrder.Key}"),
-                playerCount = PlayerCount,
-                Score = playerScoreInOrder.Value
-            };
-            PlayerMaals.Add(playerMaal);
+                Players.Add(player);
+
+                PlayerMaal playerMaal = new PlayerMaal
+                {
+                    PlayerObject = player,
+                    playerCount = PlayerCount,
+                    Score = playerScoreInOrder,
+                    Maal = playerScoreInOrder.Maal,
+                    Seen = playerScoreInOrder.Seen
+                };
+                PlayerMaals.Add(playerMaal);
+                
+                System.Diagnostics.Debug.WriteLine($"LoadPlayerScores - Added player: {player.Name} at position {playerScoreInOrder.Position}");
+            }
+            else
+            {
+                System.Diagnostics.Debug.WriteLine($"LoadPlayerScores - WARNING: Player not found for ID {playerScoreInOrder.PlayerId}");
+            }
         }
+
+        System.Diagnostics.Debug.WriteLine($"LoadPlayerScores - Final PlayerMaals count: {PlayerMaals.Count}");
 
         Player? GetPlayer(Guid playerId)
         {
-            return GameEngine.PlayerService.GetPlayerById(playerId);
+            var player = GameEngine.PlayerService.GetPlayerById(playerId);
+            if (player == null)
+            {
+                System.Diagnostics.Debug.WriteLine($"GetPlayer - Player not found in PlayerService for ID: {playerId}");
+                
+                // Try to find the player in the game set players as a fallback
+                if (GameEngine.MarriageGameSet?.GameSetPlayers?.TryGetValue(playerId, out var gameSetPlayer) == true)
+                {
+                    System.Diagnostics.Debug.WriteLine($"GetPlayer - Found player in GameSetPlayers: {gameSetPlayer.Player.Name}");
+                    return gameSetPlayer.Player;
+                }
+            }
+            return player;
         }
     }
-
       
 
     #region RelayCommands
 
+    [RelayCommand]
+    public void SelectPlayer(PlayerMaal? playerMaal)
+    {
+        if (playerMaal != null)
+        {
+            SelectedPlayer = playerMaal;
+        }
+    }
 
     [RelayCommand]
     public async Task NewGame()
     {
         if (GameEngine.CurrentMarriageGameRound is not null)
         {
-            await GameEngine.CreateNewMarriageGameForGivenGameRound(GameEngine.CurrentMarriageGameRound);
+            await GameEngine.CreateNewMarriageGame();
 
             TotalScore = 0;
             GameSequence = GameEngine.CurrentMarriageGame?.Sequence.ToString()??"1";
@@ -209,6 +263,21 @@ public partial class MarriageGameViewModel : ObservableObject
        await  GameEngine.CloseCurrentGameAsync(true);
         // Navigate to MainPage using Shell
         await Shell.Current.GoToAsync("..",true);
+    }
+     
+    // Add the ToggleExpand command for the expandable header
+    [RelayCommand]
+    public void ToggleExpand()
+    {
+        IsExpanded = !IsExpanded;
+    }
+    
+    // Method to handle animation from code-behind
+    public virtual async Task OnExpandStateChanged()
+    {
+        // This will be called from the View's code-behind for animation
+        // Virtual method allows for easy override if needed
+        await Task.CompletedTask;
     }
      
     private void OnButtonClick(string? parameter)
@@ -263,22 +332,23 @@ public partial class MarriageGameViewModel : ObservableObject
 
         if (int.TryParse(parameter, out int number))
         {
-            if (SelectedPlayer.Score.Maal == 0)
+            if (SelectedPlayer.Maal == 0)
             {
-                SelectedPlayer.Score.Maal = number;
+                SelectedPlayer.Maal = number;
             }
             else
             {
-                var maal = SelectedPlayer.Score.Maal.ToString() + number.ToString();
+                var maal = SelectedPlayer.Maal.ToString() + number.ToString();
                 var newMaal = int.Parse(maal);
                 if (newMaal <= 70)
                 {
-                    SelectedPlayer.Score.Maal = newMaal;
+                    SelectedPlayer.Maal = newMaal;
 
 
                 }
             }
         }
+        SelectedPlayer.Score.Maal = SelectedPlayer.Maal;
     }
 
     private void HandleBackSpace()
@@ -287,21 +357,24 @@ public partial class MarriageGameViewModel : ObservableObject
 
         if (SelectedPlayer.Score.Maal > 9)
         {
-            string maal = SelectedPlayer.Score.Maal.ToString();
+            string maal = SelectedPlayer.Maal.ToString();
             if (int.TryParse(maal.Substring(0, maal.Length - 1), out int result))
-                SelectedPlayer.Score.Maal = result;
+                SelectedPlayer.Maal = result;
         }
         else
         {
-            SelectedPlayer.Score.Maal = 0;
+            SelectedPlayer.Maal = 0;
         }
+        SelectedPlayer.Score.Maal = SelectedPlayer.Maal;
     }
 
     private void HandleUnseen()
     {
         if (SelectedPlayer is null) return;
+        SelectedPlayer.Seen = false;
         SelectedPlayer.Score.Seen = false;
         SelectedPlayer.Score.Maal = 0;
+        SelectedPlayer.Maal = 0;
         SelectedPlayer.Score.Winner = false;
         EnableMaalInput = false;
     }
@@ -310,6 +383,7 @@ public partial class MarriageGameViewModel : ObservableObject
     {
         if (SelectedPlayer is null) return;
         SelectedPlayer.Score.Seen = true;
+        SelectedPlayer.Seen = true;
         EnableMaalInput = true;
     }
 
@@ -422,13 +496,13 @@ public partial class MarriageGameViewModel : ObservableObject
             MarriageGame? marriageGame = GameEngine.CurrentMarriageGameRound.MarriageGames[i];
             foreach (var score in marriageGame.MarriageGameScores)
             {
-                if (playerTotalMoneyWon.ContainsKey(score.Key))
+                if (playerTotalMoneyWon.ContainsKey(score.PlayerId))
                 {
-                    playerTotalMoneyWon[score.Key] += score.Value.MoneyWon;
+                    playerTotalMoneyWon[score.PlayerId] += score.MoneyWon;
                 }
                 else
                 {
-                    playerTotalMoneyWon[score.Key] = score.Value.MoneyWon;
+                    playerTotalMoneyWon[score.PlayerId] = score.MoneyWon;
                 }
             }
         }
@@ -443,21 +517,27 @@ public partial class MarriageGameViewModel : ObservableObject
                 playerMaal.TotalForRound = 0;
             }
         }
-
     }
-
     #endregion CalculateMethods
-
 }
 public partial class PlayerMaal: ObservableObject
 {
     public required Player  PlayerObject { get; set; }
      
     public int playerCount;
-    [ObservableProperty]
-    public double totalForRound;
-     
     
+    [ObservableProperty]
+    private double totalForRound;
+    
+    [ObservableProperty]
+    private bool isSelected;
+
+    [ObservableProperty]
+    private int maal ;
+
+    [ObservableProperty]
+    private bool seen;
+
     public required MarriageGameScore Score { get; set; } 
      
 }

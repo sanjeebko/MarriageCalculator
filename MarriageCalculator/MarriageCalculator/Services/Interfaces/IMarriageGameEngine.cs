@@ -1,4 +1,6 @@
-﻿namespace MarriageCalculator.Services.Interfaces;
+﻿using MarriageCalculator.Core.Models;
+
+namespace MarriageCalculator.Services.Interfaces;
 
 public interface IMarriageGameEngine
 {
@@ -10,6 +12,7 @@ public interface IMarriageGameEngine
     ITextToSpeechService TextToSpeechService { get; }
     bool Initialized { get; }
     Task InitializeEngineAsync();
+    List<MarriageGameSet>? MarriageGameSets { get; }
     MarriageGameSet? MarriageGameSet { get; }
     bool IsPlayersReady { get; }
     bool IsActiveGame { get; }
@@ -22,10 +25,17 @@ public interface IMarriageGameEngine
     
     Task CloseCurrentGameSet();
     Task SaveCurrentGame();
-    Task<MarriageGame> CreateNewMarriageGameForGivenGameRound(MarriageGameRound marriageGameRound);
+    Task CreateNewMarriageGame();
     Task AddMarriageGameSetPlayerAsync();
     Task CloseCurrentGameRound();
     Task CloseCurrentGameAsync(bool completed);
     Task CreateNewGameRoundForGivenGameSet(int id);
     Task CleanMarriageGameSet();
+    Task AddPlayerToGameSetAsync(MarriageGameSetPlayer player);
+    Task RemovePlayerFromGameSetAsync(Guid playerId);
+    Task RefreshPlayers();
+    Task LoadGameSetAsync(int gameSetId);
+    void SetServerConnectedStatus(bool isConnected);
+    Task<List<MarriageGameSetPlayer>> GetGameSetPlayersByIdAsync(int id);
+    void SetUserId(Guid userId);
 }

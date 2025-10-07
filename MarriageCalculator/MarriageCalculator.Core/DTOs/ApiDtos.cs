@@ -15,13 +15,26 @@ public class PlayerDto
 
 public class CreatePlayerDto
 {
+    public  Guid Id { get; set; }
+    public DateTime CreatedAt { get; set; }
+    
+    [Required(ErrorMessage = "Name is required")]
+    [StringLength(100, MinimumLength = 1, ErrorMessage = "Name must be between 1 and 100 characters")]
     public string Name { get; set; } = string.Empty;
+    
+    [StringLength(255, ErrorMessage = "Email must not exceed 255 characters")]
+    [EmailAddress(ErrorMessage = "Invalid email format")]
     public string Email { get; set; } = string.Empty;
 }
 
 public class UpdatePlayerDto
 {
+    [Required(ErrorMessage = "Name is required")]
+    [StringLength(100, MinimumLength = 1, ErrorMessage = "Name must be between 1 and 100 characters")]
     public string Name { get; set; } = string.Empty;
+    
+    [StringLength(255, ErrorMessage = "Email must not exceed 255 characters")]
+    [EmailAddress(ErrorMessage = "Invalid email format")]
     public string Email { get; set; } = string.Empty;
 }
 
@@ -81,8 +94,8 @@ public class MarriageGameDto
     public int Id { get; set; }
     public int Sequence { get; set; }
     public int MarriageGameRoundId { get; set; }
-    public Guid WinnerId { get; set; }
-    public Guid DealerId { get; set; }
+    public Guid? WinnerId { get; set; }
+    public Guid? DealerId { get; set; }
     public int TotalMaal { get; set; }
     public bool ClosedRound { get; set; }
     public DateTime CreatedTime { get; set; }
@@ -90,11 +103,20 @@ public class MarriageGameDto
 
 public class CreateMarriageGameDto
 {
+    [Required]
     public int Sequence { get; set; }
+    
+    [Required]
     public int MarriageGameRoundId { get; set; }
-    public Guid WinnerId { get; set; }
-    public Guid DealerId { get; set; }
+    
+    public Guid? WinnerId { get; set; }
+    
+    public Guid? DealerId { get; set; }
+    
+    [Required]
     public int TotalMaal { get; set; }
+    
+    [Required]
     public bool ClosedRound { get; set; }
 }
 

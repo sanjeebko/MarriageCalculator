@@ -33,15 +33,22 @@ public partial class PlayersPage : ContentPage
     protected override async void OnAppearing()
     {
         base.OnAppearing();
+        
+        // Debug logging to understand the issue
+        System.Diagnostics.Debug.WriteLine($"PlayersPage OnAppearing - MarriageGameSet: {PlayerSettingsViewModel.MarriageGameEngine.MarriageGameSet?.Id}, IsActive: {PlayerSettingsViewModel.MarriageGameEngine.MarriageGameSet?.IsActive}");
+        
         // Ensure players are loaded when the page appears
         try
         {
+            // First ensure the engine is initialized to prevent creating new game sets
+            await PlayerSettingsViewModel.MarriageGameEngine.InitializeEngineAsync();
+            
             await PlayerSettingsViewModel.RefreshAllPlayersAsync();
             await PlayerSettingsViewModel.RefreshCurrentPlayerAsync();
         }
         catch (Exception ex)
         {
-            // Log error without debug output in production
+            System.Diagnostics.Debug.WriteLine($"PlayersPage OnAppearing error: {ex}");
         }
     }
 
@@ -71,4 +78,3 @@ public partial class PlayersPage : ContentPage
     //    }
     //}
 }
- 

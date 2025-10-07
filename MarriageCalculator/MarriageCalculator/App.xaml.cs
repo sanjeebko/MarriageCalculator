@@ -8,26 +8,45 @@ public partial class App : Application
 {
 	IMarriageGameEngine MarriageGameEngine { get; }
     IAuthenticationService AuthenticationService { get; }
-    
-    public App(IMarriageGameEngine marriageGameEngine, IAuthenticationService authenticationService)
-	{
-		InitializeComponent();
-        string syncLicense = @"ORg4AjUWIQA/Gnt2UlhhQlVMfV5AQmBIYVp/TGpJfl96cVxMZVVBJAtUQF1hTX9Sd0diWXxXdXVTT2Ve;MzU3MzcyM0AzMjM3MmUzMDJlMzBXdk5vdG15VlV6dUFUdWpmOUZpSXFBVDFOeFh6VDBHZ1lRdGZXOFJvTzNVPQ==;Mgo+DSMBMAY9C3t2UlhhQlVMfV5AQmBIYVp/TGpJfl96cVxMZVVBJAtUQF1hTX9Sd0diWXxXdXVSQmNc;MzU3MzcyNUAzMjM3MmUzMDJlMzBoODRrc1lDbGV5Z2taNUlaWDhVTGd2dDNPaUkxZ216R1B5S0RtOWk3TnhJPQ==;MzU3MzcyNkAzMjM3MmUzMDJlMzBXdk5vdG15VlV6dUFUdWpmOUZpSXFBVDFOeFh6VDBHZ1lRdGZXOFJvTzNVPQ==";
-        Syncfusion.Licensing.SyncfusionLicenseProvider.RegisterLicense(syncLicense);
+    IAuthenticationManager AuthenticationManager { get; }
 
-		MainPage = new AppShell();
+    public App(IMarriageGameEngine marriageGameEngine, IAuthenticationService authenticationService, IAuthenticationManager authenticationManager)
+    {
+        string syncLicense = @"Ngo9BigBOggjHTQxAR8/V1JFaF5cXGRCf1FpRmJGdld5fUVHYVZUTXxaS00DNHVRdkdmWXZccHVSR2JfWUVyW0JWYEg=";
+        Syncfusion.Licensing.SyncfusionLicenseProvider.RegisterLicense(syncLicense);
+        InitializeComponent();
+        //string syncLicense = @"ORg4AjUWIQA/Gnt2UlhhQlVMfV5AQmBIYVp/TGpJfl96cVxMZVVBJAtUQF1hTX9Sd0diWXxXdXVTT2Ve;MzU3MzcyM0AzMjM3MmUzMDJlMzBXdk5vdG15VlV6dUFUdWpmOUZpSXFBVDFOeFh6VDBHZ1lRdGZXOFJvTzNVPQ==;Mgo+DSMBMAY9C3t2UlhhQlVMfV5AQmBIYVp/TGpJfl96cVxMZVVBJAtUQF1hTX9Sd0diWXxXdXVSQmNc;MzU3MzcyNUAzMjM3MmUzMDJlMzBoODRrc1lDbGV5Z2taNUlaWDhVTGd2dDNPaUkxZ216R1B5S0RtOWk3TnhJPQ==;MzU3MzcyNkAzMjM3MmUzMDJlMzBXdk5vdG15VlV6dUFUdWpmOUZpSXFBVDFOeFh6VDBHZ1lRdGZXOFJvTzNVPQ==";
+
+
+        MainPage = new AppShell();
         MarriageGameEngine = marriageGameEngine;
         AuthenticationService = authenticationService;
+        AuthenticationManager = authenticationManager;
     }
       
     protected override async void OnStart()
     {
         base.OnStart();
         
-        // Initialize authentication first to set the token in ApiService
+        // Initialize authentication first
         await AuthenticationService.InitializeAuthenticationAsync();
         
-        // Then check if user is already logged in and navigate accordingly
+        // Check if user is already logged in and navigate accordingly
+        await CheckAuthenticationAndNavigate();
+    }
+    
+    protected override async void OnSleep() 
+    {
+        // Save settings when app goes to sleep
+        await MarriageGameEngine.SettingsService.SaveSettingsAsync();
+        base.OnSleep();
+    }
+    
+    protected override async void OnResume()
+    {
+        base.OnResume();
+        
+        // Re-check authentication when app resumes
         await CheckAuthenticationAndNavigate();
     }
     
@@ -45,6 +64,10 @@ public partial class App : Application
             // Navigate to appropriate page
             if (isLoggedIn)
             {
+                // ✅ START AUTHENTICATION MANAGER FOR ALREADY LOGGED IN USER
+                System.Diagnostics.Debug.WriteLine("App: User already logged in, starting AuthenticationManager");
+                await AuthenticationManager.StartAsync();
+                
                 // User is already logged in, go to main page
                 System.Diagnostics.Debug.WriteLine("App: Navigating to MainPage (user is logged in)");
                 await Shell.Current.GoToAsync("//MainPage");
@@ -64,14 +87,9 @@ public partial class App : Application
         }
     }
     
-    protected override void OnSleep() {
-        MarriageGameEngine.SettingsService.SaveSettingsAsync();
-        base.OnSleep();
-    }
     public static async Task Animate(VisualElement view)
     {
         var fadeAnimation = new FadeAnimation();
         await fadeAnimation.Animate(view);
     }
-
 }

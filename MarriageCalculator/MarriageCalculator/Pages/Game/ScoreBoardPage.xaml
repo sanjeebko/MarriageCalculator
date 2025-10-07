@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="MarriageCalculator.Pages.Game.ScoreBoardPage"
+             xmlns:local="clr-namespace:MarriageCalculator.ViewModels"
+             xmlns:syncfusion="clr-namespace:Syncfusion.Maui.DataGrid;assembly=Syncfusion.Maui.DataGrid"
+             x:DataType="local:ScoreBoardViewModel"
+             BackgroundColor="{AppThemeBinding Light={StaticResource LightBackground}, Dark={StaticResource DarkBackground}}"
+             Shell.NavBarIsVisible="False"
+             Title="">
+
+    <Grid RowDefinitions="Auto,*">
+        
+        <!-- Enhanced Header Section with Maximum Visibility -->
+        <Frame Grid.Row="0" 
+               BackgroundColor="{AppThemeBinding Light={StaticResource CardBackgroundLight}, Dark={StaticResource CardBackgroundDark}}"
+               BorderColor="{AppThemeBinding Light=#E0E0E0, Dark=#404040}"
+               HasShadow="True"
+               Padding="16,12" 
+               Margin="8,8,8,4"
+               CornerRadius="12">
+            <Grid ColumnDefinitions="*,Auto">
+                <StackLayout Grid.Column="0" Orientation="Horizontal" Spacing="20" VerticalOptions="Center">
+                    <Label Text="📊 Scoreboard" 
+                           FontSize="26" 
+                           FontAttributes="Bold"
+                           VerticalOptions="Center"
+                           TextColor="{AppThemeBinding Light={StaticResource GameTitleLight}, Dark={StaticResource GameTitleDark}}" />
+                    <Label Text="• Auto-rotated • Optimized capsules • Winners highlighted" 
+                           FontSize="15" 
+                           VerticalOptions="Center"
+                           TextColor="{AppThemeBinding Light={StaticResource GameSubtitleLight}, Dark={StaticResource GameSubtitleDark}}" />
+                </StackLayout>
+                
+                <!-- Rotation hint -->
+                <Label Grid.Column="1" Text="🔄" 
+                       FontSize="22" 
+                       VerticalOptions="Center"
+                       TextColor="{AppThemeBinding Light={StaticResource GameSubtitleLight}, Dark={StaticResource GameSubtitleDark}}" />
+            </Grid>
+        </Frame>
+
+        <!-- Enhanced Data Grid Section with Maximum Visibility -->
+        <Frame Grid.Row="1" 
+               BackgroundColor="{AppThemeBinding Light={StaticResource CardBackgroundLight}, Dark={StaticResource CardBackgroundDark}}"
+               BorderColor="{AppThemeBinding Light=#E0E0E0, Dark=#404040}"
+               HasShadow="True"
+               Padding="4" 
+               Margin="8,4,8,8"
+               CornerRadius="12">
+            <syncfusion:SfDataGrid x:Name="scoreDataGrid" 
+                                   ItemsSource="{Binding GameRowsData}"
+                                   AutoGenerateColumnsMode="None"
+                                   GridLinesVisibility="Both"
+                                   HeaderGridLinesVisibility="Both"
+                                   SelectionMode="Single"
+                                   NavigationMode="Cell"
+                                   ColumnWidthMode="None"
+                                   HeaderRowHeight="42"
+                                   RowHeight="50"
+                                   HorizontalScrollBarVisibility="Never"
+                                   AllowResizingColumns="False"
+                                   BackgroundColor="{AppThemeBinding Light={StaticResource CardBackgroundLight}, Dark={StaticResource CardBackgroundDark}}">
+                
+                <!-- Define Columns -->
+                <syncfusion:SfDataGrid.Columns>
+                    <!-- Enhanced Game Number Column with Explicit Styling -->
+                    <syncfusion:DataGridTextColumn MappingName="GameNumber" 
+                                                   HeaderText="Game #"
+                                                   Width="80"
+                                                   HeaderTextAlignment="Center" />
+                    
+                    <!-- Player Columns will be added programmatically -->
+                </syncfusion:SfDataGrid.Columns>
+
+                <!-- Enhanced Style configurations for maximum visibility -->
+                <syncfusion:SfDataGrid.Resources>
+                    <ResourceDictionary>
+                        <!-- Custom styles for better text visibility -->
+                    </ResourceDictionary>
+                </syncfusion:SfDataGrid.Resources>
+
+            </syncfusion:SfDataGrid>
+        </Frame>
+    </Grid>
+</ContentPage>

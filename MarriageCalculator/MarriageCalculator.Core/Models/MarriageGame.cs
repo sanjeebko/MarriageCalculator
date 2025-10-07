@@ -13,12 +13,12 @@ public class MarriageGame
     
     public int Sequence { get; set; }
     public int MarriageGameRoundId { get; set; }
-    public Guid WinnerId { get; set; }
-    public Guid DealerId { get; set; } 
+    public Guid? WinnerId { get; set; }
+    public Guid? DealerId { get; set; } 
     public int TotalMaal { get; set; }      
     public bool ClosedRound { get; set; }
     public DateTime CreatedTime { get; set; }
     
     [NotMapped]
-    public Dictionary<Guid, MarriageGameScore> MarriageGameScores { get; set; } = []; //playerId, MarriageGameScore
+    public List<MarriageGameScore> MarriageGameScores { get; set; } = []; //playerId, MarriageGameScore
 }

@@ -41,6 +41,8 @@ public class PlayerService : IPlayerService
             Deleted = false,
             Selected = false,
             CreatedByUserId = userId,
+            CreatedAt = createPlayerDto.CreatedAt ,
+            Id = createPlayerDto.Id  
         };
 
         var createdPlayer = await _playerRepository.CreateForUserAsync(player, userId);

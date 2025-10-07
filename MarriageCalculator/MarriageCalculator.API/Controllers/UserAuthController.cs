@@ -8,7 +8,30 @@ using System.Security.Claims;
 namespace MarriageCalculator.API.Controllers;
 
 /// <summary>
-/// Manages user authentication including login and logout operations
+/// User Authentication Controller - Manages user authentication, JWT tokens, and session management
+/// 
+/// ENDPOINTS SUMMARY:
+/// ==================
+/// POST   /api/userauth/login              - Authenticate user and return JWT token
+/// POST   /api/userauth/logout             - Logout user and invalidate JWT token (requires auth)
+/// GET    /api/userauth/me                 - Get current authenticated user information (requires auth)
+/// POST   /api/userauth/validate-token     - Validate JWT token
+/// POST   /api/userauth/refresh-token      - Refresh access token using refresh token
+/// POST   /api/userauth/revoke-token       - Revoke a specific refresh token
+/// POST   /api/userauth/revoke-all-tokens  - Revoke all refresh tokens for current user (requires auth)
+/// 
+/// AUTHENTICATION:
+/// - Some endpoints require authentication ([Authorize]): logout, me, revoke-all-tokens
+/// - JWT-based authentication with access and refresh token support
+/// - Token blacklisting for secure logout
+/// 
+/// KEY FEATURES:
+/// - Secure JWT-based authentication with refresh token rotation
+/// - Email verification status handling during login
+/// - Token validation and invalidation
+/// - Multi-device logout support via token revocation
+/// - Comprehensive error handling and logging
+/// - Swagger/OpenAPI documentation with detailed response types
 /// </summary>
 [ApiController]
 [Route("api/[controller]")]

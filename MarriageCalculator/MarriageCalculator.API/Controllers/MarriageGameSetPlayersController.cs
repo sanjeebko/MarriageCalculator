@@ -5,6 +5,32 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace MarriageCalculator.API.Controllers;
 
+/// <summary>
+/// Marriage Game Set Players Controller - Manages player-to-gameset relationships and associations
+/// 
+/// ENDPOINTS SUMMARY:
+/// ==================
+/// GET    /api/marriagegamesetplayers                          - Get all game set player relationships
+/// GET    /api/marriagegamesetplayers/{gameSetId}/{playerId}   - Get specific player-gameset relationship
+/// GET    /api/marriagegamesetplayers/gameset/{id}/players     - Get all players for a specific game set
+/// GET    /api/marriagegamesetplayers/player/{id}/gamesets     - Get all game sets for a specific player (GUID)
+/// GET    /api/marriagegamesetplayers/{gameSetId}/{playerId}/exists - Check if player exists in game set
+/// POST   /api/marriagegamesetplayers                          - Add player to a game set
+/// DELETE /api/marriagegamesetplayers/{gameSetId}/{playerId}   - Remove player from a game set
+/// DELETE /api/marriagegamesetplayers/gameset/{id}/players     - Remove all players from a game set
+/// 
+/// AUTHENTICATION:
+/// - All endpoints require authentication ([Authorize])
+/// 
+/// KEY FEATURES:
+/// - Composite key identification (GameSetId + PlayerId)
+/// - Support for both integer game set IDs and GUID player IDs
+/// - Many-to-many relationship management between game sets and players
+/// - Conflict detection for duplicate relationships
+/// - Bulk operations for removing all players from a game set
+/// - Existence checking for player-gameset relationships
+/// - Full error handling and logging
+/// </summary>
 [ApiController]
 [Route("api/[controller]")]
 [Authorize]
@@ -20,8 +46,10 @@ public class MarriageGameSetPlayersController : ControllerBase
     }
 
     /// <summary>
-    /// Get all marriage game set players
+    /// GET /api/marriagegamesetplayers - Get all game set player relationships
+    /// Returns a list of all player-to-gameset relationships in the system
     /// </summary>
+    /// <returns>200 OK with list of MarriageGameSetPlayerDto objects, or 500 on error</returns>
     [HttpGet]
     public async Task<ActionResult<IEnumerable<MarriageGameSetPlayerDto>>> GetAllGameSetPlayers()
     {
@@ -38,8 +66,12 @@ public class MarriageGameSetPlayersController : ControllerBase
     }
 
     /// <summary>
-    /// Get marriage game set player by game set ID and player ID
+    /// GET /api/marriagegamesetplayers/{gameSetId}/{playerId} - Get specific player-gameset relationship
+    /// Retrieves a specific player-to-gameset relationship using composite key
     /// </summary>
+    /// <param name="gameSetId">The integer ID of the game set</param>
+    /// <param name="playerId">The GUID of the player</param>
+    /// <returns>200 OK with MarriageGameSetPlayerDto object, 404 Not Found if relationship doesn't exist, or 500 on error</returns>
     [HttpGet("{gameSetId}/{playerId}")]
     public async Task<ActionResult<MarriageGameSetPlayerDto>> GetGameSetPlayer(int gameSetId, Guid playerId)
     {
@@ -61,8 +93,11 @@ public class MarriageGameSetPlayersController : ControllerBase
     }
 
     /// <summary>
-    /// Get all players for a specific marriage game set
+    /// GET /api/marriagegamesetplayers/gameset/{gameSetId}/players - Get all players for a specific game set
+    /// Retrieves all players that are associated with a specific game set
     /// </summary>
+    /// <param name="gameSetId">The integer ID of the game set to get players for</param>
+    /// <returns>200 OK with list of MarriageGameSetPlayerDto objects, or 500 on error</returns>
     [HttpGet("gameset/{gameSetId}/players")]
     public async Task<ActionResult<IEnumerable<MarriageGameSetPlayerDto>>> GetPlayersByGameSetId(int gameSetId)
     {
@@ -79,8 +114,11 @@ public class MarriageGameSetPlayersController : ControllerBase
     }
 
     /// <summary>
-    /// Get all game sets for a specific player
+    /// GET /api/marriagegamesetplayers/player/{playerId}/gamesets - Get all game sets for a specific player
+    /// Retrieves all game sets that a specific player (GUID identifier) is associated with
     /// </summary>
+    /// <param name="playerId">The GUID of the player to get game sets for</param>
+    /// <returns>200 OK with list of MarriageGameSetPlayerDto objects, or 500 on error</returns>
     [HttpGet("player/{playerId}/gamesets")]
     public async Task<ActionResult<IEnumerable<MarriageGameSetPlayerDto>>> GetGameSetsByPlayerId(Guid playerId)
     {
@@ -97,8 +135,11 @@ public class MarriageGameSetPlayersController : ControllerBase
     }
 
     /// <summary>
-    /// Add a player to a marriage game set
+    /// POST /api/marriagegamesetplayers - Add player to a game set
+    /// Creates a new player-to-gameset relationship. Includes conflict detection for duplicate relationships.
     /// </summary>
+    /// <param name="createDto">The player-gameset relationship data to create</param>
+    /// <returns>201 Created with MarriageGameSetPlayerDto object and location header, 400 Bad Request if validation fails, 409 Conflict if relationship already exists, or 500 on error</returns>
     [HttpPost]
     public async Task<ActionResult<MarriageGameSetPlayerDto>> CreateGameSetPlayer([FromBody] CreateMarriageGameSetPlayerDto createDto)
     {
@@ -113,7 +154,8 @@ public class MarriageGameSetPlayersController : ControllerBase
             var existingGameSetPlayer = await _gameSetPlayerService.GetGameSetPlayerByIdAsync(createDto.MarriageGameSetId, createDto.PlayerId);
             if (existingGameSetPlayer != null)
             {
-                return Conflict($"Player {createDto.PlayerId} is already part of game set {createDto.MarriageGameSetId}");
+                // Return the existing relationship instead of throwing a conflict
+                return Ok(existingGameSetPlayer);
             }
 
             var gameSetPlayer = await _gameSetPlayerService.CreateGameSetPlayerAsync(createDto);
@@ -129,8 +171,12 @@ public class MarriageGameSetPlayersController : ControllerBase
     }
 
     /// <summary>
-    /// Remove a player from a marriage game set
+    /// DELETE /api/marriagegamesetplayers/{gameSetId}/{playerId} - Remove player from a game set
+    /// Permanently removes a player-to-gameset relationship using composite key
     /// </summary>
+    /// <param name="gameSetId">The integer ID of the game set</param>
+    /// <param name="playerId">The GUID of the player</param>
+    /// <returns>204 No Content if successfully deleted, 404 Not Found if relationship doesn't exist, or 500 on error</returns>
     [HttpDelete("{gameSetId}/{playerId}")]
     public async Task<ActionResult> DeleteGameSetPlayer(int gameSetId, Guid playerId)
     {
@@ -152,8 +198,11 @@ public class MarriageGameSetPlayersController : ControllerBase
     }
 
     /// <summary>
-    /// Remove all players from a marriage game set
+    /// DELETE /api/marriagegamesetplayers/gameset/{gameSetId}/players - Remove all players from a game set
+    /// Bulk operation that removes all player-to-gameset relationships for a specific game set
     /// </summary>
+    /// <param name="gameSetId">The integer ID of the game set to remove all players from</param>
+    /// <returns>204 No Content if successfully deleted, 404 Not Found if no players found for game set, or 500 on error</returns>
     [HttpDelete("gameset/{gameSetId}/players")]
     public async Task<ActionResult> DeleteAllPlayersFromGameSet(int gameSetId)
     {
@@ -175,8 +224,12 @@ public class MarriageGameSetPlayersController : ControllerBase
     }
 
     /// <summary>
-    /// Check if a player exists in a marriage game set
+    /// GET /api/marriagegamesetplayers/{gameSetId}/{playerId}/exists - Check if player exists in game set
+    /// Utility endpoint to check if a player-to-gameset relationship exists without retrieving full data
     /// </summary>
+    /// <param name="gameSetId">The integer ID of the game set</param>
+    /// <param name="playerId">The GUID of the player</param>
+    /// <returns>200 OK with boolean result indicating existence, or 500 on error</returns>
     [HttpGet("{gameSetId}/{playerId}/exists")]
     public async Task<ActionResult<bool>> CheckGameSetPlayerExists(int gameSetId, Guid playerId)
     {

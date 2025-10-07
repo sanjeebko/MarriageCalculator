@@ -9,8 +9,27 @@ using System.Net;
 namespace MarriageCalculator.API.Controllers;
 
 /// <summary>
-/// Email testing controller - REQUIRES AUTHENTICATION
-/// Contains core email functionality testing endpoints
+/// Email Test Controller - Testing and monitoring email functionality and SMTP connectivity
+/// 
+/// ENDPOINTS SUMMARY:
+/// ==================
+/// GET    /api/emailtest/health                - Health check endpoint for Kubernetes (public)
+/// GET    /api/emailtest/test-smtp-connection  - Test SMTP connection without sending email (requires auth)
+/// POST   /api/emailtest/send-verification     - Send test verification email (requires auth)
+/// 
+/// AUTHENTICATION:
+/// - Health check endpoint is public ([AllowAnonymous]) for monitoring
+/// - SMTP and email testing endpoints require authentication ([Authorize])
+/// 
+/// KEY FEATURES:
+/// - Kubernetes-ready health check with environment information
+/// - SMTP server connection testing with detailed diagnostics
+/// - Test email sending with verification code generation
+/// - Comprehensive SMTP configuration validation
+/// - Performance monitoring with response time measurement
+/// - Enhanced error handling and logging for debugging
+/// - Environment-aware responses (Kubernetes detection, pod information)
+/// - Email service integration testing
 /// </summary>
 [ApiController]
 [Route("api/[controller]")]

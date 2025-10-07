@@ -1,4 +1,5 @@
 ﻿using MarriageCalculator.Pages;
+using MarriageCalculator.Pages.Game;
 using MarriageCalculator.Pages.Login;
  
 
@@ -8,6 +9,7 @@ public partial class AppShell : Shell
 {
     public AppShell()
     {
+        
         InitializeComponent();
         Routing.RegisterRoute(nameof(NewGame), typeof(NewGame));
         Routing.RegisterRoute(nameof(SettingsPage), typeof(SettingsPage)); 
@@ -16,5 +18,6 @@ public partial class AppShell : Shell
         Routing.RegisterRoute(nameof(LoginPage), typeof(LoginPage));
         Routing.RegisterRoute(nameof(RegisterPage), typeof(RegisterPage));
         Routing.RegisterRoute(nameof(GameSetupPage), typeof(GameSetupPage));
+        Routing.RegisterRoute(nameof(ScoreBoardPage), typeof(ScoreBoardPage));
     }
 }

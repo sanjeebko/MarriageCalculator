@@ -35,14 +35,13 @@ public class Player
     public override bool Equals(object? obj)
     {
         if (obj is not Player player)
-            throw new ArgumentException($" {nameof(obj)} must be of type {nameof(Player)}.", nameof(obj));
+            return false;
 
-        return string.Equals(player.Name, this.Name, StringComparison.CurrentCultureIgnoreCase) 
-            && string.Equals(player.Email, this.Email, StringComparison.CurrentCultureIgnoreCase);
+        return Id.Equals(player.Id);
     }
 
     public override int GetHashCode()
     {
-        return HashCode.Combine(Name.ToLower(), Email.ToLower());
+        return Id.GetHashCode();
     }
 }

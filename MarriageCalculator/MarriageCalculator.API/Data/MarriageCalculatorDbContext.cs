@@ -43,8 +43,6 @@ public class MarriageCalculatorDbContext : DbContext
             // This prevents SQL errors when Selected column exists but model doesn't have it
             entity.Property(e => e.Selected).HasColumnName("Selected").HasDefaultValue(false);
             
-            entity.HasIndex(e => new { e.Name, e.Email }).IsUnique();
-
             // Index for creator user id (GUID)
             entity.HasIndex(e => e.CreatedByUserId);
 

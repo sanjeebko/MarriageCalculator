@@ -5,6 +5,30 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace MarriageCalculator.API.Controllers;
 
+/// <summary>
+/// Marriage Game Scores Controller - Manages player scores within individual games
+/// 
+/// ENDPOINTS SUMMARY:
+/// ==================
+/// GET    /api/marriagegamescores               - Get all marriage game scores
+/// GET    /api/marriagegamescores/{id}          - Get specific marriage game score by ID
+/// GET    /api/marriagegamescores/game/{id}     - Get all scores for a specific game
+/// GET    /api/marriagegamescores/player/{id}   - Get all scores for a specific player (GUID)
+/// POST   /api/marriagegamescores               - Create new marriage game score
+/// PUT    /api/marriagegamescores/{id}          - Update existing marriage game score by ID
+/// DELETE /api/marriagegamescores/{id}         - Delete marriage game score by ID
+/// 
+/// AUTHENTICATION:
+/// - All endpoints require authentication ([Authorize])
+/// 
+/// KEY FEATURES:
+/// - Integer-based score identification
+/// - Score-to-game and score-to-player relationship management
+/// - Support for both integer game IDs and GUID player IDs
+/// - Full CRUD operations with proper error handling and logging
+/// - Enhanced logging for debugging and monitoring
+/// - Model validation on create and update operations
+/// </summary>
 [ApiController]
 [Route("api/[controller]")]
 [Authorize]
@@ -20,8 +44,10 @@ public class MarriageGameScoresController : ControllerBase
     }
 
     /// <summary>
-    /// Get all marriage game scores
+    /// GET /api/marriagegamescores - Get all marriage game scores
+    /// Returns a list of all marriage game scores in the system
     /// </summary>
+    /// <returns>200 OK with list of MarriageGameScoreDto objects, or 500 on error</returns>
     [HttpGet]
     public async Task<ActionResult<IEnumerable<MarriageGameScoreDto>>> GetMarriageGameScores()
     {
@@ -38,8 +64,11 @@ public class MarriageGameScoresController : ControllerBase
     }
 
     /// <summary>
-    /// Get marriage game score by ID
+    /// GET /api/marriagegamescores/{id} - Get specific marriage game score by ID
+    /// Retrieves a specific marriage game score by its unique integer identifier
     /// </summary>
+    /// <param name="id">The integer ID of the marriage game score to retrieve</param>
+    /// <returns>200 OK with MarriageGameScoreDto object, 404 Not Found if score doesn't exist, or 500 on error</returns>
     [HttpGet("{id}")]
     public async Task<ActionResult<MarriageGameScoreDto>> GetMarriageGameScore(int id)
     {
@@ -61,8 +90,11 @@ public class MarriageGameScoresController : ControllerBase
     }
 
     /// <summary>
-    /// Get marriage game scores by game ID
+    /// GET /api/marriagegamescores/game/{gameId} - Get all scores for a specific game
+    /// Retrieves all marriage game scores that belong to a specific game
     /// </summary>
+    /// <param name="gameId">The integer ID of the game to get scores for</param>
+    /// <returns>200 OK with list of MarriageGameScoreDto objects, or 500 on error</returns>
     [HttpGet("game/{gameId}")]
     public async Task<ActionResult<IEnumerable<MarriageGameScoreDto>>> GetMarriageGameScoresByGame(int gameId)
     {
@@ -81,8 +113,11 @@ public class MarriageGameScoresController : ControllerBase
     }
 
     /// <summary>
-    /// Get marriage game scores by player ID
+    /// GET /api/marriagegamescores/player/{playerId} - Get all scores for a specific player
+    /// Retrieves all marriage game scores that belong to a specific player (GUID identifier)
     /// </summary>
+    /// <param name="playerId">The GUID of the player to get scores for</param>
+    /// <returns>200 OK with list of MarriageGameScoreDto objects, or 500 on error</returns>
     [HttpGet("player/{playerId}")]
     public async Task<ActionResult<IEnumerable<MarriageGameScoreDto>>> GetMarriageGameScoresByPlayer(Guid playerId)
     {
@@ -101,8 +136,11 @@ public class MarriageGameScoresController : ControllerBase
     }
 
     /// <summary>
-    /// Create a new marriage game score
+    /// POST /api/marriagegamescores - Create new marriage game score
+    /// Creates a new marriage game score for a player in a specific game
     /// </summary>
+    /// <param name="createDto">The marriage game score data to create</param>
+    /// <returns>201 Created with MarriageGameScoreDto object and location header, 400 Bad Request if validation fails, or 500 on error</returns>
     [HttpPost]
     public async Task<ActionResult<MarriageGameScoreDto>> CreateMarriageGameScore([FromBody] CreateMarriageGameScoreDto createDto)
     {
@@ -121,6 +159,11 @@ public class MarriageGameScoresController : ControllerBase
             _logger.LogInformation("Successfully created marriage game score with ID: {ScoreId}", score.Id);
             return CreatedAtAction(nameof(GetMarriageGameScore), new { id = score.Id }, score);
         }
+        catch (InvalidOperationException ex) when (ex.Message.Contains("already exists"))
+        {
+            _logger.LogWarning("Attempted to create duplicate marriage game score: {Message}", ex.Message);
+            return Conflict(new { message = ex.Message, playerId = createDto.PlayerId, gameId = createDto.MarriageGameId });
+        }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error creating marriage game score with data: {CreateDto}", System.Text.Json.JsonSerializer.Serialize(createDto));
@@ -129,8 +172,12 @@ public class MarriageGameScoresController : ControllerBase
     }
 
     /// <summary>
-    /// Update an existing marriage game score
+    /// PUT /api/marriagegamescores/{id} - Update existing marriage game score
+    /// Updates an existing marriage game score identified by integer ID with new data
     /// </summary>
+    /// <param name="id">The integer ID of the marriage game score to update</param>
+    /// <param name="updateDto">The updated marriage game score data</param>
+    /// <returns>200 OK with updated MarriageGameScoreDto object, 400 Bad Request if validation fails, 404 Not Found if score doesn't exist, or 500 on error</returns>
     [HttpPut("{id}")]
     public async Task<ActionResult<MarriageGameScoreDto>> UpdateMarriageGameScore(int id, [FromBody] CreateMarriageGameScoreDto updateDto)
     {
@@ -162,8 +209,11 @@ public class MarriageGameScoresController : ControllerBase
     }
 
     /// <summary>
-    /// Delete a marriage game score
+    /// DELETE /api/marriagegamescores/{id} - Delete marriage game score
+    /// Permanently deletes a marriage game score identified by integer ID from the system
     /// </summary>
+    /// <param name="id">The integer ID of the marriage game score to delete</param>
+    /// <returns>204 No Content if successfully deleted, 404 Not Found if score doesn't exist, or 500 on error</returns>
     [HttpDelete("{id}")]
     public async Task<ActionResult> DeleteMarriageGameScore(int id)
     {

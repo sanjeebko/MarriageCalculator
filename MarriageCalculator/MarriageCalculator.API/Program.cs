@@ -47,7 +47,13 @@ try
     builder.Host.UseSerilog();
 
     // Add services to the container
-    builder.Services.AddControllers();
+    builder.Services.AddControllers()
+        .AddJsonOptions(options =>
+        {
+            options.JsonSerializerOptions.PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase;
+            options.JsonSerializerOptions.DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull;
+            options.JsonSerializerOptions.Converters.Add(new System.Text.Json.Serialization.JsonStringEnumConverter());
+        });
     builder.Services.AddEndpointsApiExplorer();
 
     // Configure Swagger/OpenAPI with enhanced documentation
@@ -118,59 +124,83 @@ try
     var jwtAudience = builder.Configuration["Jwt:Audience"] ?? 
         throw new InvalidOperationException("JWT Audience is required but not configured.");
 
-    builder.Services.AddAuthentication(options =>
+    // Skip authentication setup in Testing environment
+    if (!builder.Environment.IsEnvironment("Testing"))
     {
-        options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
-        options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
-        options.DefaultScheme = JwtBearerDefaults.AuthenticationScheme;
-    })
-    .AddJwtBearer(options =>
-    {
-        options.SaveToken = true;
-        options.RequireHttpsMetadata = !builder.Environment.IsDevelopment(); // Allow HTTP in development
-        options.TokenValidationParameters = new TokenValidationParameters
+        builder.Services.AddAuthentication(options =>
         {
-            ValidateIssuer = true,
-            ValidateAudience = true,
-            ValidateLifetime = true,
-            ValidateIssuerSigningKey = true,
-            ClockSkew = TimeSpan.Zero, // Remove default 5-minute clock skew
-            ValidIssuer = jwtIssuer,
-            ValidAudience = jwtAudience,
-            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSecretKey))
-        };
-        
-        // Configure JWT events for better error handling
-        options.Events = new JwtBearerEvents
+            options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+            options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+            options.DefaultScheme = JwtBearerDefaults.AuthenticationScheme;
+        })
+        .AddJwtBearer(options =>
         {
-            OnAuthenticationFailed = context =>
+            options.SaveToken = true;
+            options.RequireHttpsMetadata = !builder.Environment.IsDevelopment(); // Allow HTTP in development
+            options.TokenValidationParameters = new TokenValidationParameters
             {
-                if (context.Exception.GetType() == typeof(SecurityTokenExpiredException))
+                ValidateIssuer = true,
+                ValidateAudience = true,
+                ValidateLifetime = true,
+                ValidateIssuerSigningKey = true,
+                ClockSkew = TimeSpan.Zero, // Remove default 5-minute clock skew
+                ValidIssuer = jwtIssuer,
+                ValidAudience = jwtAudience,
+                IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSecretKey))
+            };
+            
+            // Configure JWT events for better error handling
+            options.Events = new JwtBearerEvents
+            {
+                OnAuthenticationFailed = context =>
                 {
-                    context.Response.Headers.Add("Token-Expired", "true");
+                    if (context.Exception.GetType() == typeof(SecurityTokenExpiredException))
+                    {
+                        context.Response.Headers.Add("Token-Expired", "true");
+                    }
+                    return Task.CompletedTask;
+                },
+                OnChallenge = context =>
+                {
+                    context.HandleResponse();
+                    context.Response.StatusCode = 401;
+                    context.Response.ContentType = "application/json";
+                    var result = System.Text.Json.JsonSerializer.Serialize(new
+                    {
+                        success = false,
+                        message = "You are not authorized to access this resource."
+                    });
+                    return context.Response.WriteAsync(result);
                 }
-                return Task.CompletedTask;
-            },
-            OnChallenge = context =>
-            {
-                context.HandleResponse();
-                context.Response.StatusCode = 401;
-                context.Response.ContentType = "application/json";
-                var result = System.Text.Json.JsonSerializer.Serialize(new
-                {
-                    success = false,
-                    message = "You are not authorized to access this resource."
-                });
-                return context.Response.WriteAsync(result);
-            }
-        };
-    });
+            };
+        });
 
-    builder.Services.AddAuthorization();
+        builder.Services.AddAuthorization();
+    }
+    else
+    {
+        // Configure test authentication for Testing environment
+        builder.Services.AddAuthentication("Test")
+            .AddScheme<Microsoft.AspNetCore.Authentication.AuthenticationSchemeOptions, TestAuthenticationHandler>("Test", options => { });
+        
+        builder.Services.AddAuthorization(options =>
+        {
+            options.DefaultPolicy = new Microsoft.AspNetCore.Authorization.AuthorizationPolicyBuilder()
+                .RequireAssertion(_ => true) // Always allow in tests
+                .Build();
+        });
+    }
 
     // Configure SQL Server with retry logic and enhanced settings
     builder.Services.AddDbContext<MarriageCalculatorDbContext>(options =>
     {
+        // Skip database configuration in Testing environment - let tests handle it
+        if (builder.Environment.IsEnvironment("Testing"))
+        {
+            // Tests will configure their own database
+            return;
+        }
+
         // Get base connection string from configuration
         var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
         
@@ -346,9 +376,17 @@ static async Task InitializeDatabaseAsync(WebApplication app)
     using var scope = app.Services.CreateScope();
     var services = scope.ServiceProvider;
     var logger = services.GetRequiredService<ILogger<Program>>();
+    var environment = services.GetRequiredService<IWebHostEnvironment>();
     
     try
     {
+        // Skip database initialization in Testing environment
+        if (environment.IsEnvironment("Testing"))
+        {
+            logger.LogInformation("Skipping database initialization in Testing environment.");
+            return;
+        }
+
         logger.LogInformation("Starting database initialization...");
         
         var context = services.GetRequiredService<MarriageCalculatorDbContext>();
@@ -370,5 +408,38 @@ static async Task InitializeDatabaseAsync(WebApplication app)
     {
         logger.LogError(ex, "An error occurred during database initialization: {Message}", ex.Message);
         logger.LogWarning("Application will start but database may not be properly initialized.");
+    }
+}
+
+// Make the Program class accessible to tests
+public partial class Program { }
+
+/// <summary>
+/// Test authentication handler for Testing environment
+/// </summary>
+public class TestAuthenticationHandler : Microsoft.AspNetCore.Authentication.AuthenticationHandler<Microsoft.AspNetCore.Authentication.AuthenticationSchemeOptions>
+{
+#pragma warning disable CS0618 // Type or member is obsolete
+    public TestAuthenticationHandler(Microsoft.Extensions.Options.IOptionsMonitor<Microsoft.AspNetCore.Authentication.AuthenticationSchemeOptions> options,
+        Microsoft.Extensions.Logging.ILoggerFactory logger, System.Text.Encodings.Web.UrlEncoder encoder, Microsoft.AspNetCore.Authentication.ISystemClock clock)
+        : base(options, logger, encoder, clock)
+    {
+    }
+#pragma warning restore CS0618 // Type or member is obsolete
+
+    protected override Task<Microsoft.AspNetCore.Authentication.AuthenticateResult> HandleAuthenticateAsync()
+    {
+        var claims = new[]
+        {
+            new System.Security.Claims.Claim(System.Security.Claims.ClaimTypes.Name, "TestUser"),
+            new System.Security.Claims.Claim(System.Security.Claims.ClaimTypes.NameIdentifier, "12345678-1234-1234-1234-123456789012"),
+            new System.Security.Claims.Claim(System.Security.Claims.ClaimTypes.Email, "test@example.com")
+        };
+
+        var identity = new System.Security.Claims.ClaimsIdentity(claims, "Test");
+        var principal = new System.Security.Claims.ClaimsPrincipal(identity);
+        var ticket = new Microsoft.AspNetCore.Authentication.AuthenticationTicket(principal, "Test");
+
+        return Task.FromResult(Microsoft.AspNetCore.Authentication.AuthenticateResult.Success(ticket));
     }
 }

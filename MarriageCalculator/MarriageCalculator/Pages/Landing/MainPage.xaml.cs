@@ -1,23 +1,18 @@
-﻿using Toast = CommunityToolkit.Maui.Alerts.Toast;
-using CommunityToolkit.Maui.Animations;
+﻿using CommunityToolkit.Maui.Animations;
 using CommunityToolkit.Mvvm.Messaging;
 using MarriageCalculator.DataServices;
-using MarriageCalculator.Services.Interfaces;
+using Toast = CommunityToolkit.Maui.Alerts.Toast;
 
 namespace MarriageCalculator.Pages;
 
 public partial class MainPage : ContentPage
 {
-    public IMarriageGameEngine MarriageGameEngine { get; }
     public MainPageViewModel MainPageViewModel { get; }
 
-    public MainPage(IMarriageGameEngine marriageGameEngine, MainPageViewModel mainPageViewModel)
+    public MainPage( MainPageViewModel mainPageViewModel)
     {
-        InitializeComponent();
-        MarriageGameEngine = marriageGameEngine;
-        MainPageViewModel = mainPageViewModel;
-        MarriageGameEngine.LastPageName = nameof(MainPage);
-         
+        InitializeComponent();       
+        MainPageViewModel = mainPageViewModel; 
         BindingContext = MainPageViewModel;
           
         WeakReferenceMessenger.Default.Register<NavigationReturnMessage>(this, async (sender, message) =>
@@ -31,12 +26,7 @@ public partial class MainPage : ContentPage
         base.OnAppearing();
     }
 
-    #region Button Click Events
-     
-      
-
-    
-
+    #region Button Click Events     
     public static async Task ShowToast(string message)
     {
         var toast = Toast.Make(message, CommunityToolkit.Maui.Core.ToastDuration.Short);
@@ -44,8 +34,7 @@ public partial class MainPage : ContentPage
     }
      
     private async void PlayersBtn_Clicked(object sender, EventArgs e)
-    {
-                
+    {                
         await Shell.Current.GoToAsync(nameof(PlayersPage));         
     }
 
@@ -57,29 +46,31 @@ public partial class MainPage : ContentPage
         // Ensure authentication is properly initialized before initializing game engine
         await MainPageViewModel.InitializeAsync();
         
-        if (!MarriageGameEngine.Initialized)
-        {
-            await MarriageGameEngine.InitializeEngineAsync();
-        }
     }
     private async Task PlayAudio(string pageName)
     {
+        var MarriageGameEngine = MainPageViewModel.GameEngine;
         switch (pageName)
         {
             case nameof(SettingsPage):
                 await MarriageGameEngine.TextToSpeechService.SpeakAsync("मेरिज खेलको नियमहरु सुरक्षित गरियो।");
                 break;
-            case nameof(PlayersPage): 
-                await MarriageGameEngine.TextToSpeechService.SpeakAsync([.. MarriageGameEngine.PlayerService.ActivePlayers.Values]);
+            case nameof(PlayersPage):
+                var players = MarriageGameEngine.MarriageGameSet?.GameSetPlayers.Values
+                    .Select(gsp => gsp.Player)
+                    .Where(p => p != null && !p.Deleted)
+                    .ToList();
+                if (players is not null && players.Count > 0)
+                {
+                    await MarriageGameEngine.TextToSpeechService.SpeakAsync(players.ToArray());
+                }
                 break;
             case nameof(NewGame):
 
                 break;
             default:
                 break;
-
         }
-
     }
 
     private static async Task Animate(VisualElement view)

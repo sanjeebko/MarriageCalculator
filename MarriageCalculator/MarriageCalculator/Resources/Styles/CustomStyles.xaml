@@ -103,10 +103,10 @@
         <Setter Property="HorizontalOptions" Value="FillAndExpand"/>
         <Setter Property="Shadow">
             <Setter.Value>
-                <Shadow Brush="#40000000"
-                        Offset="0,3"
-                        Radius="8"
-                        Opacity="0.3"/>
+                <Shadow Brush="#CCC"
+                        Offset="0,2"
+                        Radius="5"
+                        Opacity="0.4"/>
             </Setter.Value>
         </Setter>
         <Setter Property="VisualStateManager.VisualStateGroups">
@@ -383,19 +383,20 @@
 
     <!-- Enhanced Game Title Style with Glow Effect -->
     <Style x:Key="GameTitleLabel" TargetType="Label">
-        <Setter Property="FontFamily" Value="PoppinsSemibold"/>
-        <Setter Property="FontSize" Value="32"/>
+        <Setter Property="FontFamily" Value="OpenSansRegular"/>
+        <Setter Property="FontSize" Value="30"/>
         <Setter Property="FontAttributes" Value="Bold"/>
         <Setter Property="TextColor" Value="{AppThemeBinding Light={StaticResource Black}, Dark={StaticResource White}}" />
         <Setter Property="HorizontalOptions" Value="Center"/>
         <Setter Property="HorizontalTextAlignment" Value="Center"/>
         <Setter Property="Margin" Value="0,16,0,0"/>
+        <Setter Property="WidthRequest" Value="250"/>
         <Setter Property="Shadow">
             <Setter.Value>
-                <Shadow Brush="{AppThemeBinding Light={StaticResource White}, Dark={StaticResource Black}}"
+                <Shadow Brush="Black"
                         Offset="0,2"
-                        Radius="4"
-                        Opacity="0.2"/>
+                        Radius="5"
+                        Opacity="0.8"/>
             </Setter.Value>
         </Setter>
         <Setter Property="VisualStateManager.VisualStateGroups">
@@ -451,23 +452,98 @@
         <Setter Property="Shadow">
             <Setter.Value>
                 <Shadow Brush="{AppThemeBinding Light={StaticResource CardShadowLight}, Dark={StaticResource CardShadowDark}}"
-                        Offset="0,8"
-                        Radius="24"
-                        Opacity="0.15"/>
+                        Offset="0,1"
+                        Radius="1"
+                        Opacity="0.35"/>
             </Setter.Value>
         </Setter>
     </Style>
 
-    <!-- Keep existing calculator game styles -->
-    <Style x:Key="PlayGameCalculatorButton" TargetType="Button" BasedOn="{StaticResource MainPageActionButton}">
-        <Setter Property="BackgroundColor" Value="{AppThemeBinding Light={StaticResource LightDangerControlsBackground}, Dark={StaticResource DarkDangerControlsBackground}}"  />
-        <Setter Property="BorderColor" Value="{AppThemeBinding Light={StaticResource LightControlsBorder}, Dark={StaticResource DarkControlsBorder}}" />
+    <!-- Enhanced calculator game styles for Play Game page -->
+    <Style x:Key="PlayGameCalculatorButton" TargetType="Button">
+        <Setter Property="BackgroundColor" Value="{AppThemeBinding Light={StaticResource SecondaryButtonLight}, Dark={StaticResource SecondaryButtonDark}}" />
+        <Setter Property="TextColor" Value="{StaticResource White}" />
+        <Setter Property="FontAttributes" Value="Bold"/>
+        <Setter Property="FontFamily" Value="PoppinsSemibold"/>
+        <Setter Property="FontSize" Value="16"/>
+        <Setter Property="CornerRadius" Value="12"/>
+        <Setter Property="BorderWidth" Value="0"/>
+        <Setter Property="Margin" Value="2"/>
+        <Setter Property="Shadow">
+            <Setter.Value>
+                <Shadow Brush="{AppThemeBinding Light={StaticResource CardShadowLight}, Dark={StaticResource CardShadowDark}}"
+                Offset="0,1"
+                Radius="1"
+                Opacity="0.35"/>
+            </Setter.Value>
+        </Setter>
+        <Setter Property="VisualStateManager.VisualStateGroups">
+            <VisualStateGroupList>
+                <VisualStateGroup x:Name="CommonStates">
+                    <VisualState x:Name="Normal">
+                        <VisualState.Setters>
+                            <Setter Property="Scale" Value="1.0" />
+                            <Setter Property="Opacity" Value="1.0" />
+                        </VisualState.Setters>
+                    </VisualState>
+                    <VisualState x:Name="Pressed">
+                        <VisualState.Setters>
+                            <Setter Property="Scale" Value="0.95" />
+                            <Setter Property="Opacity" Value="0.8" />
+                        </VisualState.Setters>
+                    </VisualState>
+                    <VisualState x:Name="Disabled">
+                        <VisualState.Setters>
+                            <Setter Property="Opacity" Value="0.4" />
+                            <Setter Property="BackgroundColor" Value="{AppThemeBinding Light={StaticResource Gray400}, Dark={StaticResource Gray600}}" />
+                        </VisualState.Setters>
+                    </VisualState>
+                </VisualStateGroup>
+            </VisualStateGroupList>
+        </Setter>
     </Style>
     
-    <Style x:Key="PlayGameCalculatorActionButton" TargetType="Button" BasedOn="{StaticResource MainPageActionButton}">
-        <Setter Property="BackgroundColor" Value="{AppThemeBinding Light={StaticResource LightDangerControlsActionBackground}, Dark={StaticResource DarkDangerControlsActionBackground}}"  />
-        <Setter Property="BorderColor" Value="{AppThemeBinding Light={StaticResource LightControlsBorder}, Dark={StaticResource DarkControlsBorder}}" />
-        <Setter Property="TextColor" Value="{AppThemeBinding Light={StaticResource LightControlsActionText}, Dark={StaticResource DarkControlsActionText}}" />
+    <Style x:Key="PlayGameCalculatorActionButton" TargetType="Button">
+        <Setter Property="BackgroundColor" Value="{AppThemeBinding Light={StaticResource PrimaryButtonLight}, Dark={StaticResource PrimaryButtonDark}}" />
+        <Setter Property="TextColor" Value="{StaticResource White}" />
+        <Setter Property="FontAttributes" Value="Bold"/>
+        <Setter Property="FontFamily" Value="PoppinsSemibold"/>
+        <Setter Property="FontSize" Value="11"/>
+        <Setter Property="CornerRadius" Value="8"/>
+        <Setter Property="BorderWidth" Value="0"/>
+        <Setter Property="Margin" Value="1"/>
+        <Setter Property="Padding" Value="4,2"/>
+        <Setter Property="Shadow">
+            <Setter.Value>
+                <Shadow Brush="{AppThemeBinding Light={StaticResource CardShadowLight}, Dark={StaticResource CardShadowDark}}"
+                Offset="0,1"
+                Radius="1"
+                Opacity="0.35"/>
+            </Setter.Value>
+        </Setter>
+        <Setter Property="VisualStateManager.VisualStateGroups">
+            <VisualStateGroupList>
+                <VisualStateGroup x:Name="CommonStates">
+                    <VisualState x:Name="Normal">
+                        <VisualState.Setters>
+                            <Setter Property="Scale" Value="1.0" />
+                            <Setter Property="Opacity" Value="1.0" />
+                        </VisualState.Setters>
+                    </VisualState>
+                    <VisualState x:Name="Pressed">
+                        <VisualState.Setters>
+                            <Setter Property="Scale" Value="0.95" />
+                            <Setter Property="Opacity" Value="0.85" />
+                        </VisualState.Setters>
+                    </VisualState>
+                    <VisualState x:Name="PointerOver">
+                        <VisualState.Setters>
+                            <Setter Property="Scale" Value="1.02" />
+                        </VisualState.Setters>
+                    </VisualState>
+                </VisualStateGroup>
+            </VisualStateGroupList>
+        </Setter>
     </Style>
 
 </ResourceDictionary>

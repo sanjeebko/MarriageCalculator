@@ -1,6 +1,3 @@
-using MarriageCalculator.Core.Models;
-using MarriageCalculator.Core.DTOs;
-using AutoMapper;
 using MarriageCalculator.Repositories.Interfaces;
 using MarriageCalculator.Services.Interfaces;
 
@@ -21,14 +18,6 @@ public class GameSettingsRepository(IApiService apiService, IMapper mapper) : IG
         catch (Exception ex)
         {
             System.Diagnostics.Debug.WriteLine($"GameSettingsRepository.GetAllGameSettingsAsync failed: {ex.Message}");
-            
-            // If it's an authentication error, re-throw to let the caller handle it
-            if (ex.Message.Contains("Unauthorized") || ex.Message.Contains("401"))
-            {
-                throw new UnauthorizedAccessException("Authentication required to access game settings", ex);
-            }
-            
-            // For other errors, return empty list as fallback
             return new List<GameSettings>();
         }
     }
@@ -43,13 +32,6 @@ public class GameSettingsRepository(IApiService apiService, IMapper mapper) : IG
         catch (Exception ex)
         {
             System.Diagnostics.Debug.WriteLine($"GameSettingsRepository.GetGameSettingsByIdAsync failed for ID {id}: {ex.Message}");
-            
-            // If it's an authentication error, re-throw to let the caller handle it
-            if (ex.Message.Contains("Unauthorized") || ex.Message.Contains("401"))
-            {
-                throw new UnauthorizedAccessException("Authentication required to access game settings", ex);
-            }
-            
             return null;
         }
     }
@@ -71,13 +53,6 @@ public class GameSettingsRepository(IApiService apiService, IMapper mapper) : IG
         catch (Exception ex)
         {
             System.Diagnostics.Debug.WriteLine($"GameSettingsRepository.CreateGameSettingsAsync failed: {ex.Message}");
-            
-            // If it's an authentication error, re-throw with clearer message
-            if (ex.Message.Contains("Unauthorized") || ex.Message.Contains("401"))
-            {
-                throw new UnauthorizedAccessException("Authentication required to create game settings", ex);
-            }
-            
             throw;
         }
     }
@@ -93,13 +68,6 @@ public class GameSettingsRepository(IApiService apiService, IMapper mapper) : IG
         catch (Exception ex)
         {
             System.Diagnostics.Debug.WriteLine($"GameSettingsRepository.UpdateGameSettingsAsync failed: {ex.Message}");
-            
-            // If it's an authentication error, re-throw with clearer message
-            if (ex.Message.Contains("Unauthorized") || ex.Message.Contains("401"))
-            {
-                throw new UnauthorizedAccessException("Authentication required to update game settings", ex);
-            }
-            
             return null;
         }
     }
@@ -113,13 +81,6 @@ public class GameSettingsRepository(IApiService apiService, IMapper mapper) : IG
         catch (Exception ex)
         {
             System.Diagnostics.Debug.WriteLine($"GameSettingsRepository.DeleteGameSettingsAsync failed for ID {id}: {ex.Message}");
-            
-            // If it's an authentication error, re-throw with clearer message
-            if (ex.Message.Contains("Unauthorized") || ex.Message.Contains("401"))
-            {
-                throw new UnauthorizedAccessException("Authentication required to delete game settings", ex);
-            }
-            
             return false;
         }
     }

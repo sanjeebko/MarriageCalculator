@@ -27,13 +27,6 @@ public class MarriageGameScoreRepository : IMarriageGameScoreRepository
         catch (Exception ex)
         {
             System.Diagnostics.Debug.WriteLine($"MarriageGameScoreRepository.GetScoresByGameIdAsync failed for game ID {gameId}: {ex.Message}");
-            
-            // If it's an authentication error, re-throw to let the caller handle it
-            if (ex.Message.Contains("Unauthorized") || ex.Message.Contains("401"))
-            {
-                throw new UnauthorizedAccessException("Authentication required to access game scores", ex);
-            }
-            
             return new List<MarriageGameScore>();
         }
     }
@@ -48,13 +41,6 @@ public class MarriageGameScoreRepository : IMarriageGameScoreRepository
         catch (Exception ex)
         {
             System.Diagnostics.Debug.WriteLine($"MarriageGameScoreRepository.GetScoreByIdAsync failed for ID {id}: {ex.Message}");
-            
-            // If it's an authentication error, re-throw to let the caller handle it
-            if (ex.Message.Contains("Unauthorized") || ex.Message.Contains("401"))
-            {
-                throw new UnauthorizedAccessException("Authentication required to access game scores", ex);
-            }
-            
             return null;
         }
     }
@@ -71,10 +57,10 @@ public class MarriageGameScoreRepository : IMarriageGameScoreRepository
         {
             System.Diagnostics.Debug.WriteLine($"MarriageGameScoreRepository.CreateScoreAsync failed: {ex.Message}");
             
-            // If it's an authentication error, re-throw with clearer message
-            if (ex.Message.Contains("Unauthorized") || ex.Message.Contains("401"))
+            // Handle conflict (duplicate score) errors - this is a business logic error, not authentication
+            if (ex.Message.Contains("Conflict") || ex.Message.Contains("409") || ex.Message.Contains("already exists"))
             {
-                throw new UnauthorizedAccessException("Authentication required to create game scores", ex);
+                throw new InvalidOperationException($"A score already exists for this player in this game. Player: {score.PlayerId}, Game: {score.MarriageGameId}", ex);
             }
             
             throw;
@@ -92,13 +78,6 @@ public class MarriageGameScoreRepository : IMarriageGameScoreRepository
         catch (Exception ex)
         {
             System.Diagnostics.Debug.WriteLine($"MarriageGameScoreRepository.UpdateScoreAsync failed: {ex.Message}");
-            
-            // If it's an authentication error, re-throw with clearer message
-            if (ex.Message.Contains("Unauthorized") || ex.Message.Contains("401"))
-            {
-                throw new UnauthorizedAccessException("Authentication required to update game scores", ex);
-            }
-            
             return null;
         }
     }
@@ -112,13 +91,6 @@ public class MarriageGameScoreRepository : IMarriageGameScoreRepository
         catch (Exception ex)
         {
             System.Diagnostics.Debug.WriteLine($"MarriageGameScoreRepository.DeleteScoreAsync failed for ID {id}: {ex.Message}");
-            
-            // If it's an authentication error, re-throw with clearer message
-            if (ex.Message.Contains("Unauthorized") || ex.Message.Contains("401"))
-            {
-                throw new UnauthorizedAccessException("Authentication required to delete game scores", ex);
-            }
-            
             return false;
         }
     }
@@ -133,13 +105,6 @@ public class MarriageGameScoreRepository : IMarriageGameScoreRepository
         catch (Exception ex)
         {
             System.Diagnostics.Debug.WriteLine($"MarriageGameScoreRepository.GetScoresByPlayerIdAsync failed for player ID {playerId}: {ex.Message}");
-            
-            // If it's an authentication error, re-throw to let the caller handle it
-            if (ex.Message.Contains("Unauthorized") || ex.Message.Contains("401"))
-            {
-                throw new UnauthorizedAccessException("Authentication required to access game scores", ex);
-            }
-            
             return new List<MarriageGameScore>();
         }
     }

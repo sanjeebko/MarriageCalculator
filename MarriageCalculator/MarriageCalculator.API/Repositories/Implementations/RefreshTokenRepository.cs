@@ -32,7 +32,7 @@ public class RefreshTokenRepository : IRefreshTokenRepository
         return await _context.RefreshTokens
             .Where(rt => rt.UserId == userId && 
                         rt.IsActive && 
-                        !rt.IsRevoked && 
+                        rt.RevokedAt == null && 
                         rt.ExpiresAt > DateTime.UtcNow)
             .OrderByDescending(rt => rt.CreatedAt)
             .FirstOrDefaultAsync();
@@ -43,7 +43,7 @@ public class RefreshTokenRepository : IRefreshTokenRepository
         return await _context.RefreshTokens
             .Where(rt => rt.UserId == userId && 
                         rt.IsActive && 
-                        !rt.IsRevoked && 
+                        rt.RevokedAt == null && 
                         rt.ExpiresAt > DateTime.UtcNow)
             .OrderByDescending(rt => rt.CreatedAt)
             .ToListAsync();
@@ -95,7 +95,7 @@ public class RefreshTokenRepository : IRefreshTokenRepository
     public async Task<bool> DeleteExpiredAsync()
     {
         var expiredTokens = await _context.RefreshTokens
-            .Where(rt => rt.ExpiresAt <= DateTime.UtcNow || rt.IsRevoked)
+            .Where(rt => rt.ExpiresAt <= DateTime.UtcNow || rt.RevokedAt != null)
             .ToListAsync();
 
         if (expiredTokens.Count == 0) return false;

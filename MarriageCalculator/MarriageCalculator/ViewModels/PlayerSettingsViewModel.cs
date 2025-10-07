@@ -1,8 +1,7 @@
-﻿using MarriageCalculator.Extensions;
+﻿using CommunityToolkit.Mvvm.ComponentModel;
+using MarriageCalculator.Extensions;
 using MarriageCalculator.Services.Interfaces;
-using System.Collections.ObjectModel;
 using MvvmHelpers;
-using CommunityToolkit.Mvvm.ComponentModel;
 using ObservableObject = CommunityToolkit.Mvvm.ComponentModel.ObservableObject;
 
 namespace MarriageCalculator.ViewModels;
@@ -44,7 +43,11 @@ public partial class PlayerSettingsViewModel : ObservableObject
         MarriageGameEngine.LastPageName = nameof(PlayerSettingsViewModel);
          
         LoadAllPlayersAsync().ConfigureAwait(false);
-        ActivePlayers.SafeLoad(MarriageGameEngine.PlayerService.ActivePlayers.Values.ToList());
+        var activePlayers = marriageGameEngine.MarriageGameSet?.GameSetPlayers.Values.Select(gsp => gsp.Player)
+            .Where(p => p is not null && !p.Deleted) // FIX: Changed from p.Deleted to !p.Deleted
+            .ToList();
+        if(activePlayers is not null)
+            ActivePlayers.SafeLoad(activePlayers);
 
         ActivePlayers.CollectionChanged += CurrentPlayers_CollectionChanged;
     }
@@ -108,7 +111,8 @@ public partial class PlayerSettingsViewModel : ObservableObject
     }
 
     private async Task LoadActivePlayersAsync() {
-        var players = MarriageGameEngine.PlayerService.ActivePlayers.Values.ToList();
+        var gameSetPlayers = MarriageGameEngine.MarriageGameSet?.GameSetPlayers;
+        var players = gameSetPlayers?.Values.Select(gsp => gsp.Player).ToList() ?? new List<Player>();
 
         await MainThread.InvokeOnMainThreadAsync(() =>
         {
@@ -131,22 +135,24 @@ public partial class PlayerSettingsViewModel : ObservableObject
     {
         IsRefreshing = true;
         await MarriageGameEngine.PlayerService.RefreshAllPlayers();
-        await MarriageGameEngine.AddMarriageGameSetPlayerAsync();
+        //await MarriageGameEngine.AddMarriageGameSetPlayerAsync();
         await LoadAllPlayersAsync();
 
         IsRefreshing = false;
     }
     [RelayCommand]
-    private void AddPlayer()
+     
+    private async Task AddPlayerAsync()
     {
         string[] seperators = [",", " ", "|", ";", "-", "_", "."];
         var players = PlayerName.Split(seperators,StringSplitOptions.TrimEntries);
         foreach(var player in players.Where(a=>a.Length>1))
         {
-            AddPlayer(new Player { Name = player.ToFirstCharUpper() });
+            AddPlayer(new Player { Name = player.ToFirstCharUpper(), Id= new Guid(), CreatedAt=DateTime.UtcNow });
         }
          
-        PlayerName = string.Empty;         
+        PlayerName = string.Empty;
+        await RefreshAllPlayersAsync();
     }
 
     private void UpdateAddPlayerButtonState()
@@ -161,19 +167,50 @@ public partial class PlayerSettingsViewModel : ObservableObject
     public RelayCommand<Player?> TapPlayerCommand => new RelayCommand<Player?>(TapPlayer);
     public RelayCommand<PlayerWithStatus?> TapPlayerWithStatusCommand => new RelayCommand<PlayerWithStatus?>(TapPlayerWithStatus);
 
-    public void TapPlayer(Player? player)
+    public async void TapPlayer(Player? player)
     {
         if (player is null)
             return;
-        AddPlayer(player);
+       await SelectPlayerAsync(player);
     }
 
-    public void TapPlayerWithStatus(PlayerWithStatus? playerWithStatus)
+    public async void TapPlayerWithStatus(PlayerWithStatus? playerWithStatus)
     {
         if (playerWithStatus?.Player is null)
             return;
-        AddPlayer(playerWithStatus.Player);
+      await  SelectPlayerAsync(playerWithStatus.Player);
     }
+
+
+
+    private async Task SelectPlayerAsync(Player player)
+    {
+        if (ActivePlayers.Contains(player))
+        {
+            return; // Already selected
+        }
+        else
+        {
+            if (ActivePlayers.Count >= MaxPlayers)
+            {
+                Message = $"Cannot add more than {MaxPlayers} players.";
+                OnError?.Invoke(this, EventArgs.Empty);
+                return;
+            }
+            ActivePlayers.Add(player);
+        }
+        if (MarriageGameEngine.MarriageGameSet is not null)
+            await MarriageGameEngine.AddPlayerToGameSetAsync(new MarriageGameSetPlayer()
+            {
+                MarriageGameSetId = MarriageGameEngine.MarriageGameSet!.Id,
+                Player = player,
+                PlayerId = player.Id,
+                MarriageGameSet = MarriageGameEngine.MarriageGameSet
+            });
+        
+        UpdateAllPlayersSelectionStatus();
+    }
+
     [RelayCommand]
     private async Task Ok()
     {
@@ -223,20 +260,11 @@ public partial class PlayerSettingsViewModel : ObservableObject
 
 
     public async void AddPlayer(Player player)
-    {
-        if (ActivePlayers.Contains(player) || ActivePlayers.Any(a => a.Name == player.Name))
-            return;
-
-        if (ActivePlayers.Count >= MaxPlayers)
-            return;
-
-        // Add to local UI collection
-        ActivePlayers.Add(player);
-        
+    {        
         // FIXED: Immediately sync with GameEngine's PlayerService
         await MarriageGameEngine.PlayerService.AddPlayerAsync(player);
-        
-        UpdateAddPlayerButtonState();
+        await MarriageGameEngine.RefreshPlayers();
+        await RefreshAllPlayersAsync();
     }
 
     private async void RemovePlayer(Player? player)
@@ -246,9 +274,10 @@ public partial class PlayerSettingsViewModel : ObservableObject
             
         // Remove from local UI collection
         ActivePlayers.Remove(player);
-        
+
         // FIXED: Immediately sync with GameEngine's PlayerService
-        await MarriageGameEngine.PlayerService.DeletePlayerAsync(player, false);
+        await MarriageGameEngine.RemovePlayerFromGameSetAsync(player.Id);
+        
 
         UpdateAddPlayerButtonState();
     }
@@ -257,7 +286,7 @@ public partial class PlayerSettingsViewModel : ObservableObject
         if (player is null)
             return;
         
-        await MarriageGameEngine.PlayerService.DeletePlayerAsync(player,true);
+        await MarriageGameEngine.PlayerService.DeletePlayerAsync(player);
         RemovePlayer(player);
          
         await RefreshAllPlayersAsync();
