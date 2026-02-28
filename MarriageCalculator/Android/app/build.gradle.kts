@@ -3,6 +3,8 @@ plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
     id("org.jetbrains.kotlin.plugin.compose")
+    kotlin("kapt")
+    id("com.google.dagger.hilt.android")
 }
 
 android {
@@ -20,6 +22,8 @@ android {
         vectorDrawables {
             useSupportLibrary = true
         }
+
+        buildConfigField("String", "API_BASE_URL", "\"http://10.0.2.2:5000/api/\"")
     }
 
     buildTypes {
@@ -40,6 +44,7 @@ android {
     }
     buildFeatures {
         compose = true
+        buildConfig = true
     }
     packaging {
         resources {
@@ -48,10 +53,14 @@ android {
     }
 }
 
-dependencies {
+kapt {
+    correctErrorTypes = true
+}
 
-    implementation(platform("androidx.compose:compose-bom:2024.02.01"))
-    implementation("androidx.activity:activity-compose:1.8.2")
+dependencies {
+    // Compose
+    implementation(platform(libs.compose.bom))
+    implementation(libs.activity.compose)
     implementation("androidx.compose.ui:ui")
     implementation("androidx.compose.ui:ui-graphics")
     implementation("androidx.compose.ui:ui-tooling")
@@ -59,9 +68,40 @@ dependencies {
     implementation("androidx.compose.material:material")
     implementation("androidx.compose.material3:material3")
     implementation("androidx.compose.material:material-icons-extended")
-    implementation("androidx.core:core-ktx:1.17.0")
-    implementation("androidx.appcompat:appcompat:1.7.1")
-    implementation("com.google.android.material:material:1.13.0")
 
-    implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.10.0")
+    // AndroidX
+    implementation(libs.androidx.core.ktx)
+    implementation(libs.androidx.appcompat)
+    implementation(libs.material)
+    implementation(libs.lifecycle.viewmodel.compose)
+
+    // Navigation
+    implementation(libs.navigation.compose)
+    implementation(libs.hilt.navigation.compose)
+
+    // Hilt DI
+    implementation(libs.hilt.android)
+    kapt(libs.hilt.compiler)
+
+    // Retrofit + OkHttp
+    implementation(libs.retrofit)
+    implementation(libs.retrofit.gson)
+    implementation(libs.okhttp)
+    implementation(libs.okhttp.logging)
+    implementation(libs.gson)
+
+    // Room
+    implementation(libs.room.runtime)
+    implementation(libs.room.ktx)
+    kapt(libs.room.compiler)
+
+    // Coroutines
+    implementation(libs.coroutines.core)
+    implementation(libs.coroutines.android)
+
+    // Testing
+    testImplementation(libs.junit)
+    testImplementation(libs.coroutines.test)
+    androidTestImplementation(libs.androidx.junit)
+    androidTestImplementation(libs.androidx.espresso.core)
 }
