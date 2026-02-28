@@ -125,6 +125,28 @@ builder.Services.AddScoped<IMarriageGameServices, MarriageGameServices>();
 // Add SignalR for real-time game updates
 builder.Services.AddSignalR();
 
+// Add health checks for Kubernetes probes
+builder.Services.AddHealthChecks()
+    .AddDbContextCheck<MarriageCalculatorDbContext>("database");
+
+// Add CORS for Android client
+builder.Services.AddCors(options =>
+{
+    options.AddDefaultPolicy(policy =>
+    {
+        policy.AllowAnyOrigin()
+              .AllowAnyMethod()
+              .AllowAnyHeader();
+    });
+    options.AddPolicy("SignalR", policy =>
+    {
+        policy.SetIsOriginAllowed(_ => true)
+              .AllowAnyMethod()
+              .AllowAnyHeader()
+              .AllowCredentials();
+    });
+});
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline
@@ -167,6 +189,7 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+app.UseCors();
 app.UseAuthorization();
 
 // Serve static files for custom Swagger UI assets
@@ -176,7 +199,14 @@ app.UseStaticFiles();
 app.MapControllers();
 
 // Map SignalR hubs
-app.MapHub<GameHub>("/hubs/game");
+app.MapHub<GameHub>("/hubs/game").RequireCors("SignalR");
+
+// Map health check endpoints for Kubernetes
+app.MapHealthChecks("/health/ready");
+app.MapHealthChecks("/health/live", new Microsoft.AspNetCore.Diagnostics.HealthChecks.HealthCheckOptions
+{
+    Predicate = _ => false // Liveness: just check app is running, skip DB
+});
 
 // Simple database initialization - let EF handle everything automatically
 await InitializeDatabaseAsync(app);
