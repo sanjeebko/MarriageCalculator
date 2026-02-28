@@ -172,3 +172,41 @@ public class ApiResponse
     public bool Success { get; set; }
     public string Message { get; set; } = string.Empty;
 }
+
+// Scoring DTOs
+public class CalculateScoreRequestDto
+{
+    public GameSettingsDto Settings { get; set; } = new();
+    public int WinnerId { get; set; }
+    public List<PlayerScoreInputDto> PlayerScores { get; set; } = [];
+}
+
+public class PlayerScoreInputDto
+{
+    public int PlayerId { get; set; }
+    public string PlayerName { get; set; } = string.Empty;
+    public bool Seen { get; set; }
+    public bool Playing { get; set; } = true;
+    public int Maal { get; set; }
+    public bool Duply { get; set; }
+}
+
+public class CalculateScoreResponseDto
+{
+    public bool IsValid { get; set; }
+    public string Message { get; set; } = string.Empty;
+    public List<PlayerScoreResultDto> Results { get; set; } = [];
+    public int TotalMaal { get; set; }
+}
+
+public class PlayerScoreResultDto
+{
+    public int PlayerId { get; set; }
+    public string PlayerName { get; set; } = string.Empty;
+    public bool Seen { get; set; }
+    public bool Winner { get; set; }
+    public bool Duply { get; set; }
+    public int Maal { get; set; }
+    public int Score { get; set; }
+    public double MoneyWon { get; set; }
+}

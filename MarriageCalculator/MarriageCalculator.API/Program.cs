@@ -1,4 +1,5 @@
 using MarriageCalculator.API.Data;
+using MarriageCalculator.API.Hubs;
 using MarriageCalculator.API.Repositories;
 using MarriageCalculator.API.Services;
 using Microsoft.EntityFrameworkCore;
@@ -121,6 +122,9 @@ builder.Services.AddScoped<IDatabaseService, DatabaseService>();
 // Register existing services
 builder.Services.AddScoped<IMarriageGameServices, MarriageGameServices>();
 
+// Add SignalR for real-time game updates
+builder.Services.AddSignalR();
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline
@@ -170,6 +174,9 @@ app.UseStaticFiles();
 
 // Map controllers
 app.MapControllers();
+
+// Map SignalR hubs
+app.MapHub<GameHub>("/hubs/game");
 
 // Simple database initialization - let EF handle everything automatically
 await InitializeDatabaseAsync(app);
