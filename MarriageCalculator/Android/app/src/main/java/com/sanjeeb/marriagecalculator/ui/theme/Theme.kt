@@ -1,19 +1,25 @@
 package com.sanjeeb.marriagecalculator.ui.theme
 
-import androidx.compose.material.MaterialTheme
-import androidx.compose.material.lightColors
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.darkColorScheme
 import androidx.compose.runtime.Composable
 
-private val LightColorPalette = lightColors(
+private val DarkColorScheme = darkColorScheme(
     primary = DeepRedTika,
-    primaryVariant = MarigoldOrange,
-    secondary = GoldAccent
+    secondary = MarigoldOrange,
+    tertiary = GoldAccent,
+    background = TiharNightBlue,
+    surface = TiharNightBlue,
+    onPrimary = GoldAccent,
+    onSecondary = GoldAccent,
+    onBackground = GoldAccent,
+    onSurface = GoldAccent
 )
 
 @Composable
 fun MarriageCalculatorTheme(content: @Composable () -> Unit) {
     MaterialTheme(
-        colors = LightColorPalette,
+        colorScheme = DarkColorScheme,
         typography = FestiveTypography,
         content = content
     )
