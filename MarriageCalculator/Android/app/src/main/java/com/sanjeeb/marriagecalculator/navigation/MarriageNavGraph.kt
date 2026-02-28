@@ -12,13 +12,24 @@ import com.sanjeeb.marriagecalculator.ui.gamesetup.GameSetupScreen
 import com.sanjeeb.marriagecalculator.ui.playgame.PlayGameScreen
 import com.sanjeeb.marriagecalculator.ui.roundinput.RoundInputScreen
 import com.sanjeeb.marriagecalculator.ui.scoreboard.ScoreboardScreen
+import com.sanjeeb.marriagecalculator.ui.splash.SplashScreen
 
 @Composable
 fun MarriageNavGraph(navController: NavHostController) {
     NavHost(
         navController = navController,
-        startDestination = Screen.Login.route
+        startDestination = Screen.Splash.route
     ) {
+        composable(Screen.Splash.route) {
+            SplashScreen(
+                onSplashComplete = {
+                    navController.navigate(Screen.Login.route) {
+                        popUpTo(Screen.Splash.route) { inclusive = true }
+                    }
+                }
+            )
+        }
+
         composable(Screen.Login.route) {
             LoginScreen(
                 onGoogleLogin = {
