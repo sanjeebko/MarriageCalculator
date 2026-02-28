@@ -67,4 +67,10 @@ object NetworkModule {
     fun provideMarriageGameApiService(retrofit: Retrofit): MarriageGameApiService {
         return retrofit.create(MarriageGameApiService::class.java)
     }
+
+    @Provides
+    @Singleton
+    fun provideScoringApiService(retrofit: Retrofit): ScoringApiService {
+        return retrofit.create(ScoringApiService::class.java)
+    }
 }
