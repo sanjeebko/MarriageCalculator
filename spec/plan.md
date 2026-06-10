@@ -3,8 +3,8 @@
 ## Problem Statement
 Build a full-featured Android (Kotlin/Compose) app for the Marriage card game calculator, backed by the existing .NET API. The app must handle 2-6 players with efficient screen space usage, support offline/online modes, real-time score display, and integrate with the C# API hosted on Kubernetes. The Maui version is archived and replaced by this native Android app.
 
-## Status: Phases 1-7, 10-11 COMPLETE ✅
-- 12 .NET tests + ~30 Android unit tests all passing
+## Status: ALL PHASES COMPLETE ✅
+- 23 C# tests + 45 Android unit tests all passing
 - Android APK builds successfully
 - .NET API builds successfully
 - **Docker**: Production-ready for API deployment.
@@ -124,9 +124,9 @@ Iterative development in phases. Each step produces a buildable, testable commit
 - [x] Step 12.2: Implement authentication middleware/services in `MarriageCalculator.API` (Firebase token validation / custom OAuth headers for QA testing).
 - [x] Step 12.3: Modify `GameSettings` and `MarriageGameSet` models in Core and MongoDB schemas to include owner identifiers (`UserId` and `HostUserId`).
 - [x] Step 12.4: Update API controllers and repositories to filter all CRUD operations by the caller's authenticated `UserId` (including full API unit tests).
-- [ ] Step 12.5: Build Android Login screen as the initial landing phase, integrating auth calls to the backend and storing token credentials locally.
-- [ ] Step 12.6: Update Android Retrofit client to append authentication headers to all outbound requests.
-- [ ] Step 12.7: Write concurrent load tests and unit tests ensuring multiple users can operate simultaneously without cross-talk.
+- [x] Step 12.5: Build Android Login screen as the initial landing phase, integrating auth calls to the backend and storing token credentials locally.
+- [x] Step 12.6: Update Android Retrofit client to append authentication headers to all outbound requests.
+- [x] Step 12.7: Write concurrent load tests and unit tests ensuring multiple users can operate simultaneously without cross-talk.
 - **COMMIT**: "refactor: User entity migration, settings/games user linking, and multi-user login support"
 
 ---

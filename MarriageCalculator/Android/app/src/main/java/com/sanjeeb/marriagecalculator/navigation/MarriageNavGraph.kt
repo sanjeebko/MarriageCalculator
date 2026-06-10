@@ -6,6 +6,7 @@ import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
+import com.sanjeeb.marriagecalculator.data.repository.SessionManager
 import com.sanjeeb.marriagecalculator.ui.LoginScreen
 import com.sanjeeb.marriagecalculator.ui.dashboard.DashboardScreen
 import com.sanjeeb.marriagecalculator.ui.gamesetup.GameSetupScreen
@@ -15,7 +16,10 @@ import com.sanjeeb.marriagecalculator.ui.scoreboard.ScoreboardScreen
 import com.sanjeeb.marriagecalculator.ui.splash.SplashScreen
 
 @Composable
-fun MarriageNavGraph(navController: NavHostController) {
+fun MarriageNavGraph(
+    navController: NavHostController,
+    sessionManager: SessionManager
+) {
     NavHost(
         navController = navController,
         startDestination = Screen.Splash.route
@@ -23,7 +27,12 @@ fun MarriageNavGraph(navController: NavHostController) {
         composable(Screen.Splash.route) {
             SplashScreen(
                 onSplashComplete = {
-                    navController.navigate(Screen.Login.route) {
+                    val nextRoute = if (sessionManager.isLoggedIn()) {
+                        Screen.Dashboard.route
+                    } else {
+                        Screen.Login.route
+                    }
+                    navController.navigate(nextRoute) {
                         popUpTo(Screen.Splash.route) { inclusive = true }
                     }
                 }
@@ -32,12 +41,7 @@ fun MarriageNavGraph(navController: NavHostController) {
 
         composable(Screen.Login.route) {
             LoginScreen(
-                onGoogleLogin = {
-                    navController.navigate(Screen.Dashboard.route) {
-                        popUpTo(Screen.Login.route) { inclusive = true }
-                    }
-                },
-                onGuestLogin = {
+                onLoginSuccess = {
                     navController.navigate(Screen.Dashboard.route) {
                         popUpTo(Screen.Login.route) { inclusive = true }
                     }

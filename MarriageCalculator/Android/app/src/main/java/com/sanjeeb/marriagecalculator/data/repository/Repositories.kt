@@ -41,7 +41,7 @@ class GameSetRepository @Inject constructor(
     suspend fun createGameSet(request: CreateGameSetRequest): ApiResult<MarriageGameSet> = safeApiCall { api.createGameSet(request) }
 }
 
-private suspend fun <T> safeApiCall(call: suspend () -> retrofit2.Response<T>): ApiResult<T> {
+internal suspend fun <T> safeApiCall(call: suspend () -> retrofit2.Response<T>): ApiResult<T> {
     return try {
         val response = call()
         if (response.isSuccessful) {

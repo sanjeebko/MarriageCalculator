@@ -1,20 +1,13 @@
-
 package com.sanjeeb.marriagecalculator.ui
 
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.scale
@@ -32,6 +25,7 @@ import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.sanjeeb.marriagecalculator.R
 import com.sanjeeb.marriagecalculator.ui.components.MetallicButton
 
@@ -46,7 +40,19 @@ val BlueBottom = Color(0xFF003399)
 val BlueGlow = Color(0xFF00FFFF)
 
 @Composable
-fun LoginScreen(onGoogleLogin: () -> Unit, onGuestLogin: () -> Unit) {
+fun LoginScreen(
+    onLoginSuccess: () -> Unit,
+    viewModel: LoginViewModel = hiltViewModel()
+) {
+    val uiState by viewModel.uiState.collectAsState()
+    var username by remember { mutableStateOf("sanjeeb") }
+
+    LaunchedEffect(uiState) {
+        if (uiState is LoginUiState.Success) {
+            onLoginSuccess()
+        }
+    }
+
     Box(
         modifier = Modifier.fillMaxSize()
     ) {
@@ -59,8 +65,7 @@ fun LoginScreen(onGoogleLogin: () -> Unit, onGuestLogin: () -> Unit) {
         )
 
         Column(
-            modifier = Modifier
-                .fillMaxSize(), // Removed 32.dp padding here to allow logo to grow
+            modifier = Modifier.fillMaxSize(),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
@@ -72,24 +77,46 @@ fun LoginScreen(onGoogleLogin: () -> Unit, onGuestLogin: () -> Unit) {
                 modifier = Modifier
                     .fillMaxWidth()
                     .scale(1.5f)
-                    .padding(bottom = 100.dp) // increased to compensate for scale
+                    .padding(bottom = 60.dp) // adjusted to make room for input
             )
 
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 32.dp), // Re-apply padding for buttons
-                verticalArrangement = Arrangement.spacedBy(24.dp),
+                    .padding(horizontal = 32.dp),
+                verticalArrangement = Arrangement.spacedBy(20.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
+                // Username Input Field (Glossy dark container, Gold highlight)
+                OutlinedTextField(
+                    value = username,
+                    onValueChange = { username = it },
+                    label = { Text("Test Username", color = MetalGold) },
+                    placeholder = { Text("Enter mock username", color = Color.White.copy(alpha = 0.3f)) },
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = true,
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedContainerColor = Color(0xFF1C1C1C),
+                        unfocusedContainerColor = Color(0xFF121212),
+                        focusedBorderColor = MetalGold,
+                        unfocusedBorderColor = Color.White.copy(alpha = 0.1f),
+                        focusedLabelColor = MetalGold,
+                        unfocusedLabelColor = Color.White.copy(alpha = 0.5f),
+                        focusedTextColor = Color.White,
+                        unfocusedTextColor = Color.White
+                    ),
+                    shape = RoundedCornerShape(12.dp)
+                )
+
                 // Google Button (Polished Silver Bezel)
                 MetallicButton(
-                    onClick = onGoogleLogin,
+                    onClick = { viewModel.loginWithMockToken(username) },
                     text = "Continue with Google",
                     rimColors = listOf(Color(0xFFFFFFFF), Color(0xFF606060)),
                     faceColors = listOf(Color(0xFFFFFFFF), Color(0xFFDDDDDD)),
                     textColor = Color(0xFF333333),
                     modifier = Modifier.height(72.dp),
+                    isLoading = uiState is LoginUiState.Loading,
                     leadingIcon = {
                         Image(
                             painter = painterResource(id = R.drawable.ic_google_logo),
@@ -101,26 +128,16 @@ fun LoginScreen(onGoogleLogin: () -> Unit, onGuestLogin: () -> Unit) {
                     }
                 )
 
-                // Guest Button (Electric Blue Bezel)
-                /* TODO: Uncomment later when guest login is needed
-                MetallicButton(
-                    onClick = onGuestLogin,
-                    text = "Play as Guest",
-                    rimColors = listOf(Color(0xFF88CCFF), Color(0xFF003366)),
-                    faceColors = listOf(Color(0xFF0077EE), Color(0xFF0044AA)),
-                    textColor = Color(0xFFE6E6E6),
-                    modifier = Modifier.height(72.dp),
-                    leadingIcon = {
-                        Image(
-                            painter = painterResource(id = R.drawable.ic_guest),
-                            contentDescription = null,
-                            modifier = Modifier
-                                .size(28.dp)
-                                .shadow(4.dp, shape = RoundedCornerShape(4.dp))
-                        )
-                    }
-                )
-                */
+                if (uiState is LoginUiState.Error) {
+                    Text(
+                        text = (uiState as LoginUiState.Error).message,
+                        color = Color(0xFFFF5252),
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.Bold,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.padding(top = 8.dp)
+                    )
+                }
 
                 Spacer(Modifier.height(8.dp))
                 
@@ -177,10 +194,4 @@ fun LoginScreen(onGoogleLogin: () -> Unit, onGuestLogin: () -> Unit) {
             )
         }
     }
-}
-
-@Preview(showBackground = true)
-@Composable
-fun LoginScreenPreview() {
-    LoginScreen(onGoogleLogin = {}, onGuestLogin = {})
 }

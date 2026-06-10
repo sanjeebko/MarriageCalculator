@@ -1,7 +1,9 @@
 package com.sanjeeb.marriagecalculator.di
 
+import com.google.gson.Gson
 import com.sanjeeb.marriagecalculator.BuildConfig
 import com.sanjeeb.marriagecalculator.data.remote.*
+import com.sanjeeb.marriagecalculator.data.repository.SessionManager
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -19,7 +21,11 @@ object NetworkModule {
 
     @Provides
     @Singleton
-    fun provideOkHttpClient(): OkHttpClient {
+    fun provideGson(): Gson = Gson()
+
+    @Provides
+    @Singleton
+    fun provideOkHttpClient(sessionManager: SessionManager): OkHttpClient {
         val logging = HttpLoggingInterceptor().apply {
             level = if (BuildConfig.DEBUG)
                 HttpLoggingInterceptor.Level.BODY
@@ -28,6 +34,13 @@ object NetworkModule {
         }
         return OkHttpClient.Builder()
             .addInterceptor(logging)
+            .addInterceptor { chain ->
+                val requestBuilder = chain.request().newBuilder()
+                sessionManager.getAuthToken()?.let { token ->
+                    requestBuilder.addHeader("Authorization", "Bearer $token")
+                }
+                chain.proceed(requestBuilder.build())
+            }
             .connectTimeout(30, TimeUnit.SECONDS)
             .readTimeout(30, TimeUnit.SECONDS)
             .writeTimeout(30, TimeUnit.SECONDS)
@@ -36,11 +49,11 @@ object NetworkModule {
 
     @Provides
     @Singleton
-    fun provideRetrofit(okHttpClient: OkHttpClient): Retrofit {
+    fun provideRetrofit(okHttpClient: OkHttpClient, gson: Gson): Retrofit {
         return Retrofit.Builder()
             .baseUrl(BuildConfig.API_BASE_URL)
             .client(okHttpClient)
-            .addConverterFactory(GsonConverterFactory.create())
+            .addConverterFactory(GsonConverterFactory.create(gson))
             .build()
     }
 
@@ -72,5 +85,11 @@ object NetworkModule {
     @Singleton
     fun provideScoringApiService(retrofit: Retrofit): ScoringApiService {
         return retrofit.create(ScoringApiService::class.java)
+    }
+
+    @Provides
+    @Singleton
+    fun provideUserApiService(retrofit: Retrofit): UserApiService {
+        return retrofit.create(UserApiService::class.java)
     }
 }

@@ -1,0 +1,29 @@
+version: "3.8"
+
+services:
+  marriagecalculator-api:
+    build:
+      context: ./MarriageCalculator
+      dockerfile: MarriageCalculator.API/Dockerfile
+    container_name: marriagecalculator-api
+    ports:
+      - "5000:8080"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=${ASPNETCORE_ENVIRONMENT}
+      - ASPNETCORE_URLS=http://+:8080
+      - MCDATABASE=${DOCKER_MCDATABASE}
+      - MCUSER=${DOCKER_MCUSER}
+      - MCPASSWORD=${DOCKER_MCPASSWORD}
+      - MCDATABASENAME=${DOCKER_MCDATABASENAME}
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health/ready"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+networks:
+  default:
+    name: marriagecalculator-network
+    driver: bridge

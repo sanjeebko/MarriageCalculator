@@ -263,7 +263,7 @@ private fun PlayerScoreCard(
                     // Winner Trophy/Crown Trigger
                     IconButton(onClick = onSelectWinner) {
                         Icon(
-                            imageVector = if (isWinner) Icons.Default.EmojiEvents else Icons.Default.Trophy,
+                            imageVector = Icons.Default.EmojiEvents,
                             contentDescription = "Select Winner",
                             tint = if (isWinner) GoldAccent else Color.White.copy(alpha = 0.15f),
                             modifier = Modifier.size(28.dp)
