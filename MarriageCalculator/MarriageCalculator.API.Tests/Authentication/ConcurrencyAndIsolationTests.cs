@@ -19,7 +19,10 @@ public class ConcurrencyAndIsolationTests
 {
     private static void SetControllerUser(ControllerBase controller, string userId)
     {
-        var claims = new[] { new Claim(ClaimTypes.NameIdentifier, userId) };
+        var claims = new[] { 
+            new Claim(ClaimTypes.NameIdentifier, userId),
+            new Claim(ClaimTypes.Email, $"{userId}@marriagecalculator.local")
+        };
         var identity = new ClaimsIdentity(claims, "TestAuth");
         var principal = new ClaimsPrincipal(identity);
         controller.ControllerContext = new ControllerContext
@@ -47,8 +50,8 @@ public class ConcurrencyAndIsolationTests
         };
 
         // Set up the mocked service to filter returns strictly based on hostUserId
-        serviceMock.Setup(s => s.GetAllGameSetsAsync(It.IsAny<string>()))
-            .ReturnsAsync((string hostUserId) => userGameSets.ContainsKey(hostUserId) ? userGameSets[hostUserId] : new List<MarriageGameSetDto>());
+        serviceMock.Setup(s => s.GetAllGameSetsAsync(It.IsAny<string>(), It.IsAny<string>()))
+            .ReturnsAsync((string hostUserId, string email) => userGameSets.ContainsKey(hostUserId) ? userGameSets[hostUserId] : new List<MarriageGameSetDto>());
 
         var concurrentResults = new ConcurrentDictionary<string, List<MarriageGameSetDto>>();
 

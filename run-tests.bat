@@ -1,6 +1,6 @@
 @echo off
 echo ===================================================
-echo   RUNNING BACKEND UNIT & ISOLATION TESTS (C#)
+echo   RUNNING BACKEND UNIT AND ISOLATION TESTS (C#)
 echo ===================================================
 dotnet test MarriageCalculator/MarriageCalculator.sln
 if %ERRORLEVEL% NEQ 0 (

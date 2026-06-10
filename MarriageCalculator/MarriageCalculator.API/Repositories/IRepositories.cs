@@ -6,6 +6,7 @@ public interface IPlayerRepository
 {
     Task<IEnumerable<Player>> GetAllAsync();
     Task<Player?> GetByIdAsync(string id);
+    Task<IEnumerable<Player>> GetPlayersByEmailAsync(string email);
     Task<Player> CreateAsync(Player player);
     Task<Player?> UpdateAsync(string id, Player player);
     Task<bool> DeleteAsync(string id);
@@ -17,6 +18,8 @@ public interface IUserRepository
     Task<IEnumerable<User>> GetAllAsync();
     Task<User?> GetByIdAsync(string id);
     Task<User?> GetByUserIdAsync(string userId);
+    Task<User?> GetByEmailAsync(string email);
+    Task<IEnumerable<User>> SearchUsersAsync(string query);
     Task<User> CreateAsync(User user);
     Task<User?> UpdateAsync(string id, User user);
     Task<bool> DeleteAsync(string id);
@@ -36,7 +39,9 @@ public interface IGameSettingsRepository
 public interface IMarriageGameSetRepository
 {
     Task<IEnumerable<MarriageGameSet>> GetAllByHostUserIdAsync(string hostUserId);
+    Task<IEnumerable<MarriageGameSet>> GetAllForUserAsync(string userId, List<string> playerIds);
     Task<MarriageGameSet?> GetByIdAsync(string id, string hostUserId);
+    Task<MarriageGameSet?> GetByIdRawAsync(string id);
     Task<MarriageGameSet> CreateAsync(MarriageGameSet gameSet);
     Task<MarriageGameSet?> UpdateAsync(string id, MarriageGameSet gameSet, string hostUserId);
     Task<bool> DeleteAsync(string id, string hostUserId);
@@ -60,4 +65,14 @@ public interface IDatabaseRepository
     Task<bool> CanConnectAsync();
     Task<int> GetTableCountAsync();
     Task<string> GetProviderNameAsync();
+}
+
+public interface IFriendshipRepository
+{
+    Task<IEnumerable<Friendship>> GetAllForUserAsync(string userId);
+    Task<Friendship?> GetByIdAsync(string id);
+    Task<Friendship?> GetByUsersAsync(string requesterId, string receiverId);
+    Task<Friendship> CreateAsync(Friendship friendship);
+    Task<Friendship?> UpdateAsync(string id, Friendship friendship);
+    Task<bool> DeleteAsync(string id);
 }

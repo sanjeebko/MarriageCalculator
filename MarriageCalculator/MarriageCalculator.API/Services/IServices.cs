@@ -17,6 +17,7 @@ public interface IUserService
     Task<IEnumerable<UserDto>> GetAllUsersAsync();
     Task<UserDto?> GetUserByIdAsync(string id);
     Task<UserDto?> GetUserByUserIdAsync(string userId);
+    Task<IEnumerable<UserDto>> SearchUsersAsync(string query);
     Task<UserDto> CreateUserAsync(CreateUserDto createUserDto);
     Task<UserDto?> UpdateUserAsync(string id, UpdateUserDto updateUserDto);
     Task<bool> DeleteUserAsync(string id);
@@ -36,13 +37,14 @@ public interface IGameSettingsService
 
 public interface IMarriageGameSetService
 {
-    Task<IEnumerable<MarriageGameSetDto>> GetAllGameSetsAsync(string hostUserId);
-    Task<MarriageGameSetDto?> GetGameSetByIdAsync(string id, string hostUserId);
+    Task<IEnumerable<MarriageGameSetDto>> GetAllGameSetsAsync(string hostUserId, string email);
+    Task<MarriageGameSetDto?> GetGameSetByIdAsync(string id, string hostUserId, string email);
     Task<MarriageGameSetDto> CreateGameSetAsync(CreateMarriageGameSetDto createGameSetDto);
     Task<MarriageGameSetDto?> UpdateGameSetAsync(string id, CreateMarriageGameSetDto updateGameSetDto, string hostUserId);
     Task<bool> DeleteGameSetAsync(string id, string hostUserId);
     Task<bool> GameSetExistsAsync(string id, string hostUserId);
     Task<MarriageGameSetDto?> GetLatestActiveGameSetAsync(string hostUserId);
+    Task<MarriageGameSetDto?> TransferHostAsync(string id, string currentHostUserId, string newHostUserId);
 }
 
 public interface IMarriageGameService
@@ -61,4 +63,14 @@ public interface IDatabaseService
     Task<DatabaseInfoDto> GetDatabaseInfoAsync();
     Task<ApiResponse> SeedDefaultDataAsync();
     Task<ApiResponse> CleanupDatabaseAsync();
+}
+
+public interface IFriendshipService
+{
+    Task<IEnumerable<FriendshipDto>> GetPendingRequestsAsync(string userId);
+    Task<IEnumerable<FriendshipDto>> GetSentRequestsAsync(string userId);
+    Task<IEnumerable<UserDto>> GetFriendsAsync(string userId);
+    Task<FriendshipDto> SendFriendRequestAsync(string requesterUserId, SendFriendRequestDto requestDto);
+    Task<FriendshipDto?> RespondFriendRequestAsync(string id, string receiverUserId, RespondFriendRequestDto respondDto);
+    Task<bool> RemoveFriendAsync(string id, string userId);
 }

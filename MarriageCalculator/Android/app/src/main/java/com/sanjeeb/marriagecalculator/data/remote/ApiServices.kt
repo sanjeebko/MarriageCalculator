@@ -53,6 +53,12 @@ interface MarriageGameSetApiService {
 
     @DELETE("MarriageGameSets/{id}")
     suspend fun deleteGameSet(@Path("id") id: String): Response<Unit>
+
+    @POST("MarriageGameSets/{id}/transfer-host")
+    suspend fun transferHost(
+        @Path("id") id: String,
+        @Body request: TransferHostDto
+    ): Response<Unit>
 }
 
 interface MarriageGameApiService {

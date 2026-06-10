@@ -14,6 +14,7 @@ import com.sanjeeb.marriagecalculator.ui.playgame.PlayGameScreen
 import com.sanjeeb.marriagecalculator.ui.roundinput.RoundInputScreen
 import com.sanjeeb.marriagecalculator.ui.scoreboard.ScoreboardScreen
 import com.sanjeeb.marriagecalculator.ui.splash.SplashScreen
+import com.sanjeeb.marriagecalculator.ui.friend.FriendScreen
 
 @Composable
 fun MarriageNavGraph(
@@ -27,7 +28,7 @@ fun MarriageNavGraph(
         composable(Screen.Splash.route) {
             SplashScreen(
                 onSplashComplete = {
-                    val nextRoute = if (sessionManager.isLoggedIn()) {
+                    val nextRoute = if (sessionManager.isLoggedIn() || sessionManager.isGuestMode()) {
                         Screen.Dashboard.route
                     } else {
                         Screen.Login.route
@@ -54,7 +55,8 @@ fun MarriageNavGraph(
                 onNewGame = { navController.navigate(Screen.GameSetup.route) },
                 onResumeGame = { gameSetId ->
                     navController.navigate(Screen.PlayGame.createRoute(gameSetId))
-                }
+                },
+                onFriends = { navController.navigate(Screen.Friend.route) }
             )
         }
 
@@ -110,6 +112,12 @@ fun MarriageNavGraph(
             val gameSetId = backStackEntry.arguments?.getString("gameSetId") ?: return@composable
             ScoreboardScreen(
                 gameSetId = gameSetId,
+                onBack = { navController.popBackStack() }
+            )
+        }
+
+        composable(Screen.Friend.route) {
+            FriendScreen(
                 onBack = { navController.popBackStack() }
             )
         }

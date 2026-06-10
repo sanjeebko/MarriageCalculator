@@ -60,4 +60,38 @@ class LoginViewModel @Inject constructor(
             }
         }
     }
+
+    fun loginWithGoogle(idToken: String) {
+        _uiState.value = LoginUiState.Loading
+        viewModelScope.launch {
+            sessionManager.saveSession(idToken, User(userId = "google-temp", displayName = "Google User"))
+            when (val result = userRepository.login()) {
+                is ApiResult.Success -> {
+                    sessionManager.saveSession(idToken, result.data)
+                    _uiState.value = LoginUiState.Success(result.data)
+                }
+                is ApiResult.Error -> {
+                    sessionManager.clearSession()
+                    _uiState.value = LoginUiState.Error(result.message)
+                }
+                is ApiResult.Loading -> {
+                    _uiState.value = LoginUiState.Loading
+                }
+            }
+        }
+    }
+
+    fun loginAsGuest() {
+        _uiState.value = LoginUiState.Loading
+        viewModelScope.launch {
+            val guestUser = User(
+                id = "guest-id",
+                userId = "guest-id",
+                displayName = "Guest User",
+                email = "guest@marriagecalculator.local"
+            )
+            sessionManager.saveSession("guest-token", guestUser)
+            _uiState.value = LoginUiState.Success(guestUser)
+        }
+    }
 }

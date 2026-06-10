@@ -12,6 +12,7 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.WifiOff
+import androidx.compose.material.icons.filled.People
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -39,6 +40,7 @@ import com.sanjeeb.marriagecalculator.ui.components.MetallicRedRim
 fun DashboardScreen(
     onNewGame: () -> Unit,
     onResumeGame: (String) -> Unit,
+    onFriends: () -> Unit,
     viewModel: DashboardViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
@@ -113,6 +115,26 @@ fun DashboardScreen(
                     )
                 }
             )
+
+            if (!uiState.isOfflineMode) {
+                Spacer(modifier = Modifier.height(16.dp))
+                MetallicButton(
+                    onClick = onFriends,
+                    text = "Friends & Social",
+                    rimColors = listOf(GoldAccent, Color(0xFF6A5415)),
+                    faceColors = listOf(Color(0xFFFFEA9F), Color(0xFFD4AF37)),
+                    textColor = Color(0xFF1E1402),
+                    modifier = Modifier.height(60.dp),
+                    leadingIcon = {
+                        Icon(
+                            imageVector = Icons.Default.People,
+                            contentDescription = null,
+                            tint = Color(0xFF1E1402),
+                            modifier = Modifier.size(24.dp)
+                        )
+                    }
+                )
+            }
 
             Spacer(modifier = Modifier.height(24.dp))
 

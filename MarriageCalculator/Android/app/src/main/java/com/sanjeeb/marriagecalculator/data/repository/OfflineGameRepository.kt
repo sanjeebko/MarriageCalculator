@@ -33,6 +33,12 @@ class OfflineGameRepository @Inject constructor(
         return playerDao.insert(entity).toInt()
     }
 
+    suspend fun updatePlayerEmailAndName(playerId: Int, email: String, name: String) {
+        val player = playerDao.getById(playerId) ?: return
+        val updated = player.copy(email = email, name = name, isGuest = false)
+        playerDao.insert(updated)
+    }
+
     suspend fun createGuestPlayers(names: List<String>): List<Int> {
         val entities = names.map { PlayerEntity(name = it, isGuest = true) }
         return playerDao.insertAll(entities).map { it.toInt() }

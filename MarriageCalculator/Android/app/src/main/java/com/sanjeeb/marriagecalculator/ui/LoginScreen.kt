@@ -1,5 +1,6 @@
 package com.sanjeeb.marriagecalculator.ui
 
+import android.widget.Toast
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -15,6 +16,7 @@ import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
@@ -25,9 +27,15 @@ import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.credentials.CredentialManager
+import androidx.credentials.GetCredentialRequest
+import androidx.credentials.CustomCredential
+import com.google.android.libraries.identity.googleid.GetGoogleIdOption
+import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.sanjeeb.marriagecalculator.R
 import com.sanjeeb.marriagecalculator.ui.components.MetallicButton
+import kotlinx.coroutines.launch
 
 // Metallic Noir Color Palette
 val MetalGold = Color(0xFFD4AF37)
@@ -46,6 +54,9 @@ fun LoginScreen(
 ) {
     val uiState by viewModel.uiState.collectAsState()
     var username by remember { mutableStateOf("sanjeeb") }
+    val context = LocalContext.current
+    val coroutineScope = rememberCoroutineScope()
+    val credentialManager = CredentialManager.create(context)
 
     LaunchedEffect(uiState) {
         if (uiState is LoginUiState.Success) {
@@ -77,14 +88,14 @@ fun LoginScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .scale(1.5f)
-                    .padding(bottom = 60.dp) // adjusted to make room for input
+                    .padding(bottom = 40.dp) // adjusted to make room for input
             )
 
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = 32.dp),
-                verticalArrangement = Arrangement.spacedBy(20.dp),
+                verticalArrangement = Arrangement.spacedBy(14.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 // Username Input Field (Glossy dark container, Gold highlight)
@@ -110,22 +121,73 @@ fun LoginScreen(
 
                 // Google Button (Polished Silver Bezel)
                 MetallicButton(
-                    onClick = { viewModel.loginWithMockToken(username) },
+                    onClick = {
+                        val googleIdOption = GetGoogleIdOption.Builder()
+                            .setFilterByAuthorizedAccounts(false)
+                            .setServerClientId("721245084920-mockserverid.apps.googleusercontent.com")
+                            .setAutoSelectEnabled(false)
+                            .build()
+
+                        val request = GetCredentialRequest.Builder()
+                            .addCredentialOption(googleIdOption)
+                            .build()
+
+                        coroutineScope.launch {
+                            try {
+                                val result = credentialManager.getCredential(
+                                    context = context,
+                                    request = request
+                                )
+                                val credential = result.credential
+                                if (credential is CustomCredential && credential.type == GoogleIdTokenCredential.TYPE_GOOGLE_ID_TOKEN_CREDENTIAL) {
+                                    val googleIdTokenCredential = GoogleIdTokenCredential.createFrom(credential.data)
+                                    viewModel.loginWithGoogle(googleIdTokenCredential.idToken)
+                                } else {
+                                    Toast.makeText(context, "Unsupported auth credential", Toast.LENGTH_SHORT).show()
+                                }
+                            } catch (e: Exception) {
+                                Toast.makeText(context, "Sign-in error: ${e.message}. Using Mock Login.", Toast.LENGTH_LONG).show()
+                                viewModel.loginWithMockToken(username)
+                            }
+                        }
+                    },
                     text = "Continue with Google",
                     rimColors = listOf(Color(0xFFFFFFFF), Color(0xFF606060)),
                     faceColors = listOf(Color(0xFFFFFFFF), Color(0xFFDDDDDD)),
                     textColor = Color(0xFF333333),
-                    modifier = Modifier.height(72.dp),
+                    modifier = Modifier.height(64.dp),
                     isLoading = uiState is LoginUiState.Loading,
                     leadingIcon = {
                         Image(
                             painter = painterResource(id = R.drawable.ic_google_logo),
                             contentDescription = null,
                             modifier = Modifier
-                                .size(28.dp)
-                                .shadow(4.dp, shape = RoundedCornerShape(4.dp))
+                                .size(24.dp)
+                                .shadow(2.dp, shape = RoundedCornerShape(4.dp))
                         )
                     }
+                )
+
+                // Developer Mock Sign-In
+                MetallicButton(
+                    onClick = { viewModel.loginWithMockToken(username) },
+                    text = "Developer Mock Sign-In",
+                    rimColors = listOf(MetalGold, Color(0xFF6A5415)),
+                    faceColors = listOf(Color(0xFFFFEA9F), Color(0xFFD4AF37)),
+                    textColor = Color(0xFF1E1402),
+                    modifier = Modifier.height(52.dp),
+                    isLoading = uiState is LoginUiState.Loading
+                )
+
+                // Continue as Guest (Offline)
+                MetallicButton(
+                    onClick = { viewModel.loginAsGuest() },
+                    rimColors = listOf(Color(0xFF888888), Color(0xFF333333)),
+                    faceColors = listOf(Color(0xFF555555), Color(0xFF222222)),
+                    textColor = Color.White,
+                    text = "Continue as Guest (Offline)",
+                    modifier = Modifier.height(52.dp),
+                    isLoading = uiState is LoginUiState.Loading
                 )
 
                 if (uiState is LoginUiState.Error) {
@@ -135,7 +197,7 @@ fun LoginScreen(
                         fontSize = 14.sp,
                         fontWeight = FontWeight.Bold,
                         textAlign = TextAlign.Center,
-                        modifier = Modifier.padding(top = 8.dp)
+                        modifier = Modifier.padding(top = 4.dp)
                     )
                 }
 

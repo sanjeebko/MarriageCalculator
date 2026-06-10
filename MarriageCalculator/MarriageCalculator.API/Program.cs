@@ -103,6 +103,7 @@ builder.Services.AddScoped<IGameSettingsRepository, GameSettingsRepository>();
 builder.Services.AddScoped<IMarriageGameSetRepository, MarriageGameSetRepository>();
 builder.Services.AddScoped<IMarriageGameRepository, MarriageGameRepository>();
 builder.Services.AddScoped<IDatabaseRepository, DatabaseRepository>();
+builder.Services.AddScoped<IFriendshipRepository, FriendshipRepository>();
 
 // Register services
 builder.Services.AddScoped<IUserService, UserService>();
@@ -111,6 +112,7 @@ builder.Services.AddScoped<IGameSettingsService, GameSettingsService>();
 builder.Services.AddScoped<IMarriageGameSetService, MarriageGameSetService>();
 builder.Services.AddScoped<IMarriageGameService, MarriageGameService>();
 builder.Services.AddScoped<IDatabaseService, DatabaseService>();
+builder.Services.AddScoped<IFriendshipService, FriendshipService>();
 
 // Register existing services
 builder.Services.AddScoped<IMarriageGameServices, MarriageGameServices>();

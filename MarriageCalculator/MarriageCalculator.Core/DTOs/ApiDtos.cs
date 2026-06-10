@@ -86,6 +86,7 @@ public class MarriageGameSetDto
     public DateTime Created { get; set; }
     public bool IsActive { get; set; }
     public string GameSettingsId { get; set; } = string.Empty;
+    public List<string> PlayerIds { get; set; } = [];
 }
 
 public class CreateMarriageGameSetDto
@@ -93,6 +94,7 @@ public class CreateMarriageGameSetDto
     public string HostUserId { get; set; } = string.Empty;
     public string Name { get; set; } = string.Empty;
     public string GameSettingsId { get; set; } = string.Empty;
+    public List<string> PlayerIds { get; set; } = [];
 }
 
 public class MarriageGameDto
@@ -235,4 +237,32 @@ public class PlayerScoreResultDto
     public int Maal { get; set; }
     public int Score { get; set; }
     public double MoneyWon { get; set; }
+}
+
+public class FriendshipDto
+{
+    public string Id { get; set; } = string.Empty;
+    public string RequesterUserId { get; set; } = string.Empty;
+    public string RequesterName { get; set; } = string.Empty;
+    public string RequesterEmail { get; set; } = string.Empty;
+    public string ReceiverUserId { get; set; } = string.Empty;
+    public string ReceiverName { get; set; } = string.Empty;
+    public string ReceiverEmail { get; set; } = string.Empty;
+    public string Status { get; set; } = string.Empty;
+    public DateTime CreatedAt { get; set; }
+}
+
+public class SendFriendRequestDto
+{
+    public string ReceiverEmailOrUsername { get; set; } = string.Empty;
+}
+
+public class RespondFriendRequestDto
+{
+    public bool Accept { get; set; }
+}
+
+public class TransferHostDto
+{
+    public string NewHostUserId { get; set; } = string.Empty;
 }

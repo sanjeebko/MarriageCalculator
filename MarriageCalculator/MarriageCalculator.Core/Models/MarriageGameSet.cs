@@ -20,6 +20,9 @@ public class MarriageGameSet
     [BsonRepresentation(BsonType.ObjectId)]
     public string GameSettingsId { get; set; } = string.Empty;
 
+    [BsonRepresentation(BsonType.ObjectId)]
+    public List<string> PlayerIds { get; set; } = [];
+
     [BsonIgnore]
     public GameSettings GameSettings { get; set; } = GameSettings.Default();
 

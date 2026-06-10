@@ -29,7 +29,8 @@ public class MarriageGameSetsController : ControllerBase
         try
         {
             var hostUserId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? string.Empty;
-            var gameSets = await _gameSetService.GetAllGameSetsAsync(hostUserId);
+            var email = User.FindFirst(ClaimTypes.Email)?.Value ?? string.Empty;
+            var gameSets = await _gameSetService.GetAllGameSetsAsync(hostUserId, email);
             return Ok(gameSets);
         }
         catch (Exception ex)
@@ -48,7 +49,8 @@ public class MarriageGameSetsController : ControllerBase
         try
         {
             var hostUserId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? string.Empty;
-            var gameSet = await _gameSetService.GetGameSetByIdAsync(id, hostUserId);
+            var email = User.FindFirst(ClaimTypes.Email)?.Value ?? string.Empty;
+            var gameSet = await _gameSetService.GetGameSetByIdAsync(id, hostUserId, email);
             if (gameSet == null)
             {
                 return NotFound($"Marriage game set with ID {id} not found");
@@ -165,6 +167,39 @@ public class MarriageGameSetsController : ControllerBase
         {
             _logger.LogError(ex, "Error deleting marriage game set with ID {GameSetId}", id);
             return StatusCode(500, "An error occurred while deleting the marriage game set");
+        }
+    }
+
+    /// <summary>
+    /// Transfer host ownership of a game set to another user
+    /// </summary>
+    [HttpPost("{id}/transfer-host")]
+    public async Task<ActionResult<MarriageGameSetDto>> TransferHost(string id, [FromBody] TransferHostDto transferDto)
+    {
+        try
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
+            var hostUserId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? string.Empty;
+            var result = await _gameSetService.TransferHostAsync(id, hostUserId, transferDto.NewHostUserId);
+            if (result == null)
+            {
+                return NotFound($"Marriage game set with ID {id} not found");
+            }
+
+            return Ok(result);
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            return Forbid(ex.Message);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error transferring host of game set {GameSetId} to user {NewHostUserId}", id, transferDto.NewHostUserId);
+            return StatusCode(500, "An error occurred while transferring host ownership.");
         }
     }
 }

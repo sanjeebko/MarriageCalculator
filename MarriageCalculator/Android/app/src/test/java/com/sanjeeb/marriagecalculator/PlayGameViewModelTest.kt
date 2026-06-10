@@ -1,0 +1,107 @@
+package com.sanjeeb.marriagecalculator
+
+import com.sanjeeb.marriagecalculator.data.model.*
+import com.sanjeeb.marriagecalculator.data.repository.*
+import com.sanjeeb.marriagecalculator.ui.playgame.PlayGameViewModel
+import io.mockk.*
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.test.*
+import org.junit.After
+import org.junit.Assert.*
+import org.junit.Before
+import org.junit.Test
+
+@OptIn(ExperimentalCoroutinesApi::class)
+class PlayGameViewModelTest {
+
+    private val testDispatcher = UnconfinedTestDispatcher()
+
+    private val offlineGameRepository: OfflineGameRepository = mockk(relaxed = true)
+    private val gameSetRepository: GameSetRepository = mockk(relaxed = true)
+    private val playerRepository: PlayerRepository = mockk(relaxed = true)
+    private val friendRepository: FriendRepository = mockk(relaxed = true)
+    private val sessionManager: SessionManager = mockk(relaxed = true)
+
+    private lateinit var viewModel: PlayGameViewModel
+
+    @Before
+    fun setup() {
+        Dispatchers.setMain(testDispatcher)
+        viewModel = PlayGameViewModel(
+            offlineGameRepository,
+            gameSetRepository,
+            playerRepository,
+            friendRepository,
+            sessionManager
+        )
+    }
+
+    @After
+    fun tearDown() {
+        Dispatchers.resetMain()
+    }
+
+    @Test
+    fun `loadGame online sets host status to true when current user is host`() = runTest {
+        val gameSetId = "online-set-id"
+        val loggedInUser = User(id = "user-host-id", userId = "user-host-id", displayName = "Host User")
+        
+        val gameSet = MarriageGameSet(
+            id = gameSetId,
+            hostUserId = "user-host-id",
+            name = "Test Online Game"
+        )
+
+        every { sessionManager.isOnlineMode() } returns true
+        every { sessionManager.getUserProfile() } returns loggedInUser
+        coEvery { gameSetRepository.getGameSet(gameSetId) } returns ApiResult.Success(gameSet)
+        coEvery { friendRepository.getFriends() } returns ApiResult.Success(emptyList())
+
+        viewModel.loadGame(gameSetId)
+
+        val state = viewModel.uiState.value
+        assertEquals("Test Online Game", state.gameName)
+        assertTrue(state.isOnlineMode)
+        assertTrue(state.isHost)
+    }
+
+    @Test
+    fun `loadGame online sets host status to false when current user is not host`() = runTest {
+        val gameSetId = "online-set-id"
+        val loggedInUser = User(id = "user-guest-id", userId = "user-guest-id", displayName = "Guest User")
+        
+        val gameSet = MarriageGameSet(
+            id = gameSetId,
+            hostUserId = "user-host-id",
+            name = "Test Online Game"
+        )
+
+        every { sessionManager.isOnlineMode() } returns true
+        every { sessionManager.getUserProfile() } returns loggedInUser
+        coEvery { gameSetRepository.getGameSet(gameSetId) } returns ApiResult.Success(gameSet)
+        coEvery { friendRepository.getFriends() } returns ApiResult.Success(emptyList())
+
+        viewModel.loadGame(gameSetId)
+
+        val state = viewModel.uiState.value
+        assertEquals("Test Online Game", state.gameName)
+        assertTrue(state.isOnlineMode)
+        assertFalse(state.isHost)
+    }
+
+    @Test
+    fun `loadGame offline sets host status to true`() = runTest {
+        val gameSetId = "123"
+
+        every { sessionManager.isOnlineMode() } returns false
+        coEvery { offlineGameRepository.getGameSet(123) } returns mockk(relaxed = true)
+        coEvery { offlineGameRepository.getGameSetPlayers(123) } returns emptyList()
+
+        viewModel.loadGame(gameSetId)
+
+        val state = viewModel.uiState.value
+        assertFalse(state.isOnlineMode)
+        assertTrue(state.isHost) // offline modes default to host true
+    }
+}

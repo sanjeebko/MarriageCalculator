@@ -42,6 +42,7 @@ class AuthIntegrationTests {
         every { context.getSharedPreferences("user_session", Context.MODE_PRIVATE) } returns sharedPreferences
         every { sharedPreferences.edit() } returns editor
         every { editor.putString(any(), any()) } returns editor
+        every { editor.putBoolean(any(), any()) } returns editor
         every { editor.clear() } returns editor
 
         sessionManager = SessionManager(context, gson)

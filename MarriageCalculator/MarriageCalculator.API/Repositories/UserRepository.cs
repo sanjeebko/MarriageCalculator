@@ -30,6 +30,17 @@ public class UserRepository : IUserRepository
         return await _collection.Find(u => u.UserId == userId).FirstOrDefaultAsync();
     }
 
+    public async Task<User?> GetByEmailAsync(string email)
+    {
+        return await _collection.Find(u => u.Email.ToLower() == email.ToLower()).FirstOrDefaultAsync();
+    }
+
+    public async Task<IEnumerable<User>> SearchUsersAsync(string query)
+    {
+        var lowerQuery = query.ToLower();
+        return await _collection.Find(u => u.DisplayName.ToLower().Contains(lowerQuery) || u.Email.ToLower().Contains(lowerQuery)).ToListAsync();
+    }
+
     public async Task<User> CreateAsync(User user)
     {
         await _collection.InsertOneAsync(user);

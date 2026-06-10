@@ -23,6 +23,11 @@ public class PlayerRepository : IPlayerRepository
         return await _collection.Find(p => p.Id == id && !p.Deleted).FirstOrDefaultAsync();
     }
 
+    public async Task<IEnumerable<Player>> GetPlayersByEmailAsync(string email)
+    {
+        return await _collection.Find(p => p.Email.ToLower() == email.ToLower() && !p.Deleted).ToListAsync();
+    }
+
     public async Task<Player> CreateAsync(Player player)
     {
         await _collection.InsertOneAsync(player);

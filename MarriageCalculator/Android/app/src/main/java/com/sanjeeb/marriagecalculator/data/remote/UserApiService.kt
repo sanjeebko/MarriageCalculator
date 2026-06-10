@@ -16,4 +16,7 @@ interface UserApiService {
 
     @GET("Users/uid/{userId}")
     suspend fun getUserByUid(@Path("userId") userId: String): Response<User>
+
+    @GET("Users/search")
+    suspend fun searchUsers(@Query("query") query: String): Response<List<User>>
 }

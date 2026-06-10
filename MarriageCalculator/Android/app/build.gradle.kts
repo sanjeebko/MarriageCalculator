@@ -101,6 +101,11 @@ dependencies {
     // Image Loading
     implementation(libs.coil.compose)
 
+    // Google Sign-In & Credentials
+    implementation(libs.androidx.credentials)
+    implementation(libs.androidx.credentials.play.services)
+    implementation(libs.googleid)
+
     // Testing
     testImplementation(libs.junit)
     testImplementation(libs.coroutines.test)

@@ -35,6 +35,12 @@ public class UserService : IUserService
         return user != null ? MapToDto(user) : null;
     }
 
+    public async Task<IEnumerable<UserDto>> SearchUsersAsync(string query)
+    {
+        var users = await _userRepository.SearchUsersAsync(query);
+        return users.Select(MapToDto);
+    }
+
     public async Task<UserDto> CreateUserAsync(CreateUserDto createUserDto)
     {
         var user = new User

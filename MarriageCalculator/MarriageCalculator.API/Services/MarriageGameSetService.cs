@@ -4,20 +4,52 @@ using MarriageCalculator.Core.Models;
 
 namespace MarriageCalculator.API.Services;
 
-public class MarriageGameSetService(IMarriageGameSetRepository gameSetRepository) : IMarriageGameSetService
+public class MarriageGameSetService : IMarriageGameSetService
 {
-    private readonly IMarriageGameSetRepository _gameSetRepository = gameSetRepository;
+    private readonly IMarriageGameSetRepository _gameSetRepository;
+    private readonly IPlayerRepository _playerRepository;
 
-    public async Task<IEnumerable<MarriageGameSetDto>> GetAllGameSetsAsync(string hostUserId)
+    public MarriageGameSetService(IMarriageGameSetRepository gameSetRepository, IPlayerRepository playerRepository)
     {
-        var gameSets = await _gameSetRepository.GetAllByHostUserIdAsync(hostUserId);
+        _gameSetRepository = gameSetRepository;
+        _playerRepository = playerRepository;
+    }
+
+    public async Task<IEnumerable<MarriageGameSetDto>> GetAllGameSetsAsync(string hostUserId, string email)
+    {
+        var playerIds = new List<string>();
+        if (!string.IsNullOrEmpty(email))
+        {
+            var players = await _playerRepository.GetPlayersByEmailAsync(email);
+            playerIds.AddRange(players.Select(p => p.Id));
+        }
+
+        var gameSets = await _gameSetRepository.GetAllForUserAsync(hostUserId, playerIds);
         return gameSets.Select(MapToDto);
     }
 
-    public async Task<MarriageGameSetDto?> GetGameSetByIdAsync(string id, string hostUserId)
+    public async Task<MarriageGameSetDto?> GetGameSetByIdAsync(string id, string hostUserId, string email)
     {
-        var gameSet = await _gameSetRepository.GetByIdAsync(id, hostUserId);
-        return gameSet != null ? MapToDto(gameSet) : null;
+        var gameSet = await _gameSetRepository.GetByIdRawAsync(id);
+        if (gameSet == null) return null;
+
+        // Verify authorization: is owner/host or participant player
+        if (gameSet.HostUserId == hostUserId)
+        {
+            return MapToDto(gameSet);
+        }
+
+        if (!string.IsNullOrEmpty(email))
+        {
+            var players = await _playerRepository.GetPlayersByEmailAsync(email);
+            var playerIds = players.Select(p => p.Id).ToList();
+            if (gameSet.PlayerIds.Any(pId => playerIds.Contains(pId)))
+            {
+                return MapToDto(gameSet);
+            }
+        }
+
+        return null; // Not authorized or not found
     }
 
     public async Task<MarriageGameSetDto> CreateGameSetAsync(CreateMarriageGameSetDto createDto)
@@ -29,7 +61,8 @@ public class MarriageGameSetService(IMarriageGameSetRepository gameSetRepository
             GameSettingsId = createDto.GameSettingsId,
             Created = DateTime.UtcNow,
             LastPlayed = DateTime.UtcNow,
-            IsActive = true
+            IsActive = true,
+            PlayerIds = createDto.PlayerIds
         };
 
         var createdGameSet = await _gameSetRepository.CreateAsync(gameSet);
@@ -43,6 +76,7 @@ public class MarriageGameSetService(IMarriageGameSetRepository gameSetRepository
             HostUserId = updateDto.HostUserId,
             Name = updateDto.Name,
             GameSettingsId = updateDto.GameSettingsId,
+            PlayerIds = updateDto.PlayerIds,
             LastPlayed = DateTime.UtcNow
         };
 
@@ -66,6 +100,23 @@ public class MarriageGameSetService(IMarriageGameSetRepository gameSetRepository
         return gameSet != null ? MapToDto(gameSet) : null;
     }
 
+    public async Task<MarriageGameSetDto?> TransferHostAsync(string id, string currentHostUserId, string newHostUserId)
+    {
+        var gameSet = await _gameSetRepository.GetByIdRawAsync(id);
+        if (gameSet == null) return null;
+
+        if (gameSet.HostUserId != currentHostUserId)
+        {
+            throw new UnauthorizedAccessException("Only the current host can transfer game set ownership.");
+        }
+
+        gameSet.HostUserId = newHostUserId;
+        gameSet.LastPlayed = DateTime.UtcNow;
+
+        var updated = await _gameSetRepository.UpdateAsync(id, gameSet, currentHostUserId);
+        return updated != null ? MapToDto(updated) : null;
+    }
+
     private static MarriageGameSetDto MapToDto(MarriageGameSet gameSet)
     {
         return new MarriageGameSetDto
@@ -76,7 +127,8 @@ public class MarriageGameSetService(IMarriageGameSetRepository gameSetRepository
             LastPlayed = gameSet.LastPlayed,
             Created = gameSet.Created,
             IsActive = gameSet.IsActive,
-            GameSettingsId = gameSet.GameSettingsId
+            GameSettingsId = gameSet.GameSettingsId,
+            PlayerIds = gameSet.PlayerIds
         };
     }
 }

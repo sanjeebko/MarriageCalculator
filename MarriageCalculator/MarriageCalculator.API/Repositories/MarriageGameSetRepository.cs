@@ -20,9 +20,21 @@ public class MarriageGameSetRepository : IMarriageGameSetRepository
             .ToListAsync();
     }
 
+    public async Task<IEnumerable<MarriageGameSet>> GetAllForUserAsync(string userId, List<string> playerIds)
+    {
+        return await _collection.Find(gs => gs.HostUserId == userId || gs.PlayerIds.Any(id => playerIds.Contains(id)))
+            .SortByDescending(gs => gs.Created)
+            .ToListAsync();
+    }
+
     public async Task<MarriageGameSet?> GetByIdAsync(string id, string hostUserId)
     {
         return await _collection.Find(gs => gs.Id == id && gs.HostUserId == hostUserId).FirstOrDefaultAsync();
+    }
+
+    public async Task<MarriageGameSet?> GetByIdRawAsync(string id)
+    {
+        return await _collection.Find(gs => gs.Id == id).FirstOrDefaultAsync();
     }
 
     public async Task<MarriageGameSet> CreateAsync(MarriageGameSet gameSet)
@@ -37,7 +49,9 @@ public class MarriageGameSetRepository : IMarriageGameSetRepository
             .Set(gs => gs.Name, gameSet.Name)
             .Set(gs => gs.LastPlayed, gameSet.LastPlayed)
             .Set(gs => gs.IsActive, gameSet.IsActive)
-            .Set(gs => gs.GameSettingsId, gameSet.GameSettingsId);
+            .Set(gs => gs.GameSettingsId, gameSet.GameSettingsId)
+            .Set(gs => gs.PlayerIds, gameSet.PlayerIds)
+            .Set(gs => gs.HostUserId, gameSet.HostUserId);
 
         return await _collection.FindOneAndUpdateAsync(
             gs => gs.Id == id && gs.HostUserId == hostUserId,

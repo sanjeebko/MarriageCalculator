@@ -46,6 +46,29 @@ public class UsersController : ControllerBase
     }
 
     /// <summary>
+    /// Search registered users by email or display name
+    /// </summary>
+    [HttpGet("search")]
+    [Authorize]
+    public async Task<ActionResult<IEnumerable<UserDto>>> SearchUsers([FromQuery] string query)
+    {
+        try
+        {
+            if (string.IsNullOrWhiteSpace(query))
+            {
+                return BadRequest("Query parameter is required.");
+            }
+            var users = await _userService.SearchUsersAsync(query);
+            return Ok(users);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error searching users with query {Query}", query);
+            return StatusCode(500, "An error occurred while searching users");
+        }
+    }
+
+    /// <summary>
     /// Get all registered users
     /// </summary>
     [HttpGet]

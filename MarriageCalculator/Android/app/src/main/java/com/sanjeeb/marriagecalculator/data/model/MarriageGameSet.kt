@@ -4,6 +4,7 @@ import com.google.gson.annotations.SerializedName
 
 data class MarriageGameSet(
     @SerializedName("id") val id: String = "",
+    @SerializedName("hostUserId") val hostUserId: String = "",
     @SerializedName("name") val name: String = "",
     @SerializedName("lastPlayed") val lastPlayed: String = "",
     @SerializedName("created") val created: String = "",

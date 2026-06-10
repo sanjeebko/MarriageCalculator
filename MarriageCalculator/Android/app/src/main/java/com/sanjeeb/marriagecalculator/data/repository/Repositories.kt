@@ -39,6 +39,9 @@ class GameSetRepository @Inject constructor(
     suspend fun getGameSets(): ApiResult<List<MarriageGameSet>> = safeApiCall { api.getGameSets() }
     suspend fun getGameSet(id: String): ApiResult<MarriageGameSet> = safeApiCall { api.getGameSet(id) }
     suspend fun createGameSet(request: CreateGameSetRequest): ApiResult<MarriageGameSet> = safeApiCall { api.createGameSet(request) }
+    suspend fun transferHost(id: String, newHostUserId: String): ApiResult<Unit> = safeApiCall {
+        api.transferHost(id, TransferHostDto(newHostUserId))
+    }
 }
 
 internal suspend fun <T> safeApiCall(call: suspend () -> retrofit2.Response<T>): ApiResult<T> {

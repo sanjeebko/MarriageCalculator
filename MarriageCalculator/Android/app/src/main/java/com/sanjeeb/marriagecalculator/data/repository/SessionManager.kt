@@ -19,6 +19,7 @@ class SessionManager @Inject constructor(
         prefs.edit()
             .putString("auth_token", token)
             .putString("user_profile", gson.toJson(user))
+            .putBoolean("is_online_mode", token != "guest-token")
             .apply()
     }
 
@@ -40,6 +41,22 @@ class SessionManager @Inject constructor(
     }
 
     fun isLoggedIn(): Boolean {
-        return getAuthToken() != null
+        return getAuthToken() != null && getAuthToken() != "guest-token"
+    }
+
+    fun isGuestMode(): Boolean {
+        return getAuthToken() == "guest-token"
+    }
+
+    fun setOnlineMode(online: Boolean) {
+        prefs.edit().putBoolean("is_online_mode", online).apply()
+        if (!online) {
+            // Logged out of online or switched to guest
+            prefs.edit().putString("auth_token", "guest-token").apply()
+        }
+    }
+
+    fun isOnlineMode(): Boolean {
+        return prefs.getBoolean("is_online_mode", false) && isLoggedIn()
     }
 }

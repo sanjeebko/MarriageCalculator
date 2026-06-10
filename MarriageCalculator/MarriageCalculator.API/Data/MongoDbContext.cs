@@ -18,6 +18,9 @@ public class MongoDbContext
     public IMongoCollection<User> Users =>
         _database.GetCollection<User>("users");
 
+    public IMongoCollection<Friendship> Friendships =>
+        _database.GetCollection<Friendship>("friendships");
+
     public IMongoCollection<GameSettings> GameSettings =>
         _database.GetCollection<GameSettings>("gameSettings");
 
