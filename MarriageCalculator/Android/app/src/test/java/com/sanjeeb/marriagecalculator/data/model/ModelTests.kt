@@ -7,7 +7,7 @@ class PlayerTest {
     @Test
     fun `default player has empty fields`() {
         val player = Player()
-        assertEquals(0, player.id)
+        assertEquals("", player.id)
         assertEquals("", player.name)
         assertEquals("", player.email)
         assertFalse(player.deleted)
@@ -16,8 +16,8 @@ class PlayerTest {
 
     @Test
     fun `create player with values`() {
-        val player = Player(id = 1, name = "Ram", email = "ram@test.com", selected = true)
-        assertEquals(1, player.id)
+        val player = Player(id = "1", name = "Ram", email = "ram@test.com", selected = true)
+        assertEquals("1", player.id)
         assertEquals("Ram", player.name)
         assertEquals("ram@test.com", player.email)
         assertTrue(player.selected)
@@ -70,7 +70,7 @@ class MarriageGameSetTest {
     fun `default game set is active`() {
         val gameSet = MarriageGameSet()
         assertTrue(gameSet.isActive)
-        assertEquals(0, gameSet.id)
+        assertEquals("", gameSet.id)
     }
 }
 
@@ -89,7 +89,7 @@ class MarriageGameScoreTest {
     @Test
     fun `score with values`() {
         val score = MarriageGameScore(
-            playerId = 1,
+            playerId = "1",
             seen = true,
             maal = 15,
             winner = true,

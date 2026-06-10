@@ -2,7 +2,7 @@ namespace MarriageCalculator.Core.DTOs;
 
 public class PlayerDto
 {
-    public int Id { get; set; }
+    public string Id { get; set; } = string.Empty;
     public string Name { get; set; } = string.Empty;
     public string Email { get; set; } = string.Empty;
     public bool Deleted { get; set; }
@@ -20,9 +20,32 @@ public class UpdatePlayerDto
     public string Email { get; set; } = string.Empty;
 }
 
+public class UserDto
+{
+    public string Id { get; set; } = string.Empty;
+    public string UserId { get; set; } = string.Empty;
+    public string DisplayName { get; set; } = string.Empty;
+    public string Email { get; set; } = string.Empty;
+    public DateTime CreatedAt { get; set; }
+}
+
+public class CreateUserDto
+{
+    public string UserId { get; set; } = string.Empty;
+    public string DisplayName { get; set; } = string.Empty;
+    public string Email { get; set; } = string.Empty;
+}
+
+public class UpdateUserDto
+{
+    public string DisplayName { get; set; } = string.Empty;
+    public string Email { get; set; } = string.Empty;
+}
+
 public class GameSettingsDto
 {
-    public int Id { get; set; }
+    public string Id { get; set; } = string.Empty;
+    public string UserId { get; set; } = string.Empty;
     public bool Murder { get; set; }
     public bool Kidnap { get; set; }
     public int SeenPoint { get; set; }
@@ -39,6 +62,7 @@ public class GameSettingsDto
 
 public class CreateGameSettingsDto
 {
+    public string UserId { get; set; } = string.Empty;
     public bool Murder { get; set; }
     public bool Kidnap { get; set; }
     public int SeenPoint { get; set; }
@@ -55,27 +79,29 @@ public class CreateGameSettingsDto
 
 public class MarriageGameSetDto
 {
-    public int Id { get; set; }
+    public string Id { get; set; } = string.Empty;
+    public string HostUserId { get; set; } = string.Empty;
     public string Name { get; set; } = string.Empty;
     public DateTime LastPlayed { get; set; }
     public DateTime Created { get; set; }
     public bool IsActive { get; set; }
-    public int GameSettingsId { get; set; }
+    public string GameSettingsId { get; set; } = string.Empty;
 }
 
 public class CreateMarriageGameSetDto
 {
+    public string HostUserId { get; set; } = string.Empty;
     public string Name { get; set; } = string.Empty;
-    public int GameSettingsId { get; set; }
+    public string GameSettingsId { get; set; } = string.Empty;
 }
 
 public class MarriageGameDto
 {
-    public int Id { get; set; }
+    public string Id { get; set; } = string.Empty;
     public int Sequence { get; set; }
-    public int MarriageGameRoundId { get; set; }
-    public int WinnerId { get; set; }
-    public int DealerId { get; set; }
+    public string MarriageGameRoundId { get; set; } = string.Empty;
+    public string WinnerId { get; set; } = string.Empty;
+    public string DealerId { get; set; } = string.Empty;
     public int TotalMaal { get; set; }
     public bool ClosedRound { get; set; }
     public DateTime CreatedTime { get; set; }
@@ -84,33 +110,33 @@ public class MarriageGameDto
 public class CreateMarriageGameDto
 {
     public int Sequence { get; set; }
-    public int MarriageGameRoundId { get; set; }
-    public int WinnerId { get; set; }
-    public int DealerId { get; set; }
+    public string MarriageGameRoundId { get; set; } = string.Empty;
+    public string WinnerId { get; set; } = string.Empty;
+    public string DealerId { get; set; } = string.Empty;
     public int TotalMaal { get; set; }
     public bool ClosedRound { get; set; }
 }
 
 public class MarriageGameRoundDto
 {
-    public int Id { get; set; }
+    public string Id { get; set; } = string.Empty;
     public int Sequence { get; set; }
-    public int MarriageGameSetId { get; set; }
+    public string MarriageGameSetId { get; set; } = string.Empty;
     public bool Completed { get; set; }
 }
 
 public class CreateMarriageGameRoundDto
 {
     public int Sequence { get; set; }
-    public int MarriageGameSetId { get; set; }
+    public string MarriageGameSetId { get; set; } = string.Empty;
     public bool Completed { get; set; }
 }
 
 public class MarriageGameScoreDto
 {
-    public int Id { get; set; }
-    public int MarriageGameId { get; set; }
-    public int PlayerId { get; set; }
+    public string Id { get; set; } = string.Empty;
+    public string MarriageGameId { get; set; } = string.Empty;
+    public string PlayerId { get; set; } = string.Empty;
     public bool Seen { get; set; }
     public bool Playing { get; set; }
     public int Maal { get; set; }
@@ -125,8 +151,8 @@ public class MarriageGameScoreDto
 
 public class CreateMarriageGameScoreDto
 {
-    public int MarriageGameId { get; set; }
-    public int PlayerId { get; set; }
+    public string MarriageGameId { get; set; } = string.Empty;
+    public string PlayerId { get; set; } = string.Empty;
     public bool Seen { get; set; }
     public bool Playing { get; set; }
     public int Maal { get; set; }
@@ -141,14 +167,14 @@ public class CreateMarriageGameScoreDto
 
 public class MarriageGameSetPlayerDto
 {
-    public int MarriageGameSetId { get; set; }
-    public int PlayerId { get; set; }
+    public string MarriageGameSetId { get; set; } = string.Empty;
+    public string PlayerId { get; set; } = string.Empty;
 }
 
 public class CreateMarriageGameSetPlayerDto
 {
-    public int MarriageGameSetId { get; set; }
-    public int PlayerId { get; set; }
+    public string MarriageGameSetId { get; set; } = string.Empty;
+    public string PlayerId { get; set; } = string.Empty;
 }
 
 public class DatabaseInfoDto
@@ -177,13 +203,13 @@ public class ApiResponse
 public class CalculateScoreRequestDto
 {
     public GameSettingsDto Settings { get; set; } = new();
-    public int WinnerId { get; set; }
+    public string WinnerId { get; set; } = string.Empty;
     public List<PlayerScoreInputDto> PlayerScores { get; set; } = [];
 }
 
 public class PlayerScoreInputDto
 {
-    public int PlayerId { get; set; }
+    public string PlayerId { get; set; } = string.Empty;
     public string PlayerName { get; set; } = string.Empty;
     public bool Seen { get; set; }
     public bool Playing { get; set; } = true;
@@ -201,7 +227,7 @@ public class CalculateScoreResponseDto
 
 public class PlayerScoreResultDto
 {
-    public int PlayerId { get; set; }
+    public string PlayerId { get; set; } = string.Empty;
     public string PlayerName { get; set; } = string.Empty;
     public bool Seen { get; set; }
     public bool Winner { get; set; }

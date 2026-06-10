@@ -1,11 +1,14 @@
 using MarriageCalculator.Core.DTOs;
 using MarriageCalculator.API.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
 
 namespace MarriageCalculator.API.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
+[Authorize]
 public class GameSettingsController : ControllerBase
 {
     private readonly IGameSettingsService _gameSettingsService;
@@ -25,7 +28,8 @@ public class GameSettingsController : ControllerBase
     {
         try
         {
-            var settings = await _gameSettingsService.GetAllGameSettingsAsync();
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? string.Empty;
+            var settings = await _gameSettingsService.GetAllGameSettingsAsync(userId);
             return Ok(settings);
         }
         catch (Exception ex)
@@ -39,11 +43,12 @@ public class GameSettingsController : ControllerBase
     /// Get game settings by ID
     /// </summary>
     [HttpGet("{id}")]
-    public async Task<ActionResult<GameSettingsDto>> GetGameSettings(int id)
+    public async Task<ActionResult<GameSettingsDto>> GetGameSettings(string id)
     {
         try
         {
-            var settings = await _gameSettingsService.GetGameSettingsByIdAsync(id);
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? string.Empty;
+            var settings = await _gameSettingsService.GetGameSettingsByIdAsync(id, userId);
             if (settings == null)
             {
                 return NotFound($"Game settings with ID {id} not found");
@@ -71,6 +76,9 @@ public class GameSettingsController : ControllerBase
                 return BadRequest(ModelState);
             }
 
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? string.Empty;
+            createDto.UserId = userId; // Associate with logged-in user
+
             var settings = await _gameSettingsService.CreateGameSettingsAsync(createDto);
             return CreatedAtAction(nameof(GetGameSettings), new { id = settings.Id }, settings);
         }
@@ -85,7 +93,7 @@ public class GameSettingsController : ControllerBase
     /// Update existing game settings
     /// </summary>
     [HttpPut("{id}")]
-    public async Task<ActionResult<GameSettingsDto>> UpdateGameSettings(int id, [FromBody] CreateGameSettingsDto updateDto)
+    public async Task<ActionResult<GameSettingsDto>> UpdateGameSettings(string id, [FromBody] CreateGameSettingsDto updateDto)
     {
         try
         {
@@ -94,7 +102,10 @@ public class GameSettingsController : ControllerBase
                 return BadRequest(ModelState);
             }
 
-            var settings = await _gameSettingsService.UpdateGameSettingsAsync(id, updateDto);
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? string.Empty;
+            updateDto.UserId = userId; // Ensure ownership is maintained
+
+            var settings = await _gameSettingsService.UpdateGameSettingsAsync(id, updateDto, userId);
             if (settings == null)
             {
                 return NotFound($"Game settings with ID {id} not found");
@@ -113,11 +124,12 @@ public class GameSettingsController : ControllerBase
     /// Delete game settings
     /// </summary>
     [HttpDelete("{id}")]
-    public async Task<ActionResult> DeleteGameSettings(int id)
+    public async Task<ActionResult> DeleteGameSettings(string id)
     {
         try
         {
-            var deleted = await _gameSettingsService.DeleteGameSettingsAsync(id);
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? string.Empty;
+            var deleted = await _gameSettingsService.DeleteGameSettingsAsync(id, userId);
             if (!deleted)
             {
                 return NotFound($"Game settings with ID {id} not found");

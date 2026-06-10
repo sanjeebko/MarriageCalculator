@@ -61,6 +61,10 @@ class OfflineGameRepository @Inject constructor(
         return gameSetPlayerDao.getPlayersForGameSet(gameSetId).map { it.toDomainModel() }
     }
 
+    suspend fun getGameSet(gameSetId: Int): GameSetEntity? {
+        return gameSetDao.getById(gameSetId)
+    }
+
     suspend fun getGameSettings(settingsId: Int): GameSettings? {
         return gameSettingsDao.getById(settingsId)?.toDomainModel()
     }
@@ -123,9 +127,10 @@ data class RoundScoreData(
 // ── Mapping Extensions ──
 
 fun PlayerEntity.toDomainModel() = Player(
-    id = id,
+    id = id.toString(),
     name = name,
-    email = email
+    email = email,
+    photoUri = photoUri
 )
 
 fun GameSettings.toEntity() = GameSettingsEntity(
@@ -140,7 +145,7 @@ fun GameSettings.toEntity() = GameSettingsEntity(
 )
 
 fun GameSettingsEntity.toDomainModel() = GameSettings(
-    id = id,
+    id = id.toString(),
     murder = murder,
     kidnap = kidnap,
     seenPoint = seenPoint,

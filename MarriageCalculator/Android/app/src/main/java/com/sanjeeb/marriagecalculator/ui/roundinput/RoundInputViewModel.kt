@@ -6,6 +6,7 @@ import com.sanjeeb.marriagecalculator.data.model.GameSettings
 import com.sanjeeb.marriagecalculator.data.model.Player
 import com.sanjeeb.marriagecalculator.data.remote.*
 import com.sanjeeb.marriagecalculator.data.repository.ApiResult
+import com.sanjeeb.marriagecalculator.data.repository.OfflineGameRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -16,7 +17,8 @@ import javax.inject.Inject
 data class PlayerRoundState(
     val player: Player,
     val seen: Boolean = false,
-    val maal: Int = 0,
+    val seenPoints: Int = 0,
+    val unseenPoints: Int = 0,
     val duply: Boolean = false,
     val isWinner: Boolean = false,
     val isDealer: Boolean = false,
@@ -26,10 +28,11 @@ data class PlayerRoundState(
 )
 
 data class RoundInputUiState(
+    val gameSetId: String? = null,
     val playerStates: List<PlayerRoundState> = emptyList(),
     val settings: GameSettings = GameSettings.default(),
-    val winnerId: Int? = null,
-    val dealerId: Int? = null,
+    val winnerId: String? = null,
+    val dealerId: String? = null,
     val isLoading: Boolean = false,
     val error: String? = null,
     val submitted: Boolean = false,
@@ -38,7 +41,8 @@ data class RoundInputUiState(
 
 @HiltViewModel
 class RoundInputViewModel @Inject constructor(
-    private val scoringApi: ScoringApiService
+    private val scoringApi: ScoringApiService,
+    private val offlineGameRepository: OfflineGameRepository
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(RoundInputUiState())
@@ -51,12 +55,28 @@ class RoundInputViewModel @Inject constructor(
         )
     }
 
-    fun setWinner(playerId: Int) {
+    fun loadGameData(gameSetIdStr: String) {
+        viewModelScope.launch {
+            val gameSetId = gameSetIdStr.toIntOrNull() ?: return@launch
+            val players = offlineGameRepository.getGameSetPlayers(gameSetId)
+            val gameSetEntity = offlineGameRepository.getGameSet(gameSetId) ?: return@launch
+            val settings = offlineGameRepository.getGameSettings(gameSetEntity.settingsId) ?: GameSettings.default()
+
+            _uiState.value = _uiState.value.copy(
+                gameSetId = gameSetIdStr,
+                playerStates = players.map { PlayerRoundState(player = it) },
+                settings = settings
+            )
+        }
+    }
+
+    fun setWinner(playerId: String) {
         val current = _uiState.value
         val newStates = current.playerStates.map {
+            val isWinner = it.player.id == playerId
             it.copy(
-                isWinner = it.player.id == playerId,
-                seen = if (it.player.id == playerId) true else it.seen
+                isWinner = isWinner,
+                seen = if (isWinner) true else it.seen
             )
         }
         _uiState.value = current.copy(
@@ -66,7 +86,7 @@ class RoundInputViewModel @Inject constructor(
         calculatePreview()
     }
 
-    fun setDealer(playerId: Int) {
+    fun setDealer(playerId: String) {
         val current = _uiState.value
         val newStates = current.playerStates.map {
             it.copy(isDealer = it.player.id == playerId)
@@ -77,18 +97,22 @@ class RoundInputViewModel @Inject constructor(
         )
     }
 
-    fun toggleSeen(playerId: Int) {
+    fun toggleSeen(playerId: String) {
         val current = _uiState.value
         val newStates = current.playerStates.map {
             if (it.player.id == playerId && !it.isWinner) {
-                it.copy(seen = !it.seen)
+                val newSeen = !it.seen
+                it.copy(
+                    seen = newSeen,
+                    seenPoints = if (newSeen) it.seenPoints else 0
+                )
             } else it
         }
         _uiState.value = current.copy(playerStates = newStates)
         calculatePreview()
     }
 
-    fun toggleDuply(playerId: Int) {
+    fun toggleDuply(playerId: String) {
         val current = _uiState.value
         val newStates = current.playerStates.map {
             if (it.player.id == playerId) it.copy(duply = !it.duply) else it
@@ -97,10 +121,21 @@ class RoundInputViewModel @Inject constructor(
         calculatePreview()
     }
 
-    fun setMaal(playerId: Int, maal: Int) {
+    fun setSeenPoints(playerId: String, points: Int) {
+        val current = _uiState.value
+        val validatedPoints = points.coerceIn(0, 99)
+        val newStates = current.playerStates.map {
+            if (it.player.id == playerId) it.copy(seenPoints = validatedPoints) else it
+        }
+        _uiState.value = current.copy(playerStates = newStates)
+        calculatePreview()
+    }
+
+    fun setUnseenPoints(playerId: String, points: Int) {
+        // No longer used, but kept for compatibility or set to 0
         val current = _uiState.value
         val newStates = current.playerStates.map {
-            if (it.player.id == playerId) it.copy(maal = maal.coerceAtLeast(0)) else it
+            if (it.player.id == playerId) it.copy(unseenPoints = 0) else it
         }
         _uiState.value = current.copy(playerStates = newStates)
         calculatePreview()
@@ -117,7 +152,7 @@ class RoundInputViewModel @Inject constructor(
         if (winnerIdx < 0) return
 
         // Copy maal values and apply game mode
-        val maalValues = players.map { it.maal }.toMutableList()
+        val maalValues = players.map { if (it.seen) it.seenPoints else 0 }.toMutableList()
         val seenFlags = players.map { it.seen || it.isWinner }.toMutableList()
 
         if (settings.kidnap) {
@@ -181,12 +216,41 @@ class RoundInputViewModel @Inject constructor(
 
     fun submitRound() {
         val state = _uiState.value
-        if (state.winnerId == null) {
+        val gameSetIdStr = state.gameSetId ?: return
+        val gameSetId = gameSetIdStr.toIntOrNull() ?: return
+        val winnerId = state.winnerId?.toIntOrNull() ?: run {
             _uiState.value = state.copy(error = "Please select a winner")
             return
         }
-        // For now, mark as submitted (API integration later when online)
-        _uiState.value = state.copy(submitted = true, error = null)
+
+        viewModelScope.launch {
+            try {
+                val totalMaal = state.playerStates.sumOf { if (it.seen) it.seenPoints else 0 }
+
+                val scores = state.playerStates.map { ps ->
+                    val isPlayerWinner = ps.player.id == state.winnerId
+                    com.sanjeeb.marriagecalculator.data.repository.RoundScoreData(
+                        playerId = ps.player.id.toInt(),
+                        score = ps.previewScore,
+                        maal = if (ps.seen) ps.seenPoints else 0,
+                        isSeen = ps.seen || isPlayerWinner,
+                        isWinner = isPlayerWinner,
+                        isDublee = ps.duply
+                    )
+                }
+
+                offlineGameRepository.saveRound(
+                    gameSetId = gameSetId,
+                    winnerId = winnerId,
+                    totalMaal = totalMaal,
+                    playerScores = scores
+                )
+
+                _uiState.value = state.copy(submitted = true, error = null)
+            } catch (e: Exception) {
+                _uiState.value = state.copy(error = "Failed to save round: ${e.message}")
+            }
+        }
     }
 
     fun clearError() {

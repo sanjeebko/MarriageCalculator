@@ -1,59 +1,57 @@
 using MarriageCalculator.API.Data;
 using MarriageCalculator.Core.Models;
-using Microsoft.EntityFrameworkCore;
+using MongoDB.Driver;
 
 namespace MarriageCalculator.API.Repositories;
 
 public class PlayerRepository : IPlayerRepository
 {
-    private readonly MarriageCalculatorDbContext _context;
+    private readonly IMongoCollection<Player> _collection;
 
-    public PlayerRepository(MarriageCalculatorDbContext context)
+    public PlayerRepository(MongoDbContext context)
     {
-        _context = context;
+        _collection = context.Players;
     }
 
     public async Task<IEnumerable<Player>> GetAllAsync()
     {
-        return await _context.Players.Where(p => !p.Deleted).ToListAsync();
+        return await _collection.Find(p => !p.Deleted).ToListAsync();
     }
 
-    public async Task<Player?> GetByIdAsync(int id)
+    public async Task<Player?> GetByIdAsync(string id)
     {
-        return await _context.Players.FirstOrDefaultAsync(p => p.Id == id && !p.Deleted);
+        return await _collection.Find(p => p.Id == id && !p.Deleted).FirstOrDefaultAsync();
     }
 
     public async Task<Player> CreateAsync(Player player)
     {
-        _context.Players.Add(player);
-        await _context.SaveChangesAsync();
+        await _collection.InsertOneAsync(player);
         return player;
     }
 
-    public async Task<Player?> UpdateAsync(int id, Player player)
+    public async Task<Player?> UpdateAsync(string id, Player player)
     {
-        var existingPlayer = await GetByIdAsync(id);
-        if (existingPlayer == null) return null;
+        var update = Builders<Player>.Update
+            .Set(p => p.Name, player.Name)
+            .Set(p => p.Email, player.Email);
 
-        existingPlayer.Name = player.Name;
-        existingPlayer.Email = player.Email;
-        
-        await _context.SaveChangesAsync();
-        return existingPlayer;
+        var result = await _collection.FindOneAndUpdateAsync(
+            p => p.Id == id && !p.Deleted,
+            update,
+            new FindOneAndUpdateOptions<Player> { ReturnDocument = ReturnDocument.After });
+
+        return result;
     }
 
-    public async Task<bool> DeleteAsync(int id)
+    public async Task<bool> DeleteAsync(string id)
     {
-        var player = await GetByIdAsync(id);
-        if (player == null) return false;
-
-        player.Deleted = true; // Soft delete
-        await _context.SaveChangesAsync();
-        return true;
+        var update = Builders<Player>.Update.Set(p => p.Deleted, true);
+        var result = await _collection.UpdateOneAsync(p => p.Id == id && !p.Deleted, update);
+        return result.ModifiedCount > 0;
     }
 
-    public async Task<bool> ExistsAsync(int id)
+    public async Task<bool> ExistsAsync(string id)
     {
-        return await _context.Players.AnyAsync(p => p.Id == id && !p.Deleted);
+        return await _collection.CountDocumentsAsync(p => p.Id == id && !p.Deleted) > 0;
     }
 }

@@ -3,9 +3,9 @@ package com.sanjeeb.marriagecalculator.data.model
 import com.google.gson.annotations.SerializedName
 
 data class MarriageGameScore(
-    @SerializedName("id") val id: Int = 0,
-    @SerializedName("marriageGameId") val marriageGameId: Int = 0,
-    @SerializedName("playerId") val playerId: Int = 0,
+    @SerializedName("id") val id: String = "",
+    @SerializedName("marriageGameId") val marriageGameId: String = "",
+    @SerializedName("playerId") val playerId: String = "",
     @SerializedName("seen") val seen: Boolean = false,
     @SerializedName("playing") val playing: Boolean = false,
     @SerializedName("maal") val maal: Int = 0,

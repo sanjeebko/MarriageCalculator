@@ -39,7 +39,7 @@ public class PlayersController : ControllerBase
     /// Get player by ID
     /// </summary>
     [HttpGet("{id}")]
-    public async Task<ActionResult<PlayerDto>> GetPlayer(int id)
+    public async Task<ActionResult<PlayerDto>> GetPlayer(string id)
     {
         try
         {
@@ -85,7 +85,7 @@ public class PlayersController : ControllerBase
     /// Update an existing player
     /// </summary>
     [HttpPut("{id}")]
-    public async Task<ActionResult<PlayerDto>> UpdatePlayer(int id, [FromBody] UpdatePlayerDto updatePlayerDto)
+    public async Task<ActionResult<PlayerDto>> UpdatePlayer(string id, [FromBody] UpdatePlayerDto updatePlayerDto)
     {
         try
         {
@@ -113,7 +113,7 @@ public class PlayersController : ControllerBase
     /// Delete a player
     /// </summary>
     [HttpDelete("{id}")]
-    public async Task<ActionResult> DeletePlayer(int id)
+    public async Task<ActionResult> DeletePlayer(string id)
     {
         try
         {

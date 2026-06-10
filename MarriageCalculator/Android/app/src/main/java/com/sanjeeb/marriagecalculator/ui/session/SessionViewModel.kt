@@ -47,7 +47,7 @@ class SessionViewModel @Inject constructor() : ViewModel() {
         return true
     }
 
-    fun removePlayer(playerId: Int): Boolean {
+    fun removePlayer(playerId: String): Boolean {
         val state = _uiState.value
         if (state.players.size <= 2) return false
         _uiState.value = state.copy(
@@ -56,7 +56,7 @@ class SessionViewModel @Inject constructor() : ViewModel() {
         return true
     }
 
-    fun togglePlayerActive(playerId: Int) {
+    fun togglePlayerActive(playerId: String) {
         val state = _uiState.value
         _uiState.value = state.copy(
             players = state.players.map {
@@ -65,7 +65,7 @@ class SessionViewModel @Inject constructor() : ViewModel() {
         )
     }
 
-    fun swapSeats(playerId1: Int, playerId2: Int) {
+    fun swapSeats(playerId1: String, playerId2: String) {
         val state = _uiState.value
         val p1 = state.players.find { it.player.id == playerId1 } ?: return
         val p2 = state.players.find { it.player.id == playerId2 } ?: return

@@ -13,15 +13,15 @@ public class GameSettingsService : IGameSettingsService
         _gameSettingsRepository = gameSettingsRepository;
     }
 
-    public async Task<IEnumerable<GameSettingsDto>> GetAllGameSettingsAsync()
+    public async Task<IEnumerable<GameSettingsDto>> GetAllGameSettingsAsync(string userId)
     {
-        var settings = await _gameSettingsRepository.GetAllAsync();
+        var settings = await _gameSettingsRepository.GetAllByUserIdAsync(userId);
         return settings.Select(MapToDto);
     }
 
-    public async Task<GameSettingsDto?> GetGameSettingsByIdAsync(int id)
+    public async Task<GameSettingsDto?> GetGameSettingsByIdAsync(string id, string userId)
     {
-        var settings = await _gameSettingsRepository.GetByIdAsync(id);
+        var settings = await _gameSettingsRepository.GetByIdAsync(id, userId);
         return settings != null ? MapToDto(settings) : null;
     }
 
@@ -32,21 +32,21 @@ public class GameSettingsService : IGameSettingsService
         return MapToDto(createdSettings);
     }
 
-    public async Task<GameSettingsDto?> UpdateGameSettingsAsync(int id, CreateGameSettingsDto updateDto)
+    public async Task<GameSettingsDto?> UpdateGameSettingsAsync(string id, CreateGameSettingsDto updateDto, string userId)
     {
         var settingsToUpdate = MapFromCreateDto(updateDto);
-        var updatedSettings = await _gameSettingsRepository.UpdateAsync(id, settingsToUpdate);
+        var updatedSettings = await _gameSettingsRepository.UpdateAsync(id, settingsToUpdate, userId);
         return updatedSettings != null ? MapToDto(updatedSettings) : null;
     }
 
-    public async Task<bool> DeleteGameSettingsAsync(int id)
+    public async Task<bool> DeleteGameSettingsAsync(string id, string userId)
     {
-        return await _gameSettingsRepository.DeleteAsync(id);
+        return await _gameSettingsRepository.DeleteAsync(id, userId);
     }
 
-    public async Task<bool> GameSettingsExistsAsync(int id)
+    public async Task<bool> GameSettingsExistsAsync(string id, string userId)
     {
-        return await _gameSettingsRepository.ExistsAsync(id);
+        return await _gameSettingsRepository.ExistsAsync(id, userId);
     }
 
     private static GameSettingsDto MapToDto(GameSettings settings)
@@ -54,6 +54,7 @@ public class GameSettingsService : IGameSettingsService
         return new GameSettingsDto
         {
             Id = settings.Id,
+            UserId = settings.UserId,
             Murder = settings.Murder,
             Kidnap = settings.Kidnap,
             SeenPoint = settings.SeenPoint,
@@ -73,6 +74,7 @@ public class GameSettingsService : IGameSettingsService
     {
         return new GameSettings
         {
+            UserId = dto.UserId,
             Murder = dto.Murder,
             Kidnap = dto.Kidnap,
             SeenPoint = dto.SeenPoint,

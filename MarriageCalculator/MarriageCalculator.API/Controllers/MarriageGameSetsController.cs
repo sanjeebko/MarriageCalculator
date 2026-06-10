@@ -1,11 +1,14 @@
 using MarriageCalculator.Core.DTOs;
 using MarriageCalculator.API.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
 
 namespace MarriageCalculator.API.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
+[Authorize]
 public class MarriageGameSetsController : ControllerBase
 {
     private readonly IMarriageGameSetService _gameSetService;
@@ -25,7 +28,8 @@ public class MarriageGameSetsController : ControllerBase
     {
         try
         {
-            var gameSets = await _gameSetService.GetAllGameSetsAsync();
+            var hostUserId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? string.Empty;
+            var gameSets = await _gameSetService.GetAllGameSetsAsync(hostUserId);
             return Ok(gameSets);
         }
         catch (Exception ex)
@@ -39,11 +43,12 @@ public class MarriageGameSetsController : ControllerBase
     /// Get marriage game set by ID
     /// </summary>
     [HttpGet("{id}")]
-    public async Task<ActionResult<MarriageGameSetDto>> GetMarriageGameSet(int id)
+    public async Task<ActionResult<MarriageGameSetDto>> GetMarriageGameSet(string id)
     {
         try
         {
-            var gameSet = await _gameSetService.GetGameSetByIdAsync(id);
+            var hostUserId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? string.Empty;
+            var gameSet = await _gameSetService.GetGameSetByIdAsync(id, hostUserId);
             if (gameSet == null)
             {
                 return NotFound($"Marriage game set with ID {id} not found");
@@ -66,7 +71,8 @@ public class MarriageGameSetsController : ControllerBase
     {
         try
         {
-            var gameSet = await _gameSetService.GetLatestActiveGameSetAsync();
+            var hostUserId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? string.Empty;
+            var gameSet = await _gameSetService.GetLatestActiveGameSetAsync(hostUserId);
             if (gameSet == null)
             {
                 return NotFound("No active marriage game set found");
@@ -94,6 +100,9 @@ public class MarriageGameSetsController : ControllerBase
                 return BadRequest(ModelState);
             }
 
+            var hostUserId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? string.Empty;
+            createDto.HostUserId = hostUserId; // Set the host to be the authenticated user
+
             var gameSet = await _gameSetService.CreateGameSetAsync(createDto);
             return CreatedAtAction(nameof(GetMarriageGameSet), new { id = gameSet.Id }, gameSet);
         }
@@ -108,7 +117,7 @@ public class MarriageGameSetsController : ControllerBase
     /// Update an existing marriage game set
     /// </summary>
     [HttpPut("{id}")]
-    public async Task<ActionResult<MarriageGameSetDto>> UpdateMarriageGameSet(int id, [FromBody] CreateMarriageGameSetDto updateDto)
+    public async Task<ActionResult<MarriageGameSetDto>> UpdateMarriageGameSet(string id, [FromBody] CreateMarriageGameSetDto updateDto)
     {
         try
         {
@@ -117,7 +126,10 @@ public class MarriageGameSetsController : ControllerBase
                 return BadRequest(ModelState);
             }
 
-            var gameSet = await _gameSetService.UpdateGameSetAsync(id, updateDto);
+            var hostUserId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? string.Empty;
+            updateDto.HostUserId = hostUserId;
+
+            var gameSet = await _gameSetService.UpdateGameSetAsync(id, updateDto, hostUserId);
             if (gameSet == null)
             {
                 return NotFound($"Marriage game set with ID {id} not found");
@@ -136,11 +148,12 @@ public class MarriageGameSetsController : ControllerBase
     /// Delete a marriage game set
     /// </summary>
     [HttpDelete("{id}")]
-    public async Task<ActionResult> DeleteMarriageGameSet(int id)
+    public async Task<ActionResult> DeleteMarriageGameSet(string id)
     {
         try
         {
-            var deleted = await _gameSetService.DeleteGameSetAsync(id);
+            var hostUserId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? string.Empty;
+            var deleted = await _gameSetService.DeleteGameSetAsync(id, hostUserId);
             if (!deleted)
             {
                 return NotFound($"Marriage game set with ID {id} not found");

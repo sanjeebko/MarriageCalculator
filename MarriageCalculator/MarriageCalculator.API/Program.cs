@@ -1,8 +1,9 @@
+using MarriageCalculator.API.Authentication;
 using MarriageCalculator.API.Data;
 using MarriageCalculator.API.Hubs;
 using MarriageCalculator.API.Repositories;
 using MarriageCalculator.API.Services;
-using Microsoft.EntityFrameworkCore;
+using MongoDB.Driver;
 using Microsoft.OpenApi.Models;
 using Swashbuckle.AspNetCore.SwaggerUI;
 using System.Reflection;
@@ -53,59 +54,50 @@ builder.Services.AddSwaggerGen(c =>
 
     // Enable annotations for better documentation
     c.EnableAnnotations();
-    
+
     // Custom schema IDs to avoid conflicts
     c.CustomSchemaIds(type => type.FullName);
 });
 
-// Configure SQL Server with retry logic and enhanced settings
-builder.Services.AddDbContext<MarriageCalculatorDbContext>(options =>
+// Configure MongoDB
+builder.Services.Configure<MongoDbSettings>(options =>
 {
-    // Get base connection string from configuration
-    var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
-    
-    // Get database configuration from environment variables (no fallback values)
-    var dbServer = Environment.GetEnvironmentVariable("MCDATABASE");
-    var dbUser = Environment.GetEnvironmentVariable("MCUSER");
-    var dbPassword = Environment.GetEnvironmentVariable("MCPASSWORD");
-    
-    // Validate that all required environment variables are set
-    if (string.IsNullOrEmpty(dbServer))
-        throw new InvalidOperationException("MCDATABASE environment variable is required but not set.");
-    
-    if (string.IsNullOrEmpty(dbUser))
-        throw new InvalidOperationException("MCUSER environment variable is required but not set.");
-    
-    if (string.IsNullOrEmpty(dbPassword))
-        throw new InvalidOperationException("MCPASSWORD environment variable is required but not set.");
-    
-    // Replace placeholders with actual environment values
-    connectionString = connectionString?
+    var dbServer = Environment.GetEnvironmentVariable("MCDATABASE")
+        ?? throw new InvalidOperationException("MCDATABASE environment variable is required but not set.");
+    var dbUser = Environment.GetEnvironmentVariable("MCUSER")
+        ?? throw new InvalidOperationException("MCUSER environment variable is required but not set.");
+    var dbPassword = Environment.GetEnvironmentVariable("MCPASSWORD")
+        ?? throw new InvalidOperationException("MCPASSWORD environment variable is required but not set.");
+    var dbName = Environment.GetEnvironmentVariable("MCDATABASENAME")
+        ?? throw new InvalidOperationException("MCDATABASENAME environment variable is required but not set.");
+
+    var rawConnectionString = builder.Configuration["MongoDbSettings:ConnectionString"]
+        ?? "mongodb://{MCUSER}:{MCPASSWORD}@{MCDATABASE}/{MCDATABASENAME}?authSource={MCDATABASENAME}";
+
+    options.ConnectionString = rawConnectionString
         .Replace("{MCDATABASE}", dbServer)
         .Replace("{MCUSER}", dbUser)
-        .Replace("{MCPASSWORD}", dbPassword);
-    
-    options.UseSqlServer(connectionString, sqlOptions =>
-    {
-        // Enable retry on failure for transient errors
-        sqlOptions.EnableRetryOnFailure(
-            maxRetryCount: builder.Configuration.GetValue<int>("DatabaseSettings:MaxRetryCount", 3),
-            maxRetryDelay: TimeSpan.Parse(builder.Configuration.GetValue<string>("DatabaseSettings:MaxRetryDelay") ?? "00:00:30"),
-            errorNumbersToAdd: null);
-        
-        // Set command timeout
-        sqlOptions.CommandTimeout(60);
-    });
-    
-    // Enable detailed errors in development
-    if (builder.Environment.IsDevelopment())
-    {
-        options.EnableDetailedErrors();
-        options.EnableSensitiveDataLogging();
-    }
+        .Replace("{MCPASSWORD}", dbPassword)
+        .Replace("{MCDATABASENAME}", dbName);
+
+    options.DatabaseName = dbName;
 });
 
+builder.Services.AddSingleton<IMongoClient>(sp =>
+{
+    var settings = sp.GetRequiredService<Microsoft.Extensions.Options.IOptions<MongoDbSettings>>().Value;
+    return new MongoClient(settings.ConnectionString);
+});
+
+builder.Services.AddSingleton<MongoDbSettings>(sp =>
+{
+    return sp.GetRequiredService<Microsoft.Extensions.Options.IOptions<MongoDbSettings>>().Value;
+});
+
+builder.Services.AddScoped<MongoDbContext>();
+
 // Register repositories
+builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<IPlayerRepository, PlayerRepository>();
 builder.Services.AddScoped<IGameSettingsRepository, GameSettingsRepository>();
 builder.Services.AddScoped<IMarriageGameSetRepository, MarriageGameSetRepository>();
@@ -113,6 +105,7 @@ builder.Services.AddScoped<IMarriageGameRepository, MarriageGameRepository>();
 builder.Services.AddScoped<IDatabaseRepository, DatabaseRepository>();
 
 // Register services
+builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IPlayerService, PlayerService>();
 builder.Services.AddScoped<IGameSettingsService, GameSettingsService>();
 builder.Services.AddScoped<IMarriageGameSetService, MarriageGameSetService>();
@@ -125,9 +118,16 @@ builder.Services.AddScoped<IMarriageGameServices, MarriageGameServices>();
 // Add SignalR for real-time game updates
 builder.Services.AddSignalR();
 
+// Add Firebase/Mock Custom Authentication
+builder.Services.AddAuthentication("FirebaseOrMock")
+    .AddScheme<FirebaseOrMockAuthenticationOptions, FirebaseOrMockAuthenticationHandler>("FirebaseOrMock", options =>
+    {
+        options.FirebaseProjectId = builder.Configuration["Firebase:ProjectId"];
+        options.VerifySignature = false;
+    });
+
 // Add health checks for Kubernetes probes
-builder.Services.AddHealthChecks()
-    .AddDbContextCheck<MarriageCalculatorDbContext>("database");
+builder.Services.AddHealthChecks();
 
 // Add CORS for Android client
 builder.Services.AddCors(options =>
@@ -153,7 +153,7 @@ var app = builder.Build();
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
-    
+
     // Enhanced Swagger UI Configuration
     app.UseSwaggerUI(c =>
     {
@@ -168,20 +168,20 @@ if (app.Environment.IsDevelopment())
         c.ShowExtensions();
         c.ShowCommonExtensions();
         c.EnableValidator();
-        
+
         // Configure supported HTTP methods
         c.SupportedSubmitMethods(SubmitMethod.Get, SubmitMethod.Post, SubmitMethod.Put, SubmitMethod.Delete, SubmitMethod.Patch);
-        
+
         // Custom CSS for better appearance
         c.InjectStylesheet("/swagger-ui/custom.css");
-        
+
         // Custom JavaScript for enhanced functionality
         c.InjectJavascript("/swagger-ui/custom.js");
-        
+
         // Default model expansion
         c.DefaultModelExpandDepth(2);
         c.DefaultModelsExpandDepth(1);
-        
+
         // Configure API explorer settings
         c.DocExpansion(DocExpansion.List);
         c.DefaultModelRendering(ModelRendering.Example);
@@ -190,6 +190,7 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 app.UseCors();
+app.UseAuthentication();
 app.UseAuthorization();
 
 // Serve static files for custom Swagger UI assets
@@ -208,7 +209,7 @@ app.MapHealthChecks("/health/live", new Microsoft.AspNetCore.Diagnostics.HealthC
     Predicate = _ => false // Liveness: just check app is running, skip DB
 });
 
-// Simple database initialization - let EF handle everything automatically
+// MongoDB database initialization - seed default data
 await InitializeDatabaseAsync(app);
 
 app.Run();
@@ -218,24 +219,28 @@ static async Task InitializeDatabaseAsync(WebApplication app)
     using var scope = app.Services.CreateScope();
     var services = scope.ServiceProvider;
     var logger = services.GetRequiredService<ILogger<Program>>();
-    
+
     try
     {
-        logger.LogInformation("Starting database initialization...");
-        
-        var context = services.GetRequiredService<MarriageCalculatorDbContext>();
-        
-        // Let Entity Framework handle database and table creation automatically
-        logger.LogInformation("Ensuring database is created...");
-        await context.Database.EnsureCreatedAsync();
-        
-        logger.LogInformation("Database initialization completed successfully.");
-        
+        logger.LogInformation("Starting MongoDB database initialization...");
+
+        var mongoContext = services.GetRequiredService<MongoDbContext>();
+
+        // Verify connectivity
+        var canConnect = await mongoContext.CanConnectAsync();
+        if (!canConnect)
+        {
+            logger.LogError("Cannot connect to MongoDB. Please check connection settings.");
+            return;
+        }
+
+        logger.LogInformation("MongoDB connection verified successfully.");
+
         // Seed default data if needed
         logger.LogInformation("Seeding default data...");
         var dbInitializer = services.GetRequiredService<IMarriageGameServices>();
         await dbInitializer.SeedDefaultData();
-        
+
         logger.LogInformation("Database setup completed successfully.");
     }
     catch (Exception ex)

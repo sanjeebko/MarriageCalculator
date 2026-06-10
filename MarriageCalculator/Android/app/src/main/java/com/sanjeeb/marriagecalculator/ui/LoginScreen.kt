@@ -1,35 +1,24 @@
 
 package com.sanjeeb.marriagecalculator.ui
 
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.draw.shadow
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.layout.ContentScale
@@ -44,6 +33,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.sanjeeb.marriagecalculator.R
+import com.sanjeeb.marriagecalculator.ui.components.MetallicButton
 
 // Metallic Noir Color Palette
 val MetalGold = Color(0xFFD4AF37)
@@ -95,22 +85,42 @@ fun LoginScreen(onGoogleLogin: () -> Unit, onGuestLogin: () -> Unit) {
                 // Google Button (Polished Silver Bezel)
                 MetallicButton(
                     onClick = onGoogleLogin,
-                    rimColors = listOf(Color(0xFFFFFFFF), Color(0xFF606060)), // Highlights and Shadows
-                    faceColors = listOf(Color(0xFFFFFFFF), Color(0xFFDDDDDD)),
                     text = "Continue with Google",
+                    rimColors = listOf(Color(0xFFFFFFFF), Color(0xFF606060)),
+                    faceColors = listOf(Color(0xFFFFFFFF), Color(0xFFDDDDDD)),
                     textColor = Color(0xFF333333),
-                    iconResId = R.drawable.ic_google_logo
+                    modifier = Modifier.height(72.dp),
+                    leadingIcon = {
+                        Image(
+                            painter = painterResource(id = R.drawable.ic_google_logo),
+                            contentDescription = null,
+                            modifier = Modifier
+                                .size(28.dp)
+                                .shadow(4.dp, shape = RoundedCornerShape(4.dp))
+                        )
+                    }
                 )
 
                 // Guest Button (Electric Blue Bezel)
+                /* TODO: Uncomment later when guest login is needed
                 MetallicButton(
                     onClick = onGuestLogin,
-                    rimColors = listOf(Color(0xFF88CCFF), Color(0xFF003366)),
-                    faceColors = listOf(Color(0xFF0077EE), Color(0xFF0044AA)), // Reverted to Electric Blue
                     text = "Play as Guest",
-                    textColor = Color(0xFFE6E6E6), // Light Gray (~10% Black / 90% White)
-                    iconResId = R.drawable.ic_guest
+                    rimColors = listOf(Color(0xFF88CCFF), Color(0xFF003366)),
+                    faceColors = listOf(Color(0xFF0077EE), Color(0xFF0044AA)),
+                    textColor = Color(0xFFE6E6E6),
+                    modifier = Modifier.height(72.dp),
+                    leadingIcon = {
+                        Image(
+                            painter = painterResource(id = R.drawable.ic_guest),
+                            contentDescription = null,
+                            modifier = Modifier
+                                .size(28.dp)
+                                .shadow(4.dp, shape = RoundedCornerShape(4.dp))
+                        )
+                    }
                 )
+                */
 
                 Spacer(Modifier.height(8.dp))
                 
@@ -165,187 +175,6 @@ fun LoginScreen(onGoogleLogin: () -> Unit, onGuestLogin: () -> Unit) {
                     letterSpacing = 1.sp
                 )
             )
-        }
-    }
-}
-
-@Composable
-fun MetallicButton(
-    onClick: () -> Unit,
-    rimColors: List<Color>,
-    faceColors: List<Color>, // Expecting top, mid-light, mid-dark, bottom for simple horizon or just pass list
-    text: String,
-    textColor: Color,
-    iconResId: Int?
-) {
-    Button(
-        onClick = onClick,
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(72.dp) // Thicker button
-            .shadow(
-                elevation = 12.dp,
-                shape = RoundedCornerShape(16.dp),
-                spotColor = Color.Black
-            ),
-        colors = ButtonDefaults.buttonColors(containerColor = Color.Transparent),
-        contentPadding = PaddingValues(0.dp),
-        shape = RoundedCornerShape(16.dp)
-    ) {
-        // 1. Thick Outer Bezel (The Rim)
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(
-                    brush = Brush.linearGradient(
-                        colors = rimColors,
-                        start = androidx.compose.ui.geometry.Offset(0f, 0f),
-                        end = androidx.compose.ui.geometry.Offset(0f, Float.POSITIVE_INFINITY)
-                    )
-                )
-                .padding(4.dp), // Thicker Rim
-            contentAlignment = Alignment.Center
-        ) {
-            // 2. Inner Face with Complex Gradient (Horizon Effect)
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .background(
-                        brush = Brush.verticalGradient(
-                            colors = faceColors 
-                        ),
-                        shape = RoundedCornerShape(12.dp)
-                    )
-                    .border(
-                        width = 1.dp,
-                        brush = Brush.verticalGradient(
-                            colors = listOf(
-                                Color.White.copy(alpha = 0.5f), 
-                                Color.Transparent
-                            )
-                        ),
-                        shape = RoundedCornerShape(12.dp)
-                    ),
-                contentAlignment = Alignment.Center
-            ) {
-                // Horizontal Sheen Overlay (10% opacity)
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .alpha(0.1f)
-                        .background(
-                            brush = Brush.horizontalGradient(
-                                colorStops = arrayOf(
-                                    0.0f to Color.Black,
-                                    0.25f to Color.White,
-                                    0.35f to Color.Black,// Averaged 15-35 range for smoothness
-                                    0.65f to Color.Black,
-                                    0.85f to Color.White,
-                                    1.0f to Color.Black
-                                )
-                            ),
-                            shape = RoundedCornerShape(12.dp)
-                        )
-                )
-                // Horizontal Sheen Overlay (10% opacity)
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .alpha(0.1f)
-                        .background(
-                            brush = Brush.horizontalGradient(
-                                colorStops = arrayOf(
-                                    0.0f to Color.Black,
-                                    0.25f to Color.White, // Averaged 15-35 range for smoothness
-                                    0.35f to Color.Black,
-                                    0.80f to Color.White,
-                                    1.0f to Color.Black
-                                )
-                            ),
-                            shape = RoundedCornerShape(12.dp)
-                        )
-                )
-                
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .alpha(0.05f)
-                        .background(
-                            brush = Brush.verticalGradient(
-                                colorStops = arrayOf(
-                                    0.0f to Color.Black,
-                                    0.15f to Color.White,
-                                    0.25f to Color.White,
-                                    0.35f to Color.Black,// Averaged 15-35 range for smoothness
-                                    0.75f to Color.Black,
-                                    0.85f to Color.Gray,
-                                    0.90f to Color.Black,
-                                    1.0f to Color.Black
-                                )
-                            ),
-                            shape = RoundedCornerShape(12.dp)
-                        )
-                )
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .alpha(0.05f)
-                        .background(
-                            brush = Brush.verticalGradient(
-                                colorStops = arrayOf(
-                                    0.0f to Color.Black,
-                                    0.15f to Color.White, // Averaged 15-35 range for smoothness
-                                    0.25f to Color.Gray,
-
-                                    0.75f to Color.Black,
-                                    0.80f to Color.Gray,
-                                    1.0f to Color.Black
-                                )
-                            ),
-                            shape = RoundedCornerShape(12.dp)
-                        )
-                )
-
-                // 3. Floating Content (Text & Icon)
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier.padding(horizontal = 16.dp)
-                ) {
-                    if (iconResId != null) {
-                        Image(
-                            painter = painterResource(id = iconResId),
-                            contentDescription = null,
-                            modifier = Modifier
-                                .size(28.dp)
-                                .shadow(4.dp, shape =  RoundedCornerShape(4.dp)) // Slight shadow for icon
-                        )
-                        Spacer(Modifier.width(16.dp))
-                    }
-                    
-                    // Text with White Emboss effect
-                    Box {
-                         // 1. White Highlight (Emboss) - Bottom reflection
-                         Text(
-                            text = text,
-                            color = Color.White.copy(alpha = 0.6f),
-                            style = MaterialTheme.typography.titleMedium.copy(
-                                fontWeight = FontWeight.Bold,
-                                fontSize = 18.sp
-                            ),
-                             modifier = Modifier.padding(top = 1.2.dp) // Shift down for emboss
-                        )
-                        // 2. Main Text
-                        Text(
-                            text = text,
-                            color = textColor,
-                            style = MaterialTheme.typography.titleMedium.copy(
-                                fontWeight = FontWeight.Bold,
-                                fontSize = 18.sp
-                            )
-                        )
-                    }
-                }
-            }
         }
     }
 }

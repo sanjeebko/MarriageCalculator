@@ -3,13 +3,19 @@ package com.sanjeeb.marriagecalculator.ui.gamesetup
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -21,12 +27,25 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.PathEffect
+import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.hilt.navigation.compose.hiltViewModel
+import coil.compose.AsyncImage
+import coil.request.ImageRequest
+import java.io.File
+import java.io.FileOutputStream
+import java.io.InputStream
+import android.net.Uri
 import com.sanjeeb.marriagecalculator.data.model.Currency
 import com.sanjeeb.marriagecalculator.data.model.GameSettings
 import com.sanjeeb.marriagecalculator.data.model.Player
@@ -34,11 +53,14 @@ import com.sanjeeb.marriagecalculator.ui.theme.DeepRedTika
 import com.sanjeeb.marriagecalculator.ui.theme.GoldAccent
 import com.sanjeeb.marriagecalculator.ui.theme.MarigoldOrange
 import com.sanjeeb.marriagecalculator.ui.theme.TiharNightBlue
+import com.sanjeeb.marriagecalculator.ui.components.MetallicButton
+import com.sanjeeb.marriagecalculator.ui.components.MetallicRedFace
+import com.sanjeeb.marriagecalculator.ui.components.MetallicRedRim
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun GameSetupScreen(
-    onGameCreated: (Int) -> Unit,
+    onGameCreated: (String) -> Unit,
     onBack: () -> Unit,
     viewModel: GameSetupViewModel = hiltViewModel()
 ) {
@@ -104,11 +126,7 @@ fun GameSetupScreen(
                     allPlayers = viewModel.getAllPlayers(),
                     selectedIds = uiState.selectedPlayerIds,
                     onTogglePlayer = viewModel::togglePlayerSelection,
-                    showAddPlayer = uiState.showAddPlayer,
-                    newPlayerName = uiState.newPlayerName,
-                    onNewPlayerNameChange = viewModel::setNewPlayerName,
-                    onToggleAddPlayer = viewModel::toggleShowAddPlayer,
-                    onAddPlayer = viewModel::addLocalPlayer
+                    onAddNewPlayer = viewModel::addNewPlayer
                 )
 
                 Spacer(modifier = Modifier.height(20.dp))
@@ -132,29 +150,19 @@ fun GameSetupScreen(
                 }
 
                 // Start Game Button
-                Button(
+                MetallicButton(
                     onClick = { viewModel.createGame() },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(56.dp),
-                    shape = RoundedCornerShape(16.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = DeepRedTika),
-                    enabled = uiState.selectedPlayerIds.size in 2..6 && !uiState.isLoading
-                ) {
-                    if (uiState.isLoading) {
-                        CircularProgressIndicator(color = GoldAccent, modifier = Modifier.size(24.dp))
-                    } else {
+                    text = "Start Game (${uiState.selectedPlayerIds.size} players)",
+                    rimColors = MetallicRedRim,
+                    faceColors = MetallicRedFace,
+                    textColor = GoldAccent,
+                    modifier = Modifier.height(56.dp),
+                    enabled = uiState.selectedPlayerIds.size in 2..6,
+                    isLoading = uiState.isLoading,
+                    leadingIcon = {
                         Icon(Icons.Default.PlayArrow, null, tint = GoldAccent)
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text(
-                            "Start Game (${uiState.selectedPlayerIds.size} players)",
-                            color = GoldAccent,
-                            fontSize = 18.sp,
-                            fontWeight = FontWeight.Bold,
-                            fontFamily = FontFamily.Serif
-                        )
                     }
-                }
+                )
 
                 Spacer(modifier = Modifier.height(16.dp))
             }
@@ -162,117 +170,293 @@ fun GameSetupScreen(
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun PlayerSelectionSection(
     allPlayers: List<Player>,
-    selectedIds: Set<Int>,
-    onTogglePlayer: (Int) -> Unit,
-    showAddPlayer: Boolean,
-    newPlayerName: String,
-    onNewPlayerNameChange: (String) -> Unit,
-    onToggleAddPlayer: () -> Unit,
-    onAddPlayer: () -> Unit
+    selectedIds: Set<String>,
+    onTogglePlayer: (String) -> Unit,
+    onAddNewPlayer: (String, String?) -> Unit
 ) {
-    Text(
-        "Players (${selectedIds.size}/6)",
-        color = GoldAccent,
-        fontSize = 18.sp,
-        fontWeight = FontWeight.Bold,
-        fontFamily = FontFamily.Serif
-    )
-    Spacer(modifier = Modifier.height(8.dp))
+    var showPlayerSheet by remember { mutableStateOf(false) }
+    var showCreateSheet by remember { mutableStateOf(false) }
 
-    // Player grid - compact 3-column for up to 6 players
-    LazyVerticalGrid(
-        columns = GridCells.Fixed(3),
-        modifier = Modifier.heightIn(max = 300.dp),
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
-        verticalArrangement = Arrangement.spacedBy(8.dp)
+    val selectedPlayers = allPlayers.filter { it.id in selectedIds }
+
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.Bottom
     ) {
-        items(allPlayers) { player ->
-            PlayerChip(
-                player = player,
-                isSelected = selectedIds.contains(player.id),
-                onClick = { onTogglePlayer(player.id) }
+        Text(
+            "Players",
+            color = Color.White,
+            fontSize = 20.sp,
+            fontWeight = FontWeight.Bold,
+            fontFamily = FontFamily.Serif
+        )
+        Text(
+            "${selectedIds.size} / 6 JOINED",
+            color = GoldAccent,
+            fontWeight = FontWeight.Bold,
+            fontSize = 10.sp
+        )
+    }
+    
+    Spacer(modifier = Modifier.height(12.dp))
+
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween
+    ) {
+        for (i in 0 until 6) {
+            val emptyModifier = Modifier
+                .weight(1f)
+                .aspectRatio(1f)
+                .padding(4.dp)
+                .clip(RoundedCornerShape(8.dp))
+
+            if (i < selectedPlayers.size) {
+                PlayerSlot(player = selectedPlayers[i], modifier = emptyModifier) {
+                    onTogglePlayer(selectedPlayers[i].id)
+                }
+            } else if (i == selectedPlayers.size) {
+                Box(
+                    modifier = emptyModifier
+                        .clickable { showPlayerSheet = true },
+                    contentAlignment = Alignment.Center
+                ) {
+                    androidx.compose.foundation.Canvas(modifier = Modifier.matchParentSize()) {
+                        drawRoundRect(
+                            color = Color.White.copy(alpha = 0.3f),
+                            style = Stroke(width = 4f, pathEffect = PathEffect.dashPathEffect(floatArrayOf(10f, 10f), 0f)),
+                            cornerRadius = androidx.compose.ui.geometry.CornerRadius(8.dp.toPx())
+                        )
+                    }
+                    Icon(Icons.Default.Add, contentDescription = "Add Player", tint = Color.White)
+                }
+            } else {
+                Box(modifier = emptyModifier.background(Color.White.copy(alpha = 0.05f), RoundedCornerShape(8.dp)))
+            }
+        }
+    }
+
+    if (showPlayerSheet) {
+        ModalBottomSheet(onDismissRequest = { showPlayerSheet = false }, containerColor = TiharNightBlue) {
+            PlayerSelectionSheetContent(
+                allPlayers = allPlayers,
+                selectedIds = selectedIds,
+                onTogglePlayer = onTogglePlayer,
+                onCreateNewClicked = {
+                    showPlayerSheet = false
+                    showCreateSheet = true
+                }
             )
         }
     }
 
-    Spacer(modifier = Modifier.height(8.dp))
-
-    // Add player
-    if (showAddPlayer) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            OutlinedTextField(
-                value = newPlayerName,
-                onValueChange = onNewPlayerNameChange,
-                label = { Text("Player Name", color = GoldAccent.copy(alpha = 0.7f)) },
-                modifier = Modifier.weight(1f),
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedTextColor = Color.White,
-                    unfocusedTextColor = Color.White,
-                    focusedBorderColor = GoldAccent,
-                    unfocusedBorderColor = GoldAccent.copy(alpha = 0.3f)
-                ),
-                singleLine = true
+    if (showCreateSheet) {
+        ModalBottomSheet(onDismissRequest = { showCreateSheet = false }, containerColor = TiharNightBlue) {
+            CreatePlayerSheetContent(
+                onPlayerCreated = { name, uri ->
+                    onAddNewPlayer(name, uri)
+                    showCreateSheet = false
+                }
             )
-            Spacer(modifier = Modifier.width(8.dp))
-            IconButton(onClick = onAddPlayer) {
-                Icon(Icons.Default.Check, null, tint = GoldAccent)
-            }
-        }
-    } else {
-        TextButton(onClick = onToggleAddPlayer) {
-            Icon(Icons.Default.PersonAdd, null, tint = GoldAccent, modifier = Modifier.size(18.dp))
-            Spacer(modifier = Modifier.width(4.dp))
-            Text("Add Player", color = GoldAccent)
         }
     }
 }
 
 @Composable
-private fun PlayerChip(player: Player, isSelected: Boolean, onClick: () -> Unit) {
-    val bgColor = if (isSelected) DeepRedTika else Color.White.copy(alpha = 0.05f)
-    val borderColor = if (isSelected) GoldAccent else Color.White.copy(alpha = 0.2f)
-
-    Column(
-        modifier = Modifier
-            .clip(RoundedCornerShape(12.dp))
-            .background(bgColor)
-            .border(1.dp, borderColor, RoundedCornerShape(12.dp))
+fun PlayerSlot(player: Player, modifier: Modifier, onClick: () -> Unit) {
+    Box(
+        modifier = modifier
+            .background(Color.White.copy(alpha = 0.1f), RoundedCornerShape(8.dp))
             .clickable { onClick() }
-            .padding(12.dp),
-        horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        // Avatar
+        if (!player.photoUri.isNullOrEmpty()) {
+            val model = if (player.photoUri.startsWith("android.resource") || player.photoUri.startsWith("http")) {
+                player.photoUri
+            } else {
+                File(player.photoUri)
+            }
+            AsyncImage(
+                model = ImageRequest.Builder(LocalContext.current)
+                    .data(model)
+                    .crossfade(true)
+                    .build(),
+                contentDescription = "Player photo",
+                contentScale = ContentScale.Crop,
+                modifier = Modifier.fillMaxSize().clip(RoundedCornerShape(8.dp))
+            )
+        } else {
+             Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                 Text(player.name.take(1).uppercase(), color = Color.White, fontSize = 18.sp, fontWeight = FontWeight.Bold)
+             }
+        }
+        
         Box(
             modifier = Modifier
-                .size(40.dp)
-                .clip(CircleShape)
-                .background(
-                    if (isSelected) GoldAccent else Color.White.copy(alpha = 0.1f)
-                ),
+                .align(Alignment.BottomCenter)
+                .fillMaxWidth()
+                .background(Brush.verticalGradient(listOf(Color.Transparent, Color.Black.copy(alpha = 0.8f))))
+                .padding(vertical = 4.dp),
             contentAlignment = Alignment.Center
         ) {
-            Text(
-                text = player.name.take(1).uppercase(),
-                color = if (isSelected) DeepRedTika else Color.White,
-                fontWeight = FontWeight.Bold,
-                fontSize = 18.sp
-            )
+            Text(player.name, color = Color.White, fontSize = 9.sp, maxLines = 1)
         }
-        Spacer(modifier = Modifier.height(4.dp))
-        Text(
-            text = player.name,
-            color = if (isSelected) GoldAccent else Color.White.copy(alpha = 0.7f),
-            fontSize = 12.sp,
-            textAlign = TextAlign.Center,
-            maxLines = 1
-        )
     }
+}
+
+@Composable
+fun PlayerSelectionSheetContent(
+    allPlayers: List<Player>,
+    selectedIds: Set<String>,
+    onTogglePlayer: (String) -> Unit,
+    onCreateNewClicked: () -> Unit
+) {
+    Column(modifier = Modifier.padding(16.dp).fillMaxWidth().heightIn(min = 300.dp)) {
+        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+            Text("Select Player", fontSize = 20.sp, fontWeight = FontWeight.Bold, color = GoldAccent, fontFamily = FontFamily.Serif)
+            TextButton(onClick = onCreateNewClicked) {
+                Icon(Icons.Default.Add, null, tint = GoldAccent, modifier = Modifier.size(16.dp))
+                Spacer(modifier = Modifier.width(4.dp))
+                Text("New Player", color = GoldAccent)
+            }
+        }
+        Spacer(modifier = Modifier.height(16.dp))
+        
+        LazyVerticalGrid(
+            columns = GridCells.Fixed(3),
+            modifier = Modifier.weight(1f, fill = false),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            items(allPlayers) { player ->
+                val isSelected = selectedIds.contains(player.id)
+                val bgColor = if (isSelected) DeepRedTika else Color.White.copy(alpha = 0.05f)
+                val borderColor = if (isSelected) GoldAccent else Color.White.copy(alpha = 0.2f)
+
+                Column(
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(12.dp))
+                        .background(bgColor)
+                        .border(1.dp, borderColor, RoundedCornerShape(12.dp))
+                        .clickable { onTogglePlayer(player.id) }
+                        .padding(12.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(40.dp)
+                            .clip(CircleShape)
+                            .background(if (isSelected) GoldAccent else Color.White.copy(alpha = 0.1f)),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        if (!player.photoUri.isNullOrEmpty()) {
+                            AsyncImage(
+                                model = if (player.photoUri.startsWith("android") || player.photoUri.startsWith("http")) player.photoUri else File(player.photoUri),
+                                contentDescription = null,
+                                contentScale = ContentScale.Crop,
+                                modifier = Modifier.fillMaxSize()
+                            )
+                        } else {
+                            Text(
+                                text = player.name.take(1).uppercase(),
+                                color = if (isSelected) DeepRedTika else Color.White,
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 18.sp
+                            )
+                        }
+                    }
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(
+                        text = player.name,
+                        color = if (isSelected) GoldAccent else Color.White.copy(alpha = 0.7f),
+                        fontSize = 12.sp,
+                        textAlign = TextAlign.Center,
+                        maxLines = 1
+                    )
+                }
+            }
+        }
+        Spacer(modifier = Modifier.height(24.dp))
+    }
+}
+
+@Composable
+fun CreatePlayerSheetContent(onPlayerCreated: (String, String?) -> Unit) {
+    var name by remember { mutableStateOf("") }
+    var selectedPhotoUri by remember { mutableStateOf<String?>(null) }
+    val context = LocalContext.current
+
+    val galleryLauncher = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri: Uri? ->
+        uri?.let {
+            val savedUri = copyUriToInternalStorage(context, it)
+            selectedPhotoUri = savedUri
+        }
+    }
+
+    Column(modifier = Modifier.padding(16.dp).fillMaxWidth().padding(bottom = 32.dp)) {
+        Text("Create New Player", fontSize = 20.sp, fontWeight = FontWeight.Bold, color = GoldAccent, fontFamily = FontFamily.Serif)
+        Spacer(modifier = Modifier.height(16.dp))
+
+        OutlinedTextField(
+            value = name,
+            onValueChange = { name = it },
+            label = { Text("Player Name", color = GoldAccent.copy(alpha = 0.7f)) },
+            modifier = Modifier.fillMaxWidth(),
+            colors = OutlinedTextFieldDefaults.colors(
+                focusedTextColor = Color.White,
+                unfocusedTextColor = Color.White,
+                focusedBorderColor = GoldAccent,
+                unfocusedBorderColor = GoldAccent.copy(alpha = 0.3f)
+            ),
+            singleLine = true
+        )
+        
+        Spacer(modifier = Modifier.height(24.dp))
+        Text("Select Photo", color = Color.White.copy(alpha = 0.7f), fontSize = 14.sp)
+        Spacer(modifier = Modifier.height(8.dp))
+        
+        Row(horizontalArrangement = Arrangement.spacedBy(16.dp), modifier = Modifier.horizontalScroll(rememberScrollState())) {
+            listOf("avatar_1", "avatar_2", "avatar_3").forEach { avatarName ->
+                val isSelected = selectedPhotoUri?.contains(avatarName) == true
+                Box(modifier = Modifier.size(64.dp).clip(RoundedCornerShape(8.dp)).clickable { 
+                    selectedPhotoUri = "android.resource://${context.packageName}/drawable/$avatarName" 
+                }.border(if (isSelected) 2.dp else 0.dp, GoldAccent, RoundedCornerShape(8.dp))) {
+                    AsyncImage(model = "android.resource://${context.packageName}/drawable/$avatarName", contentDescription = null, modifier = Modifier.fillMaxSize())
+                }
+            }
+
+            Box(modifier = Modifier.size(64.dp).clip(RoundedCornerShape(8.dp)).background(Color.White.copy(alpha = 0.1f)).clickable { 
+                galleryLauncher.launch("image/*") 
+            }, contentAlignment = Alignment.Center) {
+                Icon(Icons.Default.PhotoLibrary, "Gallery", tint = GoldAccent)
+            }
+        }
+        
+        Spacer(modifier = Modifier.height(32.dp))
+        
+        Button(
+            onClick = { onPlayerCreated(name, selectedPhotoUri) },
+            modifier = Modifier.fillMaxWidth().height(50.dp),
+            enabled = name.isNotBlank(),
+            colors = ButtonDefaults.buttonColors(containerColor = DeepRedTika, contentColor = GoldAccent)
+        ) {
+            Text("Save & Add Player")
+        }
+    }
+}
+
+fun copyUriToInternalStorage(context: android.content.Context, uri: Uri): String {
+    val inputStream = context.contentResolver.openInputStream(uri) ?: return ""
+    val file = File(context.filesDir, "player_${System.currentTimeMillis()}.jpg")
+    val outputStream = FileOutputStream(file)
+    inputStream.copyTo(outputStream)
+    inputStream.close()
+    outputStream.close()
+    return file.absolutePath
 }
 
 @Composable

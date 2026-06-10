@@ -52,18 +52,23 @@ This document serves as the long-term memory and instruction manual for AI agent
 
 ## 3. Folder Structure
 
-### Root: `MarriageCalculator/`
+### Root (Workspace)
+*   `spec/`: Contains files related to specification and plan status.
+    *   `requirement.md`: The main specification document for the application.
+    *   `plan.md`: The active implementation plan showing phases and status.
+*   `documentations/`: Contains all other general markdown documentation files (previously in the `MarriageCalculator` folder).
+*   `MarriageCalculator/`: Source code projects.
 
-#### `MarriageCalculator.API/`
+#### `MarriageCalculator/MarriageCalculator.API/`
 *   `Controllers/`: REST Endpoints.
 *   `Services/`: Business logic.
 *   `Repositories/`: Data access patterns (MongoDB adapter to be added).
 
-#### `Android/` (New Mobile App)
+#### `MarriageCalculator/Android/` (New Mobile App)
 *   `app/src/main/java/`: Kotlin source.
 *   `app/src/main/res/`: Resources (XML Layouts).
 
-#### `MarriageCalculator.Core/`
+#### `MarriageCalculator/MarriageCalculator.Core/`
 *   `Models/`: Shared Entity definitions.
 *   `Extensions/`: Shared logic.
 
@@ -98,6 +103,14 @@ This document serves as the long-term memory and instruction manual for AI agent
 
 ---
 
-## 6. Memory Management
+## 6. Spec-Driven Development
+
+*   **Approach**: All development must follow spec-driven development (SDD) principles. Code changes must be driven by specifications defined in [requirement.md](file:///f:/workspace/games/MC/MarriageCalculator/spec/requirement.md).
+*   **Plan Management**: Track implementation progress in [plan.md](file:///f:/workspace/games/MC/MarriageCalculator/spec/plan.md). Always update this file as implementation phases advance.
+*   **Documentation Rule**: All general project documentation `.md` files must be managed in the [documentations/](file:///f:/workspace/games/MC/MarriageCalculator/documentations) directory at the root. No loose `.md` files should be added directly in code folders like `MarriageCalculator/`.
+
+---
+
+## 7. Memory Management
 *   **Read**: `.agent/memory.md` at session start.
 *   **Write**: Update if business rules change.

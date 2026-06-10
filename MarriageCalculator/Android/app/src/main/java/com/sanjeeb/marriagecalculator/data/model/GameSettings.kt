@@ -29,7 +29,7 @@ enum class FoulPointBonusType {
 }
 
 data class GameSettings(
-    @SerializedName("id") val id: Int = 0,
+    @SerializedName("id") val id: String = "",
     @SerializedName("murder") val murder: Boolean = true,
     @SerializedName("kidnap") val kidnap: Boolean = false,
     @SerializedName("seenPoint") val seenPoint: Int = 3,

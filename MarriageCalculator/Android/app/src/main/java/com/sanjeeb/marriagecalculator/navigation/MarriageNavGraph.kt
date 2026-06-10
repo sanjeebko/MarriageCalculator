@@ -67,9 +67,9 @@ fun MarriageNavGraph(navController: NavHostController) {
 
         composable(
             route = Screen.PlayGame.route,
-            arguments = listOf(navArgument("gameSetId") { type = NavType.IntType })
+            arguments = listOf(navArgument("gameSetId") { type = NavType.StringType })
         ) { backStackEntry ->
-            val gameSetId = backStackEntry.arguments?.getInt("gameSetId") ?: return@composable
+            val gameSetId = backStackEntry.arguments?.getString("gameSetId") ?: return@composable
             PlayGameScreen(
                 gameSetId = gameSetId,
                 onAddRound = { roundId ->
@@ -85,12 +85,12 @@ fun MarriageNavGraph(navController: NavHostController) {
         composable(
             route = Screen.RoundInput.route,
             arguments = listOf(
-                navArgument("gameSetId") { type = NavType.IntType },
-                navArgument("roundId") { type = NavType.IntType }
+                navArgument("gameSetId") { type = NavType.StringType },
+                navArgument("roundId") { type = NavType.StringType }
             )
         ) { backStackEntry ->
-            val gameSetId = backStackEntry.arguments?.getInt("gameSetId") ?: return@composable
-            val roundId = backStackEntry.arguments?.getInt("roundId") ?: return@composable
+            val gameSetId = backStackEntry.arguments?.getString("gameSetId") ?: return@composable
+            val roundId = backStackEntry.arguments?.getString("roundId") ?: return@composable
             RoundInputScreen(
                 gameSetId = gameSetId,
                 roundId = roundId,
@@ -101,9 +101,9 @@ fun MarriageNavGraph(navController: NavHostController) {
 
         composable(
             route = Screen.Scoreboard.route,
-            arguments = listOf(navArgument("gameSetId") { type = NavType.IntType })
+            arguments = listOf(navArgument("gameSetId") { type = NavType.StringType })
         ) { backStackEntry ->
-            val gameSetId = backStackEntry.arguments?.getInt("gameSetId") ?: return@composable
+            val gameSetId = backStackEntry.arguments?.getString("gameSetId") ?: return@composable
             ScoreboardScreen(
                 gameSetId = gameSetId,
                 onBack = { navController.popBackStack() }

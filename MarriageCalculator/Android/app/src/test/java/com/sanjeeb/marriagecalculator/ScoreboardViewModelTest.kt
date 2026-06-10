@@ -1,23 +1,40 @@
 package com.sanjeeb.marriagecalculator
 
+import com.sanjeeb.marriagecalculator.data.local.GameSetEntity
+import com.sanjeeb.marriagecalculator.data.local.RoundEntity
+import com.sanjeeb.marriagecalculator.data.local.RoundScoreEntity
 import com.sanjeeb.marriagecalculator.data.model.Currency
 import com.sanjeeb.marriagecalculator.data.model.GameSettings
 import com.sanjeeb.marriagecalculator.data.model.Player
+import com.sanjeeb.marriagecalculator.data.repository.OfflineGameRepository
 import com.sanjeeb.marriagecalculator.ui.scoreboard.ScoreboardViewModel
+import io.mockk.*
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.test.*
+import org.junit.After
 import org.junit.Assert.*
 import org.junit.Before
 import org.junit.Test
 
+@OptIn(ExperimentalCoroutinesApi::class)
 class ScoreboardViewModelTest {
 
+    private val testDispatcher = UnconfinedTestDispatcher()
+
     private lateinit var viewModel: ScoreboardViewModel
+    private val repository: OfflineGameRepository = mockk(relaxed = true)
+
     private val testPlayers = listOf(
-        Player(id = 1, name = "Alice"),
-        Player(id = 2, name = "Bob"),
-        Player(id = 3, name = "Charlie"),
-        Player(id = 4, name = "Dave")
+        Player(id = "1", name = "Alice"),
+        Player(id = "2", name = "Bob"),
+        Player(id = "3", name = "Charlie"),
+        Player(id = "4", name = "Dave")
     )
+
     private val settings = GameSettings(
+        id = "1",
         pointRate = 10.0,
         seenPoint = 3,
         unseenPoint = 10,
@@ -26,61 +43,126 @@ class ScoreboardViewModelTest {
         currency = Currency.NPR_Rupee
     )
 
+    private val gameSetEntity = GameSetEntity(
+        id = 1,
+        settingsId = 1,
+        isActive = true,
+        isSettled = false
+    )
+
     @Before
     fun setup() {
-        viewModel = ScoreboardViewModel()
-        viewModel.initScoreboard(testPlayers, settings)
+        Dispatchers.setMain(testDispatcher)
+        viewModel = ScoreboardViewModel(repository)
+    }
+
+    @After
+    fun tearDown() {
+        Dispatchers.resetMain()
     }
 
     @Test
-    fun `initScoreboard sets players with zero scores`() {
+    fun `loadScoreboardData successfully updates uiState`() = runTest {
+        val gameSetId = 1
+        
+        coEvery { repository.getGameSetPlayers(gameSetId) } returns testPlayers
+        coEvery { repository.getGameSet(gameSetId) } returns gameSetEntity
+        coEvery { repository.getGameSettings(1) } returns settings
+
+        val roundEntity = RoundEntity(id = 10, gameSetId = gameSetId, roundNumber = 1, winnerId = 1, totalMaal = 15)
+        every { repository.getRounds(gameSetId) } returns flowOf(listOf(roundEntity))
+
+        val scores = listOf(
+            RoundScoreEntity(id = 101, roundId = 10, playerId = 1, score = 30, maal = 15, isSeen = true, isWinner = true),
+            RoundScoreEntity(id = 102, roundId = 10, playerId = 2, score = -10, maal = 0, isSeen = true, isWinner = false),
+            RoundScoreEntity(id = 103, roundId = 10, playerId = 3, score = -10, maal = 0, isSeen = true, isWinner = false),
+            RoundScoreEntity(id = 104, roundId = 10, playerId = 4, score = -10, maal = 0, isSeen = true, isWinner = false)
+        )
+        coEvery { repository.getAllScoresForGameSet(gameSetId) } returns scores
+
+        viewModel.loadScoreboardData("1")
+
         val state = viewModel.uiState.value
+        assertEquals("1", state.gameSetId)
         assertEquals(4, state.players.size)
-        assertTrue(state.players.all { it.totalPoints == 0 })
-        assertTrue(state.players.all { it.totalMoney == 0.0 })
-    }
-
-    @Test
-    fun `addRoundResult updates player scores`() {
-        val scores = mapOf(1 to 30, 2 to -10, 3 to -10, 4 to -10)
-        viewModel.addRoundResult(winnerId = 1, scores = scores, totalMaal = 15)
-
-        val state = viewModel.uiState.value
-        assertEquals(30, state.players.find { it.player.id == 1 }!!.totalPoints)
-        assertEquals(-10, state.players.find { it.player.id == 2 }!!.totalPoints)
+        assertEquals(30, state.players.find { it.player.id == "1" }!!.totalPoints)
+        assertEquals(-10, state.players.find { it.player.id == "2" }!!.totalPoints)
+        assertEquals(300.0, state.players.find { it.player.id == "1" }!!.totalMoney, 0.01)
+        assertEquals(-100.0, state.players.find { it.player.id == "2" }!!.totalMoney, 0.01)
         assertEquals(1, state.rounds.size)
+        assertEquals("Alice", state.rounds[0].winnerName)
+        assertEquals(15, state.rounds[0].totalMaal)
     }
 
     @Test
-    fun `multiple rounds accumulate scores`() {
-        viewModel.addRoundResult(1, mapOf(1 to 20, 2 to -5, 3 to -5, 4 to -10), 10)
-        viewModel.addRoundResult(2, mapOf(1 to -8, 2 to 24, 3 to -8, 4 to -8), 12)
+    fun `multiple rounds accumulate scores`() = runTest {
+        val gameSetId = 1
+        
+        coEvery { repository.getGameSetPlayers(gameSetId) } returns testPlayers
+        coEvery { repository.getGameSet(gameSetId) } returns gameSetEntity
+        coEvery { repository.getGameSettings(1) } returns settings
+
+        val round1 = RoundEntity(id = 10, gameSetId = gameSetId, roundNumber = 1, winnerId = 1, totalMaal = 10)
+        val round2 = RoundEntity(id = 11, gameSetId = gameSetId, roundNumber = 2, winnerId = 2, totalMaal = 12)
+        every { repository.getRounds(gameSetId) } returns flowOf(listOf(round1, round2))
+
+        val scores = listOf(
+            RoundScoreEntity(id = 101, roundId = 10, playerId = 1, score = 20, isWinner = true),
+            RoundScoreEntity(id = 102, roundId = 10, playerId = 2, score = -5, isWinner = false),
+            RoundScoreEntity(id = 103, roundId = 10, playerId = 3, score = -5, isWinner = false),
+            RoundScoreEntity(id = 104, roundId = 10, playerId = 4, score = -10, isWinner = false),
+            RoundScoreEntity(id = 105, roundId = 11, playerId = 1, score = -8, isWinner = false),
+            RoundScoreEntity(id = 106, roundId = 11, playerId = 2, score = 24, isWinner = true),
+            RoundScoreEntity(id = 107, roundId = 11, playerId = 3, score = -8, isWinner = false),
+            RoundScoreEntity(id = 108, roundId = 11, playerId = 4, score = -8, isWinner = false)
+        )
+        coEvery { repository.getAllScoresForGameSet(gameSetId) } returns scores
+
+        viewModel.loadScoreboardData("1")
 
         val state = viewModel.uiState.value
-        assertEquals(12, state.players.find { it.player.id == 1 }!!.totalPoints) // 20 + (-8)
-        assertEquals(19, state.players.find { it.player.id == 2 }!!.totalPoints) // -5 + 24
+        assertEquals(12, state.players.find { it.player.id == "1" }!!.totalPoints) // 20 + (-8)
+        assertEquals(19, state.players.find { it.player.id == "2" }!!.totalPoints) // -5 + 24
         assertEquals(2, state.rounds.size)
+        assertEquals("Alice", state.rounds[0].winnerName)
+        assertEquals("Bob", state.rounds[1].winnerName)
     }
 
     @Test
-    fun `winner count tracks correctly`() {
-        viewModel.addRoundResult(1, mapOf(1 to 20, 2 to -5, 3 to -5, 4 to -10), 10)
-        viewModel.addRoundResult(1, mapOf(1 to 15, 2 to -5, 3 to -5, 4 to -5), 8)
-        viewModel.addRoundResult(3, mapOf(1 to -5, 2 to -5, 3 to 15, 4 to -5), 8)
+    fun `winner count tracks correctly`() = runTest {
+        val gameSetId = 1
+        
+        coEvery { repository.getGameSetPlayers(gameSetId) } returns testPlayers
+        coEvery { repository.getGameSet(gameSetId) } returns gameSetEntity
+        coEvery { repository.getGameSettings(1) } returns settings
+
+        val round1 = RoundEntity(id = 10, gameSetId = gameSetId, roundNumber = 1, winnerId = 1, totalMaal = 10)
+        val round2 = RoundEntity(id = 11, gameSetId = gameSetId, roundNumber = 2, winnerId = 1, totalMaal = 8)
+        val round3 = RoundEntity(id = 12, gameSetId = gameSetId, roundNumber = 3, winnerId = 3, totalMaal = 8)
+        every { repository.getRounds(gameSetId) } returns flowOf(listOf(round1, round2, round3))
+
+        val scores = listOf(
+            RoundScoreEntity(id = 101, roundId = 10, playerId = 1, score = 20, isWinner = true),
+            RoundScoreEntity(id = 102, roundId = 10, playerId = 2, score = -5, isWinner = false),
+            RoundScoreEntity(id = 103, roundId = 10, playerId = 3, score = -5, isWinner = false),
+            RoundScoreEntity(id = 104, roundId = 10, playerId = 4, score = -10, isWinner = false),
+            RoundScoreEntity(id = 105, roundId = 11, playerId = 1, score = 15, isWinner = true),
+            RoundScoreEntity(id = 106, roundId = 11, playerId = 2, score = -5, isWinner = false),
+            RoundScoreEntity(id = 107, roundId = 11, playerId = 3, score = -5, isWinner = false),
+            RoundScoreEntity(id = 108, roundId = 11, playerId = 4, score = -5, isWinner = false),
+            RoundScoreEntity(id = 109, roundId = 12, playerId = 1, score = -5, isWinner = false),
+            RoundScoreEntity(id = 110, roundId = 12, playerId = 2, score = -5, isWinner = false),
+            RoundScoreEntity(id = 111, roundId = 12, playerId = 3, score = 15, isWinner = true),
+            RoundScoreEntity(id = 112, roundId = 12, playerId = 4, score = -5, isWinner = false)
+        )
+        coEvery { repository.getAllScoresForGameSet(gameSetId) } returns scores
+
+        viewModel.loadScoreboardData("1")
 
         val state = viewModel.uiState.value
-        assertEquals(2, state.players.find { it.player.id == 1 }!!.gamesWon)
-        assertEquals(0, state.players.find { it.player.id == 2 }!!.gamesWon)
-        assertEquals(1, state.players.find { it.player.id == 3 }!!.gamesWon)
-    }
-
-    @Test
-    fun `money calculation uses point rate`() {
-        viewModel.addRoundResult(1, mapOf(1 to 30, 2 to -10, 3 to -10, 4 to -10), 15)
-
-        val state = viewModel.uiState.value
-        assertEquals(300.0, state.players.find { it.player.id == 1 }!!.totalMoney, 0.01)
-        assertEquals(-100.0, state.players.find { it.player.id == 2 }!!.totalMoney, 0.01)
+        assertEquals(2, state.players.find { it.player.id == "1" }!!.gamesWon)
+        assertEquals(0, state.players.find { it.player.id == "2" }!!.gamesWon)
+        assertEquals(1, state.players.find { it.player.id == "3" }!!.gamesWon)
     }
 
     @Test
@@ -93,19 +175,24 @@ class ScoreboardViewModelTest {
     }
 
     @Test
-    fun `settleGame marks as settled`() {
+    fun `settleGame calls repository and marks as settled`() = runTest {
+        val gameSetId = 1
+        
+        coEvery { repository.getGameSetPlayers(gameSetId) } returns testPlayers
+        coEvery { repository.getGameSet(gameSetId) } returns gameSetEntity
+        coEvery { repository.getGameSettings(1) } returns settings
+        every { repository.getRounds(gameSetId) } returns flowOf(emptyList())
+        coEvery { repository.getAllScoresForGameSet(gameSetId) } returns emptyList()
+
+        viewModel.loadScoreboardData("1")
+        
         assertFalse(viewModel.uiState.value.isSettled)
+
+        coEvery { repository.settleGame(gameSetId) } just Runs
+
         viewModel.settleGame()
+
         assertTrue(viewModel.uiState.value.isSettled)
-    }
-
-    @Test
-    fun `round history records winner name`() {
-        viewModel.addRoundResult(2, mapOf(1 to -10, 2 to 30, 3 to -10, 4 to -10), 12)
-
-        val round = viewModel.uiState.value.rounds.first()
-        assertEquals("Bob", round.winnerName)
-        assertEquals(2, round.winnerId)
-        assertEquals(1, round.roundNumber)
+        coVerify(exactly = 1) { repository.settleGame(gameSetId) }
     }
 }

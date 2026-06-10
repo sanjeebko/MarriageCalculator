@@ -30,11 +30,15 @@ import com.sanjeeb.marriagecalculator.ui.theme.TiharNightBlue
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ScoreboardScreen(
-    gameSetId: Int,
+    gameSetId: String,
     onBack: () -> Unit,
     viewModel: ScoreboardViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
+
+    LaunchedEffect(gameSetId) {
+        viewModel.loadScoreboardData(gameSetId)
+    }
 
     Scaffold(
         topBar = {
@@ -99,7 +103,7 @@ private fun ScoreboardView(uiState: ScoreboardUiState, onSettle: () -> Unit) {
 
             // Who Owes Whom section
             if (sortedPlayers.any { it.totalPoints != 0 }) {
-                WhoOwesWhomSection(sortedPlayers, uiState.settings.pointRate)
+                WhoOwesWhomSection(sortedPlayers, uiState.settings.pointRate, currency)
             }
 
             Spacer(modifier = Modifier.height(16.dp))
@@ -206,7 +210,7 @@ private fun PlayerScoreRow(playerScore: PlayerTotalScore, rank: Int, currency: S
 }
 
 @Composable
-private fun WhoOwesWhomSection(players: List<PlayerTotalScore>, pointRate: Double) {
+private fun WhoOwesWhomSection(players: List<PlayerTotalScore>, pointRate: Double, currency: String) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(12.dp),
@@ -222,33 +226,66 @@ private fun WhoOwesWhomSection(players: List<PlayerTotalScore>, pointRate: Doubl
             )
             Spacer(modifier = Modifier.height(8.dp))
 
-            // Simple settlement: losers pay winners
-            val winners = players.filter { it.totalPoints > 0 }.sortedByDescending { it.totalPoints }
-            val losers = players.filter { it.totalPoints < 0 }.sortedBy { it.totalPoints }
+            // Greedy matching algorithm for settlement:
+            val receivers = players.filter { it.totalMoney > 0 }
+                .map { it.player.name to it.totalMoney }
+                .sortedByDescending { it.second }
+                .toMutableList()
 
-            if (winners.isEmpty() || losers.isEmpty()) {
+            val givers = players.filter { it.totalMoney < 0 }
+                .map { it.player.name to -it.totalMoney }
+                .sortedByDescending { it.second }
+                .toMutableList()
+
+            if (receivers.isEmpty() || givers.isEmpty()) {
                 Text("All settled!", color = Color.White.copy(alpha = 0.5f))
                 return@Column
             }
 
-            for (loser in losers) {
-                for (winner in winners) {
-                    val amount = kotlin.math.abs(loser.totalMoney)
-                    if (amount > 0) {
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(vertical = 2.dp),
-                            horizontalArrangement = Arrangement.SpaceBetween
-                        ) {
-                            Text(
-                                "${loser.player.name} → ${winner.player.name}",
-                                color = Color.White.copy(alpha = 0.7f),
-                                fontSize = 13.sp
-                            )
-                        }
+            var printedAny = false
+            var giverIdx = 0
+            var receiverIdx = 0
+
+            while (giverIdx < givers.size && receiverIdx < receivers.size) {
+                val (giverName, giverAmt) = givers[giverIdx]
+                val (receiverName, receiverAmt) = receivers[receiverIdx]
+
+                val amount = kotlin.math.min(giverAmt, receiverAmt)
+                if (amount > 0.01) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 2.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Text(
+                            "$giverName → $receiverName",
+                            color = Color.White.copy(alpha = 0.7f),
+                            fontSize = 13.sp
+                        )
+                        Text(
+                            "${String.format("%.0f", amount)} $currency",
+                            color = GoldAccent,
+                            fontSize = 13.sp,
+                            fontWeight = FontWeight.Bold
+                        )
                     }
+                    printedAny = true
                 }
+
+                givers[giverIdx] = giverName to (giverAmt - amount)
+                receivers[receiverIdx] = receiverName to (receiverAmt - amount)
+
+                if (givers[giverIdx].second < 0.01) {
+                    giverIdx++
+                }
+                if (receivers[receiverIdx].second < 0.01) {
+                    receiverIdx++
+                }
+            }
+
+            if (!printedAny) {
+                Text("All settled!", color = Color.White.copy(alpha = 0.5f))
             }
         }
     }

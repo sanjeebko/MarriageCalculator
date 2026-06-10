@@ -1,70 +1,64 @@
 using MarriageCalculator.API.Data;
 using MarriageCalculator.Core.Models;
-using Microsoft.EntityFrameworkCore;
+using MongoDB.Driver;
 
 namespace MarriageCalculator.API.Repositories;
 
 public class GameSettingsRepository : IGameSettingsRepository
 {
-    private readonly MarriageCalculatorDbContext _context;
+    private readonly IMongoCollection<GameSettings> _collection;
 
-    public GameSettingsRepository(MarriageCalculatorDbContext context)
+    public GameSettingsRepository(MongoDbContext context)
     {
-        _context = context;
+        _collection = context.GameSettings;
     }
 
-    public async Task<IEnumerable<GameSettings>> GetAllAsync()
+    public async Task<IEnumerable<GameSettings>> GetAllByUserIdAsync(string userId)
     {
-        return await _context.GameSettings.ToListAsync();
+        return await _collection.Find(gs => gs.UserId == userId).ToListAsync();
     }
 
-    public async Task<GameSettings?> GetByIdAsync(int id)
+    public async Task<GameSettings?> GetByIdAsync(string id, string userId)
     {
-        return await _context.GameSettings.FindAsync(id);
+        return await _collection.Find(gs => gs.Id == id && gs.UserId == userId).FirstOrDefaultAsync();
     }
 
     public async Task<GameSettings> CreateAsync(GameSettings settings)
     {
-        _context.GameSettings.Add(settings);
-        await _context.SaveChangesAsync();
+        await _collection.InsertOneAsync(settings);
         return settings;
     }
 
-    public async Task<GameSettings?> UpdateAsync(int id, GameSettings settings)
+    public async Task<GameSettings?> UpdateAsync(string id, GameSettings settings, string userId)
     {
-        var existing = await GetByIdAsync(id);
-        if (existing == null) return null;
+        var update = Builders<GameSettings>.Update
+            .Set(gs => gs.Murder, settings.Murder)
+            .Set(gs => gs.Kidnap, settings.Kidnap)
+            .Set(gs => gs.SeenPoint, settings.SeenPoint)
+            .Set(gs => gs.UnseenPoint, settings.UnseenPoint)
+            .Set(gs => gs.PointRate, settings.PointRate)
+            .Set(gs => gs.Currency, settings.Currency)
+            .Set(gs => gs.Dublee, settings.Dublee)
+            .Set(gs => gs.DubleePointLess, settings.DubleePointLess)
+            .Set(gs => gs.DubleePointBonus, settings.DubleePointBonus)
+            .Set(gs => gs.FoulPoint, settings.FoulPoint)
+            .Set(gs => gs.FoulPointBonus, settings.FoulPointBonus)
+            .Set(gs => gs.Audio, settings.Audio);
 
-        // Update properties
-        existing.Murder = settings.Murder;
-        existing.Kidnap = settings.Kidnap;
-        existing.SeenPoint = settings.SeenPoint;
-        existing.UnseenPoint = settings.UnseenPoint;
-        existing.PointRate = settings.PointRate;
-        existing.Currency = settings.Currency;
-        existing.Dublee = settings.Dublee;
-        existing.DubleePointLess = settings.DubleePointLess;
-        existing.DubleePointBonus = settings.DubleePointBonus;
-        existing.FoulPoint = settings.FoulPoint;
-        existing.FoulPointBonus = settings.FoulPointBonus;
-        existing.Audio = settings.Audio;
-
-        await _context.SaveChangesAsync();
-        return existing;
+        return await _collection.FindOneAndUpdateAsync(
+            gs => gs.Id == id && gs.UserId == userId,
+            update,
+            new FindOneAndUpdateOptions<GameSettings> { ReturnDocument = ReturnDocument.After });
     }
 
-    public async Task<bool> DeleteAsync(int id)
+    public async Task<bool> DeleteAsync(string id, string userId)
     {
-        var settings = await GetByIdAsync(id);
-        if (settings == null) return false;
-
-        _context.GameSettings.Remove(settings);
-        await _context.SaveChangesAsync();
-        return true;
+        var result = await _collection.DeleteOneAsync(gs => gs.Id == id && gs.UserId == userId);
+        return result.DeletedCount > 0;
     }
 
-    public async Task<bool> ExistsAsync(int id)
+    public async Task<bool> ExistsAsync(string id, string userId)
     {
-        return await _context.GameSettings.AnyAsync(gs => gs.Id == id);
+        return await _collection.CountDocumentsAsync(gs => gs.Id == id && gs.UserId == userId) > 0;
     }
 }

@@ -12,7 +12,8 @@ data class PlayerEntity(
     val email: String = "",
     val phone: String = "",
     val isGuest: Boolean = true,
-    val remoteId: Int? = null,
+    val remoteId: String? = null,
+    val photoUri: String? = null,
     val createdAt: Long = System.currentTimeMillis()
 )
 
@@ -27,7 +28,7 @@ data class GameSettingsEntity(
     val currency: Int = 0,
     val dublee: Boolean = true,
     val dubleePointLess: Boolean = true,
-    val remoteId: Int? = null
+    val remoteId: String? = null
 )
 
 @Entity(
@@ -42,7 +43,7 @@ data class GameSetEntity(
     val isActive: Boolean = true,
     val isSettled: Boolean = false,
     val createdAt: Long = System.currentTimeMillis(),
-    val remoteId: Int? = null,
+    val remoteId: String? = null,
     val synced: Boolean = false
 )
 
@@ -74,7 +75,7 @@ data class RoundEntity(
     val winnerId: Int,
     val totalMaal: Int = 0,
     val createdAt: Long = System.currentTimeMillis(),
-    val remoteId: Int? = null,
+    val remoteId: String? = null,
     val synced: Boolean = false
 )
 
@@ -149,7 +150,7 @@ interface GameSetDao {
     suspend fun getUnsynced(): List<GameSetEntity>
 
     @Query("UPDATE game_sets SET synced = 1, remoteId = :remoteId WHERE id = :localId")
-    suspend fun markSynced(localId: Int, remoteId: Int)
+    suspend fun markSynced(localId: Int, remoteId: String)
 }
 
 @Dao
@@ -179,7 +180,7 @@ interface RoundDao {
     suspend fun getUnsynced(): List<RoundEntity>
 
     @Query("UPDATE rounds SET synced = 1, remoteId = :remoteId WHERE id = :localId")
-    suspend fun markSynced(localId: Int, remoteId: Int)
+    suspend fun markSynced(localId: Int, remoteId: String)
 }
 
 @Dao

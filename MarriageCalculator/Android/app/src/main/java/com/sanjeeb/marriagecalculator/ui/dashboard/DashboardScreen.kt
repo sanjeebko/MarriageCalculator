@@ -31,11 +31,14 @@ import com.sanjeeb.marriagecalculator.ui.theme.DeepRedTika
 import com.sanjeeb.marriagecalculator.ui.theme.GoldAccent
 import com.sanjeeb.marriagecalculator.ui.theme.MarigoldOrange
 import com.sanjeeb.marriagecalculator.ui.theme.TiharNightBlue
+import com.sanjeeb.marriagecalculator.ui.components.MetallicButton
+import com.sanjeeb.marriagecalculator.ui.components.MetallicRedFace
+import com.sanjeeb.marriagecalculator.ui.components.MetallicRedRim
 
 @Composable
 fun DashboardScreen(
     onNewGame: () -> Unit,
-    onResumeGame: (Int) -> Unit,
+    onResumeGame: (String) -> Unit,
     viewModel: DashboardViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
@@ -94,29 +97,22 @@ fun DashboardScreen(
             Spacer(modifier = Modifier.height(32.dp))
 
             // New Game Button
-            Button(
+            MetallicButton(
                 onClick = onNewGame,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(72.dp),
-                shape = RoundedCornerShape(16.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = DeepRedTika)
-            ) {
-                Icon(
-                    imageVector = Icons.Default.Add,
-                    contentDescription = null,
-                    tint = GoldAccent,
-                    modifier = Modifier.size(28.dp)
-                )
-                Spacer(modifier = Modifier.width(12.dp))
-                Text(
-                    text = "New Game",
-                    color = GoldAccent,
-                    fontSize = 20.sp,
-                    fontWeight = FontWeight.Bold,
-                    fontFamily = FontFamily.Serif
-                )
-            }
+                text = "New Game",
+                rimColors = MetallicRedRim,
+                faceColors = MetallicRedFace,
+                textColor = GoldAccent,
+                modifier = Modifier.height(72.dp),
+                leadingIcon = {
+                    Icon(
+                        imageVector = Icons.Default.Add,
+                        contentDescription = null,
+                        tint = GoldAccent,
+                        modifier = Modifier.size(28.dp)
+                    )
+                }
+            )
 
             Spacer(modifier = Modifier.height(24.dp))
 

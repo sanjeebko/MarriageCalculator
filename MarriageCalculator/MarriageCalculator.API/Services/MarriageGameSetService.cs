@@ -8,15 +8,15 @@ public class MarriageGameSetService(IMarriageGameSetRepository gameSetRepository
 {
     private readonly IMarriageGameSetRepository _gameSetRepository = gameSetRepository;
 
-    public async Task<IEnumerable<MarriageGameSetDto>> GetAllGameSetsAsync()
+    public async Task<IEnumerable<MarriageGameSetDto>> GetAllGameSetsAsync(string hostUserId)
     {
-        var gameSets = await _gameSetRepository.GetAllAsync();
+        var gameSets = await _gameSetRepository.GetAllByHostUserIdAsync(hostUserId);
         return gameSets.Select(MapToDto);
     }
 
-    public async Task<MarriageGameSetDto?> GetGameSetByIdAsync(int id)
+    public async Task<MarriageGameSetDto?> GetGameSetByIdAsync(string id, string hostUserId)
     {
-        var gameSet = await _gameSetRepository.GetByIdAsync(id);
+        var gameSet = await _gameSetRepository.GetByIdAsync(id, hostUserId);
         return gameSet != null ? MapToDto(gameSet) : null;
     }
 
@@ -24,6 +24,7 @@ public class MarriageGameSetService(IMarriageGameSetRepository gameSetRepository
     {
         var gameSet = new MarriageGameSet
         {
+            HostUserId = createDto.HostUserId,
             Name = createDto.Name,
             GameSettingsId = createDto.GameSettingsId,
             Created = DateTime.UtcNow,
@@ -35,32 +36,33 @@ public class MarriageGameSetService(IMarriageGameSetRepository gameSetRepository
         return MapToDto(createdGameSet);
     }
 
-    public async Task<MarriageGameSetDto?> UpdateGameSetAsync(int id, CreateMarriageGameSetDto updateDto)
+    public async Task<MarriageGameSetDto?> UpdateGameSetAsync(string id, CreateMarriageGameSetDto updateDto, string hostUserId)
     {
         var gameSetToUpdate = new MarriageGameSet
         {
+            HostUserId = updateDto.HostUserId,
             Name = updateDto.Name,
             GameSettingsId = updateDto.GameSettingsId,
             LastPlayed = DateTime.UtcNow
         };
 
-        var updatedGameSet = await _gameSetRepository.UpdateAsync(id, gameSetToUpdate);
+        var updatedGameSet = await _gameSetRepository.UpdateAsync(id, gameSetToUpdate, hostUserId);
         return updatedGameSet != null ? MapToDto(updatedGameSet) : null;
     }
 
-    public async Task<bool> DeleteGameSetAsync(int id)
+    public async Task<bool> DeleteGameSetAsync(string id, string hostUserId)
     {
-        return await _gameSetRepository.DeleteAsync(id);
+        return await _gameSetRepository.DeleteAsync(id, hostUserId);
     }
 
-    public async Task<bool> GameSetExistsAsync(int id)
+    public async Task<bool> GameSetExistsAsync(string id, string hostUserId)
     {
-        return await _gameSetRepository.ExistsAsync(id);
+        return await _gameSetRepository.ExistsAsync(id, hostUserId);
     }
 
-    public async Task<MarriageGameSetDto?> GetLatestActiveGameSetAsync()
+    public async Task<MarriageGameSetDto?> GetLatestActiveGameSetAsync(string hostUserId)
     {
-        var gameSet = await _gameSetRepository.GetLatestActiveAsync();
+        var gameSet = await _gameSetRepository.GetLatestActiveAsync(hostUserId);
         return gameSet != null ? MapToDto(gameSet) : null;
     }
 
@@ -69,6 +71,7 @@ public class MarriageGameSetService(IMarriageGameSetRepository gameSetRepository
         return new MarriageGameSetDto
         {
             Id = gameSet.Id,
+            HostUserId = gameSet.HostUserId,
             Name = gameSet.Name,
             LastPlayed = gameSet.LastPlayed,
             Created = gameSet.Created,

@@ -1,5 +1,5 @@
 [versions]
-agp = "9.0.0"
+agp = "9.2.1"
 kotlin = "2.2.10"
 coreKtx = "1.17.0"
 junit = "4.13.2"
@@ -19,6 +19,9 @@ composeBom = "2026.02.01"
 activityCompose = "1.12.4"
 lifecycleViewmodelCompose = "2.10.0"
 gson = "2.12.1"
+coil = "2.6.0"
+mockk = "1.13.13"
+
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -58,6 +61,10 @@ room-compiler = { group = "androidx.room", name = "room-compiler", version.ref =
 coroutines-core = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-core", version.ref = "coroutines" }
 coroutines-android = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-android", version.ref = "coroutines" }
 coroutines-test = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-test", version.ref = "coroutines" }
+
+# Coil
+coil-compose = { group = "io.coil-kt", name = "coil-compose", version.ref = "coil" }
+mockk = { group = "io.mockk", name = "mockk", version.ref = "mockk" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

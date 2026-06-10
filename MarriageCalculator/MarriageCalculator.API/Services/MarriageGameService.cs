@@ -19,7 +19,7 @@ public class MarriageGameService : IMarriageGameService
         return games.Select(MapToDto);
     }
 
-    public async Task<MarriageGameDto?> GetGameByIdAsync(int id)
+    public async Task<MarriageGameDto?> GetGameByIdAsync(string id)
     {
         var game = await _gameRepository.GetByIdAsync(id);
         return game != null ? MapToDto(game) : null;
@@ -42,7 +42,7 @@ public class MarriageGameService : IMarriageGameService
         return MapToDto(createdGame);
     }
 
-    public async Task<MarriageGameDto?> UpdateGameAsync(int id, CreateMarriageGameDto updateDto)
+    public async Task<MarriageGameDto?> UpdateGameAsync(string id, CreateMarriageGameDto updateDto)
     {
         var gameToUpdate = new MarriageGame
         {
@@ -58,17 +58,17 @@ public class MarriageGameService : IMarriageGameService
         return updatedGame != null ? MapToDto(updatedGame) : null;
     }
 
-    public async Task<bool> DeleteGameAsync(int id)
+    public async Task<bool> DeleteGameAsync(string id)
     {
         return await _gameRepository.DeleteAsync(id);
     }
 
-    public async Task<bool> GameExistsAsync(int id)
+    public async Task<bool> GameExistsAsync(string id)
     {
         return await _gameRepository.ExistsAsync(id);
     }
 
-    public async Task<IEnumerable<MarriageGameDto>> GetGamesByRoundIdAsync(int roundId)
+    public async Task<IEnumerable<MarriageGameDto>> GetGamesByRoundIdAsync(string roundId)
     {
         var games = await _gameRepository.GetByRoundIdAsync(roundId);
         return games.Select(MapToDto);

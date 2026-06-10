@@ -16,10 +16,10 @@ class PlayerRepository @Inject constructor(
     private val api: PlayerApiService
 ) {
     suspend fun getPlayers(): ApiResult<List<Player>> = safeApiCall { api.getPlayers() }
-    suspend fun getPlayer(id: Int): ApiResult<Player> = safeApiCall { api.getPlayer(id) }
+    suspend fun getPlayer(id: String): ApiResult<Player> = safeApiCall { api.getPlayer(id) }
     suspend fun createPlayer(request: CreatePlayerRequest): ApiResult<Player> = safeApiCall { api.createPlayer(request) }
-    suspend fun updatePlayer(id: Int, request: UpdatePlayerRequest): ApiResult<Player> = safeApiCall { api.updatePlayer(id, request) }
-    suspend fun deletePlayer(id: Int): ApiResult<Unit> = safeApiCall { api.deletePlayer(id) }
+    suspend fun updatePlayer(id: String, request: UpdatePlayerRequest): ApiResult<Player> = safeApiCall { api.updatePlayer(id, request) }
+    suspend fun deletePlayer(id: String): ApiResult<Unit> = safeApiCall { api.deletePlayer(id) }
 }
 
 @Singleton
@@ -27,9 +27,9 @@ class GameSettingsRepository @Inject constructor(
     private val api: GameSettingsApiService
 ) {
     suspend fun getGameSettings(): ApiResult<List<GameSettings>> = safeApiCall { api.getGameSettings() }
-    suspend fun getGameSetting(id: Int): ApiResult<GameSettings> = safeApiCall { api.getGameSetting(id) }
+    suspend fun getGameSetting(id: String): ApiResult<GameSettings> = safeApiCall { api.getGameSetting(id) }
     suspend fun createGameSettings(request: CreateGameSettingsRequest): ApiResult<GameSettings> = safeApiCall { api.createGameSettings(request) }
-    suspend fun updateGameSettings(id: Int, request: CreateGameSettingsRequest): ApiResult<GameSettings> = safeApiCall { api.updateGameSettings(id, request) }
+    suspend fun updateGameSettings(id: String, request: CreateGameSettingsRequest): ApiResult<GameSettings> = safeApiCall { api.updateGameSettings(id, request) }
 }
 
 @Singleton
@@ -37,7 +37,7 @@ class GameSetRepository @Inject constructor(
     private val api: MarriageGameSetApiService
 ) {
     suspend fun getGameSets(): ApiResult<List<MarriageGameSet>> = safeApiCall { api.getGameSets() }
-    suspend fun getGameSet(id: Int): ApiResult<MarriageGameSet> = safeApiCall { api.getGameSet(id) }
+    suspend fun getGameSet(id: String): ApiResult<MarriageGameSet> = safeApiCall { api.getGameSet(id) }
     suspend fun createGameSet(request: CreateGameSetRequest): ApiResult<MarriageGameSet> = safeApiCall { api.createGameSet(request) }
 }
 

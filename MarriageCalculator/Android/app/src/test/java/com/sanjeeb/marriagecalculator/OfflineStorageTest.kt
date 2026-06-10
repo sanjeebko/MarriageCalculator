@@ -14,7 +14,7 @@ class OfflineStorageTest {
     fun `PlayerEntity maps to Player correctly`() {
         val entity = PlayerEntity(id = 1, name = "Test Player", email = "test@test.com", isGuest = true)
         val player = entity.toDomainModel()
-        assertEquals(1, player.id)
+        assertEquals("1", player.id)
         assertEquals("Test Player", player.name)
         assertEquals("test@test.com", player.email)
     }
@@ -75,9 +75,9 @@ class OfflineStorageTest {
         assertFalse(gameSet.synced)
         assertNull(gameSet.remoteId)
 
-        val synced = gameSet.copy(synced = true, remoteId = 42)
+        val synced = gameSet.copy(synced = true, remoteId = "42")
         assertTrue(synced.synced)
-        assertEquals(42, synced.remoteId)
+        assertEquals("42", synced.remoteId)
     }
 
     @Test
@@ -85,8 +85,8 @@ class OfflineStorageTest {
         val round = RoundEntity(gameSetId = 1, roundNumber = 1, winnerId = 2, synced = false)
         assertFalse(round.synced)
 
-        val synced = round.copy(synced = true, remoteId = 99)
+        val synced = round.copy(synced = true, remoteId = "99")
         assertTrue(synced.synced)
-        assertEquals(99, synced.remoteId)
+        assertEquals("99", synced.remoteId)
     }
 }

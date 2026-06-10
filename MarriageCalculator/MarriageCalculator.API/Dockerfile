@@ -35,6 +35,9 @@ WORKDIR /app
 # Copy published application
 COPY --from=publish /app/publish .
 
+# Install curl for health checks
+RUN apt-get update && apt-get install -y --no-install-recommends curl && rm -rf /var/lib/apt/lists/*
+
 # Create a non-root user for security
 RUN adduser --disabled-password --gecos '' appuser && chown -R appuser /app
 USER appuser

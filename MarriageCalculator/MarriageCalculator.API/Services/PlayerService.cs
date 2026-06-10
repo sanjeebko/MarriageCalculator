@@ -19,7 +19,7 @@ public class PlayerService : IPlayerService
         return players.Select(MapToDto);
     }
 
-    public async Task<PlayerDto?> GetPlayerByIdAsync(int id)
+    public async Task<PlayerDto?> GetPlayerByIdAsync(string id)
     {
         var player = await _playerRepository.GetByIdAsync(id);
         return player != null ? MapToDto(player) : null;
@@ -38,7 +38,7 @@ public class PlayerService : IPlayerService
         return MapToDto(createdPlayer);
     }
 
-    public async Task<PlayerDto?> UpdatePlayerAsync(int id, UpdatePlayerDto updatePlayerDto)
+    public async Task<PlayerDto?> UpdatePlayerAsync(string id, UpdatePlayerDto updatePlayerDto)
     {
         var playerToUpdate = new Player
         {
@@ -50,12 +50,12 @@ public class PlayerService : IPlayerService
         return updatedPlayer != null ? MapToDto(updatedPlayer) : null;
     }
 
-    public async Task<bool> DeletePlayerAsync(int id)
+    public async Task<bool> DeletePlayerAsync(string id)
     {
         return await _playerRepository.DeleteAsync(id);
     }
 
-    public async Task<bool> PlayerExistsAsync(int id)
+    public async Task<bool> PlayerExistsAsync(string id)
     {
         return await _playerRepository.ExistsAsync(id);
     }

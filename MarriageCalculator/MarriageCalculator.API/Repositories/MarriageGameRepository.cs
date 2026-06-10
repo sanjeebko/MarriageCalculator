@@ -1,71 +1,67 @@
 using MarriageCalculator.API.Data;
 using MarriageCalculator.Core.Models;
-using Microsoft.EntityFrameworkCore;
+using MongoDB.Driver;
 
 namespace MarriageCalculator.API.Repositories;
 
 public class MarriageGameRepository : IMarriageGameRepository
 {
-    private readonly MarriageCalculatorDbContext _context;
+    private readonly IMongoCollection<MarriageGame> _collection;
 
-    public MarriageGameRepository(MarriageCalculatorDbContext context)
+    public MarriageGameRepository(MongoDbContext context)
     {
-        _context = context;
+        _collection = context.MarriageGames;
     }
 
     public async Task<IEnumerable<MarriageGame>> GetAllAsync()
     {
-        return await _context.MarriageGames.OrderByDescending(g => g.CreatedTime).ToListAsync();
+        return await _collection.Find(_ => true)
+            .SortByDescending(g => g.CreatedTime)
+            .ToListAsync();
     }
 
-    public async Task<MarriageGame?> GetByIdAsync(int id)
+    public async Task<MarriageGame?> GetByIdAsync(string id)
     {
-        return await _context.MarriageGames.FindAsync(id);
+        return await _collection.Find(g => g.Id == id).FirstOrDefaultAsync();
     }
 
     public async Task<MarriageGame> CreateAsync(MarriageGame game)
     {
-        _context.MarriageGames.Add(game);
-        await _context.SaveChangesAsync();
+        await _collection.InsertOneAsync(game);
         return game;
     }
 
-    public async Task<MarriageGame?> UpdateAsync(int id, MarriageGame game)
+    public async Task<MarriageGame?> UpdateAsync(string id, MarriageGame game)
     {
-        var existing = await GetByIdAsync(id);
-        if (existing == null) return null;
+        var update = Builders<MarriageGame>.Update
+            .Set(g => g.Sequence, game.Sequence)
+            .Set(g => g.MarriageGameRoundId, game.MarriageGameRoundId)
+            .Set(g => g.WinnerId, game.WinnerId)
+            .Set(g => g.DealerId, game.DealerId)
+            .Set(g => g.TotalMaal, game.TotalMaal)
+            .Set(g => g.ClosedRound, game.ClosedRound);
 
-        existing.Sequence = game.Sequence;
-        existing.MarriageGameRoundId = game.MarriageGameRoundId;
-        existing.WinnerId = game.WinnerId;
-        existing.DealerId = game.DealerId;
-        existing.TotalMaal = game.TotalMaal;
-        existing.ClosedRound = game.ClosedRound;
-
-        await _context.SaveChangesAsync();
-        return existing;
+        return await _collection.FindOneAndUpdateAsync(
+            g => g.Id == id,
+            update,
+            new FindOneAndUpdateOptions<MarriageGame> { ReturnDocument = ReturnDocument.After });
     }
 
-    public async Task<bool> DeleteAsync(int id)
+    public async Task<bool> DeleteAsync(string id)
     {
-        var game = await GetByIdAsync(id);
-        if (game == null) return false;
-
-        _context.MarriageGames.Remove(game);
-        await _context.SaveChangesAsync();
-        return true;
+        var result = await _collection.DeleteOneAsync(g => g.Id == id);
+        return result.DeletedCount > 0;
     }
 
-    public async Task<bool> ExistsAsync(int id)
+    public async Task<bool> ExistsAsync(string id)
     {
-        return await _context.MarriageGames.AnyAsync(g => g.Id == id);
+        return await _collection.CountDocumentsAsync(g => g.Id == id) > 0;
     }
 
-    public async Task<IEnumerable<MarriageGame>> GetByRoundIdAsync(int roundId)
+    public async Task<IEnumerable<MarriageGame>> GetByRoundIdAsync(string roundId)
     {
-        return await _context.MarriageGames
-            .Where(g => g.MarriageGameRoundId == roundId)
-            .OrderBy(g => g.Sequence)
+        return await _collection.Find(g => g.MarriageGameRoundId == roundId)
+            .SortBy(g => g.Sequence)
             .ToListAsync();
     }
 }

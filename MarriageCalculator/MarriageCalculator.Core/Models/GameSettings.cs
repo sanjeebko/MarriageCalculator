@@ -1,14 +1,16 @@
-﻿using System.ComponentModel.DataAnnotations;
-using System.ComponentModel.DataAnnotations.Schema;
+using MongoDB.Bson;
+using MongoDB.Bson.Serialization.Attributes;
+
 namespace MarriageCalculator.Core.Models;
 
-[Table("GameSettings")]
 public class GameSettings
 {
-    [Key]
-    [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
-    public int Id { get; set; }    
-    
+    [BsonId]
+    [BsonRepresentation(BsonType.ObjectId)]
+    public string Id { get; set; } = ObjectId.GenerateNewId().ToString();
+
+    public string UserId { get; set; } = string.Empty; // Owner of these settings
+
     public bool Murder { get; set; }
     public bool Kidnap { get; set; }
     public int SeenPoint { get; set; }
@@ -19,13 +21,13 @@ public class GameSettings
     public bool DubleePointLess { get; set; }
     public int DubleePointBonus { get; set; }
     public int FoulPoint { get; set; }
-    public FoulPointBonusType FoulPointBonus { get; set; }      
+    public FoulPointBonusType FoulPointBonus { get; set; }
     public bool Audio { get; set; }
 
-    public static GameSettings Default() {
+    public static GameSettings Default()
+    {
         return new GameSettings()
         {
-
             Murder = true,
             Kidnap = false,
             SeenPoint = 3,

@@ -118,41 +118,59 @@ The calculator handles the complex "give-and-take" logic:
 *   **Clarity**: Clearly show who owes whom immediately.
 *   **Mistake Correction**: Ability to edit previous rounds if a mistake was made.
 
-## 4. Authentication & Connectivity (New)
+## 4. Authentication & Connectivity
 
-### 4.1 Users & Authentication
-*   **Provider**: Firebase Authentication (Google Sign-In).
-*   **Modes**:
-    *   **Guest/Offline Mode**:
-        *   User plays locally.
-        *   Can create "Dummy Players" (local-only, simple names, no email required).
-    *   **Online Mode**:
-        *   Requires Sign-In.
-        *   Enables Cloud persistence and Multiplayer features.
+### 4.1 Login & User Entities
+*   **Provider**: Firebase Authentication (Google Sign-In / OAuth) or custom API authentication for testing.
+*   **Startup Flow**: 
+    *   **Login-First Flow**: The application entry point must start with a **Login Screen**. If a valid session exists, it automatically redirects to the Dashboard.
+    *   **Registration**: First-time sign-ins auto-register a new User entity on the API/database.
+*   **User Entity Schema**:
+    *   `UserId` (Unique key from auth provider, string).
+    *   `DisplayName` (string).
+    *   `Email` (string).
+    *   `CreatedAt` (DateTime).
 
-### 4.2 Friends & Social
+### 4.2 User-Centric Entity Relationships & Ownership
+*   **Game Settings Ownership**: 
+    *   Every custom configuration profile or default settings override is linked to a `UserId` (the settings owner).
+    *   Different users can maintain different default preferences (e.g. currency, point rate, seen/unseen penalties).
+*   **Game Sets & Games Ownership**:
+    *   A `MarriageGameSet` is created by a host user and must explicitly store a `HostUserId` (referencing the owning `User`).
+    *   Access to modify a Game Set, add rounds, or settle a game is restricted to requests made by the matching `HostUserId`.
+*   **Scores & Round Inputs Ownership**:
+    *   Each round's inputs and calculated points are logged inside a Game Set.
+    *   Participants are mapped either to registered `User` entities (using their `UserId`) or to "Dummy Players" (local to that Game Set).
+    *   Scores can be viewed in real-time by the registered participants.
+
+### 4.3 Concurrent Multi-User Testing & Isolation
+*   **Database Isolation**: All data queries for dashboard listings, active games, and settings are filtered by the requesting client's `UserId`.
+*   **Independent Sessions**: Multiple distinct QA testers/users can use and test the application at the same time on the same server without visual overlap or data corruption.
+*   **Mock/Test Users**: Backend supports signing in with mock credentials during local development or concurrent load testing.
+
+### 4.4 Friends & Social
 *   **Friend System**:
-    *   Users can send invitiations to other users.
-    *   The other user must install the app and accept the request to become "Friends".
+    *   Users can send invitations to other users.
+    *   The other user must accept the request to become "Friends".
 *   **Player Mapping (Dummy-to-Real)**:
-    *   A host can start a game with "Dummy Players" (e.g., "Player 2").
-    *   **Linking**: The host can later map a "Dummy Player" to a "Real Friend's Account".
-    *   **Constraint**: The Real User must be a "Friend" first.
-    *   **Auto-Update**: Once linked, the Dummy Player's display name automatically updates to the Real User's profile name.
+    *   A host can start a game with local "Dummy Players" (e.g., "Player 2").
+    *   **Linking**: The host can later map a "Dummy Player" to a "Real Friend's Account" using their `UserId`.
+    *   **Constraint**: The target player must be a "Friend" first.
+    *   **Auto-Update**: Once linked, display names sync automatically with the real user's profile.
 
-### 4.3 Game Ownership & Permissions
-*   **Single Owner**: A contest (Set of Games) has exactly **ONE** Owner at a time.
+### 4.5 Game Permissions & Role Transfer
+*   **Single Owner**: A contest (Set of Games) has exactly **ONE** Owner (`HostUserId`) at a time.
 *   **Permissions**:
-    *   **Owner/Host**: Full access to Add Rounds, Edit Scores, Modify Settings.
-    *   **Participants**: Read-only access to Game Calculation and History (Real-time view).
-*   **Transfer**: ownership can be transferred from the current Owner to another player in the game.
+    *   **Owner/Host**: Full access to add/edit rounds, modify settings, settle scores.
+    *   **Participants**: Read-only access to calculation results and history (real-time synced view).
+*   **Transfer**: The owner can transfer the `HostUserId` permission to any other registered participant user in the game.
 
-### 4.4 Notifications (FCM)
+### 4.6 Notifications (FCM)
 *   **Infrastructure**: Firebase Cloud Messaging (FCM).
 *   **Feature: Nudge**:
-    *   **Action**: The Game Owner can "Nudge" players to join/resume the game.
-    *   **Behavior**: Sends an offline push notification to the target player(s).
-    *   **Deep Link**: Clicking the notification automatically launches the app and navigates directly to the specific Game Page.
+    *   **Action**: The game owner can trigger a "Nudge" to participants.
+    *   **Behavior**: Sends an offline push notification.
+    *   **Deep Link**: Clicking the notification launches the app directly into the specific Game Set page.
 
 ## 5. Branding & Assets
 *   **App Icon**:
