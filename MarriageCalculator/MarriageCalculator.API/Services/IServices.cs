@@ -47,6 +47,7 @@ public interface IMarriageGameSetService
     Task<MarriageGameSetDto?> GetLatestActiveGameSetAsync(string hostUserId);
     Task<MarriageGameSetDto?> TransferHostAsync(string id, string currentHostUserId, string newHostUserId);
     Task<bool> NudgePlayerAsync(string gameSetId, string hostUserId, string playerId);
+    Task<MarriageGameRoundDto> SubmitRoundAsync(string gameSetId, string hostUserId, SubmitRoundDto dto);
 }
 
 public interface IMarriageGameService

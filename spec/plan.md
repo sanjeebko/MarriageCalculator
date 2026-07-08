@@ -3,8 +3,8 @@
 ## Problem Statement
 Build a full-featured Android (Kotlin/Compose) app for the Marriage card game calculator, backed by the existing .NET API. The app must handle 2-6 players with efficient screen space usage, support offline/online modes, real-time score display, and integrate with the C# API hosted on Kubernetes. The Maui version is archived and replaced by this native Android app.
 
-## Status: Phases 1-13 COMPLETE ✅
-- 30 C# tests (12 Core + 18 API) + 74 Android unit tests all passing
+## Status: Phases 1-14 COMPLETE ✅
+- 35 C# tests (12 Core + 23 API) + 74 Android unit tests all passing
 - Android APK builds successfully (`assembleDebug`)
 - .NET API builds successfully
 - **Docker**: Production-ready for API deployment.
@@ -148,6 +148,18 @@ Covers requirement §3.2 "(Optional Advanced) Calculator for Maal" and §2.2 sea
 - [x] Step 13.6: Unit tests for Maal calculator and seating draw (MaalCalculatorTest.kt, SeatingDrawTest.kt)
 - [x] Step 13.7: Verify — `./gradlew testDebugUnitTest` (74 tests, BUILD SUCCESSFUL) and `assembleDebug` (BUILD SUCCESSFUL); `dotnet test` (30 tests, all passing)
 - **COMMIT**: "feat: Maal calculator, seating card draw, and duplicate-package cleanup"
+
+## Phase 14: Round History Table + Online-Mode Round Submission (Complete)
+Triggered by a user request to see round-by-round Seen/Dublee/Maal/Points/Money in a spreadsheet-style table on the Scoreboard. Live testing on the emulator (an online, Google-authenticated account) surfaced a pre-existing, more serious bug: **Add Round and Scoreboard were completely non-functional for any online (non-guest) user.** `RoundInputViewModel` and `ScoreboardViewModel` only ever read/wrote local Room storage; for a remote MongoDB-backed game set (non-numeric ID) they silently no-opped. Worse, the API itself had no endpoint to persist a round's per-player scores at all — `POST MarriageGames` required a `MarriageGameRoundId` that nothing could create, and had no `Scores` field. Fixing the requested feature required fixing this first.
+- [x] Step 14.1: **API** — `SubmitRoundDto`/`RoundPlayerInputDto` (`MarriageCalculator.Core/DTOs/ApiDtos.cs`) and `POST MarriageGameSets/{id}/rounds` (`MarriageGameSetsController.cs`, `MarriageGameSetService.SubmitRoundAsync`). Atomically creates the `MarriageGameRound` + its one `MarriageGame`, computes every player's score **server-side** via the existing `ScoringEngine` (never trusts a client-submitted score), and persists `MarriageGameScore` docs. Host-only (403 otherwise).
+- [x] Step 14.2: **API** — `MarriageGameDto.MarriageGameScores` (keyed by playerId) added and populated in `MarriageGameSetService.MapToDtoAsync`, so `GET MarriageGameSets/{id}` now exposes per-player Seen/Dublee/Maal/Score, not just the summed `TotalScore`.
+- [x] Step 14.3: **Android** — `RoundInputViewModel` branches online (remote `GameSetRepository`) vs offline (`OfflineGameRepository`) for both loading players/settings and submitting a round, mirroring the pattern already used in `PlayGameViewModel`.
+- [x] Step 14.4: **Android** — `ScoreboardViewModel` gets the same online/offline branch for `loadScoreboardData`, building `RoundSummary`/`PlayerTotalScore` from the enriched `MarriageGameSet` DTO when online.
+- [x] Step 14.5: **Android** — Round Input screen now shows a live Points/Money preview per player (was computed in `RoundInputViewModel.calculatePreview()` but never rendered).
+- [x] Step 14.6: **Android** — New spreadsheet-style Round History Table (`ScoreboardScreen.kt`, replacing the old flat `RoundHistoryView`): one color-cycled block per round with Seen/Dublee/Maal/Points/Money sub-rows per player + Total Maal column, synced horizontal scroll (shared `ScrollState`) across header/rounds/total row, and a bottom Total row (money summed per player, zero-sum).
+- [x] Step 14.7: Verify — unit tests updated (`ScoreboardViewModelTest`, new `ControllersTests` cases for submit-round success/forbidden/bad-request) and passing; `dotnet test` 35/35; `gradlew testDebugUnitTest`/`assembleDebug` both green; **live end-to-end verification on the emulator** against the real online account and a rebuilt Docker API container — submitted a real round, confirmed it appears correctly in both Standings and the new table (zero-sum: +40/-10/-10/-10/-10), confirmed horizontal scroll sync.
+- **COMMIT**: "feat: round history table, online-mode round submission, and live score preview"
+- **NOTE**: A test round (Round 1, winner Aariya Ojha) was submitted to the "2026-07-08" game set during live verification and is now real data in the shared dev database — left in place rather than guessing at cleanup semantics; flag to the user.
 
 ---
 

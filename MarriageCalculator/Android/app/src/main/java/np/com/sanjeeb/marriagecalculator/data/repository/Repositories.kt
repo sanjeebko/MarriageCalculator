@@ -46,6 +46,9 @@ class GameSetRepository @Inject constructor(
     suspend fun nudgePlayer(id: String, playerId: String): ApiResult<Unit> = safeApiCall {
         api.nudgePlayer(id, playerId)
     }
+    suspend fun submitRound(id: String, request: SubmitRoundRequest): ApiResult<MarriageGameRound> = safeApiCall {
+        api.submitRound(id, request)
+    }
 }
 
 internal suspend fun <T> safeApiCall(call: suspend () -> retrofit2.Response<T>): ApiResult<T> {

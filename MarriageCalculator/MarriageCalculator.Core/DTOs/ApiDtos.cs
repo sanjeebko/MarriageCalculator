@@ -116,6 +116,7 @@ public class MarriageGameDto
     public int TotalMaal { get; set; }
     public bool ClosedRound { get; set; }
     public DateTime CreatedTime { get; set; }
+    public Dictionary<string, MarriageGameScoreDto>? MarriageGameScores { get; set; }
 }
 
 public class CreateMarriageGameDto
@@ -280,4 +281,19 @@ public class RespondFriendRequestDto
 public class TransferHostDto
 {
     public string NewHostUserId { get; set; } = string.Empty;
+}
+
+public class SubmitRoundDto
+{
+    public string WinnerId { get; set; } = string.Empty;
+    public string DealerId { get; set; } = string.Empty;
+    public List<RoundPlayerInputDto> Players { get; set; } = [];
+}
+
+public class RoundPlayerInputDto
+{
+    public string PlayerId { get; set; } = string.Empty;
+    public bool Seen { get; set; }
+    public bool Duply { get; set; }
+    public int Maal { get; set; }
 }

@@ -1,6 +1,7 @@
 using MarriageCalculator.Core.DTOs;
 using MarriageCalculator.API.Repositories;
 using MarriageCalculator.Core.Models;
+using MarriageCalculator.Core.Services;
 using MarriageCalculator.API.Data;
 using MongoDB.Driver;
 using System;
@@ -175,6 +176,126 @@ public class MarriageGameSetService : IMarriageGameSetService
         return true;
     }
 
+    /// <summary>
+    /// Atomically records one round's result for a game set: creates the MarriageGameRound and
+    /// its single MarriageGame, computes each player's score server-side via ScoringEngine (never
+    /// trusting a client-submitted score), and persists the MarriageGameScore documents.
+    /// </summary>
+    public async Task<MarriageGameRoundDto> SubmitRoundAsync(string gameSetId, string hostUserId, SubmitRoundDto dto)
+    {
+        var gameSet = await _gameSetRepository.GetByIdRawAsync(gameSetId);
+        if (gameSet == null)
+        {
+            throw new KeyNotFoundException($"Marriage game set with ID {gameSetId} not found");
+        }
+
+        if (gameSet.HostUserId != hostUserId)
+        {
+            throw new UnauthorizedAccessException("Only the game host can add rounds.");
+        }
+
+        if (dto.Players.Count < 2)
+        {
+            throw new ArgumentException("At least 2 players are required.");
+        }
+
+        if (!dto.Players.Any(p => p.PlayerId == dto.WinnerId))
+        {
+            throw new ArgumentException("Winner must be one of the players in this round.");
+        }
+
+        var settingsDoc = !string.IsNullOrEmpty(gameSet.GameSettingsId)
+            ? await _context.GameSettings.Find(s => s.Id == gameSet.GameSettingsId).FirstOrDefaultAsync()
+            : null;
+        var settings = settingsDoc ?? new GameSettings();
+
+        var existingRoundsCount = await _context.MarriageGameRounds.CountDocumentsAsync(r => r.MarriageGameSetId == gameSetId);
+        var round = new MarriageGameRound
+        {
+            Sequence = (int)existingRoundsCount + 1,
+            MarriageGameSetId = gameSetId,
+            Completed = true
+        };
+        await _context.MarriageGameRounds.InsertOneAsync(round);
+
+        var game = new MarriageGame
+        {
+            Sequence = 1,
+            MarriageGameRoundId = round.Id,
+            WinnerId = dto.WinnerId,
+            DealerId = dto.DealerId,
+            ClosedRound = true,
+            CreatedTime = DateTime.UtcNow
+        };
+
+        // Compute scores server-side using the same engine ScoringController exposes for previews.
+        foreach (var p in dto.Players)
+        {
+            game.MarriageGameScores[p.PlayerId] = new MarriageGameScore
+            {
+                PlayerId = p.PlayerId,
+                Seen = p.Seen || p.PlayerId == dto.WinnerId,
+                Playing = true,
+                Maal = p.Maal,
+                Duply = p.Duply,
+                Winner = p.PlayerId == dto.WinnerId,
+                Deal = p.PlayerId == dto.DealerId
+            };
+        }
+        ScoringEngine.CalculateScores(game, settings);
+
+        await _context.MarriageGames.InsertOneAsync(game);
+
+        var scoreDocs = game.MarriageGameScores.Values.Select(s =>
+        {
+            s.MarriageGameId = game.Id;
+            return s;
+        }).ToList();
+        await _context.MarriageGameScores.InsertManyAsync(scoreDocs);
+
+        gameSet.LastPlayed = DateTime.UtcNow;
+        await _gameSetRepository.UpdateAsync(gameSetId, gameSet, hostUserId);
+
+        return new MarriageGameRoundDto
+        {
+            Id = round.Id,
+            Sequence = round.Sequence,
+            MarriageGameSetId = round.MarriageGameSetId,
+            Completed = round.Completed,
+            MarriageGames = new List<MarriageGameDto>
+            {
+                new MarriageGameDto
+                {
+                    Id = game.Id,
+                    Sequence = game.Sequence,
+                    MarriageGameRoundId = game.MarriageGameRoundId,
+                    WinnerId = game.WinnerId,
+                    DealerId = game.DealerId,
+                    TotalMaal = game.TotalMaal,
+                    ClosedRound = game.ClosedRound,
+                    CreatedTime = game.CreatedTime,
+                    MarriageGameScores = scoreDocs.ToDictionary(s => s.PlayerId, s => new MarriageGameScoreDto
+                    {
+                        Id = s.Id,
+                        MarriageGameId = s.MarriageGameId,
+                        PlayerId = s.PlayerId,
+                        Seen = s.Seen,
+                        Playing = s.Playing,
+                        Maal = s.Maal,
+                        BonusPoint = s.BonusPoint,
+                        Duply = s.Duply,
+                        Winner = s.Winner,
+                        Score = s.Score,
+                        MoneyWon = s.MoneyWon,
+                        Deal = s.Deal,
+                        Position = s.Position
+                    })
+                }
+            },
+            TotalScore = scoreDocs.ToDictionary(s => s.PlayerId, s => (double)s.Score)
+        };
+    }
+
     private async Task<MarriageGameSetDto> MapToDtoAsync(MarriageGameSet gameSet)
     {
         var dto = new MarriageGameSetDto
@@ -258,6 +379,16 @@ public class MarriageGameSetService : IMarriageGameSetService
             };
 
             var games = await _context.MarriageGames.Find(g => g.MarriageGameRoundId == r.Id).SortBy(g => g.Sequence).ToListAsync();
+            var gameIds = games.Select(g => g.Id).ToList();
+            var scores = gameIds.Count > 0
+                ? await _context.MarriageGameScores.Find(s => gameIds.Contains(s.MarriageGameId)).ToListAsync()
+                : new List<MarriageGameScore>();
+
+            roundDto.TotalScore = scores
+                .GroupBy(s => s.PlayerId)
+                .ToDictionary(g => g.Key, g => (double)g.Sum(s => s.Score));
+
+            var scoresByGame = scores.ToLookup(s => s.MarriageGameId);
             foreach (var g in games)
             {
                 roundDto.MarriageGames.Add(new MarriageGameDto
@@ -269,19 +400,24 @@ public class MarriageGameSetService : IMarriageGameSetService
                     DealerId = g.DealerId,
                     TotalMaal = g.TotalMaal,
                     ClosedRound = g.ClosedRound,
-                    CreatedTime = g.CreatedTime
+                    CreatedTime = g.CreatedTime,
+                    MarriageGameScores = scoresByGame[g.Id].ToDictionary(s => s.PlayerId, s => new MarriageGameScoreDto
+                    {
+                        Id = s.Id,
+                        MarriageGameId = s.MarriageGameId,
+                        PlayerId = s.PlayerId,
+                        Seen = s.Seen,
+                        Playing = s.Playing,
+                        Maal = s.Maal,
+                        BonusPoint = s.BonusPoint,
+                        Duply = s.Duply,
+                        Winner = s.Winner,
+                        Score = s.Score,
+                        MoneyWon = s.MoneyWon,
+                        Deal = s.Deal,
+                        Position = s.Position
+                    })
                 });
-            }
-
-            // Calculate TotalScore for this round
-            if (games.Count > 0)
-            {
-                var gameIds = games.Select(g => g.Id).ToList();
-                var scores = await _context.MarriageGameScores.Find(s => gameIds.Contains(s.MarriageGameId)).ToListAsync();
-                
-                roundDto.TotalScore = scores
-                    .GroupBy(s => s.PlayerId)
-                    .ToDictionary(g => g.Key, g => (double)g.Sum(s => s.Score));
             }
 
             dto.Rounds.Add(roundDto);

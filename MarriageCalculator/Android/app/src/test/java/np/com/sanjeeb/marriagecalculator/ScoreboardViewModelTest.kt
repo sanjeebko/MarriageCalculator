@@ -6,7 +6,9 @@ import np.com.sanjeeb.marriagecalculator.data.local.RoundScoreEntity
 import np.com.sanjeeb.marriagecalculator.data.model.Currency
 import np.com.sanjeeb.marriagecalculator.data.model.GameSettings
 import np.com.sanjeeb.marriagecalculator.data.model.Player
+import np.com.sanjeeb.marriagecalculator.data.repository.GameSetRepository
 import np.com.sanjeeb.marriagecalculator.data.repository.OfflineGameRepository
+import np.com.sanjeeb.marriagecalculator.data.repository.SessionManager
 import np.com.sanjeeb.marriagecalculator.ui.scoreboard.ScoreboardViewModel
 import io.mockk.*
 import kotlinx.coroutines.Dispatchers
@@ -25,6 +27,8 @@ class ScoreboardViewModelTest {
 
     private lateinit var viewModel: ScoreboardViewModel
     private val repository: OfflineGameRepository = mockk(relaxed = true)
+    private val gameSetRepository: GameSetRepository = mockk(relaxed = true)
+    private val sessionManager: SessionManager = mockk(relaxed = true)
 
     private val testPlayers = listOf(
         Player(id = "1", name = "Alice"),
@@ -53,7 +57,7 @@ class ScoreboardViewModelTest {
     @Before
     fun setup() {
         Dispatchers.setMain(testDispatcher)
-        viewModel = ScoreboardViewModel(repository)
+        viewModel = ScoreboardViewModel(repository, gameSetRepository, sessionManager)
     }
 
     @After

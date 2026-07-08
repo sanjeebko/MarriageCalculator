@@ -5,9 +5,13 @@ import androidx.lifecycle.viewModelScope
 import np.com.sanjeeb.marriagecalculator.data.model.GameSettings
 import np.com.sanjeeb.marriagecalculator.data.model.MaalItem
 import np.com.sanjeeb.marriagecalculator.data.model.Player
+import np.com.sanjeeb.marriagecalculator.data.model.RoundPlayerInput
+import np.com.sanjeeb.marriagecalculator.data.model.SubmitRoundRequest
 import np.com.sanjeeb.marriagecalculator.data.remote.*
 import np.com.sanjeeb.marriagecalculator.data.repository.ApiResult
+import np.com.sanjeeb.marriagecalculator.data.repository.GameSetRepository
 import np.com.sanjeeb.marriagecalculator.data.repository.OfflineGameRepository
+import np.com.sanjeeb.marriagecalculator.data.repository.SessionManager
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -45,7 +49,9 @@ data class RoundInputUiState(
 @HiltViewModel
 class RoundInputViewModel @Inject constructor(
     private val scoringApi: ScoringApiService,
-    private val offlineGameRepository: OfflineGameRepository
+    private val offlineGameRepository: OfflineGameRepository,
+    private val gameSetRepository: GameSetRepository,
+    private val sessionManager: SessionManager
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(RoundInputUiState())
@@ -60,10 +66,33 @@ class RoundInputViewModel @Inject constructor(
 
     fun loadGameData(gameSetIdStr: String, roundNumber: Int) {
         viewModelScope.launch {
-            val gameSetId = gameSetIdStr.toIntOrNull() ?: return@launch
-            val players = offlineGameRepository.getGameSetPlayers(gameSetId)
-            val gameSetEntity = offlineGameRepository.getGameSet(gameSetId) ?: return@launch
-            val settings = offlineGameRepository.getGameSettings(gameSetEntity.settingsId) ?: GameSettings.default()
+            val isLocalId = gameSetIdStr.toIntOrNull() != null
+            val isOnline = sessionManager.isOnlineMode() && !isLocalId
+
+            val players: List<Player>
+            val settings: GameSettings
+
+            if (isOnline) {
+                when (val result = gameSetRepository.getGameSet(gameSetIdStr)) {
+                    is ApiResult.Success -> {
+                        val gameSet = result.data
+                        players = gameSet.gameSetPlayers?.values
+                            ?.sortedBy { it.position }
+                            ?.mapNotNull { it.player } ?: emptyList()
+                        settings = gameSet.gameSettings ?: GameSettings.default()
+                    }
+                    is ApiResult.Error -> {
+                        _uiState.value = _uiState.value.copy(error = result.message)
+                        return@launch
+                    }
+                    is ApiResult.Loading -> return@launch
+                }
+            } else {
+                val gameSetId = gameSetIdStr.toIntOrNull() ?: return@launch
+                players = offlineGameRepository.getGameSetPlayers(gameSetId)
+                val gameSetEntity = offlineGameRepository.getGameSet(gameSetId) ?: return@launch
+                settings = offlineGameRepository.getGameSettings(gameSetEntity.settingsId) ?: GameSettings.default()
+            }
 
             val dealerIndex = if (players.isNotEmpty()) (roundNumber - 2 + players.size) % players.size else -1
             val dealer = players.getOrNull(dealerIndex)
@@ -236,13 +265,42 @@ class RoundInputViewModel @Inject constructor(
     fun submitRound() {
         val state = _uiState.value
         val gameSetIdStr = state.gameSetId ?: return
-        val gameSetId = gameSetIdStr.toIntOrNull() ?: return
-        val winnerId = state.winnerId?.toIntOrNull() ?: run {
+        val winnerId = state.winnerId ?: run {
             _uiState.value = state.copy(error = "Please select a winner")
             return
         }
 
+        val isLocalId = gameSetIdStr.toIntOrNull() != null
+        val isOnline = sessionManager.isOnlineMode() && !isLocalId
+
         viewModelScope.launch {
+            if (isOnline) {
+                val request = SubmitRoundRequest(
+                    winnerId = winnerId,
+                    dealerId = state.dealerId ?: "",
+                    players = state.playerStates.map { ps ->
+                        val isPlayerWinner = ps.player.id == winnerId
+                        RoundPlayerInput(
+                            playerId = ps.player.id,
+                            seen = ps.seen || isPlayerWinner,
+                            duply = ps.duply,
+                            maal = if (ps.seen) ps.seenPoints else 0
+                        )
+                    }
+                )
+                when (val result = gameSetRepository.submitRound(gameSetIdStr, request)) {
+                    is ApiResult.Success -> {
+                        _uiState.value = state.copy(submitted = true, error = null)
+                    }
+                    is ApiResult.Error -> {
+                        _uiState.value = state.copy(error = "Failed to save round: ${result.message}")
+                    }
+                    is ApiResult.Loading -> {}
+                }
+                return@launch
+            }
+
+            val gameSetId = gameSetIdStr.toIntOrNull() ?: return@launch
             try {
                 val totalMaal = state.playerStates.sumOf { if (it.seen) it.seenPoints else 0 }
 
@@ -260,7 +318,7 @@ class RoundInputViewModel @Inject constructor(
 
                 offlineGameRepository.saveRound(
                     gameSetId = gameSetId,
-                    winnerId = winnerId,
+                    winnerId = winnerId.toIntOrNull() ?: return@launch,
                     totalMaal = totalMaal,
                     playerScores = scores
                 )

@@ -29,3 +29,16 @@ data class CreateGameSetRequest(
     @SerializedName("gameSettingsId") val gameSettingsId: String,
     @SerializedName("playerIds") val playerIds: List<String> = emptyList()
 )
+
+data class SubmitRoundRequest(
+    @SerializedName("winnerId") val winnerId: String,
+    @SerializedName("dealerId") val dealerId: String,
+    @SerializedName("players") val players: List<RoundPlayerInput>
+)
+
+data class RoundPlayerInput(
+    @SerializedName("playerId") val playerId: String,
+    @SerializedName("seen") val seen: Boolean = false,
+    @SerializedName("duply") val duply: Boolean = false,
+    @SerializedName("maal") val maal: Int = 0
+)

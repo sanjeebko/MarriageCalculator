@@ -132,9 +132,14 @@ fun RoundInputScreen(
                 Spacer(modifier = Modifier.height(24.dp))
 
                 // Player cards
+                val currencySymbol = uiState.settings.currency.displayName()
+                    .substringAfter("(", "").substringBefore(")").ifEmpty { "" }
+
                 uiState.playerStates.forEach { playerState ->
                     PlayerScoreCard(
                         state = playerState,
+                        showPreview = uiState.showPreview,
+                        currencySymbol = currencySymbol,
                         onSelectWinner = { viewModel.setWinner(playerState.player.id) },
                         onToggleSeen = { viewModel.toggleSeen(playerState.player.id) },
                         onToggleDuply = { viewModel.toggleDuply(playerState.player.id) },
@@ -199,6 +204,8 @@ fun RoundInputScreen(
 @Composable
 private fun PlayerScoreCard(
     state: PlayerRoundState,
+    showPreview: Boolean,
+    currencySymbol: String,
     onSelectWinner: () -> Unit,
     onToggleSeen: () -> Unit,
     onToggleDuply: () -> Unit,
@@ -399,6 +406,38 @@ private fun PlayerScoreCard(
                                 )
                             }
                         }
+                    }
+                }
+
+                // Live preview of this round's computed points/money, once a winner is picked
+                if (showPreview) {
+                    Spacer(modifier = Modifier.height(12.dp))
+                    val scoreColor = when {
+                        state.previewScore > 0 -> Color(0xFF4CAF50)
+                        state.previewScore < 0 -> Color(0xFFFF5252)
+                        else -> Color.White.copy(alpha = 0.6f)
+                    }
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clip(RoundedCornerShape(8.dp))
+                            .background(scoreColor.copy(alpha = 0.08f))
+                            .padding(horizontal = 12.dp, vertical = 8.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = "Points: ${if (state.previewScore > 0) "+" else ""}${state.previewScore}",
+                            color = scoreColor,
+                            fontSize = 13.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                        Text(
+                            text = "Money: ${if (state.previewMoney > 0) "+" else ""}${String.format("%.1f", state.previewMoney)}$currencySymbol",
+                            color = scoreColor,
+                            fontSize = 13.sp,
+                            fontWeight = FontWeight.Bold
+                        )
                     }
                 }
             }

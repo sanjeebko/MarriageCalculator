@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using Moq;
+using System;
 using System.Collections.Generic;
 using System.Security.Claims;
 using System.Threading.Tasks;
@@ -88,5 +89,77 @@ public class ControllersTests
         var returnedSet = Assert.IsType<MarriageGameSetDto>(okResult.Value);
         Assert.Equal("mock-host-456", returnedSet.HostUserId);
         serviceMock.Verify(s => s.GetLatestActiveGameSetAsync("mock-host-456"), Times.Once);
+    }
+
+    [Fact]
+    public async Task MarriageGameSetsController_SubmitRound_ReturnsOkWithRound()
+    {
+        // Arrange
+        var serviceMock = new Mock<IMarriageGameSetService>();
+        var loggerMock = new Mock<ILogger<MarriageGameSetsController>>();
+        var controller = new MarriageGameSetsController(serviceMock.Object, loggerMock.Object);
+        SetControllerUser(controller, "mock-host-456");
+
+        var submitDto = new SubmitRoundDto
+        {
+            WinnerId = "p1",
+            DealerId = "p2",
+            Players = new List<RoundPlayerInputDto>
+            {
+                new() { PlayerId = "p1", Seen = true, Maal = 10 },
+                new() { PlayerId = "p2", Seen = true, Maal = 4 }
+            }
+        };
+        var roundDto = new MarriageGameRoundDto { Id = "round-1", Sequence = 1, MarriageGameSetId = "set-1" };
+        serviceMock.Setup(s => s.SubmitRoundAsync("set-1", "mock-host-456", submitDto))
+            .ReturnsAsync(roundDto);
+
+        // Act
+        var result = await controller.SubmitRound("set-1", submitDto);
+
+        // Assert
+        var okResult = Assert.IsType<OkObjectResult>(result.Result);
+        var returnedRound = Assert.IsType<MarriageGameRoundDto>(okResult.Value);
+        Assert.Equal("round-1", returnedRound.Id);
+    }
+
+    [Fact]
+    public async Task MarriageGameSetsController_SubmitRound_NonHost_ReturnsForbid()
+    {
+        // Arrange
+        var serviceMock = new Mock<IMarriageGameSetService>();
+        var loggerMock = new Mock<ILogger<MarriageGameSetsController>>();
+        var controller = new MarriageGameSetsController(serviceMock.Object, loggerMock.Object);
+        SetControllerUser(controller, "not-the-host");
+
+        var submitDto = new SubmitRoundDto { WinnerId = "p1", Players = new List<RoundPlayerInputDto> { new() { PlayerId = "p1" }, new() { PlayerId = "p2" } } };
+        serviceMock.Setup(s => s.SubmitRoundAsync("set-1", "not-the-host", submitDto))
+            .ThrowsAsync(new UnauthorizedAccessException("Only the game host can add rounds."));
+
+        // Act
+        var result = await controller.SubmitRound("set-1", submitDto);
+
+        // Assert
+        Assert.IsType<ForbidResult>(result.Result);
+    }
+
+    [Fact]
+    public async Task MarriageGameSetsController_SubmitRound_InvalidWinner_ReturnsBadRequest()
+    {
+        // Arrange
+        var serviceMock = new Mock<IMarriageGameSetService>();
+        var loggerMock = new Mock<ILogger<MarriageGameSetsController>>();
+        var controller = new MarriageGameSetsController(serviceMock.Object, loggerMock.Object);
+        SetControllerUser(controller, "mock-host-456");
+
+        var submitDto = new SubmitRoundDto { WinnerId = "not-a-player", Players = new List<RoundPlayerInputDto> { new() { PlayerId = "p1" }, new() { PlayerId = "p2" } } };
+        serviceMock.Setup(s => s.SubmitRoundAsync("set-1", "mock-host-456", submitDto))
+            .ThrowsAsync(new ArgumentException("Winner must be one of the players in this round."));
+
+        // Act
+        var result = await controller.SubmitRound("set-1", submitDto);
+
+        // Assert
+        Assert.IsType<BadRequestObjectResult>(result.Result);
     }
 }

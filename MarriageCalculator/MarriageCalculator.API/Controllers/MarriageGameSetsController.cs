@@ -204,6 +204,43 @@ public class MarriageGameSetsController : ControllerBase
     }
 
     /// <summary>
+    /// Record one round's result: winner, dealer, and per-player seen/dublee/maal.
+    /// Scores are always computed server-side, never trusted from the client.
+    /// </summary>
+    [HttpPost("{id}/rounds")]
+    public async Task<ActionResult<MarriageGameRoundDto>> SubmitRound(string id, [FromBody] SubmitRoundDto submitDto)
+    {
+        try
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
+            var hostUserId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? string.Empty;
+            var round = await _gameSetService.SubmitRoundAsync(id, hostUserId, submitDto);
+            return Ok(round);
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(ex.Message);
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(ex.Message);
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            return Forbid(ex.Message);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error submitting round for game set {GameSetId}", id);
+            return StatusCode(500, "An error occurred while submitting the round.");
+        }
+    }
+
+    /// <summary>
     /// Nudge a player in a game set via FCM push notification
     /// </summary>
     [HttpPost("{id}/nudge/{playerId}")]

@@ -1,9 +1,12 @@
 package np.com.sanjeeb.marriagecalculator.ui.scoreboard
 
+import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.background
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -22,6 +25,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
+import np.com.sanjeeb.marriagecalculator.data.model.Player
 import np.com.sanjeeb.marriagecalculator.ui.theme.DeepRedTika
 import np.com.sanjeeb.marriagecalculator.ui.theme.GoldAccent
 import np.com.sanjeeb.marriagecalculator.ui.theme.MarigoldOrange
@@ -291,70 +295,208 @@ private fun WhoOwesWhomSection(players: List<PlayerTotalScore>, pointRate: Doubl
     }
 }
 
+// Alternating festive backgrounds for each round block (cycled), matching the
+// Dashain/Tihar palette used elsewhere in the app.
+private val ROUND_BLOCK_COLORS = listOf(
+    Color(0xFF1B3B2E), // deep green
+    Color(0xFF3B3416), // deep gold/olive
+    Color(0xFF3B2416)  // deep marigold
+)
+
+private const val LABEL_COL_WIDTH_DP = 68
+private const val PLAYER_COL_WIDTH_DP = 84
+private const val TOTAL_COL_WIDTH_DP = 84
+private const val CELL_ROW_HEIGHT_DP = 22
+
+private fun currencySymbol(displayName: String): String =
+    displayName.substringAfter("(", "").substringBefore(")").ifEmpty { displayName }
+
+private fun formatMoney(money: Double, symbol: String): String {
+    val sign = if (money > 0) "+" else if (money < 0) "-" else ""
+    return "$sign${String.format("%.1f", kotlin.math.abs(money))}$symbol"
+}
+
+@Composable
+private fun TableCell(text: String, widthDp: Int, color: Color, bold: Boolean = false) {
+    Box(
+        modifier = Modifier
+            .width(widthDp.dp)
+            .height(CELL_ROW_HEIGHT_DP.dp),
+        contentAlignment = Alignment.Center
+    ) {
+        Text(
+            text,
+            color = color,
+            fontSize = 12.sp,
+            fontWeight = if (bold) FontWeight.Bold else FontWeight.Normal,
+            textAlign = TextAlign.Center,
+            maxLines = 1
+        )
+    }
+}
+
+/**
+ * Full spreadsheet-style breakdown: one block per round with Seen/Dublee/Maal/Points/Money
+ * sub-rows per player, a Total Maal column, and a grand-total row at the bottom.
+ */
 @Composable
 private fun RoundHistoryView(uiState: ScoreboardUiState) {
-    LazyColumn(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(12.dp),
-        verticalArrangement = Arrangement.spacedBy(8.dp)
-    ) {
-        if (uiState.rounds.isEmpty()) {
+    if (uiState.rounds.isEmpty()) {
+        Box(
+            modifier = Modifier.fillMaxSize(),
+            contentAlignment = Alignment.Center
+        ) {
+            Text("No rounds played yet", color = Color.White.copy(alpha = 0.5f))
+        }
+        return
+    }
+
+    val horizontalScrollState = rememberScrollState()
+    val players = uiState.players.map { it.player }
+    val currency = currencySymbol(uiState.settings.currency.displayName())
+
+    Column(modifier = Modifier.fillMaxSize().padding(vertical = 12.dp)) {
+        Text(
+            "Rate: ${uiState.settings.pointRate} $currency / point",
+            color = Color.White.copy(alpha = 0.5f),
+            fontSize = 11.sp,
+            modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp)
+        )
+
+        // Header row: player names + Total Maal, pinned above the scrolling round list
+        // but scrolled horizontally in sync with the round blocks below.
+        Row(
+            modifier = Modifier
+                .horizontalScroll(horizontalScrollState)
+                .padding(horizontal = 12.dp)
+        ) {
+            TableCell("", LABEL_COL_WIDTH_DP, Color.Transparent)
+            players.forEach { p ->
+                TableCell(p.name, PLAYER_COL_WIDTH_DP, GoldAccent, bold = true)
+            }
+            TableCell("Total\nMaal", TOTAL_COL_WIDTH_DP, GoldAccent, bold = true)
+        }
+        HorizontalDivider(color = Color.White.copy(alpha = 0.15f), modifier = Modifier.padding(top = 4.dp))
+
+        LazyColumn(
+            modifier = Modifier.fillMaxSize(),
+            contentPadding = PaddingValues(vertical = 8.dp)
+        ) {
+            items(uiState.rounds) { round ->
+                RoundBlock(round, players, horizontalScrollState, currency)
+                Spacer(modifier = Modifier.height(8.dp))
+            }
+
             item {
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(48.dp),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text("No rounds played yet", color = Color.White.copy(alpha = 0.5f))
-                }
+                TotalRow(uiState.players, players, horizontalScrollState, currency)
             }
         }
+    }
+}
 
-        items(uiState.rounds.reversed()) { round ->
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(12.dp),
-                colors = CardDefaults.cardColors(containerColor = Color.White.copy(alpha = 0.05f))
-            ) {
-                Column(modifier = Modifier.padding(12.dp)) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween
-                    ) {
-                        Text(
-                            "Round ${round.roundNumber}",
-                            color = GoldAccent,
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 14.sp
-                        )
-                        Text(
-                            "👑 ${round.winnerName}",
-                            color = MarigoldOrange,
-                            fontSize = 13.sp
-                        )
-                    }
-                    Spacer(modifier = Modifier.height(6.dp))
+@Composable
+private fun RoundBlock(
+    round: RoundSummary,
+    players: List<Player>,
+    scrollState: ScrollState,
+    currency: String
+) {
+    val blockColor = ROUND_BLOCK_COLORS[(round.roundNumber - 1).mod(ROUND_BLOCK_COLORS.size)]
 
-                    // Scores for this round
-                    round.scores.forEach { (playerId, score) ->
-                        val playerName = uiState.players.find { it.player.id == playerId }?.player?.name ?: "Player $playerId"
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween
-                        ) {
-                            Text(playerName, color = Color.White.copy(alpha = 0.7f), fontSize = 12.sp)
-                            Text(
-                                "${if (score > 0) "+" else ""}$score",
-                                color = if (score > 0) Color(0xFF4CAF50) else Color(0xFFFF5252),
-                                fontSize = 12.sp,
-                                fontWeight = FontWeight.Bold
-                            )
-                        }
-                    }
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(blockColor)
+            .padding(vertical = 6.dp)
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 12.dp),
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            Text(
+                "Round ${round.roundNumber}",
+                color = GoldAccent,
+                fontWeight = FontWeight.Bold,
+                fontSize = 13.sp
+            )
+            Text("👑 ${round.winnerName}", color = MarigoldOrange, fontSize = 12.sp)
+        }
+
+        Row(
+            modifier = Modifier
+                .horizontalScroll(scrollState)
+                .padding(horizontal = 12.dp, vertical = 4.dp)
+        ) {
+            Column {
+                TableCell("Seen", LABEL_COL_WIDTH_DP, Color.White.copy(alpha = 0.6f))
+                TableCell("Dublee", LABEL_COL_WIDTH_DP, Color.White.copy(alpha = 0.6f))
+                TableCell("Maal", LABEL_COL_WIDTH_DP, Color.White.copy(alpha = 0.6f))
+                TableCell("Points", LABEL_COL_WIDTH_DP, Color.White.copy(alpha = 0.6f))
+                TableCell("Money", LABEL_COL_WIDTH_DP, Color.White.copy(alpha = 0.6f))
+            }
+            players.forEach { p ->
+                val entry = round.playerEntries.find { it.playerId == p.id }
+                Column {
+                    TableCell(
+                        if (entry?.isSeen == true) "Yes" else "No",
+                        PLAYER_COL_WIDTH_DP,
+                        if (entry?.isSeen == true) Color(0xFF4CAF50) else Color.White.copy(alpha = 0.4f)
+                    )
+                    TableCell(
+                        if (entry?.isDublee == true) "Yes" else "-",
+                        PLAYER_COL_WIDTH_DP,
+                        Color.White.copy(alpha = 0.7f)
+                    )
+                    TableCell("${entry?.maal ?: 0}", PLAYER_COL_WIDTH_DP, Color.White)
+                    val score = entry?.score ?: 0
+                    TableCell(
+                        "${if (score > 0) "+" else ""}$score",
+                        PLAYER_COL_WIDTH_DP,
+                        if (score > 0) Color(0xFF4CAF50) else if (score < 0) Color(0xFFFF5252) else Color.White,
+                        bold = true
+                    )
+                    TableCell(
+                        formatMoney(entry?.money ?: 0.0, currency),
+                        PLAYER_COL_WIDTH_DP,
+                        Color.White.copy(alpha = 0.8f)
+                    )
                 }
             }
+            Column {
+                repeat(2) { TableCell("", TOTAL_COL_WIDTH_DP, Color.Transparent) }
+                TableCell("${round.totalMaal}", TOTAL_COL_WIDTH_DP, GoldAccent, bold = true)
+                repeat(2) { TableCell("", TOTAL_COL_WIDTH_DP, Color.Transparent) }
+            }
         }
+    }
+}
+
+@Composable
+private fun TotalRow(
+    playerTotals: List<PlayerTotalScore>,
+    players: List<Player>,
+    scrollState: ScrollState,
+    currency: String
+) {
+    HorizontalDivider(color = Color.White.copy(alpha = 0.2f), modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp))
+    Row(
+        modifier = Modifier
+            .horizontalScroll(scrollState)
+            .padding(horizontal = 12.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        TableCell("Total", LABEL_COL_WIDTH_DP, GoldAccent, bold = true)
+        players.forEach { p ->
+            val total = playerTotals.find { it.player.id == p.id }?.totalMoney ?: 0.0
+            TableCell(
+                formatMoney(total, currency),
+                PLAYER_COL_WIDTH_DP,
+                if (total > 0) Color(0xFF4CAF50) else if (total < 0) Color(0xFFFF5252) else Color.White,
+                bold = true
+            )
+        }
+        TableCell("", TOTAL_COL_WIDTH_DP, Color.Transparent)
     }
 }
