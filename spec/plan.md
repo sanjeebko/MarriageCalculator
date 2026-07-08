@@ -3,7 +3,7 @@
 ## Problem Statement
 Build a full-featured Android (Kotlin/Compose) app for the Marriage card game calculator, backed by the existing .NET API. The app must handle 2-6 players with efficient screen space usage, support offline/online modes, real-time score display, and integrate with the C# API hosted on Kubernetes. The Maui version is archived and replaced by this native Android app.
 
-## Status: Phases 1-15 COMPLETE ✅
+## Status: Phases 1-16 COMPLETE ✅
 - 35 C# tests (12 Core + 23 API) + 74 Android unit tests all passing
 - Android APK builds successfully (`assembleDebug`)
 - .NET API builds successfully
@@ -171,7 +171,22 @@ The Scoreboard's spreadsheet-style table (Phase 14) is intentionally verbose (ex
 - [x] Step 15.4: `RoundDetailsDialog` — tapping the small info icon under a round's "R{n}" label opens a popup with the full per-player Seen/Dublee/Maal/Points/Money breakdown for that round.
 - [x] Step 15.5: Verify — `dotnet test`/`gradlew testDebugUnitTest`/`assembleDebug` all green; live end-to-end on the emulator confirmed the compact grid renders correctly (trophy + points top row, money bottom row) and the info-icon popup opens with correct data.
 - **COMMIT**: "feat: compact icon-driven rounds grid on the game page with detail popup"
-- **NOTE**: Live testing surfaced a pre-existing "Round 2" on the "2026-07-08" game set whose points don't sum to zero (+3, -7, +23, -29, +1 = -9, not 0) — the scoring engine's `ValidateZeroSum` invariant is violated. This round predates this session's changes (wasn't created via the work here) and its origin is unclear (possibly seed/test data inserted outside the normal round-submission flow). Flagged, not investigated — worth a look if it recurs from real gameplay.
+- **RESOLVED**: The "Round 2" non-zero-sum concern noted above was a false alarm — a later screenshot of the same round's details popup (Phase 16) showed the true value was +10 (Sushma, winner), not +1; the earlier compact-grid screenshot had truncated the trailing digit at the screen edge. +3-7+23-29+10 = 0, correctly zero-sum. No scoring engine bug.
+
+## Phase 16: Game Page UI Refinements (Complete)
+A round of detailed UX feedback on `PlayGameScreen` tightening up Phase 15's compact grid and replacing the custom bottom action bar with standard Material components.
+- [x] Step 16.1: Rounds sorted latest-first (`uiState.rounds.sortedByDescending { it.roundNumber }` at the call site, ViewModel state itself stays ascending since dealer-index math depends on count not order).
+- [x] Step 16.2: Section order swapped — Rounds Played now above Standings.
+- [x] Step 16.3: Round row's leading column is just the plain sequence number (no "R" prefix), and the number itself is the tap target for the details popup — the separate info icon is gone.
+- [x] Step 16.4: Player column headers are first-3-letters text (e.g. "AAR"), no circle/avatar background.
+- [x] Step 16.5: Positive values show as plain green text with no `+` prefix (negative still shows `-` naturally); applied across the compact grid, the details popup, and the Standings row.
+- [x] Step 16.6: Cell content model changed — top row now shows Maal or Points (switchable via a "Maal"/"Points" tab control above the table, default Maal), bottom row always shows money; winner/dublee icons dropped from the compact cells (still visible in the details popup).
+- [x] Step 16.7: Alternating row background (zebra striping) on the rounds table.
+- [x] Step 16.8: `PlayerStandings` gains `totalMoney`, computed from `netPoints * settings.pointRate` in both online/offline load paths; Standings rows now show points + money stacked.
+- [x] Step 16.9: Bottom action bar (`MetallicButton` "Add Round" + "Scoreboard") replaced with a standard Material3 `FloatingActionButton` (Add Round) and a `TopAppBar` icon button (Scoreboard, `Icons.Default.Leaderboard`).
+- [x] Step 16.10: Transfer Host icon kept visible but disabled (`enabled = false`, dimmed tint) — feature isn't fully designed yet.
+- [x] Step 16.11: Verify — `dotnet test`/`gradlew testDebugUnitTest`/`assembleDebug` all green; live end-to-end on the emulator confirmed every item above (latest-round-first ordering, section swap, tap-to-open on the number itself, 3-letter headers, no `+` signs, Maal/Points toggle switching correctly, visible zebra striping, Standings money column, FAB + top-bar Scoreboard icon navigating correctly, Transfer Host icon inert when tapped).
+- **COMMIT**: "feat: redesign game page rounds table and replace bottom bar with Material FAB"
 
 ---
 

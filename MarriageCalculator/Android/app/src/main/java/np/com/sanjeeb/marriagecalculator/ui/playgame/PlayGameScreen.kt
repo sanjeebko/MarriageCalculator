@@ -9,7 +9,6 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -34,11 +33,6 @@ import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import np.com.sanjeeb.marriagecalculator.data.model.Player
 import np.com.sanjeeb.marriagecalculator.data.model.User
-import np.com.sanjeeb.marriagecalculator.ui.components.MetallicButton
-import np.com.sanjeeb.marriagecalculator.ui.components.MetallicGoldFace
-import np.com.sanjeeb.marriagecalculator.ui.components.MetallicGoldRim
-import np.com.sanjeeb.marriagecalculator.ui.components.MetallicRedFace
-import np.com.sanjeeb.marriagecalculator.ui.components.MetallicRedRim
 import np.com.sanjeeb.marriagecalculator.ui.gamesetup.PlayerMappingDialog
 import np.com.sanjeeb.marriagecalculator.ui.gamesetup.RearrangeSeatsDialog
 import np.com.sanjeeb.marriagecalculator.ui.scoreboard.RoundPlayerEntry
@@ -85,14 +79,29 @@ fun PlayGameScreen(
                     }
                 },
                 actions = {
+                    // Transfer host is disabled for now - the feature isn't fully designed yet.
                     if (uiState.isHost && uiState.isOnlineMode && !uiState.isSettled) {
-                        IconButton(onClick = { showTransferDialog = true }) {
-                            Icon(Icons.Default.SwapHoriz, "Transfer Host", tint = GoldAccent)
+                        IconButton(onClick = {}, enabled = false) {
+                            Icon(Icons.Default.SwapHoriz, "Transfer Host (coming soon)", tint = GoldAccent.copy(alpha = 0.3f))
                         }
+                    }
+                    IconButton(onClick = onViewScoreboard) {
+                        Icon(Icons.Default.Leaderboard, "Scoreboard", tint = GoldAccent)
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = TiharNightBlue)
             )
+        },
+        floatingActionButton = {
+            if (!uiState.isSettled && uiState.isHost) {
+                FloatingActionButton(
+                    onClick = { onAddRound((uiState.rounds.size + 1).toString()) },
+                    containerColor = DeepRedTika,
+                    contentColor = GoldAccent
+                ) {
+                    Icon(Icons.Default.Add, contentDescription = "Add Round")
+                }
+            }
         },
         containerColor = Color.Transparent
     ) { padding ->
@@ -211,6 +220,40 @@ fun PlayGameScreen(
                     }
                 }
 
+                // Rounds Section Title
+                Text(
+                    text = "ROUNDS PLAYED",
+                    color = GoldAccent,
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.Bold,
+                    letterSpacing = 1.5.sp,
+                    modifier = Modifier.padding(bottom = 8.dp)
+                )
+
+                if (uiState.rounds.isEmpty()) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 32.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = "No rounds played yet." + if (uiState.isHost) " Tap Add Round to start!" else "",
+                            color = Color.White.copy(alpha = 0.4f),
+                            fontSize = 14.sp
+                        )
+                    }
+                } else {
+                    CompactRoundsTable(
+                        rounds = uiState.rounds.sortedByDescending { it.roundNumber },
+                        players = uiState.players,
+                        currencySymbol = currencySymbol(uiState.settings.currency.displayName()),
+                        onRoundClick = { roundForDetails = it }
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(24.dp))
+
                 // Leaderboard Title Row
                 Row(
                     modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp),
@@ -240,11 +283,13 @@ fun PlayGameScreen(
                 }
 
                 // Standings list
+                val currencySymbolText = currencySymbol(uiState.settings.currency.displayName())
                 uiState.players.forEach { standings ->
                     PlayerStandingsRow(
                         standings = standings,
                         isHost = uiState.isHost,
                         currentUserEmail = uiState.currentUserEmail,
+                        currencySymbol = currencySymbolText,
                         onMapClick = { selectedPlayerToMap = standings.player },
                         onNudgeClick = {
                             viewModel.nudgePlayer(standings.player.id, gameSetId)
@@ -253,91 +298,7 @@ fun PlayGameScreen(
                     Spacer(modifier = Modifier.height(8.dp))
                 }
 
-                Spacer(modifier = Modifier.height(24.dp))
-
-                // Rounds Section Title
-                Text(
-                    text = "ROUNDS PLAYED",
-                    color = GoldAccent,
-                    fontSize = 12.sp,
-                    fontWeight = FontWeight.Bold,
-                    letterSpacing = 1.5.sp,
-                    modifier = Modifier.padding(bottom = 8.dp)
-                )
-
-                if (uiState.rounds.isEmpty()) {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(vertical = 32.dp),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text(
-                            text = "No rounds played yet." + if (uiState.isHost) " Tap Add Round to start!" else "",
-                            color = Color.White.copy(alpha = 0.4f),
-                            fontSize = 14.sp
-                        )
-                    }
-                } else {
-                    CompactRoundsTable(
-                        rounds = uiState.rounds,
-                        players = uiState.players,
-                        currencySymbol = currencySymbol(uiState.settings.currency.displayName()),
-                        onRoundClick = { roundForDetails = it }
-                    )
-                }
-
-                Spacer(modifier = Modifier.height(100.dp)) // padding for the bottom buttons
-            }
-
-            // Bottom Buttons fixed
-            Box(
-                modifier = Modifier
-                    .align(Alignment.BottomCenter)
-                    .fillMaxWidth()
-                    .background(
-                        Brush.verticalGradient(
-                            listOf(Color.Transparent, Color(0xFF0D0D1A).copy(alpha = 0.95f))
-                        )
-                    )
-                    .padding(16.dp)
-            ) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
-                    if (!uiState.isSettled && uiState.isHost) {
-                        // Add Round Button
-                        MetallicButton(
-                            onClick = { onAddRound((uiState.rounds.size + 1).toString()) },
-                            text = "Add Round",
-                            rimColors = MetallicRedRim,
-                            faceColors = MetallicRedFace,
-                            textColor = GoldAccent,
-                            modifier = Modifier
-                                .weight(1f)
-                                .height(56.dp),
-                            leadingIcon = {
-                                Icon(Icons.Default.Add, null, tint = GoldAccent, modifier = Modifier.size(20.dp))
-                            }
-                        )
-                    }
-
-                    // Scoreboard Button
-                    MetallicButton(
-                        onClick = onViewScoreboard,
-                        text = if (uiState.isSettled) "Final Scoreboard" else "Scoreboard",
-                        rimColors = MetallicGoldRim,
-                        faceColors = MetallicGoldFace,
-                        textColor = GoldAccent,
-                        modifier = Modifier
-                            .weight(1f)
-                            .height(56.dp),
-                        leadingIcon = {
-                            Icon(Icons.Default.Leaderboard, null, tint = GoldAccent, modifier = Modifier.size(20.dp))
-                        }
-                    )
-                }
+                Spacer(modifier = Modifier.height(90.dp)) // clearance for the FAB
             }
         }
     }
@@ -450,6 +411,7 @@ private fun PlayerStandingsRow(
     standings: PlayerStandings,
     isHost: Boolean,
     currentUserEmail: String,
+    currencySymbol: String,
     onMapClick: () -> Unit,
     onNudgeClick: () -> Unit
 ) {
@@ -567,24 +529,33 @@ private fun PlayerStandingsRow(
                 }
             }
 
-            // Net Points
-            Text(
-                text = "${if (standings.netPoints > 0) "+" else ""}${standings.netPoints} pts",
-                color = scoreColor,
-                fontSize = 15.sp,
-                fontWeight = FontWeight.Bold
-            )
+            // Net Points + Money
+            Column(horizontalAlignment = Alignment.End) {
+                Text(
+                    text = "${standings.netPoints} pts",
+                    color = scoreColor,
+                    fontSize = 15.sp,
+                    fontWeight = FontWeight.Bold
+                )
+                Text(
+                    text = "${String.format("%.0f", standings.totalMoney)}$currencySymbol",
+                    color = scoreColor.copy(alpha = 0.7f),
+                    fontSize = 11.sp
+                )
+            }
         }
     }
 }
 
-private const val ROUND_LABEL_COL_WIDTH_DP = 48
-private const val ROUND_PLAYER_COL_WIDTH_DP = 60
+private enum class RoundDisplayMode { MAAL, POINTS }
+
+private const val ROUND_SEQ_COL_WIDTH_DP = 26
+private const val ROUND_PLAYER_COL_WIDTH_DP = 52
 
 /**
- * Compact grid: one row per round, one column per player. Each cell packs winner/dublee
- * status into small icons plus points on top and money below - no text labels needed.
- * Tap the info icon on a round to see the full breakdown in a popup.
+ * Compact grid: one row per round, one column per player. Top row shows Maal or Points
+ * (switchable), bottom row always shows money won. Tap the round number to see the full
+ * per-player breakdown in a popup.
  */
 @Composable
 private fun CompactRoundsTable(
@@ -593,6 +564,7 @@ private fun CompactRoundsTable(
     currencySymbol: String,
     onRoundClick: (RoundItem) -> Unit
 ) {
+    var mode by remember { mutableStateOf(RoundDisplayMode.MAAL) }
     val scrollState = rememberScrollState()
 
     Card(
@@ -600,66 +572,73 @@ private fun CompactRoundsTable(
         shape = RoundedCornerShape(8.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White.copy(alpha = 0.03f))
     ) {
-        Column(modifier = Modifier.padding(vertical = 8.dp)) {
-            // Header: player avatars
+        Column {
+            // Maal / Points mode selector
             Row(
-                modifier = Modifier.padding(horizontal = 8.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 6.dp),
+                horizontalArrangement = Arrangement.Center
+            ) {
+                ModeTab("Maal", mode == RoundDisplayMode.MAAL) { mode = RoundDisplayMode.MAAL }
+                Spacer(modifier = Modifier.width(8.dp))
+                ModeTab("Points", mode == RoundDisplayMode.POINTS) { mode = RoundDisplayMode.POINTS }
+            }
+
+            HorizontalDivider(color = Color.White.copy(alpha = 0.08f))
+
+            // Header: player initials
+            Row(
+                modifier = Modifier.padding(vertical = 6.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Spacer(modifier = Modifier.width(ROUND_LABEL_COL_WIDTH_DP.dp))
+                Spacer(modifier = Modifier.width(ROUND_SEQ_COL_WIDTH_DP.dp))
                 Row(modifier = Modifier.horizontalScroll(scrollState)) {
                     players.forEach { p ->
                         Box(
                             modifier = Modifier.width(ROUND_PLAYER_COL_WIDTH_DP.dp),
                             contentAlignment = Alignment.Center
                         ) {
-                            Box(
-                                modifier = Modifier
-                                    .size(28.dp)
-                                    .clip(CircleShape)
-                                    .background(Color.White.copy(alpha = 0.1f)),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Text(
-                                    p.player.name.take(1).uppercase(),
-                                    color = GoldAccent,
-                                    fontSize = 12.sp,
-                                    fontWeight = FontWeight.Bold
-                                )
-                            }
+                            Text(
+                                text = p.player.name.take(3).uppercase(),
+                                color = GoldAccent.copy(alpha = 0.8f),
+                                fontSize = 10.sp,
+                                fontWeight = FontWeight.Bold
+                            )
                         }
                     }
                 }
             }
 
-            HorizontalDivider(color = Color.White.copy(alpha = 0.08f), modifier = Modifier.padding(vertical = 6.dp))
+            HorizontalDivider(color = Color.White.copy(alpha = 0.08f))
 
-            rounds.forEach { round ->
+            rounds.forEachIndexed { index, round ->
+                val rowBackground = if (index % 2 == 0) Color.White.copy(alpha = 0.06f) else Color.Transparent
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 8.dp, vertical = 4.dp),
+                        .background(rowBackground)
+                        .padding(vertical = 3.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Column(
+                    Box(
                         modifier = Modifier
-                            .width(ROUND_LABEL_COL_WIDTH_DP.dp)
+                            .width(ROUND_SEQ_COL_WIDTH_DP.dp)
                             .clickable { onRoundClick(round) },
-                        horizontalAlignment = Alignment.CenterHorizontally
+                        contentAlignment = Alignment.Center
                     ) {
-                        Text("R${round.roundNumber}", color = Color.White.copy(alpha = 0.6f), fontSize = 11.sp, fontWeight = FontWeight.Bold)
-                        Icon(
-                            imageVector = Icons.Default.Info,
-                            contentDescription = "Round ${round.roundNumber} details",
-                            tint = GoldAccent.copy(alpha = 0.6f),
-                            modifier = Modifier.size(16.dp)
+                        Text(
+                            text = "${round.roundNumber}",
+                            color = GoldAccent,
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Bold
                         )
                     }
 
                     Row(modifier = Modifier.horizontalScroll(scrollState)) {
                         players.forEach { p ->
                             val entry = round.playerEntries.find { it.playerId == p.player.id }
-                            CompactRoundCell(entry, currencySymbol, modifier = Modifier.width(ROUND_PLAYER_COL_WIDTH_DP.dp))
+                            CompactRoundCell(entry, mode, currencySymbol, modifier = Modifier.width(ROUND_PLAYER_COL_WIDTH_DP.dp))
                         }
                     }
                 }
@@ -669,50 +648,54 @@ private fun CompactRoundsTable(
 }
 
 @Composable
-private fun CompactRoundCell(entry: RoundPlayerEntry?, currencySymbol: String, modifier: Modifier = Modifier) {
-    val score = entry?.score ?: 0
-    val wasSeenOrWon = entry?.isSeen == true
-    val scoreColor = when {
-        score > 0 -> Color(0xFF4CAF50)
-        score < 0 -> Color(0xFFFF5252)
-        else -> Color.White.copy(alpha = 0.6f)
-    }
-    val cellAlpha = if (wasSeenOrWon) 1f else 0.45f
+private fun ModeTab(label: String, selected: Boolean, onClick: () -> Unit) {
+    Text(
+        text = label,
+        color = if (selected) GoldAccent else Color.White.copy(alpha = 0.4f),
+        fontSize = 12.sp,
+        fontWeight = if (selected) FontWeight.Bold else FontWeight.Normal,
+        modifier = Modifier
+            .clip(RoundedCornerShape(6.dp))
+            .then(if (selected) Modifier.background(GoldAccent.copy(alpha = 0.15f)) else Modifier)
+            .clickable(onClick = onClick)
+            .padding(horizontal = 12.dp, vertical = 4.dp)
+    )
+}
 
-    Box(modifier = modifier, contentAlignment = Alignment.Center) {
-        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                if (entry?.isWinner == true) {
-                    Icon(
-                        imageVector = Icons.Default.EmojiEvents,
-                        contentDescription = "Winner",
-                        tint = MarigoldOrange.copy(alpha = cellAlpha),
-                        modifier = Modifier.size(11.dp)
-                    )
-                    Spacer(modifier = Modifier.width(2.dp))
-                }
-                if (entry?.isDublee == true) {
-                    Icon(
-                        imageVector = Icons.Default.Diversity3,
-                        contentDescription = "Dublee",
-                        tint = DeepRedTika.copy(alpha = cellAlpha),
-                        modifier = Modifier.size(11.dp)
-                    )
-                    Spacer(modifier = Modifier.width(2.dp))
-                }
-                Text(
-                    text = "${if (score > 0) "+" else ""}$score",
-                    color = scoreColor.copy(alpha = cellAlpha),
-                    fontSize = 13.sp,
-                    fontWeight = FontWeight.Bold
-                )
-            }
-            Text(
-                text = "${if ((entry?.money ?: 0.0) > 0) "+" else ""}${String.format("%.0f", entry?.money ?: 0.0)}$currencySymbol",
-                color = Color.White.copy(alpha = 0.5f * cellAlpha + 0.1f),
-                fontSize = 10.sp
-            )
-        }
+@Composable
+private fun CompactRoundCell(entry: RoundPlayerEntry?, mode: RoundDisplayMode, currencySymbol: String, modifier: Modifier = Modifier) {
+    val topValue = when (mode) {
+        RoundDisplayMode.MAAL -> entry?.maal ?: 0
+        RoundDisplayMode.POINTS -> entry?.score ?: 0
+    }
+    val topColor = when {
+        mode == RoundDisplayMode.POINTS && topValue > 0 -> Color(0xFF4CAF50)
+        mode == RoundDisplayMode.POINTS && topValue < 0 -> Color(0xFFFF5252)
+        else -> Color.White.copy(alpha = 0.85f)
+    }
+    val money = entry?.money ?: 0.0
+    val moneyColor = when {
+        money > 0 -> Color(0xFF4CAF50)
+        money < 0 -> Color(0xFFFF5252)
+        else -> Color.White.copy(alpha = 0.5f)
+    }
+    val cellAlpha = if (entry?.isSeen == true) 1f else 0.5f
+
+    Column(
+        modifier = modifier,
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Text(
+            text = "$topValue",
+            color = topColor.copy(alpha = cellAlpha),
+            fontSize = 13.sp,
+            fontWeight = FontWeight.Bold
+        )
+        Text(
+            text = "${String.format("%.0f", money)}$currencySymbol",
+            color = moneyColor.copy(alpha = cellAlpha),
+            fontSize = 10.sp
+        )
     }
 }
 
@@ -763,13 +746,13 @@ private fun RoundDetailsDialog(round: RoundItem, currencySymbol: String, onDismi
                             }
                             Column(horizontalAlignment = Alignment.End) {
                                 Text(
-                                    text = "${if (entry.score > 0) "+" else ""}${entry.score} pts",
+                                    text = "${entry.score} pts",
                                     color = if (entry.score > 0) Color(0xFF4CAF50) else if (entry.score < 0) Color(0xFFFF5252) else Color.White,
                                     fontWeight = FontWeight.Bold,
                                     fontSize = 14.sp
                                 )
                                 Text(
-                                    text = "${if (entry.money > 0) "+" else ""}${String.format("%.1f", entry.money)}$currencySymbol",
+                                    text = "${String.format("%.1f", entry.money)}$currencySymbol",
                                     color = Color.White.copy(alpha = 0.6f),
                                     fontSize = 11.sp
                                 )

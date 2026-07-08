@@ -21,6 +21,7 @@ import javax.inject.Inject
 data class PlayerStandings(
     val player: Player,
     val netPoints: Int = 0,
+    val totalMoney: Double = 0.0,
     val isNextDealer: Boolean = false
 )
 
@@ -119,6 +120,7 @@ class PlayGameViewModel @Inject constructor(
                             PlayerStandings(
                                 player = p,
                                 netPoints = netPoints,
+                                totalMoney = netPoints * settings.pointRate,
                                 isNextDealer = index == nextDealerIndex
                             )
                         }
@@ -196,9 +198,11 @@ class PlayGameViewModel @Inject constructor(
 
                     val standings = players.mapIndexed { index, p ->
                         val pScores = allScores.filter { it.playerId == p.id.toInt() }
+                        val netPoints = pScores.sumOf { it.score }
                         PlayerStandings(
                             player = p,
-                            netPoints = pScores.sumOf { it.score },
+                            netPoints = netPoints,
+                            totalMoney = netPoints * settings.pointRate,
                             isNextDealer = index == nextDealerIndex
                         )
                     }
