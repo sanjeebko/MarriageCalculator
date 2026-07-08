@@ -77,7 +77,7 @@ Iterative development in phases. Each step produces a buildable, testable commit
 - [x] Step 6.1: Set up Room database with entities mirroring API models
 - [x] Step 6.2: Implement offline-first pattern (local save → sync when online)
 - [x] Step 6.3: Guest mode (no auth, local dummy players)
-- [x] Step 6.4: Data sync logic (merge local + remote on reconnect)
+- [x] Step 6.4: Data sync logic — online mode writes directly to the API (remoteId + synced flag stored locally); offline/guest mode is local-only via Room. No background reconnect/merge queue exists yet (see Phase 14 candidate below).
 - [x] Step 6.5: Write tests for offline storage and sync
 - **COMMIT**: "feat: Offline mode with Room database and sync"
 
@@ -148,6 +148,11 @@ Covers requirement §3.2 "(Optional Advanced) Calculator for Maal" and §2.2 sea
 - [x] Step 13.6: Unit tests for Maal calculator and seating draw (MaalCalculatorTest.kt, SeatingDrawTest.kt)
 - [x] Step 13.7: Verify — `./gradlew testDebugUnitTest` (74 tests, BUILD SUCCESSFUL) and `assembleDebug` (BUILD SUCCESSFUL); `dotnet test` (30 tests, all passing)
 - **COMMIT**: "feat: Maal calculator, seating card draw, and duplicate-package cleanup"
+
+---
+
+## Backlog / Future Candidates (not started)
+- **True offline reconnect sync**: requirement §3.4 calls out cloud sync as "(Future)". Today, online mode writes straight to the API and offline/guest mode is local-only Room storage (Phase 6.4) — there's no queued-write/merge engine that reconciles a game played offline once connectivity returns. Would need an outbox table + WorkManager sync job + conflict resolution rule (e.g. last-write-wins vs. host-wins) if pursued.
 
 ---
 
