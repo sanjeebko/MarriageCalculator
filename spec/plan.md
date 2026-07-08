@@ -170,7 +170,7 @@ The Scoreboard's spreadsheet-style table (Phase 14) is intentionally verbose (ex
 - [x] Step 15.3: `CompactRoundsTable` + `CompactRoundCell` (`PlayGameScreen.kt`) replace the old flat `RoundItemRow` list — synced horizontal scroll (shared `ScrollState`) across a player-avatar header row and one row per round; unseen/non-winning cells are dimmed via alpha rather than a text label.
 - [x] Step 15.4: `RoundDetailsDialog` — tapping the small info icon under a round's "R{n}" label opens a popup with the full per-player Seen/Dublee/Maal/Points/Money breakdown for that round.
 - [x] Step 15.5: Verify — `dotnet test`/`gradlew testDebugUnitTest`/`assembleDebug` all green; live end-to-end on the emulator confirmed the compact grid renders correctly (trophy + points top row, money bottom row) and the info-icon popup opens with correct data.
-- **COMMIT**: pending
+- **COMMIT**: "feat: compact icon-driven rounds grid on the game page with detail popup"
 - **NOTE**: Live testing surfaced a pre-existing "Round 2" on the "2026-07-08" game set whose points don't sum to zero (+3, -7, +23, -29, +1 = -9, not 0) — the scoring engine's `ValidateZeroSum` invariant is violated. This round predates this session's changes (wasn't created via the work here) and its origin is unclear (possibly seed/test data inserted outside the normal round-submission flow). Flagged, not investigated — worth a look if it recurs from real gameplay.
 
 ---
