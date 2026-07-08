@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Authentication;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using System;
+using System.Linq;
 using System.Security.Claims;
 using System.Text;
 using System.Text.Encodings.Web;
@@ -15,6 +16,13 @@ namespace MarriageCalculator.API.Authentication;
 public class FirebaseOrMockAuthenticationOptions : AuthenticationSchemeOptions
 {
     public string? FirebaseProjectId { get; set; }
+    /// <summary>
+    /// OAuth 2.0 Client ID(s) the Android app requests as serverClientId when signing in with
+    /// Google via Credential Manager. The resulting Google ID token's "aud" claim equals this
+    /// value, NOT the Firebase project ID (that only holds for tokens minted by Firebase Auth
+    /// itself, which this app does not use). Comma-separated to allow multiple client IDs.
+    /// </summary>
+    public string? GoogleClientId { get; set; }
     public bool VerifySignature { get; set; } = false; // Set to true to enforce signature validation
 }
 
@@ -94,13 +102,20 @@ public class FirebaseOrMockAuthenticationHandler : AuthenticationHandler<Firebas
                     return AuthenticateResult.Fail("Invalid JWT: missing 'sub' claim.");
                 }
 
-                // Verify project ID claim if configured
-                if (!string.IsNullOrEmpty(Options.FirebaseProjectId))
+                // Verify the audience claim against whichever allowed values are configured:
+                // the Firebase project ID (for real Firebase ID tokens) and/or the Google OAuth
+                // Client ID(s) (for raw Google Sign-In ID tokens, which is what this app sends).
+                var allowedAudiences = (Options.GoogleClientId ?? string.Empty)
+                    .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+                    .Concat(string.IsNullOrEmpty(Options.FirebaseProjectId) ? Array.Empty<string>() : new[] { Options.FirebaseProjectId })
+                    .ToArray();
+
+                if (allowedAudiences.Length > 0)
                 {
                     string aud = root.TryGetProperty("aud", out var audProp) ? audProp.GetString() ?? string.Empty : string.Empty;
-                    if (aud != Options.FirebaseProjectId)
+                    if (!allowedAudiences.Contains(aud))
                     {
-                        return AuthenticateResult.Fail($"Audience mismatch. Expected: {Options.FirebaseProjectId}, Actual: {aud}");
+                        return AuthenticateResult.Fail($"Audience mismatch. Expected one of: {string.Join(", ", allowedAudiences)}. Actual: {aud}");
                     }
                 }
 

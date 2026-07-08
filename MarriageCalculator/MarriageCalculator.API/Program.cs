@@ -126,6 +126,7 @@ builder.Services.AddAuthentication("FirebaseOrMock")
     .AddScheme<FirebaseOrMockAuthenticationOptions, FirebaseOrMockAuthenticationHandler>("FirebaseOrMock", options =>
     {
         options.FirebaseProjectId = builder.Configuration["Firebase:ProjectId"];
+        options.GoogleClientId = builder.Configuration["Firebase:GoogleClientId"];
         options.VerifySignature = false;
     });
 
