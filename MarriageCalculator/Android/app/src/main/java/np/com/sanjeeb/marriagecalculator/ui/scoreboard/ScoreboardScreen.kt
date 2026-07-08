@@ -1,5 +1,9 @@
 package np.com.sanjeeb.marriagecalculator.ui.scoreboard
 
+import android.app.Activity
+import android.content.Context
+import android.content.ContextWrapper
+import android.content.pm.ActivityInfo
 import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.horizontalScroll
@@ -19,6 +23,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -31,6 +36,32 @@ import np.com.sanjeeb.marriagecalculator.ui.theme.GoldAccent
 import np.com.sanjeeb.marriagecalculator.ui.theme.MarigoldOrange
 import np.com.sanjeeb.marriagecalculator.ui.theme.TiharNightBlue
 
+private fun Context.findActivity(): Activity? {
+    var context = this
+    while (context is ContextWrapper) {
+        if (context is Activity) return context
+        context = context.baseContext
+    }
+    return null
+}
+
+/**
+ * Locks the host Activity to the given orientation while this composable is on screen,
+ * restoring whatever orientation setting was active before it entered composition.
+ */
+@Composable
+private fun LockScreenOrientation(orientation: Int) {
+    val context = LocalContext.current
+    DisposableEffect(orientation) {
+        val activity = context.findActivity() ?: return@DisposableEffect onDispose {}
+        val originalOrientation = activity.requestedOrientation
+        activity.requestedOrientation = orientation
+        onDispose {
+            activity.requestedOrientation = originalOrientation
+        }
+    }
+}
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ScoreboardScreen(
@@ -42,6 +73,12 @@ fun ScoreboardScreen(
 
     LaunchedEffect(gameSetId) {
         viewModel.loadScoreboardData(gameSetId)
+    }
+
+    // The round history table has many player columns, so rotate to landscape while
+    // it's showing to fit more of them on screen at once.
+    if (uiState.showHistory) {
+        LockScreenOrientation(ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE)
     }
 
     Scaffold(
