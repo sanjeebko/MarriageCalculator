@@ -19,6 +19,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
@@ -295,7 +296,7 @@ fun PlayGameScreen(
                             viewModel.nudgePlayer(standings.player.id, gameSetId)
                         }
                     )
-                    Spacer(modifier = Modifier.height(8.dp))
+                    Spacer(modifier = Modifier.height(4.dp))
                 }
 
                 Spacer(modifier = Modifier.height(90.dp)) // clearance for the FAB
@@ -428,13 +429,13 @@ private fun PlayerStandingsRow(
             .then(
                 if (isHost && isGuest) Modifier.clickable { onMapClick() } else Modifier
             ),
-        shape = RoundedCornerShape(8.dp),
+        shape = RoundedCornerShape(6.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White.copy(alpha = 0.05f))
     ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(10.dp),
+                .padding(horizontal = 8.dp, vertical = 6.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             // Avatar
@@ -454,14 +455,14 @@ private fun PlayerStandingsRow(
                     contentDescription = null,
                     contentScale = ContentScale.Crop,
                     modifier = Modifier
-                        .size(36.dp)
-                        .clip(RoundedCornerShape(6.dp))
+                        .size(26.dp)
+                        .clip(RoundedCornerShape(5.dp))
                 )
             } else {
                 Box(
                     modifier = Modifier
-                        .size(36.dp)
-                        .clip(RoundedCornerShape(6.dp))
+                        .size(26.dp)
+                        .clip(RoundedCornerShape(5.dp))
                         .background(Color.DarkGray),
                     contentAlignment = Alignment.Center
                 ) {
@@ -469,12 +470,12 @@ private fun PlayerStandingsRow(
                         text = standings.player.name.take(1).uppercase(),
                         color = Color.White,
                         fontWeight = FontWeight.Bold,
-                        fontSize = 16.sp
+                        fontSize = 12.sp
                     )
                 }
             }
 
-            Spacer(modifier = Modifier.width(12.dp))
+            Spacer(modifier = Modifier.width(8.dp))
 
             // Player Name + Dealer Indicator
             Column(modifier = Modifier.weight(1f)) {
@@ -482,31 +483,31 @@ private fun PlayerStandingsRow(
                     Text(
                         text = standings.player.name,
                         color = Color.White,
-                        fontSize = 15.sp,
+                        fontSize = 13.sp,
                         fontWeight = FontWeight.Bold
                     )
                     if (isGuest) {
-                        Spacer(modifier = Modifier.width(6.dp))
+                        Spacer(modifier = Modifier.width(4.dp))
                         Icon(
                             imageVector = Icons.Default.Link,
                             contentDescription = "Link Account",
                             tint = GoldAccent.copy(alpha = 0.7f),
-                            modifier = Modifier.size(16.dp)
+                            modifier = Modifier.size(13.dp)
                         )
                     }
                     if (standings.isNextDealer) {
-                        Spacer(modifier = Modifier.width(6.dp))
+                        Spacer(modifier = Modifier.width(4.dp))
                         Box(
                             modifier = Modifier
                                 .clip(RoundedCornerShape(4.dp))
                                 .background(GoldAccent.copy(alpha = 0.2f))
                                 .border(0.5.dp, GoldAccent, RoundedCornerShape(4.dp))
-                                .padding(horizontal = 4.dp, vertical = 2.dp)
+                                .padding(horizontal = 4.dp, vertical = 1.dp)
                         ) {
                             Text(
                                 text = "DEALER",
                                 color = GoldAccent,
-                                fontSize = 8.sp,
+                                fontSize = 7.sp,
                                 fontWeight = FontWeight.Bold
                             )
                         }
@@ -518,15 +519,16 @@ private fun PlayerStandingsRow(
             if (isHost && standings.player.email.isNotBlank() && standings.player.email != currentUserEmail) {
                 IconButton(
                     onClick = onNudgeClick,
-                    modifier = Modifier.padding(end = 4.dp)
+                    modifier = Modifier.size(28.dp)
                 ) {
                     Icon(
                         imageVector = Icons.Default.NotificationsActive,
                         contentDescription = "Nudge Player",
                         tint = GoldAccent,
-                        modifier = Modifier.size(20.dp)
+                        modifier = Modifier.size(16.dp)
                     )
                 }
+                Spacer(modifier = Modifier.width(2.dp))
             }
 
             // Net Points + Money
@@ -534,13 +536,13 @@ private fun PlayerStandingsRow(
                 Text(
                     text = "${standings.netPoints} pts",
                     color = scoreColor,
-                    fontSize = 15.sp,
+                    fontSize = 13.sp,
                     fontWeight = FontWeight.Bold
                 )
                 Text(
                     text = "${String.format("%.0f", standings.totalMoney)}$currencySymbol",
                     color = scoreColor.copy(alpha = 0.7f),
-                    fontSize = 11.sp
+                    fontSize = 10.sp
                 )
             }
         }
@@ -720,16 +722,43 @@ private fun RoundDetailsDialog(round: RoundItem, currencySymbol: String, onDismi
                 }
                 LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     items(round.playerEntries) { entry ->
+                        val winnerGlow = Color(0xFF4CAF50)
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
+                                .then(
+                                    if (entry.isWinner) {
+                                        Modifier.shadow(
+                                            elevation = 10.dp,
+                                            shape = RoundedCornerShape(8.dp),
+                                            ambientColor = winnerGlow,
+                                            spotColor = winnerGlow
+                                        )
+                                    } else Modifier
+                                )
                                 .clip(RoundedCornerShape(8.dp))
-                                .background(Color.White.copy(alpha = 0.05f))
+                                .background(if (entry.isWinner) winnerGlow.copy(alpha = 0.15f) else Color.White.copy(alpha = 0.05f))
+                                .then(
+                                    if (entry.isWinner) {
+                                        Modifier.border(1.5.dp, winnerGlow.copy(alpha = 0.7f), RoundedCornerShape(8.dp))
+                                    } else Modifier
+                                )
                                 .padding(10.dp),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Column(modifier = Modifier.weight(1f)) {
-                                Text(entry.playerName, color = Color.White, fontWeight = FontWeight.Bold, fontSize = 13.sp)
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Text(entry.playerName, color = Color.White, fontWeight = FontWeight.Bold, fontSize = 13.sp)
+                                    if (entry.isWinner) {
+                                        Spacer(modifier = Modifier.width(4.dp))
+                                        Icon(
+                                            imageVector = Icons.Default.EmojiEvents,
+                                            contentDescription = "Winner",
+                                            tint = MarigoldOrange,
+                                            modifier = Modifier.size(14.dp)
+                                        )
+                                    }
+                                }
                                 Row(verticalAlignment = Alignment.CenterVertically) {
                                     Text(
                                         if (entry.isSeen) "Seen" else "Unseen",

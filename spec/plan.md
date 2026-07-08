@@ -3,7 +3,7 @@
 ## Problem Statement
 Build a full-featured Android (Kotlin/Compose) app for the Marriage card game calculator, backed by the existing .NET API. The app must handle 2-6 players with efficient screen space usage, support offline/online modes, real-time score display, and integrate with the C# API hosted on Kubernetes. The Maui version is archived and replaced by this native Android app.
 
-## Status: Phases 1-16 COMPLETE ✅
+## Status: Phases 1-17 COMPLETE ✅
 - 35 C# tests (12 Core + 23 API) + 74 Android unit tests all passing
 - Android APK builds successfully (`assembleDebug`)
 - .NET API builds successfully
@@ -187,6 +187,12 @@ A round of detailed UX feedback on `PlayGameScreen` tightening up Phase 15's com
 - [x] Step 16.10: Transfer Host icon kept visible but disabled (`enabled = false`, dimmed tint) — feature isn't fully designed yet.
 - [x] Step 16.11: Verify — `dotnet test`/`gradlew testDebugUnitTest`/`assembleDebug` all green; live end-to-end on the emulator confirmed every item above (latest-round-first ordering, section swap, tap-to-open on the number itself, 3-letter headers, no `+` signs, Maal/Points toggle switching correctly, visible zebra striping, Standings money column, FAB + top-bar Scoreboard icon navigating correctly, Transfer Host icon inert when tapped).
 - **COMMIT**: "feat: redesign game page rounds table and replace bottom bar with Material FAB"
+
+## Phase 17: Round Details Winner Highlight + Compact Standings (Complete)
+- [x] Step 17.1: In `RoundDetailsDialog`, the winner's row gets a green glow (`Modifier.shadow` with green `ambientColor`/`spotColor`, a light green background tint, and a green border) plus a small trophy icon next to their name.
+- [x] Step 17.2: `PlayerStandingsRow` made compact — smaller avatar (36dp → 26dp), tighter card padding, smaller fonts, reduced inter-row spacing (8dp → 4dp).
+- [x] Step 17.3: Verify — `dotnet test` 35/35; `gradlew testDebugUnitTest`/`assembleDebug` green; live on the emulator confirmed the winner's row in the details popup has a visible green glow/border/icon and Standings visibly fits more rows on screen.
+- **COMMIT**: "feat: highlight round-details winner and compact standings rows"
 
 ---
 
