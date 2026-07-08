@@ -3,9 +3,9 @@
 ## Problem Statement
 Build a full-featured Android (Kotlin/Compose) app for the Marriage card game calculator, backed by the existing .NET API. The app must handle 2-6 players with efficient screen space usage, support offline/online modes, real-time score display, and integrate with the C# API hosted on Kubernetes. The Maui version is archived and replaced by this native Android app.
 
-## Status: All Phases (1-12) COMPLETE ✅
-- 23 C# tests + 63 Android unit tests all passing
-- Android APK builds successfully
+## Status: Phases 1-13 COMPLETE ✅
+- 30 C# tests (12 Core + 18 API) + 74 Android unit tests all passing
+- Android APK builds successfully (`assembleDebug`)
 - .NET API builds successfully
 - **Docker**: Production-ready for API deployment.
 
@@ -128,6 +128,26 @@ Iterative development in phases. Each step produces a buildable, testable commit
 - [x] Step 12.6: Update Android Retrofit client to append authentication headers to all outbound requests.
 - [x] Step 12.7: Write concurrent load tests and unit tests ensuring multiple users can operate simultaneously without cross-talk.
 - **COMMIT**: "refactor: User entity migration, settings/games user linking, and multi-user login support"
+
+## Phase 13: Gameplay Aids & Hardening (Complete)
+Covers requirement §3.2 "(Optional Advanced) Calculator for Maal" and §2.2 seating/dealing automation, plus codebase cleanup.
+- [x] Step 13.1: Cleanup — remove stray duplicate package `np.com.marriage.calculator` (3 leftover files: LoginScreen.kt, theme/Color.kt, theme/Type.kt)
+- [x] Step 13.2: Maal Calculator engine (pure Kotlin, `data/model/MaalCalculator.kt`)
+  - Maal item types: Tiplu, Poplu, Jhiplu, Alter, Marriage, Tunnel, Manuk (Joker)
+  - Configurable per-item point values with common defaults (Tiplu 3, Poplu 2, Jhiplu 2, Alter 1, Marriage 10, Tunnel 5, Manuk 1)
+  - Auto-sum counts × values → total Maal
+- [x] Step 13.3: Maal Calculator dialog in Round Input screen
+  - Calculator icon next to the Maal field opens a stepper dialog per maal item
+  - Total auto-fills the player's Maal input; counts preserved per player while on screen
+- [x] Step 13.4: Seating draw engine (pure Kotlin, `data/model/SeatingDraw.kt`)
+  - Each player draws a distinct card from a single 52-card deck
+  - Highest card → 1st seat, descending order; ties broken by suit (Spades > Hearts > Diamonds > Clubs)
+  - Lowest card → last seat = first dealer (per requirement §2.2)
+- [x] Step 13.5: "Draw Cards" action in Rearrange Seats dialog
+  - Draws for all players, shows each player's card, reorders seating automatically
+- [x] Step 13.6: Unit tests for Maal calculator and seating draw (MaalCalculatorTest.kt, SeatingDrawTest.kt)
+- [x] Step 13.7: Verify — `./gradlew testDebugUnitTest` (74 tests, BUILD SUCCESSFUL) and `assembleDebug` (BUILD SUCCESSFUL); `dotnet test` (30 tests, all passing)
+- **COMMIT**: "feat: Maal calculator, seating card draw, and duplicate-package cleanup"
 
 ---
 
