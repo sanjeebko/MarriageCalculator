@@ -3,7 +3,7 @@
 ## Problem Statement
 Build a full-featured Android (Kotlin/Compose) app for the Marriage card game calculator, backed by the existing .NET API. The app must handle 2-6 players with efficient screen space usage, support offline/online modes, real-time score display, and integrate with the C# API hosted on Kubernetes. The Maui version is archived and replaced by this native Android app.
 
-## Status: Phases 1-14 COMPLETE ✅
+## Status: Phases 1-15 COMPLETE ✅
 - 35 C# tests (12 Core + 23 API) + 74 Android unit tests all passing
 - Android APK builds successfully (`assembleDebug`)
 - .NET API builds successfully
@@ -160,6 +160,18 @@ Triggered by a user request to see round-by-round Seen/Dublee/Maal/Points/Money 
 - [x] Step 14.7: Verify — unit tests updated (`ScoreboardViewModelTest`, new `ControllersTests` cases for submit-round success/forbidden/bad-request) and passing; `dotnet test` 35/35; `gradlew testDebugUnitTest`/`assembleDebug` both green; **live end-to-end verification on the emulator** against the real online account and a rebuilt Docker API container — submitted a real round, confirmed it appears correctly in both Standings and the new table (zero-sum: +40/-10/-10/-10/-10), confirmed horizontal scroll sync.
 - **COMMIT**: "feat: round history table, online-mode round submission, and live score preview"
 - **NOTE**: A test round (Round 1, winner Aariya Ojha) was submitted to the "2026-07-08" game set during live verification and is now real data in the shared dev database — left in place rather than guessing at cleanup semantics; flag to the user.
+- [x] Step 14.8: **Android** — Round History Table locks the screen to landscape while showing (`ScoreboardScreen.kt` `LockScreenOrientation`, `MainActivity` gets `android:configChanges` so rotation doesn't recreate the Activity), fitting more player columns before horizontal scroll kicks in. Reverts to the prior orientation when leaving the table. Verified live: 5 players + Total Maal fit with zero scrolling in landscape.
+- **COMMIT**: "feat: lock round history table to landscape for more player columns"
+
+## Phase 15: Compact Rounds Grid on the Game Page (Complete)
+The Scoreboard's spreadsheet-style table (Phase 14) is intentionally verbose (explicit Seen/Dublee/Maal/Points/Money rows) for a dedicated history view. The main game page ("Rounds Played" section of `PlayGameScreen`) needed a denser, icon-driven summary instead: one compact two-line cell per player per round (🏆 winner icon + 👥 dublee icon + points on top, money below; no row labels), with a per-round info icon opening a popup with the full breakdown.
+- [x] Step 15.1: `RoundPlayerEntry` (shared model in `ui/scoreboard/ScoreboardViewModel.kt`) gains an `isWinner` field — needed a real signal for the trophy icon instead of the incorrect `score > 0` proxy (a seen non-winning player can still net a positive score).
+- [x] Step 15.2: `PlayGameViewModel.RoundItem` gains `playerEntries: List<RoundPlayerEntry>` and `PlayGameUiState` gains `settings: GameSettings`, populated in both the online (`MarriageGameScore.winner`/`.duply`/`.seen`) and offline (`RoundScoreEntity.isWinner`/`.isDublee`/`.isSeen`) load paths, mirroring Phase 14's `ScoreboardViewModel` pattern.
+- [x] Step 15.3: `CompactRoundsTable` + `CompactRoundCell` (`PlayGameScreen.kt`) replace the old flat `RoundItemRow` list — synced horizontal scroll (shared `ScrollState`) across a player-avatar header row and one row per round; unseen/non-winning cells are dimmed via alpha rather than a text label.
+- [x] Step 15.4: `RoundDetailsDialog` — tapping the small info icon under a round's "R{n}" label opens a popup with the full per-player Seen/Dublee/Maal/Points/Money breakdown for that round.
+- [x] Step 15.5: Verify — `dotnet test`/`gradlew testDebugUnitTest`/`assembleDebug` all green; live end-to-end on the emulator confirmed the compact grid renders correctly (trophy + points top row, money bottom row) and the info-icon popup opens with correct data.
+- **COMMIT**: pending
+- **NOTE**: Live testing surfaced a pre-existing "Round 2" on the "2026-07-08" game set whose points don't sum to zero (+3, -7, +23, -29, +1 = -9, not 0) — the scoring engine's `ValidateZeroSum` invariant is violated. This round predates this session's changes (wasn't created via the work here) and its origin is unclear (possibly seed/test data inserted outside the normal round-submission flow). Flagged, not investigated — worth a look if it recurs from real gameplay.
 
 ---
 

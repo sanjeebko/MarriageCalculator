@@ -29,6 +29,7 @@ data class RoundPlayerEntry(
     val playerName: String,
     val isSeen: Boolean,
     val isDublee: Boolean,
+    val isWinner: Boolean = false,
     val maal: Int,
     val score: Int,
     val money: Double
@@ -101,6 +102,7 @@ class ScoreboardViewModel @Inject constructor(
                             playerName = p.name,
                             isSeen = pScore?.isSeen ?: false,
                             isDublee = pScore?.isDublee ?: false,
+                            isWinner = pScore?.isWinner ?: false,
                             maal = pScore?.maal ?: 0,
                             score = pScore?.score ?: 0,
                             money = (pScore?.score ?: 0) * settings.pointRate
@@ -169,6 +171,7 @@ class ScoreboardViewModel @Inject constructor(
                                 playerName = p.name,
                                 isSeen = score?.seen ?: false,
                                 isDublee = score?.duply ?: false,
+                                isWinner = score?.winner ?: false,
                                 maal = score?.maal ?: 0,
                                 score = score?.score ?: 0,
                                 money = (score?.score ?: 0) * settings.pointRate

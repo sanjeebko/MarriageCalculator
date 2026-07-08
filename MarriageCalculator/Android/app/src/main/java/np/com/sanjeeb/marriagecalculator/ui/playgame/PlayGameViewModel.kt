@@ -9,6 +9,7 @@ import np.com.sanjeeb.marriagecalculator.data.repository.PlayerRepository
 import np.com.sanjeeb.marriagecalculator.data.repository.FriendRepository
 import np.com.sanjeeb.marriagecalculator.data.repository.SessionManager
 import np.com.sanjeeb.marriagecalculator.data.repository.ApiResult
+import np.com.sanjeeb.marriagecalculator.ui.scoreboard.RoundPlayerEntry
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -28,7 +29,8 @@ data class RoundItem(
     val roundNumber: Int,
     val winnerName: String,
     val totalMaal: Int,
-    val winnerScore: Int
+    val winnerScore: Int,
+    val playerEntries: List<RoundPlayerEntry> = emptyList()
 )
 
 data class PlayGameUiState(
@@ -43,7 +45,8 @@ data class PlayGameUiState(
     val friendsList: List<User> = emptyList(),
     val currentUserEmail: String = "",
     val error: String? = null,
-    val gameSettingsId: String = ""
+    val gameSettingsId: String = "",
+    val settings: GameSettings = GameSettings.default()
 )
 
 @HiltViewModel
@@ -70,20 +73,36 @@ class PlayGameViewModel @Inject constructor(
                         val gameSet = result.data
                         val gameSetPlayers = gameSet.gameSetPlayers?.values?.sortedBy { it.position } ?: emptyList()
                         val players = gameSetPlayers.mapNotNull { it.player }
-                        
+                        val settings = gameSet.gameSettings ?: GameSettings.default()
+
                         val roundsList = gameSet.rounds?.map { r ->
                             val firstGame = r.marriageGames?.firstOrNull()
                             val winnerName = players.find { it.id == firstGame?.winnerId }?.name ?: "Unknown"
                             val totalMaal = firstGame?.totalMaal ?: 0
                             val winnerScoreMap = r.totalScore ?: emptyMap()
                             val winnerScore = winnerScoreMap[firstGame?.winnerId ?: ""]?.toInt() ?: 0
-                            
+
+                            val playerEntries = players.map { p ->
+                                val score = firstGame?.marriageGameScores?.get(p.id)
+                                RoundPlayerEntry(
+                                    playerId = p.id,
+                                    playerName = p.name,
+                                    isSeen = score?.seen ?: false,
+                                    isDublee = score?.duply ?: false,
+                                    isWinner = score?.winner ?: false,
+                                    maal = score?.maal ?: 0,
+                                    score = score?.score ?: 0,
+                                    money = (score?.score ?: 0) * settings.pointRate
+                                )
+                            }
+
                             RoundItem(
                                 roundId = r.id.hashCode(),
                                 roundNumber = r.sequence,
                                 winnerName = winnerName,
                                 totalMaal = totalMaal,
-                                winnerScore = winnerScore
+                                winnerScore = winnerScore,
+                                playerEntries = playerEntries
                             )
                         } ?: emptyList()
 
@@ -118,7 +137,8 @@ class PlayGameViewModel @Inject constructor(
                             isOnlineMode = true,
                             friendsList = emptyList(),
                             currentUserEmail = userEmail,
-                            gameSettingsId = gameSet.gameSettingsId
+                            gameSettingsId = gameSet.gameSettingsId,
+                            settings = settings
                         )
                         loadFriends()
                     }
@@ -136,6 +156,7 @@ class PlayGameViewModel @Inject constructor(
             viewModelScope.launch {
                 val gameSet = offlineGameRepository.getGameSet(gameSetId) ?: return@launch
                 val players = offlineGameRepository.getGameSetPlayers(gameSetId)
+                val settings = offlineGameRepository.getGameSettings(gameSet.settingsId) ?: GameSettings.default()
 
                 offlineGameRepository.getRounds(gameSetId).collect { roundEntities ->
                     val allScores = offlineGameRepository.getAllScoresForGameSet(gameSetId)
@@ -146,12 +167,27 @@ class PlayGameViewModel @Inject constructor(
                         val winnerScore = roundScores.find { it.isWinner }?.score ?: 0
                         val winnerName = players.find { it.id == roundScores.find { it.isWinner }?.playerId?.toString() }?.name ?: "Unknown"
 
+                        val playerEntries = players.map { p ->
+                            val pScore = roundScores.find { it.playerId.toString() == p.id }
+                            RoundPlayerEntry(
+                                playerId = p.id,
+                                playerName = p.name,
+                                isSeen = pScore?.isSeen ?: false,
+                                isDublee = pScore?.isDublee ?: false,
+                                isWinner = pScore?.isWinner ?: false,
+                                maal = pScore?.maal ?: 0,
+                                score = pScore?.score ?: 0,
+                                money = (pScore?.score ?: 0) * settings.pointRate
+                            )
+                        }
+
                         RoundItem(
                             roundId = r.id,
                             roundNumber = r.roundNumber,
                             winnerName = winnerName,
                             totalMaal = r.totalMaal,
-                            winnerScore = winnerScore
+                            winnerScore = winnerScore,
+                            playerEntries = playerEntries
                         )
                     }
 
@@ -176,7 +212,8 @@ class PlayGameViewModel @Inject constructor(
                         isLoading = false,
                         isHost = true,
                         isOnlineMode = false,
-                        gameSettingsId = gameSet.settingsId.toString()
+                        gameSettingsId = gameSet.settingsId.toString(),
+                        settings = settings
                     )
                 }
             }
