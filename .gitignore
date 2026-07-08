@@ -352,3 +352,6 @@ MigrationBackup/
 
 # Local Environment Variables and Secrets
 .env
+# Firebase private keys
+firebase-adminsdk.json
+**/firebase-adminsdk.json

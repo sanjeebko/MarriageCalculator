@@ -16,5 +16,7 @@ public class User
 
     public string Email { get; set; } = string.Empty;
 
+    public string? FcmToken { get; set; }
+
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 }

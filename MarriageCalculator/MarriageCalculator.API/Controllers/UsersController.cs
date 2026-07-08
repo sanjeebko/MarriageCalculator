@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System;
 using System.Collections.Generic;
+using System.Security.Claims;
 using System.Threading.Tasks;
 
 namespace MarriageCalculator.API.Controllers;
@@ -42,6 +43,41 @@ public class UsersController : ControllerBase
         {
             _logger.LogError(ex, "Error processing user login/registration");
             return StatusCode(500, "An error occurred during authentication.");
+        }
+    }
+
+    /// <summary>
+    /// Register/update FCM token for the authenticated user
+    /// </summary>
+    [HttpPost("fcm-token")]
+    [Authorize]
+    public async Task<ActionResult> RegisterFcmToken([FromBody] RegisterFcmTokenDto dto)
+    {
+        try
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(userId))
+            {
+                return Unauthorized("User ID claim missing.");
+            }
+
+            var success = await _userService.UpdateFcmTokenAsync(userId, dto.Token);
+            if (!success)
+            {
+                return NotFound("User not found.");
+            }
+
+            return Ok();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error updating FCM token");
+            return StatusCode(500, "An error occurred while updating the FCM token.");
         }
     }
 

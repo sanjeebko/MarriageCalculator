@@ -61,6 +61,19 @@ public class UserRepository : IUserRepository
         return result;
     }
 
+    public async Task<User?> UpdateFcmTokenAsync(string userId, string fcmToken)
+    {
+        var update = Builders<User>.Update
+            .Set(u => u.FcmToken, fcmToken);
+
+        var result = await _collection.FindOneAndUpdateAsync(
+            u => u.UserId == userId,
+            update,
+            new FindOneAndUpdateOptions<User> { ReturnDocument = ReturnDocument.After });
+
+        return result;
+    }
+
     public async Task<bool> DeleteAsync(string id)
     {
         var result = await _collection.DeleteOneAsync(u => u.Id == id);

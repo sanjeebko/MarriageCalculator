@@ -106,6 +106,7 @@ builder.Services.AddScoped<IDatabaseRepository, DatabaseRepository>();
 builder.Services.AddScoped<IFriendshipRepository, FriendshipRepository>();
 
 // Register services
+builder.Services.AddSingleton<IFcmService, FcmService>();
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IPlayerService, PlayerService>();
 builder.Services.AddScoped<IGameSettingsService, GameSettingsService>();

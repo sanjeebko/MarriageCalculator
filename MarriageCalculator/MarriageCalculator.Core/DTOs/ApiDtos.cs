@@ -26,7 +26,13 @@ public class UserDto
     public string UserId { get; set; } = string.Empty;
     public string DisplayName { get; set; } = string.Empty;
     public string Email { get; set; } = string.Empty;
+    public string? FcmToken { get; set; }
     public DateTime CreatedAt { get; set; }
+}
+
+public class RegisterFcmTokenDto
+{
+    public string Token { get; set; } = string.Empty;
 }
 
 public class CreateUserDto
@@ -87,6 +93,9 @@ public class MarriageGameSetDto
     public bool IsActive { get; set; }
     public string GameSettingsId { get; set; } = string.Empty;
     public List<string> PlayerIds { get; set; } = [];
+    public GameSettingsDto? GameSettings { get; set; }
+    public Dictionary<string, MarriageGameSetPlayerDto>? GameSetPlayers { get; set; }
+    public List<MarriageGameRoundDto>? Rounds { get; set; }
 }
 
 public class CreateMarriageGameSetDto
@@ -125,6 +134,8 @@ public class MarriageGameRoundDto
     public int Sequence { get; set; }
     public string MarriageGameSetId { get; set; } = string.Empty;
     public bool Completed { get; set; }
+    public List<MarriageGameDto>? MarriageGames { get; set; }
+    public Dictionary<string, double>? TotalScore { get; set; }
 }
 
 public class CreateMarriageGameRoundDto
@@ -169,8 +180,12 @@ public class CreateMarriageGameScoreDto
 
 public class MarriageGameSetPlayerDto
 {
+    public string Id { get; set; } = string.Empty;
     public string MarriageGameSetId { get; set; } = string.Empty;
     public string PlayerId { get; set; } = string.Empty;
+    public int Position { get; set; }
+    public bool IsActive { get; set; } = true;
+    public PlayerDto? Player { get; set; }
 }
 
 public class CreateMarriageGameSetPlayerDto

@@ -1,111 +1,91 @@
-# MarriageCalculator Solution Architecture
+# Marriage Calculator Solution Architecture
 
-## ?? Project Structure
+This document serves as the architectural overview and design manual for the Marriage Calculator solution.
+
+---
+
+## 1. Solution Structure & Projects
+
+The solution consists of three main projects, organized using clean architecture principles:
 
 ```
 MarriageCalculator/
-??? MarriageCalculator/                    # ?? MAUI Mobile App
-?   ??? Platforms/                         # Platform-specific code
-?   ??? Pages/                            # MAUI Pages/Views
-?   ??? Resources/                        # Images, fonts, etc.
-?   ??? MarriageCalculator.csproj         # MAUI project file
-??? MarriageCalculator.API/               # ?? Web API Backend
-?   ??? Controllers/                      # API endpoints
-?   ??? Services/                         # Business logic
-?   ??? Repositories/                     # Data access
-?   ??? MarriageCalculator.API.csproj     # Web API project file
-??? MarriageCalculator.Core/              # ?? Shared Library
-    ??? Models/                           # Entity models
-    ??? Extensions/                       # Helper extensions
-    ??? MarriageCalculator.Core.csproj    # Simple .NET 8 library
+├── MarriageCalculator.Core/       # Domain Layer (POCO models & scoring logic)
+├── MarriageCalculator.API/        # Application Layer (REST API & WebSockets)
+└── Android/                       # Presentation Layer (Native Compose Client)
 ```
 
-## ?? Project Dependencies
+### 1.1 MarriageCalculator.Core (Shared Domain Library)
+* **Role**: Central repository of domain models, rules, and calculation engines.
+* **Tech Stack**: Pure .NET 8 Class Library.
+* **Constraints**: Strictly **zero dependencies**. No databases, no UI frameworks, and no web components are imported. This keeps the scoring engine completely portable.
+* **Contents**:
+  * Domain models (`User`, `Player`, `GameSettings`, `MarriageGameSet`, etc.).
+  * Central Collection scoring algorithm.
 
-### MarriageCalculator.Core (Shared Library) - ? CLEANED
-- **Purpose**: Contains shared models, business logic, and utilities
-- **Target Framework**: `net8.0` (Simple .NET 8 class library)
-- **Dependencies**: NONE - Pure .NET 8 with no MAUI dependencies
-- **Used By**: Both MAUI app and Web API
+### 1.2 MarriageCalculator.API (Web API Backend)
+* **Role**: Handles persistence, session sync, real-time broadcasts, and notification dispatch.
+* **Tech Stack**: ASP.NET Core 8 with Controller-based REST routing.
+* **Database**: **MongoDB** (Default server hosted on local network at `192.168.0.229`).
+* **Real-time Sync**: **SignalR Hubs** to broadcast score updates concurrently to connected players.
+* **Push Notifications**: **Firebase Cloud Messaging (FCM)** for offline invites and host nudges.
 
-### ? Changes Made - Clean Architecture
+### 1.3 MarriageCalculator.Android (Native Mobile Client)
+* **Role**: Native mobile client for player scoring inputs, scoreboard viewing, and setup.
+* **Tech Stack**: Native Kotlin with **Jetpack Compose** for UI styling.
+* **Local Storage**: **Room Database** for offline-first data caching and offline game support.
+* **Network Client**: **Retrofit + OkHttp** with JWT/OAuth headers.
+* **Deep Linking**: Handles `marriagecalculator://playgame/{gameSetId}` scheme to route users directly into an active game session from push notifications.
 
-1. **Removed MAUI Dependencies**: Core is now a pure .NET 8 library
-2. **Removed ObservableObject**: Models use simple properties instead of MVVM patterns
-3. **Removed IValueConverter**: No UI-specific converters in shared library
-4. **Removed Multi-targeting**: Single target framework (net8.0)
+---
 
-### MarriageCalculator (MAUI App)
-- **Purpose**: Cross-platform mobile application
-- **Dependencies**: References `MarriageCalculator.Core`
-- **API Communication**: Connects to `MarriageCalculator.API` via HTTP
-- **MVVM Implementation**: Uses its own MVVM code, not shared
+## 2. API Architecture Layers (Clean Architecture)
 
-### MarriageCalculator.API (Web API)
-- **Purpose**: Backend API for data management
-- **Dependencies**: References `MarriageCalculator.Core`
-- **Database**: Uses Entity Framework Core with SQL Server
+The backend is structured into decoupled layers, separating delivery mechanisms from business logic and database concerns:
 
-## ?? Docker Build Simplified
-
-### No MAUI Workload Required
-The Dockerfile no longer needs MAUI workload installation:
-
-```dockerfile
-# Simple .NET 8 build - no MAUI workload needed
-FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
-RUN dotnet restore
-RUN dotnet build
-RUN dotnet publish
+```
+[Client App] ──> [Controllers] ──> [Services] ──> [Repositories] ──> [MongoDB]
 ```
 
-### Benefits of Clean Architecture
-1. **Faster Docker builds**: No MAUI workload installation needed
-2. **Smaller images**: No unnecessary MAUI dependencies
-3. **Cleaner separation**: Core library is truly shared without UI concerns
-4. **Better testability**: Core models can be unit tested without MAUI dependencies
+### 2.1 Controllers (`/Controllers`)
+* **Role**: Handles HTTP requests, parses routing schemas, and outputs RESTful HTTP responses.
+* **Responsibilities**:
+  * Input model validation (`ModelState`).
+  * Mapping endpoint targets using DTOs.
+  * Standardized HTTP response codes.
+  * Exposes routes: `/api/Users`, `/api/MarriageGameSets`, `/api/Friendships`, `/api/Scoring`.
 
-## ?? Core Library Contents
+### 2.2 Services (`/Services`)
+* **Role**: Orchestrates business logic, applies domain validations, and converts models between DTOs and database entities.
+* **Responsibilities**:
+  * Authentication context validation.
+  * FCM payload formatting and dispatching.
+  * Encapsulates transactional business logic.
 
-### ? What's Included (Clean)
-- **Entity Models**: `Player`, `GameSettings`, `MarriageGame`, etc.
-- **Enums**: `Currency`, `FoulPointBonusType`
-- **Extensions**: Helper methods for business logic
-- **Pure .NET 8**: No platform-specific dependencies
+### 2.3 Repositories (`/Repositories`)
+* **Role**: Abstract interface for reading and writing data, isolating the service layer from database-specific syntax.
+* **Responsibilities**:
+  * Connecting to MongoDB collections.
+  * MongoDB queries, updates, and deletes.
+  * Database transaction management.
 
-### ? What's Removed (MAUI-specific)
-- **ObservableObject**: Removed from models
-- **IValueConverter**: UI converters moved to MAUI project
-- **Multi-targeting**: Single framework target
-- **MVVM Attributes**: No `[ObservableProperty]` annotations
+### 2.4 DTOs (`/DTOs`)
+* **Role**: Defines contracts for requesting or returning data over the network, decoupling database entities from public API footprints.
 
-## ?? Benefits of Clean Architecture
+---
 
-? **Simplified Docker Build**: No MAUI workload installation required  
-? **Pure Shared Library**: Core contains only business logic and models  
-? **Better Separation**: UI concerns separated from business logic  
-? **Easier Testing**: Unit tests don't require MAUI dependencies  
-? **Faster Builds**: Reduced complexity and dependencies  
-? **Clear Responsibilities**: Each project has a single, well-defined purpose  
+## 3. Key Design Patterns
 
-## ?? Migration Notes
+### 3.1 Central Collection Scoring Algorithm
+Scoring in the "Marriage" card game revolves around the **Central Collection** technique:
+1. All losing players pay fixed game penalties to the winner (based on seen/unseen/dublee statuses).
+2. The winner then distributes "Maal" payouts to all qualified seen players based on the difference of their held Maal points.
+3. This is calculated dynamically on the server and returned to the client instantly.
 
-### For MAUI App
-- MAUI app now implements its own MVVM patterns
-- UI converters moved to MAUI project
-- Observable properties implemented in MAUI-specific ViewModels
+### 3.2 Offline-First Sync Pattern
+1. If the mobile app is in Guest mode or disconnected, game states are stored in the local **Room Database**.
+2. Once connection is established, the local data is merged with the remote database through the API sync endpoints.
 
-### For API
-- Uses simple POCO models from Core
-- Entity Framework works with clean models
-- No UI-related dependencies
-
-## ?? Recommended Usage
-
-This clean architecture is optimal because:
-1. **Clear separation of concerns**: UI, business logic, and data access are properly separated
-2. **Technology independence**: Core library can be used by any .NET application
-3. **Docker efficiency**: Simple builds without complex workload requirements
-4. **Maintainability**: Changes to UI don't affect business logic and vice versa
-
-The MarriageCalculator solution now follows clean architecture principles with a truly shared, technology-agnostic core library.
+### 3.3 Real-time Scoreboard
+* Every time a round input is submitted, the API recalculates the score and triggers a SignalR broadcast.
+* Connected player clients receive the packet and update their Scoreboard grids instantly.

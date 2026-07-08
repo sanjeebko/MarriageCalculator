@@ -66,6 +66,12 @@ public class UserService : IUserService
         return updatedUser != null ? MapToDto(updatedUser) : null;
     }
 
+    public async Task<bool> UpdateFcmTokenAsync(string userId, string fcmToken)
+    {
+        var updated = await _userRepository.UpdateFcmTokenAsync(userId, fcmToken);
+        return updated != null;
+    }
+
     public async Task<bool> DeleteUserAsync(string id)
     {
         return await _userRepository.DeleteAsync(id);
@@ -112,6 +118,7 @@ public class UserService : IUserService
             UserId = user.UserId,
             DisplayName = user.DisplayName,
             Email = user.Email,
+            FcmToken = user.FcmToken,
             CreatedAt = user.CreatedAt
         };
     }

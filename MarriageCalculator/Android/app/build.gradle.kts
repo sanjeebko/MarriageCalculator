@@ -1,20 +1,20 @@
-
 plugins {
-    id("com.android.application")
-    id("org.jetbrains.kotlin.android")
-    id("org.jetbrains.kotlin.plugin.compose")
+    alias(libs.plugins.android.application)
+    alias(libs.plugins.kotlin.android)
     kotlin("kapt")
-    id("com.google.dagger.hilt.android")
+    alias(libs.plugins.hilt.android)
+    alias(libs.plugins.google.services)
+    alias(libs.plugins.kotlin.compose)
 }
 
 android {
-    namespace = "com.sanjeeb.marriagecalculator"
-    compileSdk = 36
+    namespace = "np.com.sanjeeb.marriagecalculator"
+    compileSdk = 34
 
     defaultConfig {
-        applicationId = "com.sanjeeb.marriagecalculator"
+        applicationId = "np.com.sanjeeb.marriagecalculator"
         minSdk = 26
-        targetSdk = 36
+        targetSdk = 34
         versionCode = 1
         versionName = "1.0"
 
@@ -72,6 +72,7 @@ dependencies {
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.appcompat)
     implementation(libs.material)
+    implementation(libs.lifecycle.runtime.compose)
     implementation(libs.lifecycle.viewmodel.compose)
 
     // Navigation
@@ -105,6 +106,10 @@ dependencies {
     implementation(libs.androidx.credentials)
     implementation(libs.androidx.credentials.play.services)
     implementation(libs.googleid)
+
+    // Firebase
+    implementation(platform(libs.firebase.bom))
+    implementation(libs.firebase.messaging)
 
     // Testing
     testImplementation(libs.junit)

@@ -15,6 +15,8 @@ services:
       - MCUSER=${DOCKER_MCUSER}
       - MCPASSWORD=${DOCKER_MCPASSWORD}
       - MCDATABASENAME=${DOCKER_MCDATABASENAME}
+    volumes:
+      - ./MarriageCalculator/MarriageCalculator.API/firebase-adminsdk.json:/app/firebase-adminsdk.json:ro
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8080/health/ready"]

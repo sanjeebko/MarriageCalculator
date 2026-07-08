@@ -3,8 +3,8 @@
 ## Problem Statement
 Build a full-featured Android (Kotlin/Compose) app for the Marriage card game calculator, backed by the existing .NET API. The app must handle 2-6 players with efficient screen space usage, support offline/online modes, real-time score display, and integrate with the C# API hosted on Kubernetes. The Maui version is archived and replaced by this native Android app.
 
-## Status: Phases 1-7, 10-12 COMPLETE ✅ (Phases 8 & 9 Pending ⏳)
-- 23 C# tests + 45 Android unit tests all passing
+## Status: All Phases (1-12) COMPLETE ✅
+- 23 C# tests + 63 Android unit tests all passing
 - Android APK builds successfully
 - .NET API builds successfully
 - **Docker**: Production-ready for API deployment.
@@ -89,19 +89,19 @@ Iterative development in phases. Each step produces a buildable, testable commit
 - **COMMIT**: "feat: Player session management with join/leave and settlement"
 
 ## Phase 8: Authentication & Social
-- [ ] Step 8.1: Google Sign-In (Firebase Auth) integration
-- [ ] Step 8.2: Guest/Offline vs Online mode toggle
-- [ ] Step 8.3: Friend system (send/accept invitations)
-- [ ] Step 8.4: Dummy-to-Real player mapping
-- [ ] Step 8.5: Game ownership & permissions (owner=full access, participants=read-only)
-- [ ] Step 8.6: Write tests for auth flows
+- [x] Step 8.1: Google Sign-In (Firebase Auth) integration
+- [x] Step 8.2: Guest/Offline vs Online mode toggle
+- [x] Step 8.3: Friend system (send/accept invitations)
+- [x] Step 8.4: Dummy-to-Real player mapping
+- [x] Step 8.5: Game ownership & permissions (owner=full access, participants=read-only)
+- [x] Step 8.6: Write tests for auth flows
 - **COMMIT**: "feat: Authentication, friend system, and game permissions"
 
 ## Phase 9: Notifications & Real-time
-- [ ] Step 9.1: FCM integration for push notifications
-- [ ] Step 9.2: "Nudge" feature (owner can nudge players)
-- [ ] Step 9.3: Deep link handling (notification → specific game page)
-- [ ] Step 9.4: Write tests for notification handling
+- [x] Step 9.1: FCM integration for push notifications
+- [x] Step 9.2: "Nudge" feature (owner can nudge players)
+- [x] Step 9.3: Deep link handling (notification → specific game page)
+- [x] Step 9.4: Write tests for notification handling
 - **COMMIT**: "feat: Push notifications with nudge and deep linking"
 
 ## Phase 10: Polish & Branding
@@ -119,7 +119,7 @@ Iterative development in phases. Each step produces a buildable, testable commit
 - [x] Step 11.4: Update Docker compose for k8s readiness
 - **COMMIT**: "feat: API Kubernetes-ready with health checks and SignalR scaling"
 
-## Phase 12: User Entity & Multi-User Support Refactoring (Active)
+## Phase 12: User Entity & Multi-User Support Refactoring (Complete)
 - [x] Step 12.1: Define `User` model in `MarriageCalculator.Core` (UserId, DisplayName, Email, CreatedAt).
 - [x] Step 12.2: Implement authentication middleware/services in `MarriageCalculator.API` (Firebase token validation / custom OAuth headers for QA testing).
 - [x] Step 12.3: Modify `GameSettings` and `MarriageGameSet` models in Core and MongoDB schemas to include owner identifiers (`UserId` and `HostUserId`).

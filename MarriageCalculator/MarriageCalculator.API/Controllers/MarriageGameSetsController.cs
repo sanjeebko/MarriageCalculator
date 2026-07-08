@@ -202,4 +202,32 @@ public class MarriageGameSetsController : ControllerBase
             return StatusCode(500, "An error occurred while transferring host ownership.");
         }
     }
+
+    /// <summary>
+    /// Nudge a player in a game set via FCM push notification
+    /// </summary>
+    [HttpPost("{id}/nudge/{playerId}")]
+    public async Task<ActionResult> NudgePlayer(string id, string playerId)
+    {
+        try
+        {
+            var hostUserId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? string.Empty;
+            var success = await _gameSetService.NudgePlayerAsync(id, hostUserId, playerId);
+            if (!success)
+            {
+                return BadRequest("Failed to nudge player. Make sure the player exists and has linked their registered account (having a registered device token).");
+            }
+
+            return Ok(new { Message = "Nudge notification sent successfully." });
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            return Forbid(ex.Message);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error nudging player {PlayerId} in game set {GameSetId}", playerId, id);
+            return StatusCode(500, "An error occurred while sending the nudge notification.");
+        }
+    }
 }

@@ -20,6 +20,7 @@ public interface IUserService
     Task<IEnumerable<UserDto>> SearchUsersAsync(string query);
     Task<UserDto> CreateUserAsync(CreateUserDto createUserDto);
     Task<UserDto?> UpdateUserAsync(string id, UpdateUserDto updateUserDto);
+    Task<bool> UpdateFcmTokenAsync(string userId, string fcmToken);
     Task<bool> DeleteUserAsync(string id);
     Task<bool> UserExistsAsync(string id);
     Task<UserDto> GetOrCreateUserFromClaimsAsync(System.Security.Claims.ClaimsPrincipal principal);
@@ -45,6 +46,7 @@ public interface IMarriageGameSetService
     Task<bool> GameSetExistsAsync(string id, string hostUserId);
     Task<MarriageGameSetDto?> GetLatestActiveGameSetAsync(string hostUserId);
     Task<MarriageGameSetDto?> TransferHostAsync(string id, string currentHostUserId, string newHostUserId);
+    Task<bool> NudgePlayerAsync(string gameSetId, string hostUserId, string playerId);
 }
 
 public interface IMarriageGameService

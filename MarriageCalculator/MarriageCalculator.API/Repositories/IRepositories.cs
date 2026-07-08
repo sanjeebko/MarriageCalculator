@@ -22,6 +22,7 @@ public interface IUserRepository
     Task<IEnumerable<User>> SearchUsersAsync(string query);
     Task<User> CreateAsync(User user);
     Task<User?> UpdateAsync(string id, User user);
+    Task<User?> UpdateFcmTokenAsync(string userId, string fcmToken);
     Task<bool> DeleteAsync(string id);
     Task<bool> ExistsAsync(string id);
 }
