@@ -13,7 +13,6 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
-import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -30,19 +29,29 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.layout.positionInRoot
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.IntOffset
+import androidx.compose.ui.unit.IntRect
+import androidx.compose.ui.unit.IntSize
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.window.Dialog
-import androidx.compose.ui.window.DialogProperties
+import androidx.compose.ui.window.Popup
+import androidx.compose.ui.window.PopupPositionProvider
+import androidx.compose.ui.window.PopupProperties
 import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
+import kotlinx.coroutines.delay
 import np.com.sanjeeb.marriagecalculator.data.model.Player
 import np.com.sanjeeb.marriagecalculator.data.model.User
 import np.com.sanjeeb.marriagecalculator.ui.gamesetup.PlayerMappingDialog
@@ -68,7 +77,7 @@ fun PlayGameScreen(
     var showTransferDialog by remember { mutableStateOf(false) }
     var showReorderDialog by remember { mutableStateOf(false) }
     var gameForDetails by remember { mutableStateOf<GameEntry?>(null) }
-    var playerForNamePopup by remember { mutableStateOf<Player?>(null) }
+    var tooltipAnchor by remember { mutableStateOf<PlayerTooltipAnchor?>(null) }
     var standingsExpanded by remember { mutableStateOf(false) }
 
     LaunchedEffect(gameSetId) {
@@ -217,7 +226,7 @@ fun PlayGameScreen(
                     pointRate = uiState.settings.pointRate,
                     isHost = uiState.isHost && !uiState.isSettled,
                     onGameClick = { gameForDetails = it },
-                    onPlayerHeaderClick = { playerForNamePopup = it },
+                    onPlayerHeaderClick = { player, position, size -> tooltipAnchor = PlayerTooltipAnchor(player, position, size) },
                     onCloseRound = { viewModel.closeCurrentRound(gameSetId) }
                 )
 
@@ -391,10 +400,12 @@ fun PlayGameScreen(
         )
     }
 
-    playerForNamePopup?.let { player ->
-        PlayerNamePopup(player = player, onDismiss = { playerForNamePopup = null })
+    tooltipAnchor?.let { anchor ->
+        PlayerNameTooltip(anchor = anchor, onDismiss = { tooltipAnchor = null })
     }
 }
+
+data class PlayerTooltipAnchor(val player: Player, val position: Offset, val size: IntSize)
 
 private fun currencySymbol(displayName: String): String =
     displayName.substringAfter("(", "").substringBefore(")").ifEmpty { displayName }
@@ -585,7 +596,7 @@ private fun CompactRoundsTable(
     pointRate: Double,
     isHost: Boolean,
     onGameClick: (GameEntry) -> Unit,
-    onPlayerHeaderClick: (Player) -> Unit,
+    onPlayerHeaderClick: (Player, Offset, IntSize) -> Unit,
     onCloseRound: () -> Unit
 ) {
     var mode by remember { mutableStateOf(RoundDisplayMode.MAAL) }
@@ -641,7 +652,7 @@ private fun RoundBlock(
     pointRate: Double,
     isHost: Boolean,
     onGameClick: (GameEntry) -> Unit,
-    onPlayerHeaderClick: (Player) -> Unit,
+    onPlayerHeaderClick: (Player, Offset, IntSize) -> Unit,
     onCloseRound: () -> Unit
 ) {
     val scrollState = rememberScrollState()
@@ -681,7 +692,7 @@ private fun RoundBlock(
 
             HorizontalDivider(color = Color.White.copy(alpha = 0.08f))
 
-            // Header: player initials, tappable for the full-name popup
+            // Header: player initials, tappable for a tooltip with the full name
             Row(
                 modifier = Modifier.padding(vertical = 6.dp),
                 verticalAlignment = Alignment.CenterVertically
@@ -689,10 +700,16 @@ private fun RoundBlock(
                 Spacer(modifier = Modifier.width(ROUND_SEQ_COL_WIDTH_DP.dp))
                 Row(modifier = Modifier.horizontalScroll(scrollState)) {
                     players.forEach { p ->
+                        var headerPosition by remember { mutableStateOf(Offset.Zero) }
+                        var headerSize by remember { mutableStateOf(IntSize.Zero) }
                         Box(
                             modifier = Modifier
                                 .width(ROUND_PLAYER_COL_WIDTH_DP.dp)
-                                .clickable { onPlayerHeaderClick(p.player) },
+                                .onGloballyPositioned { coords ->
+                                    headerPosition = coords.positionInRoot()
+                                    headerSize = coords.size
+                                }
+                                .clickable { onPlayerHeaderClick(p.player, headerPosition, headerSize) },
                             contentAlignment = Alignment.Center
                         ) {
                             Text(
@@ -983,80 +1000,112 @@ private fun RoundDetailsDialog(game: GameEntry, currencySymbol: String, onDismis
     )
 }
 
-/** Slick animated popup: tapping a truncated player name in the table header shows their full name + photo. */
+/** Positions a tooltip just above the tapped header cell, flipping below if there isn't room. */
+private class TooltipAbovePositionProvider(
+    private val anchorPosition: Offset,
+    private val anchorSize: IntSize,
+    private val verticalGapPx: Int
+) : PopupPositionProvider {
+    override fun calculatePosition(
+        anchorBounds: IntRect,
+        windowSize: IntSize,
+        layoutDirection: LayoutDirection,
+        popupContentSize: IntSize
+    ): IntOffset {
+        val anchorCenterX = anchorPosition.x + anchorSize.width / 2f
+        val x = (anchorCenterX - popupContentSize.width / 2f).toInt()
+            .coerceIn(8, (windowSize.width - popupContentSize.width - 8).coerceAtLeast(8))
+        var y = (anchorPosition.y - popupContentSize.height - verticalGapPx).toInt()
+        if (y < 0) {
+            // Not enough room above - show below the header instead.
+            y = (anchorPosition.y + anchorSize.height + verticalGapPx).toInt()
+        }
+        return IntOffset(x, y)
+    }
+}
+
+/**
+ * Compact web-style tooltip: appears just above the tapped player-name header (or below it if
+ * there's no room), dismisses on outside tap or automatically after 3 seconds. Does not cover
+ * the rest of the screen.
+ */
 @Composable
-private fun PlayerNamePopup(player: Player, onDismiss: () -> Unit) {
-    Dialog(onDismissRequest = onDismiss, properties = DialogProperties(usePlatformDefaultWidth = false)) {
+private fun PlayerNameTooltip(anchor: PlayerTooltipAnchor, onDismiss: () -> Unit) {
+    val gapPx = with(LocalDensity.current) { 8.dp.roundToPx() }
+
+    LaunchedEffect(anchor) {
+        delay(3000)
+        onDismiss()
+    }
+
+    Popup(
+        popupPositionProvider = remember(anchor) {
+            TooltipAbovePositionProvider(anchor.position, anchor.size, gapPx)
+        },
+        onDismissRequest = onDismiss,
+        properties = PopupProperties(focusable = false, dismissOnClickOutside = true)
+    ) {
         var visible by remember { mutableStateOf(false) }
         LaunchedEffect(Unit) { visible = true }
 
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(Color.Black.copy(alpha = 0.6f))
-                .clickable(
-                    indication = null,
-                    interactionSource = remember { MutableInteractionSource() }
-                ) { onDismiss() },
-            contentAlignment = Alignment.Center
+        AnimatedVisibility(
+            visible = visible,
+            enter = fadeIn(animationSpec = tween(160)) + scaleIn(initialScale = 0.85f, animationSpec = tween(160)),
+            exit = fadeOut(animationSpec = tween(120)) + scaleOut(targetScale = 0.85f, animationSpec = tween(120))
         ) {
-            AnimatedVisibility(
-                visible = visible,
-                enter = fadeIn(animationSpec = tween(220)) + scaleIn(initialScale = 0.8f, animationSpec = tween(220)),
-                exit = fadeOut(animationSpec = tween(150)) + scaleOut(targetScale = 0.8f, animationSpec = tween(150))
+            Card(
+                shape = RoundedCornerShape(12.dp),
+                colors = CardDefaults.cardColors(containerColor = TiharNightBlue),
+                border = androidx.compose.foundation.BorderStroke(1.dp, GoldAccent.copy(alpha = 0.5f)),
+                elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
             ) {
-                Card(
-                    modifier = Modifier
-                        .padding(32.dp)
-                        .clickable(
-                            indication = null,
-                            interactionSource = remember { MutableInteractionSource() }
-                        ) { /* absorb taps so they don't dismiss via the scrim */ },
-                    shape = RoundedCornerShape(20.dp),
-                    colors = CardDefaults.cardColors(containerColor = TiharNightBlue),
-                    border = androidx.compose.foundation.BorderStroke(1.dp, GoldAccent.copy(alpha = 0.4f))
+                Row(
+                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Column(
-                        modifier = Modifier.padding(28.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally
-                    ) {
-                        val uri = player.photoUri
-                        val model = if (uri != null && (uri.startsWith("android.resource") || uri.startsWith("http"))) {
-                            uri
-                        } else if (uri != null) {
-                            File(uri)
-                        } else null
+                    val uri = anchor.player.photoUri
+                    val model = if (uri != null && (uri.startsWith("android.resource") || uri.startsWith("http"))) {
+                        uri
+                    } else if (uri != null) {
+                        File(uri)
+                    } else null
 
-                        if (model != null) {
-                            AsyncImage(
-                                model = ImageRequest.Builder(LocalContext.current)
-                                    .data(model)
-                                    .crossfade(true)
-                                    .build(),
-                                contentDescription = null,
-                                contentScale = ContentScale.Crop,
-                                modifier = Modifier
-                                    .size(88.dp)
-                                    .clip(CircleShape)
-                                    .border(2.dp, GoldAccent, CircleShape)
-                            )
-                        } else {
-                            Box(
-                                modifier = Modifier
-                                    .size(88.dp)
-                                    .clip(CircleShape)
-                                    .background(GoldAccent.copy(alpha = 0.2f))
-                                    .border(2.dp, GoldAccent, CircleShape),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Text(player.name.take(1).uppercase(), color = GoldAccent, fontSize = 32.sp, fontWeight = FontWeight.Bold)
-                            }
+                    if (model != null) {
+                        AsyncImage(
+                            model = ImageRequest.Builder(LocalContext.current)
+                                .data(model)
+                                .crossfade(true)
+                                .build(),
+                            contentDescription = null,
+                            contentScale = ContentScale.Crop,
+                            modifier = Modifier
+                                .size(32.dp)
+                                .clip(CircleShape)
+                                .border(1.dp, GoldAccent, CircleShape)
+                        )
+                    } else {
+                        Box(
+                            modifier = Modifier
+                                .size(32.dp)
+                                .clip(CircleShape)
+                                .background(GoldAccent.copy(alpha = 0.2f))
+                                .border(1.dp, GoldAccent, CircleShape),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(anchor.player.name.take(1).uppercase(), color = GoldAccent, fontSize = 13.sp, fontWeight = FontWeight.Bold)
                         }
-                        Spacer(modifier = Modifier.height(16.dp))
-                        Text(player.name, color = Color.White, fontSize = 18.sp, fontWeight = FontWeight.Bold, fontFamily = FontFamily.Serif)
-                        if (player.email.isNotBlank()) {
-                            Spacer(modifier = Modifier.height(4.dp))
-                            Text(player.email, color = Color.White.copy(alpha = 0.5f), fontSize = 12.sp)
+                    }
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Column {
+                        Text(
+                            text = anchor.player.name,
+                            color = Color.White,
+                            fontSize = 13.sp,
+                            fontWeight = FontWeight.Bold,
+                            fontFamily = FontFamily.Serif
+                        )
+                        if (anchor.player.email.isNotBlank()) {
+                            Text(anchor.player.email, color = Color.White.copy(alpha = 0.5f), fontSize = 10.sp)
                         }
                     }
                 }
