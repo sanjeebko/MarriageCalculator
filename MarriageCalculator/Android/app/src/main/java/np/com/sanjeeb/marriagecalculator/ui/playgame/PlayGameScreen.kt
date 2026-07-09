@@ -185,7 +185,8 @@ fun PlayGameScreen(
                 }
 
                 // Reshuffle seating notice once the latest round has completed
-                val latestRoundCompleted = uiState.roundGroups.lastOrNull()?.isCompleted == true
+                val lastRealRound = uiState.roundGroups.lastOrNull()
+                val latestRoundCompleted = lastRealRound?.isCompleted == true
 
                 if (latestRoundCompleted && !uiState.isSettled && uiState.isHost) {
                     Card(
@@ -208,13 +209,13 @@ fun PlayGameScreen(
                                 Spacer(modifier = Modifier.width(8.dp))
                                 Column {
                                     Text(
-                                        text = "Round Complete!",
+                                        text = "Round ${lastRealRound?.roundSequence} Complete!",
                                         color = Color.White,
                                         fontWeight = FontWeight.Bold,
                                         fontSize = 13.sp
                                     )
                                     Text(
-                                        text = "Every player has dealt. Time to reshuffle seats?",
+                                        text = "Every player has dealt. Time to reshuffle seats for the next round?",
                                         color = Color.White.copy(alpha = 0.7f),
                                         fontSize = 11.sp
                                     )
@@ -761,7 +762,11 @@ private fun RoundBlock(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = "Round ${group.roundSequence}" + if (!group.isCompleted) " · in progress" else "",
+                    text = "Round ${group.roundSequence}" + when {
+                        group.isCompleted -> ""
+                        group.games.isEmpty() -> " · not started"
+                        else -> " · in progress"
+                    },
                     color = GoldAccent,
                     fontSize = 12.sp,
                     fontWeight = FontWeight.Bold
