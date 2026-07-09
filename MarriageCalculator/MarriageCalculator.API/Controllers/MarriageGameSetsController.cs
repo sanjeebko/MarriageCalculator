@@ -273,6 +273,74 @@ public class MarriageGameSetsController : ControllerBase
     }
 
     /// <summary>
+    /// Delete only the most recently played game (undo), removing the round too if it was the
+    /// round's only game. Blocked once the game set is settled.
+    /// </summary>
+    [HttpDelete("{id}/games/last")]
+    public async Task<ActionResult<MarriageGameRoundDto>> DeleteLastGame(string id)
+    {
+        try
+        {
+            var hostUserId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? string.Empty;
+            var round = await _gameSetService.DeleteLastGameAsync(id, hostUserId);
+            return round == null ? NoContent() : Ok(round);
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(ex.Message);
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            return Forbid(ex.Message);
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(ex.Message);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error deleting last game for game set {GameSetId}", id);
+            return StatusCode(500, "An error occurred while deleting the game.");
+        }
+    }
+
+    /// <summary>
+    /// Delete an entire round - all its games and scores - and renumber later rounds down.
+    /// Blocked once the game set is settled.
+    /// </summary>
+    [HttpDelete("{id}/rounds/{roundId}")]
+    public async Task<ActionResult> DeleteRound(string id, string roundId)
+    {
+        try
+        {
+            var hostUserId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? string.Empty;
+            var deleted = await _gameSetService.DeleteRoundAsync(id, roundId, hostUserId);
+            if (!deleted)
+            {
+                return NotFound($"Round with ID {roundId} not found in game set {id}");
+            }
+            return NoContent();
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(ex.Message);
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            return Forbid(ex.Message);
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(ex.Message);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error deleting round {RoundId} for game set {GameSetId}", roundId, id);
+            return StatusCode(500, "An error occurred while deleting the round.");
+        }
+    }
+
+    /// <summary>
     /// Nudge a player in a game set via FCM push notification
     /// </summary>
     [HttpPost("{id}/nudge/{playerId}")]

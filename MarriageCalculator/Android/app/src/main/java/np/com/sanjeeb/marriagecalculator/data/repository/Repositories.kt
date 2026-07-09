@@ -52,6 +52,11 @@ class GameSetRepository @Inject constructor(
     suspend fun closeRound(id: String, roundId: String): ApiResult<MarriageGameRound> = safeApiCall {
         api.closeRound(id, roundId)
     }
+    // These hit endpoints that can legitimately return 204 No Content (no body), so they can't
+    // use safeApiCall - it treats a null body as an error even on success.
+    suspend fun deleteLastGame(id: String): ApiResult<Unit> = safeUnitApiCall { api.deleteLastGame(id) }
+    suspend fun deleteRound(id: String, roundId: String): ApiResult<Unit> = safeUnitApiCall { api.deleteRound(id, roundId) }
+    suspend fun deleteGameSet(id: String): ApiResult<Unit> = safeUnitApiCall { api.deleteGameSet(id) }
 }
 
 internal suspend fun <T> safeApiCall(call: suspend () -> retrofit2.Response<T>): ApiResult<T> {
@@ -60,6 +65,20 @@ internal suspend fun <T> safeApiCall(call: suspend () -> retrofit2.Response<T>):
         if (response.isSuccessful) {
             response.body()?.let { ApiResult.Success(it) }
                 ?: ApiResult.Error("Empty response body")
+        } else {
+            ApiResult.Error("API error: ${response.code()} ${response.message()}", response.code())
+        }
+    } catch (e: Exception) {
+        ApiResult.Error(e.message ?: "Unknown error")
+    }
+}
+
+/** Like [safeApiCall], but for endpoints where a successful response may have no body (e.g. 204). */
+internal suspend fun safeUnitApiCall(call: suspend () -> retrofit2.Response<Unit>): ApiResult<Unit> {
+    return try {
+        val response = call()
+        if (response.isSuccessful) {
+            ApiResult.Success(Unit)
         } else {
             ApiResult.Error("API error: ${response.code()} ${response.message()}", response.code())
         }

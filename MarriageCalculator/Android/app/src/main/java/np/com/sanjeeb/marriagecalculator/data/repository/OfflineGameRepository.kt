@@ -197,6 +197,40 @@ class OfflineGameRepository @Inject constructor(
         roundDao.closeRoundAt(latest.id)
     }
 
+    /** Removes only the most recently played game (undo), e.g. to fix a mistake. */
+    suspend fun deleteLastGame(gameSetId: Int) {
+        val latest = roundDao.getLatestGame(gameSetId) ?: return
+        roundScoreDao.deleteForRound(latest.id)
+        roundDao.deleteById(latest.id)
+    }
+
+    /**
+     * Removes every game (and score) belonging to one logical round, then compacts the
+     * remaining games' sequence numbers so they stay contiguous - matching the server's
+     * "renumber later rounds down" behavior.
+     */
+    suspend fun deleteRoundGames(gameSetId: Int, gameIds: List<Int>) {
+        if (gameIds.isEmpty()) return
+        roundScoreDao.deleteForRounds(gameIds)
+        roundDao.deleteByIds(gameIds)
+
+        val remaining = roundDao.getRoundsForGameSet(gameSetId).first().sortedBy { it.roundNumber }
+        remaining.forEachIndexed { index, game ->
+            val newNumber = index + 1
+            if (game.roundNumber != newNumber) {
+                roundDao.renumber(game.id, newNumber)
+            }
+        }
+    }
+
+    /** Deletes an entire local game set: every round, score, and player link, then the set itself. */
+    suspend fun deleteGameSet(gameSetId: Int) {
+        roundScoreDao.deleteForGameSet(gameSetId)
+        roundDao.deleteAllForGameSet(gameSetId)
+        gameSetPlayerDao.deleteForGameSet(gameSetId)
+        gameSetDao.deleteById(gameSetId)
+    }
+
     fun getRounds(gameSetId: Int): Flow<List<RoundEntity>> =
         roundDao.getRoundsForGameSet(gameSetId)
 

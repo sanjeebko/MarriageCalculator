@@ -77,6 +77,15 @@ interface MarriageGameSetApiService {
         @Path("id") id: String,
         @Path("roundId") roundId: String
     ): Response<MarriageGameRound>
+
+    @DELETE("MarriageGameSets/{id}/games/last")
+    suspend fun deleteLastGame(@Path("id") id: String): Response<Unit>
+
+    @DELETE("MarriageGameSets/{id}/rounds/{roundId}")
+    suspend fun deleteRound(
+        @Path("id") id: String,
+        @Path("roundId") roundId: String
+    ): Response<Unit>
 }
 
 interface MarriageGameApiService {

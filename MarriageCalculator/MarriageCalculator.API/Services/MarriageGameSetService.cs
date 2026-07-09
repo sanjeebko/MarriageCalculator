@@ -113,8 +113,36 @@ public class MarriageGameSetService : IMarriageGameSetService
         return updatedGameSet != null ? await MapToDtoAsync(updatedGameSet) : null;
     }
 
+    /// <summary>
+    /// Deletes an entire game set: every round, every game, and every score belonging to it,
+    /// then the game set itself. Irreversible - the caller must confirm with the user first.
+    /// </summary>
     public async Task<bool> DeleteGameSetAsync(string id, string hostUserId)
     {
+        var gameSet = await _gameSetRepository.GetByIdRawAsync(id);
+        if (gameSet == null || gameSet.HostUserId != hostUserId) return false;
+
+        var roundIds = await _context.MarriageGameRounds
+            .Find(r => r.MarriageGameSetId == id)
+            .Project(r => r.Id)
+            .ToListAsync();
+
+        if (roundIds.Count > 0)
+        {
+            var gameIds = await _context.MarriageGames
+                .Find(g => roundIds.Contains(g.MarriageGameRoundId))
+                .Project(g => g.Id)
+                .ToListAsync();
+
+            if (gameIds.Count > 0)
+            {
+                await _context.MarriageGameScores.DeleteManyAsync(s => gameIds.Contains(s.MarriageGameId));
+                await _context.MarriageGames.DeleteManyAsync(g => roundIds.Contains(g.MarriageGameRoundId));
+            }
+
+            await _context.MarriageGameRounds.DeleteManyAsync(r => r.MarriageGameSetId == id);
+        }
+
         return await _gameSetRepository.DeleteAsync(id, hostUserId);
     }
 
@@ -313,6 +341,121 @@ public class MarriageGameSetService : IMarriageGameSetService
         }
 
         return await BuildRoundDtoAsync(round);
+    }
+
+    /// <summary>
+    /// Removes only the most recently played game (the last game of the last round), to undo a
+    /// mistake. If that was the round's only game, the now-empty round is removed too. Blocked
+    /// once the game set is settled (IsActive = false).
+    /// </summary>
+    public async Task<MarriageGameRoundDto?> DeleteLastGameAsync(string gameSetId, string hostUserId)
+    {
+        var gameSet = await _gameSetRepository.GetByIdRawAsync(gameSetId);
+        if (gameSet == null)
+        {
+            throw new KeyNotFoundException($"Marriage game set with ID {gameSetId} not found");
+        }
+
+        if (gameSet.HostUserId != hostUserId)
+        {
+            throw new UnauthorizedAccessException("Only the game host can delete a game.");
+        }
+
+        if (!gameSet.IsActive)
+        {
+            throw new InvalidOperationException("Cannot modify a settled game set.");
+        }
+
+        var round = await _context.MarriageGameRounds
+            .Find(r => r.MarriageGameSetId == gameSetId)
+            .SortByDescending(r => r.Sequence)
+            .FirstOrDefaultAsync();
+        if (round == null)
+        {
+            throw new InvalidOperationException("There are no games to delete.");
+        }
+
+        var lastGame = await _context.MarriageGames
+            .Find(g => g.MarriageGameRoundId == round.Id)
+            .SortByDescending(g => g.Sequence)
+            .FirstOrDefaultAsync();
+        if (lastGame == null)
+        {
+            throw new InvalidOperationException("There are no games to delete.");
+        }
+
+        await _context.MarriageGameScores.DeleteManyAsync(s => s.MarriageGameId == lastGame.Id);
+        await _context.MarriageGames.DeleteOneAsync(g => g.Id == lastGame.Id);
+
+        var remainingCount = await _context.MarriageGames.CountDocumentsAsync(g => g.MarriageGameRoundId == round.Id);
+        if (remainingCount == 0)
+        {
+            await _context.MarriageGameRounds.DeleteOneAsync(r => r.Id == round.Id);
+            return null;
+        }
+
+        if (round.Completed)
+        {
+            await _context.MarriageGameRounds.UpdateOneAsync(
+                r => r.Id == round.Id,
+                Builders<MarriageGameRound>.Update.Set(r => r.Completed, false));
+            round.Completed = false;
+        }
+
+        return await BuildRoundDtoAsync(round);
+    }
+
+    /// <summary>
+    /// Deletes an entire round - every game and score in it - and renumbers later rounds down so
+    /// round sequence numbers stay contiguous. Blocked once the game set is settled.
+    /// </summary>
+    public async Task<bool> DeleteRoundAsync(string gameSetId, string roundId, string hostUserId)
+    {
+        var gameSet = await _gameSetRepository.GetByIdRawAsync(gameSetId);
+        if (gameSet == null)
+        {
+            throw new KeyNotFoundException($"Marriage game set with ID {gameSetId} not found");
+        }
+
+        if (gameSet.HostUserId != hostUserId)
+        {
+            throw new UnauthorizedAccessException("Only the game host can delete a round.");
+        }
+
+        if (!gameSet.IsActive)
+        {
+            throw new InvalidOperationException("Cannot modify a settled game set.");
+        }
+
+        var round = await _context.MarriageGameRounds
+            .Find(r => r.Id == roundId && r.MarriageGameSetId == gameSetId)
+            .FirstOrDefaultAsync();
+        if (round == null) return false;
+
+        var gameIds = await _context.MarriageGames
+            .Find(g => g.MarriageGameRoundId == round.Id)
+            .Project(g => g.Id)
+            .ToListAsync();
+
+        if (gameIds.Count > 0)
+        {
+            await _context.MarriageGameScores.DeleteManyAsync(s => gameIds.Contains(s.MarriageGameId));
+            await _context.MarriageGames.DeleteManyAsync(g => g.MarriageGameRoundId == round.Id);
+        }
+
+        await _context.MarriageGameRounds.DeleteOneAsync(r => r.Id == round.Id);
+
+        var laterRounds = await _context.MarriageGameRounds
+            .Find(r => r.MarriageGameSetId == gameSetId && r.Sequence > round.Sequence)
+            .ToListAsync();
+        foreach (var later in laterRounds)
+        {
+            await _context.MarriageGameRounds.UpdateOneAsync(
+                r => r.Id == later.Id,
+                Builders<MarriageGameRound>.Update.Set(r => r.Sequence, later.Sequence - 1));
+        }
+
+        return true;
     }
 
     private async Task<MarriageGameSetDto> MapToDtoAsync(MarriageGameSet gameSet)

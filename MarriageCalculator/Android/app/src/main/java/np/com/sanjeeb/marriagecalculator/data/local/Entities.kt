@@ -159,6 +159,9 @@ interface GameSetDao {
 
     @Query("UPDATE game_sets SET synced = 1, remoteId = :remoteId WHERE id = :localId")
     suspend fun markSynced(localId: Int, remoteId: String)
+
+    @Query("DELETE FROM game_sets WHERE id = :id")
+    suspend fun deleteById(id: Int)
 }
 
 @Dao
@@ -171,6 +174,9 @@ interface GameSetPlayerDao {
 
     @Query("SELECT p.* FROM players p INNER JOIN game_set_players gsp ON p.id = gsp.playerId WHERE gsp.gameSetId = :gameSetId ORDER BY gsp.seatPosition")
     suspend fun getPlayersForGameSet(gameSetId: Int): List<PlayerEntity>
+
+    @Query("DELETE FROM game_set_players WHERE gameSetId = :gameSetId")
+    suspend fun deleteForGameSet(gameSetId: Int)
 }
 
 @Dao
@@ -195,6 +201,18 @@ interface RoundDao {
 
     @Query("UPDATE rounds SET synced = 1, remoteId = :remoteId WHERE id = :localId")
     suspend fun markSynced(localId: Int, remoteId: String)
+
+    @Query("DELETE FROM rounds WHERE id = :id")
+    suspend fun deleteById(id: Int)
+
+    @Query("DELETE FROM rounds WHERE id IN (:ids)")
+    suspend fun deleteByIds(ids: List<Int>)
+
+    @Query("DELETE FROM rounds WHERE gameSetId = :gameSetId")
+    suspend fun deleteAllForGameSet(gameSetId: Int)
+
+    @Query("UPDATE rounds SET roundNumber = :roundNumber WHERE id = :id")
+    suspend fun renumber(id: Int, roundNumber: Int)
 }
 
 @Dao
@@ -210,4 +228,13 @@ interface RoundScoreDao {
 
     @Query("SELECT rs.* FROM round_scores rs INNER JOIN rounds r ON rs.roundId = r.id WHERE r.gameSetId = :gameSetId")
     suspend fun getAllScoresForGameSet(gameSetId: Int): List<RoundScoreEntity>
+
+    @Query("DELETE FROM round_scores WHERE roundId = :roundId")
+    suspend fun deleteForRound(roundId: Int)
+
+    @Query("DELETE FROM round_scores WHERE roundId IN (:roundIds)")
+    suspend fun deleteForRounds(roundIds: List<Int>)
+
+    @Query("DELETE FROM round_scores WHERE roundId IN (SELECT id FROM rounds WHERE gameSetId = :gameSetId)")
+    suspend fun deleteForGameSet(gameSetId: Int)
 }

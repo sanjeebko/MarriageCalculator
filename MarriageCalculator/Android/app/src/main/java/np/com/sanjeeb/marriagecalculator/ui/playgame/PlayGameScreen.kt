@@ -22,6 +22,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.Undo
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -79,6 +80,10 @@ fun PlayGameScreen(
     var gameForDetails by remember { mutableStateOf<GameEntry?>(null) }
     var tooltipAnchor by remember { mutableStateOf<PlayerTooltipAnchor?>(null) }
     var standingsExpanded by remember { mutableStateOf(false) }
+    var showOverflowMenu by remember { mutableStateOf(false) }
+    var showDeleteGameSetConfirm by remember { mutableStateOf(false) }
+    var showDeleteLastGameConfirm by remember { mutableStateOf(false) }
+    var roundPendingDeletion by remember { mutableStateOf<RoundGroup?>(null) }
 
     LaunchedEffect(gameSetId) {
         viewModel.loadGame(gameSetId)
@@ -110,6 +115,23 @@ fun PlayGameScreen(
                     }
                     IconButton(onClick = onViewScoreboard) {
                         Icon(Icons.Default.Leaderboard, "Scoreboard", tint = GoldAccent)
+                    }
+                    if (uiState.isHost) {
+                        Box {
+                            IconButton(onClick = { showOverflowMenu = true }) {
+                                Icon(Icons.Default.MoreVert, "More options", tint = GoldAccent)
+                            }
+                            DropdownMenu(expanded = showOverflowMenu, onDismissRequest = { showOverflowMenu = false }) {
+                                DropdownMenuItem(
+                                    text = { Text("Delete Game", color = Color(0xFFFF5252)) },
+                                    leadingIcon = { Icon(Icons.Default.DeleteForever, null, tint = Color(0xFFFF5252)) },
+                                    onClick = {
+                                        showOverflowMenu = false
+                                        showDeleteGameSetConfirm = true
+                                    }
+                                )
+                            }
+                        }
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = TiharNightBlue)
@@ -227,7 +249,9 @@ fun PlayGameScreen(
                     isHost = uiState.isHost && !uiState.isSettled,
                     onGameClick = { gameForDetails = it },
                     onPlayerHeaderClick = { player, position, size -> tooltipAnchor = PlayerTooltipAnchor(player, position, size) },
-                    onCloseRound = { viewModel.closeCurrentRound(gameSetId) }
+                    onCloseRound = { viewModel.closeCurrentRound(gameSetId) },
+                    onDeleteLastGame = { showDeleteLastGameConfirm = true },
+                    onDeleteRound = { round -> roundPendingDeletion = round }
                 )
 
                 Spacer(modifier = Modifier.height(24.dp))
@@ -403,6 +427,64 @@ fun PlayGameScreen(
     tooltipAnchor?.let { anchor ->
         PlayerNameTooltip(anchor = anchor, onDismiss = { tooltipAnchor = null })
     }
+
+    if (showDeleteLastGameConfirm) {
+        ConfirmDeleteDialog(
+            title = "Delete Last Game?",
+            message = "This removes the most recently played game and its scores. This cannot be undone.",
+            onConfirm = {
+                viewModel.deleteLastGame(gameSetId)
+                showDeleteLastGameConfirm = false
+            },
+            onDismiss = { showDeleteLastGameConfirm = false }
+        )
+    }
+
+    roundPendingDeletion?.let { round ->
+        ConfirmDeleteDialog(
+            title = "Delete Round ${round.roundSequence}?",
+            message = "This removes all ${round.games.size} game(s) and their scores from this round. Later rounds will renumber down. This cannot be undone.",
+            onConfirm = {
+                viewModel.deleteRound(gameSetId, round)
+                roundPendingDeletion = null
+            },
+            onDismiss = { roundPendingDeletion = null }
+        )
+    }
+
+    if (showDeleteGameSetConfirm) {
+        ConfirmDeleteDialog(
+            title = "Delete This Game?",
+            message = "This permanently deletes the entire game - every round, game, and score. This cannot be undone.",
+            onConfirm = {
+                showDeleteGameSetConfirm = false
+                viewModel.deleteGameSet(gameSetId, onDeleted = onBack)
+            },
+            onDismiss = { showDeleteGameSetConfirm = false }
+        )
+    }
+}
+
+@Composable
+private fun ConfirmDeleteDialog(title: String, message: String, onConfirm: () -> Unit, onDismiss: () -> Unit) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(title, color = GoldAccent, fontFamily = FontFamily.Serif, fontWeight = FontWeight.Bold) },
+        text = { Text(message, color = Color.White.copy(alpha = 0.7f), fontSize = 14.sp) },
+        confirmButton = {
+            TextButton(onClick = onConfirm) {
+                Text("Delete", color = Color(0xFFFF5252), fontWeight = FontWeight.Bold)
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Cancel", color = GoldAccent)
+            }
+        },
+        containerColor = TiharNightBlue,
+        shape = RoundedCornerShape(16.dp),
+        modifier = Modifier.border(1.dp, GoldAccent, RoundedCornerShape(16.dp))
+    )
 }
 
 data class PlayerTooltipAnchor(val player: Player, val position: Offset, val size: IntSize)
@@ -597,7 +679,9 @@ private fun CompactRoundsTable(
     isHost: Boolean,
     onGameClick: (GameEntry) -> Unit,
     onPlayerHeaderClick: (Player, Offset, IntSize) -> Unit,
-    onCloseRound: () -> Unit
+    onCloseRound: () -> Unit,
+    onDeleteLastGame: () -> Unit,
+    onDeleteRound: (RoundGroup) -> Unit
 ) {
     var mode by remember { mutableStateOf(RoundDisplayMode.MAAL) }
 
@@ -623,7 +707,7 @@ private fun CompactRoundsTable(
             ModeTab("Points", mode == RoundDisplayMode.POINTS) { mode = RoundDisplayMode.POINTS }
         }
 
-        displayGroups.forEach { group ->
+        displayGroups.forEachIndexed { index, group ->
             RoundBlock(
                 group = group,
                 players = players,
@@ -632,9 +716,12 @@ private fun CompactRoundsTable(
                 currencySymbol = currencySymbol,
                 pointRate = pointRate,
                 isHost = isHost,
+                isLatestRound = index == 0,
                 onGameClick = onGameClick,
                 onPlayerHeaderClick = onPlayerHeaderClick,
-                onCloseRound = onCloseRound
+                onCloseRound = onCloseRound,
+                onDeleteLastGame = onDeleteLastGame,
+                onDeleteRound = { onDeleteRound(group) }
             )
             Spacer(modifier = Modifier.height(10.dp))
         }
@@ -651,9 +738,12 @@ private fun RoundBlock(
     currencySymbol: String,
     pointRate: Double,
     isHost: Boolean,
+    isLatestRound: Boolean,
     onGameClick: (GameEntry) -> Unit,
     onPlayerHeaderClick: (Player, Offset, IntSize) -> Unit,
-    onCloseRound: () -> Unit
+    onCloseRound: () -> Unit,
+    onDeleteLastGame: () -> Unit,
+    onDeleteRound: () -> Unit
 ) {
     val scrollState = rememberScrollState()
 
@@ -676,17 +766,39 @@ private fun RoundBlock(
                     fontSize = 12.sp,
                     fontWeight = FontWeight.Bold
                 )
-                if (isHost && !group.isCompleted && group.games.isNotEmpty()) {
-                    Text(
-                        text = "Close Round",
-                        color = DeepRedTika,
-                        fontSize = 10.sp,
-                        fontWeight = FontWeight.Bold,
-                        modifier = Modifier
-                            .clip(RoundedCornerShape(4.dp))
-                            .clickable(onClick = onCloseRound)
-                            .padding(horizontal = 6.dp, vertical = 2.dp)
-                    )
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    if (isHost && !group.isCompleted && group.games.isNotEmpty()) {
+                        Text(
+                            text = "Close Round",
+                            color = DeepRedTika,
+                            fontSize = 10.sp,
+                            fontWeight = FontWeight.Bold,
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(4.dp))
+                                .clickable(onClick = onCloseRound)
+                                .padding(horizontal = 6.dp, vertical = 2.dp)
+                        )
+                    }
+                    if (isHost && isLatestRound && group.games.isNotEmpty()) {
+                        IconButton(onClick = onDeleteLastGame, modifier = Modifier.size(24.dp)) {
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Filled.Undo,
+                                contentDescription = "Undo last game",
+                                tint = GoldAccent.copy(alpha = 0.7f),
+                                modifier = Modifier.size(14.dp)
+                            )
+                        }
+                    }
+                    if (isHost && group.games.isNotEmpty()) {
+                        IconButton(onClick = onDeleteRound, modifier = Modifier.size(24.dp)) {
+                            Icon(
+                                imageVector = Icons.Default.DeleteOutline,
+                                contentDescription = "Delete round",
+                                tint = Color(0xFFFF5252).copy(alpha = 0.7f),
+                                modifier = Modifier.size(14.dp)
+                            )
+                        }
+                    }
                 }
             }
 

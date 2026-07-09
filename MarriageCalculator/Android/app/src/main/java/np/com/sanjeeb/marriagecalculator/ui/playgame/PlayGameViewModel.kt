@@ -384,6 +384,76 @@ class PlayGameViewModel @Inject constructor(
         }
     }
 
+    /** Removes only the most recently played game (undo a mistake). Blocked once settled. */
+    fun deleteLastGame(gameSetIdStr: String) {
+        viewModelScope.launch {
+            val isLocalId = gameSetIdStr.toIntOrNull() != null
+            val isOnline = sessionManager.isOnlineMode() && !isLocalId
+
+            if (isOnline) {
+                when (val result = gameSetRepository.deleteLastGame(gameSetIdStr)) {
+                    is ApiResult.Error -> {
+                        _uiState.value = _uiState.value.copy(error = result.message)
+                        return@launch
+                    }
+                    else -> {}
+                }
+            } else {
+                val gameSetId = gameSetIdStr.toIntOrNull() ?: return@launch
+                offlineGameRepository.deleteLastGame(gameSetId)
+            }
+            loadGame(gameSetIdStr)
+        }
+    }
+
+    /** Removes an entire round - all its games and scores. Blocked once settled. */
+    fun deleteRound(gameSetIdStr: String, round: RoundGroup) {
+        viewModelScope.launch {
+            val isLocalId = gameSetIdStr.toIntOrNull() != null
+            val isOnline = sessionManager.isOnlineMode() && !isLocalId
+
+            if (isOnline) {
+                when (val result = gameSetRepository.deleteRound(gameSetIdStr, round.roundId)) {
+                    is ApiResult.Error -> {
+                        _uiState.value = _uiState.value.copy(error = result.message)
+                        return@launch
+                    }
+                    else -> {}
+                }
+            } else {
+                val gameSetId = gameSetIdStr.toIntOrNull() ?: return@launch
+                val gameIds = round.games.mapNotNull { it.gameId.toIntOrNull() }
+                offlineGameRepository.deleteRoundGames(gameSetId, gameIds)
+            }
+            loadGame(gameSetIdStr)
+        }
+    }
+
+    /** Permanently deletes the whole game set. Irreversible - caller must confirm first. */
+    fun deleteGameSet(gameSetIdStr: String, onDeleted: () -> Unit) {
+        viewModelScope.launch {
+            _uiState.value = _uiState.value.copy(isLoading = true, error = null)
+            val isLocalId = gameSetIdStr.toIntOrNull() != null
+            val isOnline = sessionManager.isOnlineMode() && !isLocalId
+
+            if (isOnline) {
+                when (val result = gameSetRepository.deleteGameSet(gameSetIdStr)) {
+                    is ApiResult.Success -> onDeleted()
+                    is ApiResult.Error -> _uiState.value = _uiState.value.copy(isLoading = false, error = result.message)
+                    is ApiResult.Loading -> {}
+                }
+            } else {
+                val gameSetId = gameSetIdStr.toIntOrNull()
+                if (gameSetId == null) {
+                    _uiState.value = _uiState.value.copy(isLoading = false, error = "Invalid game set")
+                    return@launch
+                }
+                offlineGameRepository.deleteGameSet(gameSetId)
+                onDeleted()
+            }
+        }
+    }
+
     fun nudgePlayer(playerId: String, gameSetIdStr: String) {
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isLoading = true, error = null)

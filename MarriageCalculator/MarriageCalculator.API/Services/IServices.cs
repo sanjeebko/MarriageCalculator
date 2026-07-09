@@ -49,6 +49,8 @@ public interface IMarriageGameSetService
     Task<bool> NudgePlayerAsync(string gameSetId, string hostUserId, string playerId);
     Task<MarriageGameRoundDto> SubmitRoundAsync(string gameSetId, string hostUserId, SubmitRoundDto dto);
     Task<MarriageGameRoundDto?> CloseRoundAsync(string gameSetId, string roundId, string hostUserId);
+    Task<MarriageGameRoundDto?> DeleteLastGameAsync(string gameSetId, string hostUserId);
+    Task<bool> DeleteRoundAsync(string gameSetId, string roundId, string hostUserId);
 }
 
 public interface IMarriageGameService

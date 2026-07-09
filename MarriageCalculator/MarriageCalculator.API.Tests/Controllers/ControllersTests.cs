@@ -203,4 +203,140 @@ public class ControllersTests
         // Assert
         Assert.IsType<NotFoundObjectResult>(result.Result);
     }
+
+    [Fact]
+    public async Task MarriageGameSetsController_DeleteLastGame_ReturnsOkWithRound()
+    {
+        // Arrange
+        var serviceMock = new Mock<IMarriageGameSetService>();
+        var loggerMock = new Mock<ILogger<MarriageGameSetsController>>();
+        var controller = new MarriageGameSetsController(serviceMock.Object, loggerMock.Object);
+        SetControllerUser(controller, "mock-host-456");
+
+        var roundDto = new MarriageGameRoundDto { Id = "round-1", Sequence = 1, MarriageGameSetId = "set-1" };
+        serviceMock.Setup(s => s.DeleteLastGameAsync("set-1", "mock-host-456"))
+            .ReturnsAsync(roundDto);
+
+        // Act
+        var result = await controller.DeleteLastGame("set-1");
+
+        // Assert
+        var okResult = Assert.IsType<OkObjectResult>(result.Result);
+        var returnedRound = Assert.IsType<MarriageGameRoundDto>(okResult.Value);
+        Assert.Equal("round-1", returnedRound.Id);
+    }
+
+    [Fact]
+    public async Task MarriageGameSetsController_DeleteLastGame_RoundEmptied_ReturnsNoContent()
+    {
+        // Arrange
+        var serviceMock = new Mock<IMarriageGameSetService>();
+        var loggerMock = new Mock<ILogger<MarriageGameSetsController>>();
+        var controller = new MarriageGameSetsController(serviceMock.Object, loggerMock.Object);
+        SetControllerUser(controller, "mock-host-456");
+
+        serviceMock.Setup(s => s.DeleteLastGameAsync("set-1", "mock-host-456"))
+            .ReturnsAsync((MarriageGameRoundDto?)null);
+
+        // Act
+        var result = await controller.DeleteLastGame("set-1");
+
+        // Assert
+        Assert.IsType<NoContentResult>(result.Result);
+    }
+
+    [Fact]
+    public async Task MarriageGameSetsController_DeleteLastGame_Settled_ReturnsBadRequest()
+    {
+        // Arrange
+        var serviceMock = new Mock<IMarriageGameSetService>();
+        var loggerMock = new Mock<ILogger<MarriageGameSetsController>>();
+        var controller = new MarriageGameSetsController(serviceMock.Object, loggerMock.Object);
+        SetControllerUser(controller, "mock-host-456");
+
+        serviceMock.Setup(s => s.DeleteLastGameAsync("set-1", "mock-host-456"))
+            .ThrowsAsync(new InvalidOperationException("Cannot modify a settled game set."));
+
+        // Act
+        var result = await controller.DeleteLastGame("set-1");
+
+        // Assert
+        Assert.IsType<BadRequestObjectResult>(result.Result);
+    }
+
+    [Fact]
+    public async Task MarriageGameSetsController_DeleteLastGame_NonHost_ReturnsForbid()
+    {
+        // Arrange
+        var serviceMock = new Mock<IMarriageGameSetService>();
+        var loggerMock = new Mock<ILogger<MarriageGameSetsController>>();
+        var controller = new MarriageGameSetsController(serviceMock.Object, loggerMock.Object);
+        SetControllerUser(controller, "not-the-host");
+
+        serviceMock.Setup(s => s.DeleteLastGameAsync("set-1", "not-the-host"))
+            .ThrowsAsync(new UnauthorizedAccessException("Only the game host can delete a game."));
+
+        // Act
+        var result = await controller.DeleteLastGame("set-1");
+
+        // Assert
+        Assert.IsType<ForbidResult>(result.Result);
+    }
+
+    [Fact]
+    public async Task MarriageGameSetsController_DeleteRound_ReturnsNoContent()
+    {
+        // Arrange
+        var serviceMock = new Mock<IMarriageGameSetService>();
+        var loggerMock = new Mock<ILogger<MarriageGameSetsController>>();
+        var controller = new MarriageGameSetsController(serviceMock.Object, loggerMock.Object);
+        SetControllerUser(controller, "mock-host-456");
+
+        serviceMock.Setup(s => s.DeleteRoundAsync("set-1", "round-1", "mock-host-456"))
+            .ReturnsAsync(true);
+
+        // Act
+        var result = await controller.DeleteRound("set-1", "round-1");
+
+        // Assert
+        Assert.IsType<NoContentResult>(result);
+    }
+
+    [Fact]
+    public async Task MarriageGameSetsController_DeleteRound_UnknownRound_ReturnsNotFound()
+    {
+        // Arrange
+        var serviceMock = new Mock<IMarriageGameSetService>();
+        var loggerMock = new Mock<ILogger<MarriageGameSetsController>>();
+        var controller = new MarriageGameSetsController(serviceMock.Object, loggerMock.Object);
+        SetControllerUser(controller, "mock-host-456");
+
+        serviceMock.Setup(s => s.DeleteRoundAsync("set-1", "missing-round", "mock-host-456"))
+            .ReturnsAsync(false);
+
+        // Act
+        var result = await controller.DeleteRound("set-1", "missing-round");
+
+        // Assert
+        Assert.IsType<NotFoundObjectResult>(result);
+    }
+
+    [Fact]
+    public async Task MarriageGameSetsController_DeleteRound_NonHost_ReturnsForbid()
+    {
+        // Arrange
+        var serviceMock = new Mock<IMarriageGameSetService>();
+        var loggerMock = new Mock<ILogger<MarriageGameSetsController>>();
+        var controller = new MarriageGameSetsController(serviceMock.Object, loggerMock.Object);
+        SetControllerUser(controller, "not-the-host");
+
+        serviceMock.Setup(s => s.DeleteRoundAsync("set-1", "round-1", "not-the-host"))
+            .ThrowsAsync(new UnauthorizedAccessException("Only the game host can delete a round."));
+
+        // Act
+        var result = await controller.DeleteRound("set-1", "round-1");
+
+        // Assert
+        Assert.IsType<ForbidResult>(result);
+    }
 }
