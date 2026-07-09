@@ -49,6 +49,9 @@ class GameSetRepository @Inject constructor(
     suspend fun submitRound(id: String, request: SubmitRoundRequest): ApiResult<MarriageGameRound> = safeApiCall {
         api.submitRound(id, request)
     }
+    suspend fun closeRound(id: String, roundId: String): ApiResult<MarriageGameRound> = safeApiCall {
+        api.closeRound(id, roundId)
+    }
 }
 
 internal suspend fun <T> safeApiCall(call: suspend () -> retrofit2.Response<T>): ApiResult<T> {

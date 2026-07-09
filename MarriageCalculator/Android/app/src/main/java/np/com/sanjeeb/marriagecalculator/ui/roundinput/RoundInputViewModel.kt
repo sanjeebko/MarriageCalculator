@@ -319,6 +319,7 @@ class RoundInputViewModel @Inject constructor(
                 offlineGameRepository.saveRound(
                     gameSetId = gameSetId,
                     winnerId = winnerId.toIntOrNull() ?: return@launch,
+                    dealerId = state.dealerId?.toIntOrNull() ?: 0,
                     totalMaal = totalMaal,
                     playerScores = scores
                 )

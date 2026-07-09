@@ -72,9 +72,13 @@ data class GameSetPlayerEntity(
 data class RoundEntity(
     @PrimaryKey(autoGenerate = true) val id: Int = 0,
     val gameSetId: Int,
+    /** Overall game sequence number within the game set (1-indexed) - NOT the logical round number. */
     val roundNumber: Int,
     val winnerId: Int,
+    val dealerId: Int = 0,
     val totalMaal: Int = 0,
+    /** True if this game is the last one of its logical round (either N games were reached, or the round was closed early). */
+    val closesRound: Boolean = false,
     val createdAt: Long = System.currentTimeMillis(),
     val remoteId: String? = null,
     val synced: Boolean = false
@@ -179,6 +183,12 @@ interface RoundDao {
 
     @Query("SELECT COUNT(*) FROM rounds WHERE gameSetId = :gameSetId")
     suspend fun getRoundCount(gameSetId: Int): Int
+
+    @Query("SELECT * FROM rounds WHERE gameSetId = :gameSetId ORDER BY roundNumber DESC LIMIT 1")
+    suspend fun getLatestGame(gameSetId: Int): RoundEntity?
+
+    @Query("UPDATE rounds SET closesRound = 1 WHERE id = :id")
+    suspend fun closeRoundAt(id: Int)
 
     @Query("SELECT * FROM rounds WHERE synced = 0")
     suspend fun getUnsynced(): List<RoundEntity>

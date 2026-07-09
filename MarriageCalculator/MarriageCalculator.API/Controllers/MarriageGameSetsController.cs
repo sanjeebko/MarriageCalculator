@@ -241,6 +241,38 @@ public class MarriageGameSetsController : ControllerBase
     }
 
     /// <summary>
+    /// Close the current round early (fewer than N games played) - e.g. a player left, or the
+    /// table wants to restart. The next submitted game will start a fresh round.
+    /// </summary>
+    [HttpPost("{id}/rounds/{roundId}/close")]
+    public async Task<ActionResult<MarriageGameRoundDto>> CloseRound(string id, string roundId)
+    {
+        try
+        {
+            var hostUserId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? string.Empty;
+            var round = await _gameSetService.CloseRoundAsync(id, roundId, hostUserId);
+            if (round == null)
+            {
+                return NotFound($"Round with ID {roundId} not found in game set {id}");
+            }
+            return Ok(round);
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(ex.Message);
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            return Forbid(ex.Message);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error closing round {RoundId} for game set {GameSetId}", roundId, id);
+            return StatusCode(500, "An error occurred while closing the round.");
+        }
+    }
+
+    /// <summary>
     /// Nudge a player in a game set via FCM push notification
     /// </summary>
     [HttpPost("{id}/nudge/{playerId}")]

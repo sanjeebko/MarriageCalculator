@@ -162,6 +162,7 @@ class OfflineGameRepository @Inject constructor(
     suspend fun saveRound(
         gameSetId: Int,
         winnerId: Int,
+        dealerId: Int,
         totalMaal: Int,
         playerScores: List<RoundScoreData>
     ): Int {
@@ -170,6 +171,7 @@ class OfflineGameRepository @Inject constructor(
             gameSetId = gameSetId,
             roundNumber = roundNumber,
             winnerId = winnerId,
+            dealerId = dealerId,
             totalMaal = totalMaal
         )
         val roundId = roundDao.insert(roundEntity).toInt()
@@ -187,6 +189,12 @@ class OfflineGameRepository @Inject constructor(
         }
         roundScoreDao.insertAll(scoreEntities)
         return roundId
+    }
+
+    /** Marks the most recently played game as closing out its logical round early. */
+    suspend fun closeCurrentRound(gameSetId: Int) {
+        val latest = roundDao.getLatestGame(gameSetId) ?: return
+        roundDao.closeRoundAt(latest.id)
     }
 
     fun getRounds(gameSetId: Int): Flow<List<RoundEntity>> =

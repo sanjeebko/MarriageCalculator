@@ -162,4 +162,45 @@ public class ControllersTests
         // Assert
         Assert.IsType<BadRequestObjectResult>(result.Result);
     }
+
+    [Fact]
+    public async Task MarriageGameSetsController_CloseRound_ReturnsOkWithRound()
+    {
+        // Arrange
+        var serviceMock = new Mock<IMarriageGameSetService>();
+        var loggerMock = new Mock<ILogger<MarriageGameSetsController>>();
+        var controller = new MarriageGameSetsController(serviceMock.Object, loggerMock.Object);
+        SetControllerUser(controller, "mock-host-456");
+
+        var roundDto = new MarriageGameRoundDto { Id = "round-1", Sequence = 1, MarriageGameSetId = "set-1", Completed = true };
+        serviceMock.Setup(s => s.CloseRoundAsync("set-1", "round-1", "mock-host-456"))
+            .ReturnsAsync(roundDto);
+
+        // Act
+        var result = await controller.CloseRound("set-1", "round-1");
+
+        // Assert
+        var okResult = Assert.IsType<OkObjectResult>(result.Result);
+        var returnedRound = Assert.IsType<MarriageGameRoundDto>(okResult.Value);
+        Assert.True(returnedRound.Completed);
+    }
+
+    [Fact]
+    public async Task MarriageGameSetsController_CloseRound_UnknownRound_ReturnsNotFound()
+    {
+        // Arrange
+        var serviceMock = new Mock<IMarriageGameSetService>();
+        var loggerMock = new Mock<ILogger<MarriageGameSetsController>>();
+        var controller = new MarriageGameSetsController(serviceMock.Object, loggerMock.Object);
+        SetControllerUser(controller, "mock-host-456");
+
+        serviceMock.Setup(s => s.CloseRoundAsync("set-1", "missing-round", "mock-host-456"))
+            .ReturnsAsync((MarriageGameRoundDto?)null);
+
+        // Act
+        var result = await controller.CloseRound("set-1", "missing-round");
+
+        // Assert
+        Assert.IsType<NotFoundObjectResult>(result.Result);
+    }
 }

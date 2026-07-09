@@ -71,6 +71,12 @@ interface MarriageGameSetApiService {
         @Path("id") id: String,
         @Body request: SubmitRoundRequest
     ): Response<MarriageGameRound>
+
+    @POST("MarriageGameSets/{id}/rounds/{roundId}/close")
+    suspend fun closeRound(
+        @Path("id") id: String,
+        @Path("roundId") roundId: String
+    ): Response<MarriageGameRound>
 }
 
 interface MarriageGameApiService {

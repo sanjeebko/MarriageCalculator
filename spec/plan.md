@@ -3,8 +3,8 @@
 ## Problem Statement
 Build a full-featured Android (Kotlin/Compose) app for the Marriage card game calculator, backed by the existing .NET API. The app must handle 2-6 players with efficient screen space usage, support offline/online modes, real-time score display, and integrate with the C# API hosted on Kubernetes. The Maui version is archived and replaced by this native Android app.
 
-## Status: Phases 1-17 COMPLETE ✅
-- 35 C# tests (12 Core + 23 API) + 74 Android unit tests all passing
+## Status: Phases 1-18 COMPLETE ✅
+- 37 C# tests (12 Core + 25 API) + 74 Android unit tests all passing
 - Android APK builds successfully (`assembleDebug`)
 - .NET API builds successfully
 - **Docker**: Production-ready for API deployment.
@@ -193,6 +193,25 @@ A round of detailed UX feedback on `PlayGameScreen` tightening up Phase 15's com
 - [x] Step 17.2: `PlayerStandingsRow` made compact — smaller avatar (36dp → 26dp), tighter card padding, smaller fonts, reduced inter-row spacing (8dp → 4dp).
 - [x] Step 17.3: Verify — `dotnet test` 35/35; `gradlew testDebugUnitTest`/`assembleDebug` green; live on the emulator confirmed the winner's row in the details popup has a visible green glow/border/icon and Standings visibly fits more rows on screen.
 - **COMMIT**: "feat: highlight round-details winner and compact standings rows"
+
+## Phase 18: Real Round = N Games Hierarchy (Complete)
+Everything through Phase 17 treated one "Add Round" submission as both a round and a game (1:1), a simplification from Phase 14. This phase implements the actual card-game rule from requirement §2.2: a round consists of up to N games (N = player count), one deal per player; the round completes once everyone has dealt, or can be closed early.
+- [x] Step 18.1: **API** — `MarriageGameSetService.SubmitRoundAsync` now appends a new `MarriageGame` to the latest still-open `MarriageGameRound` (creating a new round only if none is open), auto-marking the round `Completed` once `games.count == player count`. Extracted `BuildRoundDtoAsync` (shared by `MapToDtoAsync` and the new round-submission/close paths) to avoid duplicating the round→games→scores DTO-building logic.
+- [x] Step 18.2: **API** — New `POST MarriageGameSets/{id}/rounds/{roundId}/close` (+ `CloseRoundAsync` service method) ends a round early (fewer than N games) so the next submitted game starts a fresh round. Host-only.
+- [x] Step 18.3: **Android (offline/Room)** — `RoundEntity` (still one row = one game, name kept for schema continuity) gains `dealerId` and `closesRound` columns (DB version 2→3, destructive migration — acceptable pre-release). `OfflineGameRepository` gains `closeCurrentRound`. Logical-round grouping is derived at read time by chunking games into buckets of `playerCount`, closing a bucket early if a game has `closesRound = true` — mirrors the server's explicit `Completed` flag without needing a separate local "round" table.
+- [x] Step 18.4: **Android** — `PlayGameViewModel` reworked around `RoundGroup` (a round: sequence, completed flag, its `GameEntry` list, total score per player) instead of a flat per-game list, for both online and offline load paths. `closeCurrentRound()` added, calling the new API/repository method then reloading.
+- [x] Step 18.5: **Android UI** (`PlayGameScreen.kt`, full rewrite) —
+  - Next Dealer banner removed from view (value still computed in `PlayGameUiState.nextDealerId`/`nextDealerName` for later use)
+  - "ROUNDS PLAYED" renamed to "ROUND"
+  - Every open round shows a synthetic blank placeholder game row (all-default values) at the top, purely UI-computed — not persisted until real data is submitted via the FAB
+  - Small "D" badge on the dealing player's cell, per game
+  - Per-round Total row (money summed across that round's games)
+  - "Close Round" text action next to an in-progress round's header (host-only, hidden if the round has zero games yet)
+  - Standings moved below the Round table, collapsed by default, expands on tap with an animated chevron
+  - Tapping a player's 3-letter table header opens an animated (fade+scale) popup with their full name, email, and circular photo
+- [x] Step 18.6: **Bug found & fixed during verification** — `PlayGameViewModel`'s new `nextDealerIndex` formula (`totalGamesPlayed % size`) didn't match `RoundInputViewModel`'s pre-existing dealer formula (`(roundNumber - 2 + size) % size`, where `roundNumber = totalGamesPlayed + 1`) — they were off by one, so the blank row's dealer badge showed a different player than who `RoundInputViewModel` would actually assign as dealer. Fixed `PlayGameViewModel` to use the algebraically equivalent `(totalGamesPlayed - 1 + size) % size`.
+- [x] Step 18.7: Verify — `dotnet test` 37/37 (added `CloseRound` controller tests); `gradlew testDebugUnitTest`/`assembleDebug` green (74 tests); full live walkthrough on the emulator against the real online account and a rebuilt Docker API + fresh (destructively-migrated) local DB: legacy 1-game "rounds" from before this phase displayed correctly as individual completed rounds; added a game to auto-continue a round; verified the dealer badge on the blank row matched `RoundInputViewModel`'s actual assignment after the fix; completed a round via 5th game and confirmed a fresh round auto-started; tested "Close Round" on a 1-game round and confirmed it closed immediately with a new round appearing above it; confirmed Standings collapse/expand animation and the player-name popup (with photo/email) both work.
+- **COMMIT**: "feat: real Round-contains-N-Games hierarchy with close-round support"
 
 ---
 

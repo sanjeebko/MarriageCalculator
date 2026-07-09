@@ -25,19 +25,32 @@ data class PlayerStandings(
     val isNextDealer: Boolean = false
 )
 
-data class RoundItem(
-    val roundId: Int,
-    val roundNumber: Int,
+/** One hand/deal within a round - one player deals, everyone else plays. */
+data class GameEntry(
+    val gameId: String,
+    val gameSequenceInRound: Int,
+    val dealerId: String,
+    val winnerId: String,
     val winnerName: String,
     val totalMaal: Int,
-    val winnerScore: Int,
     val playerEntries: List<RoundPlayerEntry> = emptyList()
+)
+
+/** A round is complete once every player has dealt once (games.size == player count), or is closed early. */
+data class RoundGroup(
+    val roundId: String,
+    val roundSequence: Int,
+    val isCompleted: Boolean,
+    val games: List<GameEntry> = emptyList(),
+    val totalScoreByPlayer: Map<String, Int> = emptyMap()
 )
 
 data class PlayGameUiState(
     val gameName: String = "",
     val players: List<PlayerStandings> = emptyList(),
-    val rounds: List<RoundItem> = emptyList(),
+    val roundGroups: List<RoundGroup> = emptyList(),
+    val totalGamesPlayed: Int = 0,
+    val nextDealerId: String = "",
     val nextDealerName: String = "",
     val isSettled: Boolean = false,
     val isLoading: Boolean = false,
@@ -76,40 +89,48 @@ class PlayGameViewModel @Inject constructor(
                         val players = gameSetPlayers.mapNotNull { it.player }
                         val settings = gameSet.gameSettings ?: GameSettings.default()
 
-                        val roundsList = gameSet.rounds?.map { r ->
-                            val firstGame = r.marriageGames?.firstOrNull()
-                            val winnerName = players.find { it.id == firstGame?.winnerId }?.name ?: "Unknown"
-                            val totalMaal = firstGame?.totalMaal ?: 0
-                            val winnerScoreMap = r.totalScore ?: emptyMap()
-                            val winnerScore = winnerScoreMap[firstGame?.winnerId ?: ""]?.toInt() ?: 0
-
-                            val playerEntries = players.map { p ->
-                                val score = firstGame?.marriageGameScores?.get(p.id)
-                                RoundPlayerEntry(
-                                    playerId = p.id,
-                                    playerName = p.name,
-                                    isSeen = score?.seen ?: false,
-                                    isDublee = score?.duply ?: false,
-                                    isWinner = score?.winner ?: false,
-                                    maal = score?.maal ?: 0,
-                                    score = score?.score ?: 0,
-                                    money = (score?.score ?: 0) * settings.pointRate
+                        val roundGroups = gameSet.rounds?.sortedBy { it.sequence }?.map { r ->
+                            val games = r.marriageGames?.sortedBy { it.sequence }?.map { g ->
+                                val winnerName = players.find { it.id == g.winnerId }?.name ?: "Unknown"
+                                val playerEntries = players.map { p ->
+                                    val score = g.marriageGameScores?.get(p.id)
+                                    RoundPlayerEntry(
+                                        playerId = p.id,
+                                        playerName = p.name,
+                                        isSeen = score?.seen ?: false,
+                                        isDublee = score?.duply ?: false,
+                                        isWinner = score?.winner ?: false,
+                                        maal = score?.maal ?: 0,
+                                        score = score?.score ?: 0,
+                                        money = (score?.score ?: 0) * settings.pointRate
+                                    )
+                                }
+                                GameEntry(
+                                    gameId = g.id,
+                                    gameSequenceInRound = g.sequence,
+                                    dealerId = g.dealerId,
+                                    winnerId = g.winnerId,
+                                    winnerName = winnerName,
+                                    totalMaal = g.totalMaal,
+                                    playerEntries = playerEntries
                                 )
-                            }
+                            } ?: emptyList()
 
-                            RoundItem(
-                                roundId = r.id.hashCode(),
-                                roundNumber = r.sequence,
-                                winnerName = winnerName,
-                                totalMaal = totalMaal,
-                                winnerScore = winnerScore,
-                                playerEntries = playerEntries
+                            RoundGroup(
+                                roundId = r.id,
+                                roundSequence = r.sequence,
+                                isCompleted = r.completed,
+                                games = games,
+                                totalScoreByPlayer = r.totalScore?.mapValues { it.value.toInt() } ?: emptyMap()
                             )
                         } ?: emptyList()
 
-                        val nextDealerIndex = if (players.isNotEmpty()) (roundsList.size - 1 + players.size) % players.size else 0
+                        val totalGamesPlayed = roundGroups.sumOf { it.games.size }
+                        // Must match RoundInputViewModel.loadGameData's dealer formula (roundNumber - 2 + size) % size,
+                        // where roundNumber = totalGamesPlayed + 1: simplifies to (totalGamesPlayed - 1 + size) % size.
+                        val nextDealerIndex = if (players.isNotEmpty()) (totalGamesPlayed - 1 + players.size) % players.size else 0
                         val nextDealer = players.getOrNull(nextDealerIndex)
-                        
+
                         val standings = gameSetPlayers.mapIndexed { index, gsp ->
                             val p = gsp.player ?: Player(id = gsp.playerId, name = "Unknown")
                             var netPoints = 0
@@ -131,7 +152,9 @@ class PlayGameViewModel @Inject constructor(
                         _uiState.value = PlayGameUiState(
                             gameName = gameSet.name,
                             players = standings,
-                            rounds = roundsList,
+                            roundGroups = roundGroups,
+                            totalGamesPlayed = totalGamesPlayed,
+                            nextDealerId = nextDealer?.id ?: "",
                             nextDealerName = nextDealer?.name ?: "None",
                             isSettled = !gameSet.isActive,
                             isLoading = false,
@@ -163,12 +186,34 @@ class PlayGameViewModel @Inject constructor(
                 offlineGameRepository.getRounds(gameSetId).collect { roundEntities ->
                     val allScores = offlineGameRepository.getAllScoresForGameSet(gameSetId)
                     val scoresByRound = allScores.groupBy { it.roundId }
+                    val playerCount = players.size
 
-                    val roundsList = roundEntities.map { r ->
+                    val orderedGames = roundEntities.sortedBy { it.roundNumber }
+                    val roundGroups = mutableListOf<RoundGroup>()
+                    var bucket = mutableListOf<GameEntry>()
+                    var roundSeq = 1
+
+                    fun flushBucket(isCompleted: Boolean) {
+                        if (bucket.isEmpty()) return
+                        roundGroups.add(
+                            RoundGroup(
+                                roundId = "local-$roundSeq",
+                                roundSequence = roundSeq,
+                                isCompleted = isCompleted,
+                                games = bucket.toList(),
+                                totalScoreByPlayer = bucket.flatMap { it.playerEntries }
+                                    .groupBy { it.playerId }
+                                    .mapValues { entry -> entry.value.sumOf { e -> e.score } }
+                            )
+                        )
+                        bucket = mutableListOf()
+                        roundSeq++
+                    }
+
+                    for (r in orderedGames) {
                         val roundScores = scoresByRound[r.id] ?: emptyList()
-                        val winnerScore = roundScores.find { it.isWinner }?.score ?: 0
-                        val winnerName = players.find { it.id == roundScores.find { it.isWinner }?.playerId?.toString() }?.name ?: "Unknown"
-
+                        val winnerScore = roundScores.find { it.isWinner }
+                        val winnerName = players.find { it.id == winnerScore?.playerId?.toString() }?.name ?: "Unknown"
                         val playerEntries = players.map { p ->
                             val pScore = roundScores.find { it.playerId.toString() == p.id }
                             RoundPlayerEntry(
@@ -182,18 +227,26 @@ class PlayGameViewModel @Inject constructor(
                                 money = (pScore?.score ?: 0) * settings.pointRate
                             )
                         }
-
-                        RoundItem(
-                            roundId = r.id,
-                            roundNumber = r.roundNumber,
-                            winnerName = winnerName,
-                            totalMaal = r.totalMaal,
-                            winnerScore = winnerScore,
-                            playerEntries = playerEntries
+                        bucket.add(
+                            GameEntry(
+                                gameId = r.id.toString(),
+                                gameSequenceInRound = bucket.size + 1,
+                                dealerId = r.dealerId.toString(),
+                                winnerId = r.winnerId.toString(),
+                                winnerName = winnerName,
+                                totalMaal = r.totalMaal,
+                                playerEntries = playerEntries
+                            )
                         )
+                        if (bucket.size >= playerCount || r.closesRound) {
+                            flushBucket(isCompleted = true)
+                        }
                     }
+                    flushBucket(isCompleted = false)
 
-                    val nextDealerIndex = if (players.isNotEmpty()) (roundsList.size - 1 + players.size) % players.size else 0
+                    val totalGamesPlayed = orderedGames.size
+                    // Must match RoundInputViewModel's dealer formula: (totalGamesPlayed - 1 + size) % size.
+                    val nextDealerIndex = if (players.isNotEmpty()) (totalGamesPlayed - 1 + players.size) % players.size else 0
                     val nextDealer = players.getOrNull(nextDealerIndex)
 
                     val standings = players.mapIndexed { index, p ->
@@ -210,7 +263,9 @@ class PlayGameViewModel @Inject constructor(
                     _uiState.value = PlayGameUiState(
                         gameName = gameSet.name.ifEmpty { "Game Set #$gameSetId" },
                         players = standings,
-                        rounds = roundsList,
+                        roundGroups = roundGroups,
+                        totalGamesPlayed = totalGamesPlayed,
+                        nextDealerId = nextDealer?.id ?: "",
                         nextDealerName = nextDealer?.name ?: "None",
                         isSettled = gameSet.isSettled,
                         isLoading = false,
@@ -304,6 +359,28 @@ class PlayGameViewModel @Inject constructor(
                 }
                 else -> {}
             }
+        }
+    }
+
+    /** Ends the current round early (fewer than N games played), e.g. to add a player or restart. */
+    fun closeCurrentRound(gameSetIdStr: String) {
+        viewModelScope.launch {
+            val isLocalId = gameSetIdStr.toIntOrNull() != null
+            val isOnline = sessionManager.isOnlineMode() && !isLocalId
+
+            if (isOnline) {
+                val openRoundId = _uiState.value.roundGroups.find { !it.isCompleted }?.roundId
+                if (openRoundId != null) {
+                    when (val result = gameSetRepository.closeRound(gameSetIdStr, openRoundId)) {
+                        is ApiResult.Error -> _uiState.value = _uiState.value.copy(error = result.message)
+                        else -> {}
+                    }
+                }
+            } else {
+                val gameSetId = gameSetIdStr.toIntOrNull() ?: return@launch
+                offlineGameRepository.closeCurrentRound(gameSetId)
+            }
+            loadGame(gameSetIdStr)
         }
     }
 
