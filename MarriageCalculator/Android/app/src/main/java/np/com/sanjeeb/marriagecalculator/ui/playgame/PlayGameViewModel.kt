@@ -438,7 +438,12 @@ class PlayGameViewModel @Inject constructor(
 
             if (isOnline) {
                 when (val result = gameSetRepository.deleteGameSet(gameSetIdStr)) {
-                    is ApiResult.Success -> onDeleted()
+                    is ApiResult.Success -> {
+                        // Clean up the local offline mirror too, or the Dashboard's merge logic
+                        // will mistake the leftover row for an unsynced game and resurrect it.
+                        offlineGameRepository.deleteGameSetByRemoteId(gameSetIdStr)
+                        onDeleted()
+                    }
                     is ApiResult.Error -> _uiState.value = _uiState.value.copy(isLoading = false, error = result.message)
                     is ApiResult.Loading -> {}
                 }

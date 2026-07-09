@@ -151,6 +151,9 @@ interface GameSetDao {
     @Query("SELECT * FROM game_sets WHERE id = :id")
     suspend fun getById(id: Int): GameSetEntity?
 
+    @Query("SELECT * FROM game_sets WHERE remoteId = :remoteId LIMIT 1")
+    suspend fun getByRemoteId(remoteId: String): GameSetEntity?
+
     @Query("UPDATE game_sets SET isSettled = 1 WHERE id = :id")
     suspend fun settle(id: Int)
 

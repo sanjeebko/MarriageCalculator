@@ -231,6 +231,18 @@ class OfflineGameRepository @Inject constructor(
         gameSetDao.deleteById(gameSetId)
     }
 
+    /**
+     * Cleans up the local offline mirror of an online game set (created at online-creation time
+     * so the Dashboard has something to show before the first sync). Without this, deleting a
+     * game set only online would leave the stale local mirror row behind, and the Dashboard's
+     * online/offline merge logic - which shows local rows not yet present in the remote list -
+     * would misread the leftover as "not yet synced" and resurrect it into the list.
+     */
+    suspend fun deleteGameSetByRemoteId(remoteId: String) {
+        val entity = gameSetDao.getByRemoteId(remoteId) ?: return
+        deleteGameSet(entity.id)
+    }
+
     fun getRounds(gameSetId: Int): Flow<List<RoundEntity>> =
         roundDao.getRoundsForGameSet(gameSetId)
 
