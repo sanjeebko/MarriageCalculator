@@ -570,11 +570,11 @@ private fun blankGameEntry(players: List<PlayerStandings>, dealerId: String, seq
 }
 
 /**
- * One block per round (a round = up to N games, N = player count, one deal per player). Each
- * round that hasn't finished shows a blank placeholder row on top for the pending game. Top row
- * of each cell shows Maal or Points (switchable), bottom row always shows money; the dealer's
- * cell for a game gets a small "D" badge. A completed/in-progress round with at least one game
- * gets a Total row.
+ * A round (up to N games, N = player count, one deal per player) is laid out as a Column of
+ * self-contained [RoundBlock]s - each one owns its own header row, game rows, total row, and
+ * horizontal scroll, so it works like a repeater: every round is an independent unit that could
+ * show a different player/seat order after a reshuffle. Only the Maal/Points mode toggle is
+ * shared across all rounds, since it's a display preference rather than round data.
  */
 @Composable
 private fun CompactRoundsTable(
@@ -589,7 +589,6 @@ private fun CompactRoundsTable(
     onCloseRound: () -> Unit
 ) {
     var mode by remember { mutableStateOf(RoundDisplayMode.MAAL) }
-    val scrollState = rememberScrollState()
 
     val hasOpenRound = roundGroups.any { !it.isCompleted }
     val displayGroups = remember(roundGroups) {
@@ -601,22 +600,83 @@ private fun CompactRoundsTable(
         groups.sortedByDescending { it.roundSequence }
     }
 
+    Column {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(vertical = 6.dp),
+            horizontalArrangement = Arrangement.Center
+        ) {
+            ModeTab("Maal", mode == RoundDisplayMode.MAAL) { mode = RoundDisplayMode.MAAL }
+            Spacer(modifier = Modifier.width(8.dp))
+            ModeTab("Points", mode == RoundDisplayMode.POINTS) { mode = RoundDisplayMode.POINTS }
+        }
+
+        displayGroups.forEach { group ->
+            RoundBlock(
+                group = group,
+                players = players,
+                nextDealerId = nextDealerId,
+                mode = mode,
+                currencySymbol = currencySymbol,
+                pointRate = pointRate,
+                isHost = isHost,
+                onGameClick = onGameClick,
+                onPlayerHeaderClick = onPlayerHeaderClick,
+                onCloseRound = onCloseRound
+            )
+            Spacer(modifier = Modifier.height(10.dp))
+        }
+    }
+}
+
+/** One self-contained round: its own header row, game rows, and total row - a repeatable unit. */
+@Composable
+private fun RoundBlock(
+    group: RoundGroup,
+    players: List<PlayerStandings>,
+    nextDealerId: String,
+    mode: RoundDisplayMode,
+    currencySymbol: String,
+    pointRate: Double,
+    isHost: Boolean,
+    onGameClick: (GameEntry) -> Unit,
+    onPlayerHeaderClick: (Player) -> Unit,
+    onCloseRound: () -> Unit
+) {
+    val scrollState = rememberScrollState()
+
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(8.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White.copy(alpha = 0.03f))
     ) {
         Column {
-            // Maal / Points mode selector
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(vertical = 6.dp),
-                horizontalArrangement = Arrangement.Center
+                    .padding(horizontal = 8.dp, vertical = 6.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                ModeTab("Maal", mode == RoundDisplayMode.MAAL) { mode = RoundDisplayMode.MAAL }
-                Spacer(modifier = Modifier.width(8.dp))
-                ModeTab("Points", mode == RoundDisplayMode.POINTS) { mode = RoundDisplayMode.POINTS }
+                Text(
+                    text = "Round ${group.roundSequence}" + if (!group.isCompleted) " · in progress" else "",
+                    color = GoldAccent,
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.Bold
+                )
+                if (isHost && !group.isCompleted && group.games.isNotEmpty()) {
+                    Text(
+                        text = "Close Round",
+                        color = DeepRedTika,
+                        fontSize = 10.sp,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(4.dp))
+                            .clickable(onClick = onCloseRound)
+                            .padding(horizontal = 6.dp, vertical = 2.dp)
+                    )
+                }
             }
 
             HorizontalDivider(color = Color.White.copy(alpha = 0.08f))
@@ -648,120 +708,81 @@ private fun CompactRoundsTable(
 
             HorizontalDivider(color = Color.White.copy(alpha = 0.08f))
 
-            displayGroups.forEachIndexed { groupIndex, group ->
-                if (groupIndex > 0) {
-                    HorizontalDivider(
-                        color = GoldAccent.copy(alpha = 0.15f),
-                        thickness = 1.dp,
-                        modifier = Modifier.padding(vertical = 2.dp)
-                    )
-                }
+            val pendingSeq = group.games.size + 1
+            val rowsAscending = if (!group.isCompleted) {
+                group.games + blankGameEntry(players, nextDealerId, pendingSeq)
+            } else group.games
+            val rowsDisplay = rowsAscending.sortedByDescending { it.gameSequenceInRound }
 
+            rowsDisplay.forEachIndexed { index, game ->
+                val isPending = game.gameId == "pending"
+                val rowBackground = if (index % 2 == 0) Color.White.copy(alpha = 0.06f) else Color.Transparent
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 8.dp, vertical = 4.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
+                        .background(rowBackground)
+                        .padding(vertical = 3.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text(
-                        text = "Round ${group.roundSequence}" + if (!group.isCompleted) " · in progress" else "",
-                        color = GoldAccent.copy(alpha = 0.7f),
-                        fontSize = 10.sp,
-                        fontWeight = FontWeight.Bold
-                    )
-                    if (isHost && !group.isCompleted && group.games.isNotEmpty()) {
+                    Box(
+                        modifier = Modifier
+                            .width(ROUND_SEQ_COL_WIDTH_DP.dp)
+                            .then(if (!isPending) Modifier.clickable { onGameClick(game) } else Modifier),
+                        contentAlignment = Alignment.Center
+                    ) {
                         Text(
-                            text = "Close Round",
-                            color = DeepRedTika,
-                            fontSize = 10.sp,
-                            fontWeight = FontWeight.Bold,
-                            modifier = Modifier
-                                .clip(RoundedCornerShape(4.dp))
-                                .clickable(onClick = onCloseRound)
-                                .padding(horizontal = 6.dp, vertical = 2.dp)
+                            text = "${game.gameSequenceInRound}",
+                            color = if (isPending) Color.White.copy(alpha = 0.3f) else GoldAccent,
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Bold
                         )
                     }
-                }
 
-                val pendingSeq = group.games.size + 1
-                val rowsAscending = if (!group.isCompleted) {
-                    group.games + blankGameEntry(players, nextDealerId, pendingSeq)
-                } else group.games
-                val rowsDisplay = rowsAscending.sortedByDescending { it.gameSequenceInRound }
-
-                rowsDisplay.forEachIndexed { index, game ->
-                    val isPending = game.gameId == "pending"
-                    val rowBackground = if (index % 2 == 0) Color.White.copy(alpha = 0.06f) else Color.Transparent
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .background(rowBackground)
-                            .padding(vertical = 3.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Box(
-                            modifier = Modifier
-                                .width(ROUND_SEQ_COL_WIDTH_DP.dp)
-                                .then(if (!isPending) Modifier.clickable { onGameClick(game) } else Modifier),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Text(
-                                text = "${game.gameSequenceInRound}",
-                                color = if (isPending) Color.White.copy(alpha = 0.3f) else GoldAccent,
-                                fontSize = 12.sp,
-                                fontWeight = FontWeight.Bold
+                    Row(modifier = Modifier.horizontalScroll(scrollState)) {
+                        players.forEach { p ->
+                            val entry = game.playerEntries.find { it.playerId == p.player.id }
+                            CompactRoundCell(
+                                entry = entry,
+                                mode = mode,
+                                currencySymbol = currencySymbol,
+                                isDealer = game.dealerId == p.player.id,
+                                modifier = Modifier.width(ROUND_PLAYER_COL_WIDTH_DP.dp)
                             )
                         }
+                    }
+                }
+            }
 
-                        Row(modifier = Modifier.horizontalScroll(scrollState)) {
-                            players.forEach { p ->
-                                val entry = game.playerEntries.find { it.playerId == p.player.id }
-                                CompactRoundCell(
-                                    entry = entry,
-                                    mode = mode,
-                                    currencySymbol = currencySymbol,
-                                    isDealer = game.dealerId == p.player.id,
-                                    modifier = Modifier.width(ROUND_PLAYER_COL_WIDTH_DP.dp)
+            if (group.games.isNotEmpty()) {
+                HorizontalDivider(color = Color.White.copy(alpha = 0.1f), modifier = Modifier.padding(horizontal = 8.dp))
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 4.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Box(modifier = Modifier.width(ROUND_SEQ_COL_WIDTH_DP.dp), contentAlignment = Alignment.Center) {
+                        Text("Σ", color = GoldAccent.copy(alpha = 0.6f), fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                    }
+                    Row(modifier = Modifier.horizontalScroll(scrollState)) {
+                        players.forEach { p ->
+                            val points = group.totalScoreByPlayer[p.player.id] ?: 0
+                            val money = points * pointRate
+                            Box(modifier = Modifier.width(ROUND_PLAYER_COL_WIDTH_DP.dp), contentAlignment = Alignment.Center) {
+                                Text(
+                                    text = "${String.format("%.0f", money)}$currencySymbol",
+                                    color = when {
+                                        money > 0 -> Color(0xFF4CAF50)
+                                        money < 0 -> Color(0xFFFF5252)
+                                        else -> Color.White.copy(alpha = 0.6f)
+                                    },
+                                    fontSize = 11.sp,
+                                    fontWeight = FontWeight.Bold
                                 )
                             }
                         }
                     }
                 }
-
-                if (group.games.isNotEmpty()) {
-                    HorizontalDivider(color = Color.White.copy(alpha = 0.1f), modifier = Modifier.padding(horizontal = 8.dp))
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(vertical = 4.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Box(modifier = Modifier.width(ROUND_SEQ_COL_WIDTH_DP.dp), contentAlignment = Alignment.Center) {
-                            Text("Σ", color = GoldAccent.copy(alpha = 0.6f), fontSize = 12.sp, fontWeight = FontWeight.Bold)
-                        }
-                        Row(modifier = Modifier.horizontalScroll(scrollState)) {
-                            players.forEach { p ->
-                                val points = group.totalScoreByPlayer[p.player.id] ?: 0
-                                val money = points * pointRate
-                                Box(modifier = Modifier.width(ROUND_PLAYER_COL_WIDTH_DP.dp), contentAlignment = Alignment.Center) {
-                                    Text(
-                                        text = "${String.format("%.0f", money)}$currencySymbol",
-                                        color = when {
-                                            money > 0 -> Color(0xFF4CAF50)
-                                            money < 0 -> Color(0xFFFF5252)
-                                            else -> Color.White.copy(alpha = 0.6f)
-                                        },
-                                        fontSize = 11.sp,
-                                        fontWeight = FontWeight.Bold
-                                    )
-                                }
-                            }
-                        }
-                    }
-                }
-
-                Spacer(modifier = Modifier.height(4.dp))
             }
         }
     }
