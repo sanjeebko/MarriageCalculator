@@ -27,6 +27,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
+import np.com.sanjeeb.marriagecalculator.data.model.Currency
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import np.com.sanjeeb.marriagecalculator.ui.theme.DeepRedTika
@@ -132,14 +133,11 @@ fun RoundInputScreen(
                 Spacer(modifier = Modifier.height(24.dp))
 
                 // Player cards
-                val currencySymbol = uiState.settings.currency.displayName()
-                    .substringAfter("(", "").substringBefore(")").ifEmpty { "" }
-
                 uiState.playerStates.forEach { playerState ->
                     PlayerScoreCard(
                         state = playerState,
                         showPreview = uiState.showPreview,
-                        currencySymbol = currencySymbol,
+                        currency = uiState.settings.currency,
                         onSelectWinner = { viewModel.setWinner(playerState.player.id) },
                         onToggleSeen = { viewModel.toggleSeen(playerState.player.id) },
                         onToggleDuply = { viewModel.toggleDuply(playerState.player.id) },
@@ -205,7 +203,7 @@ fun RoundInputScreen(
 private fun PlayerScoreCard(
     state: PlayerRoundState,
     showPreview: Boolean,
-    currencySymbol: String,
+    currency: Currency,
     onSelectWinner: () -> Unit,
     onToggleSeen: () -> Unit,
     onToggleDuply: () -> Unit,
@@ -433,7 +431,7 @@ private fun PlayerScoreCard(
                             fontWeight = FontWeight.Bold
                         )
                         Text(
-                            text = "Money: ${if (state.previewMoney > 0) "+" else ""}${String.format("%.1f", state.previewMoney)}$currencySymbol",
+                            text = "Money: ${if (state.previewMoney > 0) "+" else ""}${currency.formatMoney(state.previewMoney)}",
                             color = scoreColor,
                             fontSize = 13.sp,
                             fontWeight = FontWeight.Bold

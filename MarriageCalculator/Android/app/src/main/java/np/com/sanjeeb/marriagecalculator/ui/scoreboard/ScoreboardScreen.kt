@@ -30,6 +30,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
+import np.com.sanjeeb.marriagecalculator.data.model.Currency
 import np.com.sanjeeb.marriagecalculator.data.model.Player
 import np.com.sanjeeb.marriagecalculator.ui.theme.DeepRedTika
 import np.com.sanjeeb.marriagecalculator.ui.theme.GoldAccent
@@ -124,7 +125,7 @@ fun ScoreboardScreen(
 @Composable
 private fun ScoreboardView(uiState: ScoreboardUiState, onSettle: () -> Unit) {
     val sortedPlayers = uiState.players.sortedByDescending { it.totalPoints }
-    val currency = uiState.settings.currency.displayName()
+    val currency = uiState.settings.currency
 
     LazyColumn(
         modifier = Modifier
@@ -169,7 +170,7 @@ private fun ScoreboardView(uiState: ScoreboardUiState, onSettle: () -> Unit) {
 }
 
 @Composable
-private fun PlayerScoreRow(playerScore: PlayerTotalScore, rank: Int, currency: String) {
+private fun PlayerScoreRow(playerScore: PlayerTotalScore, rank: Int, currency: Currency) {
     val scoreColor = when {
         playerScore.totalPoints > 0 -> Color(0xFF4CAF50)
         playerScore.totalPoints < 0 -> Color(0xFFFF5252)
@@ -241,7 +242,7 @@ private fun PlayerScoreRow(playerScore: PlayerTotalScore, rank: Int, currency: S
                     fontWeight = FontWeight.Bold
                 )
                 Text(
-                    "${String.format("%.0f", playerScore.totalMoney)} $currency",
+                    currency.formatMoney(playerScore.totalMoney),
                     color = scoreColor.copy(alpha = 0.7f),
                     fontSize = 12.sp
                 )
@@ -251,7 +252,7 @@ private fun PlayerScoreRow(playerScore: PlayerTotalScore, rank: Int, currency: S
 }
 
 @Composable
-private fun WhoOwesWhomSection(players: List<PlayerTotalScore>, pointRate: Double, currency: String) {
+private fun WhoOwesWhomSection(players: List<PlayerTotalScore>, pointRate: Double, currency: Currency) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(12.dp),
@@ -305,7 +306,7 @@ private fun WhoOwesWhomSection(players: List<PlayerTotalScore>, pointRate: Doubl
                             fontSize = 13.sp
                         )
                         Text(
-                            "${String.format("%.0f", amount)} $currency",
+                            currency.formatMoney(amount),
                             color = GoldAccent,
                             fontSize = 13.sp,
                             fontWeight = FontWeight.Bold
@@ -345,14 +346,6 @@ private const val PLAYER_COL_WIDTH_DP = 84
 private const val TOTAL_COL_WIDTH_DP = 84
 private const val CELL_ROW_HEIGHT_DP = 22
 
-private fun currencySymbol(displayName: String): String =
-    displayName.substringAfter("(", "").substringBefore(")").ifEmpty { displayName }
-
-private fun formatMoney(money: Double, symbol: String): String {
-    val sign = if (money > 0) "+" else if (money < 0) "-" else ""
-    return "$sign${String.format("%.1f", kotlin.math.abs(money))}$symbol"
-}
-
 @Composable
 private fun TableCell(text: String, widthDp: Int, color: Color, bold: Boolean = false) {
     Box(
@@ -390,11 +383,11 @@ private fun RoundHistoryView(uiState: ScoreboardUiState) {
 
     val horizontalScrollState = rememberScrollState()
     val players = uiState.players.map { it.player }
-    val currency = currencySymbol(uiState.settings.currency.displayName())
+    val currency = uiState.settings.currency
 
     Column(modifier = Modifier.fillMaxSize().padding(vertical = 12.dp)) {
         Text(
-            "Rate: ${uiState.settings.pointRate} $currency / point",
+            "Rate: ${uiState.settings.pointRate} ${currency.displayName().substringAfter("(", "").substringBefore(")")} / point",
             color = Color.White.copy(alpha = 0.5f),
             fontSize = 11.sp,
             modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp)
@@ -436,7 +429,7 @@ private fun RoundBlock(
     round: RoundSummary,
     players: List<Player>,
     scrollState: ScrollState,
-    currency: String
+    currency: Currency
 ) {
     val blockColor = ROUND_BLOCK_COLORS[(round.roundNumber - 1).mod(ROUND_BLOCK_COLORS.size)]
 
@@ -495,7 +488,7 @@ private fun RoundBlock(
                         bold = true
                     )
                     TableCell(
-                        formatMoney(entry?.money ?: 0.0, currency),
+                        currency.formatMoney(entry?.money ?: 0.0),
                         PLAYER_COL_WIDTH_DP,
                         Color.White.copy(alpha = 0.8f)
                     )
@@ -515,7 +508,7 @@ private fun TotalRow(
     playerTotals: List<PlayerTotalScore>,
     players: List<Player>,
     scrollState: ScrollState,
-    currency: String
+    currency: Currency
 ) {
     HorizontalDivider(color = Color.White.copy(alpha = 0.2f), modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp))
     Row(
@@ -528,7 +521,7 @@ private fun TotalRow(
         players.forEach { p ->
             val total = playerTotals.find { it.player.id == p.id }?.totalMoney ?: 0.0
             TableCell(
-                formatMoney(total, currency),
+                currency.formatMoney(total),
                 PLAYER_COL_WIDTH_DP,
                 if (total > 0) Color(0xFF4CAF50) else if (total < 0) Color(0xFFFF5252) else Color.White,
                 bold = true

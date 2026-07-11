@@ -53,6 +53,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import kotlinx.coroutines.delay
+import np.com.sanjeeb.marriagecalculator.data.model.Currency
 import np.com.sanjeeb.marriagecalculator.data.model.Player
 import np.com.sanjeeb.marriagecalculator.data.model.User
 import np.com.sanjeeb.marriagecalculator.ui.gamesetup.PlayerMappingDialog
@@ -188,7 +189,7 @@ fun PlayGameScreen(
                     roundGroups = uiState.roundGroups,
                     players = uiState.players,
                     nextDealerId = uiState.nextDealerId,
-                    currencySymbol = currencySymbol(uiState.settings.currency.displayName()),
+                    currency = uiState.settings.currency,
                     pointRate = uiState.settings.pointRate,
                     isHost = uiState.isHost && !uiState.isSettled,
                     onGameClick = { gameForDetails = it },
@@ -256,14 +257,14 @@ fun PlayGameScreen(
                     enter = expandVertically(animationSpec = tween(200)) + fadeIn(animationSpec = tween(200)),
                     exit = shrinkVertically(animationSpec = tween(150)) + fadeOut(animationSpec = tween(150))
                 ) {
-                    val currencySymbolText = currencySymbol(uiState.settings.currency.displayName())
+                    
                     Column(modifier = Modifier.padding(top = 4.dp)) {
                         uiState.players.forEach { standings ->
                             PlayerStandingsRow(
                                 standings = standings,
                                 isHost = uiState.isHost,
                                 currentUserEmail = uiState.currentUserEmail,
-                                currencySymbol = currencySymbolText,
+                                currency = uiState.settings.currency,
                                 onMapClick = { selectedPlayerToMap = standings.player },
                                 onNudgeClick = {
                                     viewModel.nudgePlayer(standings.player.id, gameSetId)
@@ -373,7 +374,7 @@ fun PlayGameScreen(
     gameForDetails?.let { game ->
         RoundDetailsDialog(
             game = game,
-            currencySymbol = currencySymbol(uiState.settings.currency.displayName()),
+            currency = uiState.settings.currency,
             onDismiss = { gameForDetails = null }
         )
     }
@@ -443,15 +444,12 @@ private fun ConfirmDeleteDialog(title: String, message: String, onConfirm: () ->
 
 data class PlayerTooltipAnchor(val player: Player, val position: Offset, val size: IntSize)
 
-private fun currencySymbol(displayName: String): String =
-    displayName.substringAfter("(", "").substringBefore(")").ifEmpty { displayName }
-
 @Composable
 private fun PlayerStandingsRow(
     standings: PlayerStandings,
     isHost: Boolean,
     currentUserEmail: String,
-    currencySymbol: String,
+    currency: Currency,
     onMapClick: () -> Unit,
     onNudgeClick: () -> Unit
 ) {
@@ -579,7 +577,7 @@ private fun PlayerStandingsRow(
                     fontWeight = FontWeight.Bold
                 )
                 Text(
-                    text = "${String.format("%.0f", standings.totalMoney)}$currencySymbol",
+                    text = currency.formatMoney(standings.totalMoney),
                     color = scoreColor.copy(alpha = 0.7f),
                     fontSize = 10.sp
                 )
@@ -628,7 +626,7 @@ private fun CompactRoundsTable(
     roundGroups: List<RoundGroup>,
     players: List<PlayerStandings>,
     nextDealerId: String,
-    currencySymbol: String,
+    currency: Currency,
     pointRate: Double,
     isHost: Boolean,
     onGameClick: (GameEntry) -> Unit,
@@ -671,7 +669,7 @@ private fun CompactRoundsTable(
                 players = group.seatOrder.ifEmpty { currentSeatOrder },
                 nextDealerId = nextDealerId,
                 mode = mode,
-                currencySymbol = currencySymbol,
+                currency = currency,
                 pointRate = pointRate,
                 isHost = isHost,
                 isLatestRound = index == 0,
@@ -694,7 +692,7 @@ private fun RoundBlock(
     players: List<Player>,
     nextDealerId: String,
     mode: RoundDisplayMode,
-    currencySymbol: String,
+    currency: Currency,
     pointRate: Double,
     isHost: Boolean,
     isLatestRound: Boolean,
@@ -851,7 +849,7 @@ private fun RoundBlock(
                             CompactRoundCell(
                                 entry = entry,
                                 mode = mode,
-                                currencySymbol = currencySymbol,
+                                currency = currency,
                                 isDealer = game.dealerId == p.id,
                                 isWinner = !isPending && game.winnerId == p.id,
                                 modifier = Modifier.width(ROUND_PLAYER_COL_WIDTH_DP.dp)
@@ -878,7 +876,7 @@ private fun RoundBlock(
                             val money = points * pointRate
                             Box(modifier = Modifier.width(ROUND_PLAYER_COL_WIDTH_DP.dp), contentAlignment = Alignment.Center) {
                                 Text(
-                                    text = "${String.format("%.0f", money)}$currencySymbol",
+                                    text = currency.formatMoney(money),
                                     color = when {
                                         money > 0 -> Color(0xFF4CAF50)
                                         money < 0 -> Color(0xFFFF5252)
@@ -915,7 +913,7 @@ private fun ModeTab(label: String, selected: Boolean, onClick: () -> Unit) {
 private fun CompactRoundCell(
     entry: RoundPlayerEntry?,
     mode: RoundDisplayMode,
-    currencySymbol: String,
+    currency: Currency,
     isDealer: Boolean,
     isWinner: Boolean = false,
     modifier: Modifier = Modifier
@@ -991,7 +989,7 @@ private fun CompactRoundCell(
             }
         }
         Text(
-            text = "${String.format("%.0f", money)}$currencySymbol",
+            text = currency.formatMoney(money),
             color = moneyColor.copy(alpha = cellAlpha),
             fontSize = 10.sp
         )
@@ -999,7 +997,7 @@ private fun CompactRoundCell(
 }
 
 @Composable
-private fun RoundDetailsDialog(game: GameEntry, currencySymbol: String, onDismiss: () -> Unit) {
+private fun RoundDetailsDialog(game: GameEntry, currency: Currency, onDismiss: () -> Unit) {
     val dealerName = game.playerEntries.find { it.playerId == game.dealerId }?.playerName
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -1100,7 +1098,7 @@ private fun RoundDetailsDialog(game: GameEntry, currencySymbol: String, onDismis
                                     fontSize = 14.sp
                                 )
                                 Text(
-                                    text = "${String.format("%.1f", entry.money)}$currencySymbol",
+                                    text = currency.formatMoney(entry.money),
                                     color = Color.White.copy(alpha = 0.6f),
                                     fontSize = 11.sp
                                 )

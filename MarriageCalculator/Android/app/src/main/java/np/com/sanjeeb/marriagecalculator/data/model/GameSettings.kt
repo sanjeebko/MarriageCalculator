@@ -16,6 +16,23 @@ enum class Currency {
         USD_Cent -> "USD (¢)"
         AUD_Cent -> "AUD (¢)"
     }
+
+    /**
+     * Formats a money amount for display. Amounts are denominated in this currency's rate unit -
+     * pence/cents for GBP/USD/AUD, whole rupees for NPR/INR - so minor-unit currencies convert
+     * to the major unit: 230p -> £2.30, 230¢ -> $2.30, while rupees stay whole: ₹230, ₨230.
+     */
+    fun formatMoney(amount: Double): String {
+        val sign = if (amount < 0) "-" else ""
+        val abs = kotlin.math.abs(amount)
+        return when (this) {
+            NPR_Rupee -> "$sign₨${String.format("%.0f", abs)}"
+            INR_Rupee -> "$sign₹${String.format("%.0f", abs)}"
+            GBP_Pence -> "$sign£${String.format("%.2f", abs / 100)}"
+            USD_Cent -> "$sign$${String.format("%.2f", abs / 100)}"
+            AUD_Cent -> "${sign}A$${String.format("%.2f", abs / 100)}"
+        }
+    }
 }
 
 enum class FoulPointBonusType {
