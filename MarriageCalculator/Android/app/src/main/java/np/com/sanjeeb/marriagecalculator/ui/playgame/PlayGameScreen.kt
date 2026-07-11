@@ -892,6 +892,7 @@ private fun RoundBlock(
                                 mode = mode,
                                 currencySymbol = currencySymbol,
                                 isDealer = game.dealerId == p.id,
+                                isWinner = !isPending && game.winnerId == p.id,
                                 modifier = Modifier.width(ROUND_PLAYER_COL_WIDTH_DP.dp)
                             )
                         }
@@ -955,6 +956,7 @@ private fun CompactRoundCell(
     mode: RoundDisplayMode,
     currencySymbol: String,
     isDealer: Boolean,
+    isWinner: Boolean = false,
     modifier: Modifier = Modifier
 ) {
     val topValue = when (mode) {
@@ -974,8 +976,37 @@ private fun CompactRoundCell(
     }
     val cellAlpha = if (entry?.isSeen == true) 1f else 0.5f
 
+    // The winner is fixed once a game is submitted - mark their cell with a frosted-glass pill:
+    // rounded rectangle, translucent gradient fill, and a light-catching gradient border.
+    val winnerGlass = if (isWinner) {
+        Modifier
+            .padding(horizontal = 2.dp)
+            .clip(RoundedCornerShape(8.dp))
+            .background(
+                Brush.verticalGradient(
+                    listOf(
+                        Color.White.copy(alpha = 0.22f),
+                        Color(0xFF4CAF50).copy(alpha = 0.10f),
+                        Color.White.copy(alpha = 0.04f)
+                    )
+                )
+            )
+            .border(
+                width = 1.dp,
+                brush = Brush.verticalGradient(
+                    listOf(
+                        Color.White.copy(alpha = 0.50f),
+                        Color(0xFF4CAF50).copy(alpha = 0.25f),
+                        Color.White.copy(alpha = 0.06f)
+                    )
+                ),
+                shape = RoundedCornerShape(8.dp)
+            )
+            .padding(vertical = 2.dp)
+    } else Modifier
+
     Column(
-        modifier = modifier,
+        modifier = modifier.then(winnerGlass),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {

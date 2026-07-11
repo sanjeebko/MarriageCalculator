@@ -3,7 +3,7 @@
 ## Problem Statement
 Build a full-featured Android (Kotlin/Compose) app for the Marriage card game calculator, backed by the existing .NET API. The app must handle 2-6 players with efficient screen space usage, support offline/online modes, real-time score display, and integrate with the C# API hosted on Kubernetes. The Maui version is archived and replaced by this native Android app.
 
-## Status: Phases 1-20 COMPLETE ✅
+## Status: Phases 1-21 COMPLETE ✅
 - 44 C# tests (12 Core + 32 API) + 74 Android unit tests all passing
 - Android APK builds successfully (`assembleDebug`)
 - .NET API builds successfully
@@ -251,6 +251,13 @@ User feedback on the actual table rules: after a round completes, players reshuf
 - **COMMIT**: "fix: persist seat-order and dealer history to the database on first load"
 - [x] Step 20.8: **Follow-up (user feedback)** — "Seat order can be fixed for round, as the shuffle happens only after round is completed." Enforced the rule everywhere, not just via snapshots: the Standings "Arrange Seats" action is disabled (dimmed, label "Seats locked until round ends") while any round is in progress; `UpdateGameSetAsync` (API) rejects a player-order change with 400 while an open round exists (controller maps `InvalidOperationException` → BadRequest); `updateGameSetPlayerPositions` (Room) throws the same guard offline, surfaced through `reorderPlayers`' existing error handling. The Reshuffle banner already only appears after round completion, so between-rounds reshuffling remains one tap. Verified live: with no round open, "Arrange Seats" is active; after submitting a game (Round 3 in progress), it reads "Seats locked until round ends" and doesn't respond to taps; the standings DEALER chip correctly moved to the top seat (deal wrapped after the last seat dealt game 1); the test game was then removed via Undo Last Game, restoring the not-started preview.
 - **COMMIT**: "feat: lock seat rearrangement while a round is in progress"
+
+---
+
+## Phase 21: Winner Cell Glass Highlight (Complete)
+- [x] Step 21.1: Each submitted game's winner is immutable, so the winner's cell in the rounds table gets a permanent frosted-glass pill: rounded 8dp rectangle, translucent white→green→transparent vertical gradient fill, and a light-catching gradient border (`CompactRoundCell` gains `isWinner`, set from the stored `game.winnerId` - never the pending placeholder row). The details dialog's green winner glow is unchanged.
+- [x] Step 21.2: Verify — build/tests green; live on the emulator: Round 1's pill sits on AAR (400p winner) and Round 2's on SUS - correctly following the *stored* winner rather than the biggest earner (PLA out-earned SUS via maal that game but didn't win it).
+- **COMMIT**: "feat: frosted-glass highlight on each game's winner cell"
 
 ---
 
