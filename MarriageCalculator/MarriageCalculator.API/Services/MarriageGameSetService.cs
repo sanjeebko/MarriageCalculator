@@ -547,6 +547,27 @@ public class MarriageGameSetService : IMarriageGameSetService
 
         // 3. Fetch Rounds & Games
         var rounds = await _context.MarriageGameRounds.Find(r => r.MarriageGameSetId == gameSet.Id).SortBy(r => r.Sequence).ToListAsync();
+
+        // One-time backfill: rounds created before per-round seat snapshots existed get the
+        // game set's current order PERSISTED now, so history is stored data - never derived
+        // again, and never affected by later reshuffles.
+        var unsnapshotted = rounds.Where(r => r.PlayerIds == null || r.PlayerIds.Count == 0).ToList();
+        if (unsnapshotted.Count > 0 && gameSet.PlayerIds.Count > 0)
+        {
+            var filter = Builders<MarriageGameRound>.Filter.And(
+                Builders<MarriageGameRound>.Filter.Eq(r => r.MarriageGameSetId, gameSet.Id),
+                Builders<MarriageGameRound>.Filter.Or(
+                    Builders<MarriageGameRound>.Filter.Exists(r => r.PlayerIds, false),
+                    Builders<MarriageGameRound>.Filter.Size(r => r.PlayerIds, 0)));
+            await _context.MarriageGameRounds.UpdateManyAsync(
+                filter,
+                Builders<MarriageGameRound>.Update.Set(r => r.PlayerIds, gameSet.PlayerIds));
+            foreach (var r in unsnapshotted)
+            {
+                r.PlayerIds = [.. gameSet.PlayerIds];
+            }
+        }
+
         dto.Rounds = new List<MarriageGameRoundDto>();
 
         foreach (var r in rounds)
@@ -575,6 +596,21 @@ public class MarriageGameSetService : IMarriageGameSetService
         };
 
         var games = await _context.MarriageGames.Find(g => g.MarriageGameRoundId == r.Id).SortBy(g => g.Sequence).ToListAsync();
+
+        // One-time backfill: games recorded before dealer tracking existed get their dealer
+        // computed from the round's rotation (last seat deals the round's first game, then the
+        // deal wraps to the top) and PERSISTED, so it's stored data - never derived again.
+        if (r.PlayerIds is { Count: > 0 })
+        {
+            foreach (var g in games.Where(g => string.IsNullOrEmpty(g.DealerId)))
+            {
+                g.DealerId = r.PlayerIds[(r.PlayerIds.Count - 1 + g.Sequence - 1) % r.PlayerIds.Count];
+                await _context.MarriageGames.UpdateOneAsync(
+                    x => x.Id == g.Id,
+                    Builders<MarriageGame>.Update.Set(x => x.DealerId, g.DealerId));
+            }
+        }
+
         var gameIds = games.Select(g => g.Id).ToList();
         var scores = gameIds.Count > 0
             ? await _context.MarriageGameScores.Find(s => gameIds.Contains(s.MarriageGameId)).ToListAsync()

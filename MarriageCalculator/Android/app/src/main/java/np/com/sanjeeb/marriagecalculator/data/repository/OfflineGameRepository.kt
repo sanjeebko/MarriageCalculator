@@ -209,6 +209,33 @@ class OfflineGameRepository @Inject constructor(
     }
 
     /**
+     * One-time backfill so round history is stored data, never derived: games saved before seat
+     * snapshots existed get the current seating persisted as theirs, and games saved before
+     * dealer tracking (dealerId 0) get their dealer computed once from the round's rotation
+     * (last seat deals a round's first game, then the deal wraps to the top) and persisted.
+     */
+    suspend fun backfillRoundHistory(gameSetId: Int) {
+        val players = gameSetPlayerDao.getPlayersForGameSet(gameSetId)
+        if (players.isEmpty()) return
+        roundDao.backfillSeatOrder(gameSetId, players.joinToString(",") { it.id.toString() })
+
+        val games = roundDao.getRoundsForGameSet(gameSetId).first().sortedBy { it.roundNumber }
+        var bucketSize = 0
+        var bucketSeats: List<Int> = players.map { it.id }
+        for (g in games) {
+            if (bucketSize == 0) {
+                bucketSeats = g.seatOrder.split(",").mapNotNull { it.toIntOrNull() }
+                    .takeIf { it.size == players.size } ?: players.map { it.id }
+            }
+            if (g.dealerId == 0) {
+                roundDao.setDealer(g.id, bucketSeats[(bucketSeats.size - 1 + bucketSize) % bucketSeats.size])
+            }
+            bucketSize++
+            if (bucketSize >= players.size || g.closesRound) bucketSize = 0
+        }
+    }
+
+    /**
      * State of the current open logical round: how many games it has so far (0 if the last round
      * closed and a new one hasn't started), and the seat order its first game was played with
      * (null if the round is empty or predates seat-order snapshots).

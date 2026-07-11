@@ -207,6 +207,10 @@ class PlayGameViewModel @Inject constructor(
                 val players = offlineGameRepository.getGameSetPlayers(gameSetId)
                 val settings = offlineGameRepository.getGameSettings(gameSet.settingsId) ?: GameSettings.default()
 
+                // Persist any missing seat-order/dealer history once, so the table below always
+                // renders stored data rather than re-deriving it.
+                offlineGameRepository.backfillRoundHistory(gameSetId)
+
                 offlineGameRepository.getRounds(gameSetId).collect { roundEntities ->
                     val allScores = offlineGameRepository.getAllScoresForGameSet(gameSetId)
                     val scoresByRound = allScores.groupBy { it.roundId }
