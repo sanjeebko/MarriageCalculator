@@ -251,7 +251,9 @@ public class MarriageGameSetService : IMarriageGameSetService
             {
                 Sequence = (int)existingRoundsCount + 1,
                 MarriageGameSetId = gameSetId,
-                Completed = false
+                Completed = false,
+                // Snapshot the seating so a later reshuffle doesn't rewrite this round's history.
+                PlayerIds = [.. gameSet.PlayerIds]
             };
             await _context.MarriageGameRounds.InsertOneAsync(round);
         }
@@ -548,6 +550,7 @@ public class MarriageGameSetService : IMarriageGameSetService
             Sequence = r.Sequence,
             MarriageGameSetId = r.MarriageGameSetId,
             Completed = r.Completed,
+            PlayerIds = r.PlayerIds,
             MarriageGames = new List<MarriageGameDto>(),
             TotalScore = new Dictionary<string, double>()
         };

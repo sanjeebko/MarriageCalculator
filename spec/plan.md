@@ -3,7 +3,7 @@
 ## Problem Statement
 Build a full-featured Android (Kotlin/Compose) app for the Marriage card game calculator, backed by the existing .NET API. The app must handle 2-6 players with efficient screen space usage, support offline/online modes, real-time score display, and integrate with the C# API hosted on Kubernetes. The Maui version is archived and replaced by this native Android app.
 
-## Status: Phases 1-19 COMPLETE ✅
+## Status: Phases 1-20 COMPLETE ✅
 - 44 C# tests (12 Core + 32 API) + 74 Android unit tests all passing
 - Android APK builds successfully (`assembleDebug`)
 - .NET API builds successfully
@@ -234,6 +234,17 @@ Three levels of destructive edit, scoped down per user clarification: only the s
 - **COMMIT**: "fix: refresh dashboard on resume and clean up local mirror on game-set delete"
 - [x] Step 19.9: **Bug found & fixed post-release** — user reported seeing "Round Complete! Every player has dealt" while "the last round has 0 games... all 0" on screen, and questioned how that satisfies "every player must deal in the same round." Root cause was UI clarity, not a data bug: `CompactRoundsTable` synthesizes a purely-cosmetic preview round card (0 games, blank placeholder row) whenever no real round is open, so the table always shows what the next round will look like. Sorted latest-first, that synthetic card sits directly under the "Round Complete!" banner - so it reads as if the completed round is the empty one, when the banner actually refers to the real (fully-dealt) round further down. Fixed two ways: the banner now names the round ("Round 2 Complete!" instead of generic "Round Complete!"), and a round header only says "in progress" once it has at least one real game — an empty synthetic round now says "not started" instead. Verified live against the real `2026-07-08` game (which was already sitting in exactly this state from Phase 19's round-deletion testing): banner now reads "Round 2 Complete!" and the empty card above it reads "Round 3 · not started."
 - **COMMIT**: "fix: clarify which round completed vs the not-yet-started placeholder"
+
+---
+
+## Phase 20: Per-Round Seat Order + Round-Relative Dealer Rotation (Complete)
+User feedback on the actual table rules: after a round completes, players reshuffle seats (via the app or by drawing cards manually) and the person who drew the lowest card - seated LAST in the list - deals the new round's first game. Two gaps vs. that: dealer rotation was computed from the *overall* game count (so a round closed early skewed who deals next round), and seat order was a single global list (a reshuffle silently rewrote every historical round's column order).
+- [x] Step 20.1: **API** — `MarriageGameRound` gains `PlayerIds`: the game set's seat order snapshotted at round creation in `SubmitRoundAsync`, exposed through `MarriageGameRoundDto`. Legacy rounds have an empty list; clients fall back to the game set's current order for them.
+- [x] Step 20.2: **Android (offline/Room)** — `RoundEntity` gains `seatOrder` (CSV of player ids at save time; DB v3→4, destructive). A logical round's seat order = its first game's snapshot. New `OfflineGameRepository.getOpenRoundState(gameSetId, playerCount)` returns games-in-open-round + that round's seat order, reusing the same bucket-chunking rule as display.
+- [x] Step 20.3: **Android** — `RoundGroup` gains `seatOrder: List<Player>`; new shared `nextDealerFor(seatOrder, gamesInOpenRound)` = `seatOrder[(size - 1 + gamesInOpenRound) % size]` - i.e. the round's first game is dealt by the LAST seat, then the deal wraps to the top. Replaces the global `(totalGamesPlayed - 1 + size) % size` formula in both `PlayGameViewModel` branches AND `RoundInputViewModel.loadGameData` (which now derives the open round from the game set / Room instead of the passed game number, and lists players in the round's seat order). Standings' DEALER chip now matches by player id rather than list index.
+- [x] Step 20.4: **Android UI** — `RoundBlock` renders `group.seatOrder` (falling back to the current order for legacy rounds), so each round keeps the columns it was played with; the not-started preview round uses the game set's current (possibly just-reshuffled) order.
+- [x] Step 20.5: Verify — `dotnet test` 44/44, `gradlew testDebugUnitTest`/`assembleDebug` green, Docker API rebuilt+redeployed; live on the emulator: with Rounds 1-2 both closed early after 1 game (previously skewing the old formula to seat #2), the Round 3 preview's D badge correctly sat on the LAST seat; Arrange Seats dialog's DEALER chip tracked the last seat through a shuffle; RoundInput assigned the same dealer and listed players in the new order; after submitting a game, the next pending game's D badge wrapped to the FIRST seat; a second mid-flight reshuffle left the open Round 3's columns untouched (snapshot held) while legacy Rounds 1-2 re-rendered in the new order with per-player data still correct; the test game was then removed via Undo Last Game, restoring the "not started" preview under the newest order with D on its last seat.
+- **COMMIT**: "feat: per-round seat order snapshots and round-relative dealer rotation"
 
 ---
 

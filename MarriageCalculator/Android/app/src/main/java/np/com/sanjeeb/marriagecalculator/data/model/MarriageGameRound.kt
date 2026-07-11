@@ -7,6 +7,8 @@ data class MarriageGameRound(
     @SerializedName("sequence") val sequence: Int = 0,
     @SerializedName("marriageGameSetId") val marriageGameSetId: String = "",
     @SerializedName("completed") val completed: Boolean = false,
+    /** Seat order snapshotted when the round started; empty for legacy rounds (fall back to game-set order). */
+    @SerializedName("playerIds") val playerIds: List<String>? = null,
     @SerializedName("marriageGames") val marriageGames: List<MarriageGame>? = null,
     @SerializedName("totalScore") val totalScore: Map<String, Double>? = null
 )

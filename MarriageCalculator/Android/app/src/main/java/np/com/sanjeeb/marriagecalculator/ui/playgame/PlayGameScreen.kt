@@ -640,7 +640,7 @@ private enum class RoundDisplayMode { MAAL, POINTS }
 private const val ROUND_SEQ_COL_WIDTH_DP = 26
 private const val ROUND_PLAYER_COL_WIDTH_DP = 52
 
-private fun blankGameEntry(players: List<PlayerStandings>, dealerId: String, sequenceInRound: Int): GameEntry {
+private fun blankGameEntry(players: List<Player>, dealerId: String, sequenceInRound: Int): GameEntry {
     return GameEntry(
         gameId = "pending",
         gameSequenceInRound = sequenceInRound,
@@ -650,8 +650,8 @@ private fun blankGameEntry(players: List<PlayerStandings>, dealerId: String, seq
         totalMaal = 0,
         playerEntries = players.map { p ->
             RoundPlayerEntry(
-                playerId = p.player.id,
-                playerName = p.player.name,
+                playerId = p.id,
+                playerName = p.name,
                 isSeen = false,
                 isDublee = false,
                 isWinner = false,
@@ -687,11 +687,14 @@ private fun CompactRoundsTable(
     var mode by remember { mutableStateOf(RoundDisplayMode.MAAL) }
 
     val hasOpenRound = roundGroups.any { !it.isCompleted }
-    val displayGroups = remember(roundGroups) {
+    val currentSeatOrder = players.map { it.player }
+    val displayGroups = remember(roundGroups, players) {
         val groups = roundGroups.toMutableList()
         if (!hasOpenRound) {
+            // Preview of the upcoming round - it uses the game set's current (possibly just
+            // reshuffled) seat order, unlike the historical rounds above which keep their own.
             val nextSeq = (groups.maxOfOrNull { it.roundSequence } ?: 0) + 1
-            groups.add(RoundGroup(roundId = "", roundSequence = nextSeq, isCompleted = false))
+            groups.add(RoundGroup(roundId = "", roundSequence = nextSeq, isCompleted = false, seatOrder = currentSeatOrder))
         }
         groups.sortedByDescending { it.roundSequence }
     }
@@ -711,7 +714,7 @@ private fun CompactRoundsTable(
         displayGroups.forEachIndexed { index, group ->
             RoundBlock(
                 group = group,
-                players = players,
+                players = group.seatOrder.ifEmpty { currentSeatOrder },
                 nextDealerId = nextDealerId,
                 mode = mode,
                 currencySymbol = currencySymbol,
@@ -729,11 +732,11 @@ private fun CompactRoundsTable(
     }
 }
 
-/** One self-contained round: its own header row, game rows, and total row - a repeatable unit. */
+/** One self-contained round: its own header row, game rows, and total row - a repeatable unit. Renders the seat order this round was played with. */
 @Composable
 private fun RoundBlock(
     group: RoundGroup,
-    players: List<PlayerStandings>,
+    players: List<Player>,
     nextDealerId: String,
     mode: RoundDisplayMode,
     currencySymbol: String,
@@ -826,11 +829,11 @@ private fun RoundBlock(
                                     headerPosition = coords.positionInRoot()
                                     headerSize = coords.size
                                 }
-                                .clickable { onPlayerHeaderClick(p.player, headerPosition, headerSize) },
+                                .clickable { onPlayerHeaderClick(p, headerPosition, headerSize) },
                             contentAlignment = Alignment.Center
                         ) {
                             Text(
-                                text = p.player.name.take(3).uppercase(),
+                                text = p.name.take(3).uppercase(),
                                 color = GoldAccent.copy(alpha = 0.8f),
                                 fontSize = 10.sp,
                                 fontWeight = FontWeight.Bold
@@ -874,12 +877,12 @@ private fun RoundBlock(
 
                     Row(modifier = Modifier.horizontalScroll(scrollState)) {
                         players.forEach { p ->
-                            val entry = game.playerEntries.find { it.playerId == p.player.id }
+                            val entry = game.playerEntries.find { it.playerId == p.id }
                             CompactRoundCell(
                                 entry = entry,
                                 mode = mode,
                                 currencySymbol = currencySymbol,
-                                isDealer = game.dealerId == p.player.id,
+                                isDealer = game.dealerId == p.id,
                                 modifier = Modifier.width(ROUND_PLAYER_COL_WIDTH_DP.dp)
                             )
                         }
@@ -900,7 +903,7 @@ private fun RoundBlock(
                     }
                     Row(modifier = Modifier.horizontalScroll(scrollState)) {
                         players.forEach { p ->
-                            val points = group.totalScoreByPlayer[p.player.id] ?: 0
+                            val points = group.totalScoreByPlayer[p.id] ?: 0
                             val money = points * pointRate
                             Box(modifier = Modifier.width(ROUND_PLAYER_COL_WIDTH_DP.dp), contentAlignment = Alignment.Center) {
                                 Text(

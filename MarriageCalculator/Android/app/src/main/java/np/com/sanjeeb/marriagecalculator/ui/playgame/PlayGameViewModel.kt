@@ -42,8 +42,19 @@ data class RoundGroup(
     val roundSequence: Int,
     val isCompleted: Boolean,
     val games: List<GameEntry> = emptyList(),
-    val totalScoreByPlayer: Map<String, Int> = emptyMap()
+    val totalScoreByPlayer: Map<String, Int> = emptyMap(),
+    /** Seat order this round was (or is being) played with - a reshuffle between rounds must not rewrite history. */
+    val seatOrder: List<Player> = emptyList()
 )
+
+/**
+ * Dealer rule: the last player in the round's seat order deals the round's first game (they drew
+ * the lowest card at reshuffle), then the deal wraps to the top of the list. Rotation is relative
+ * to the round, not the overall game count, so closing a round early still restarts the deal.
+ */
+fun nextDealerFor(seatOrder: List<Player>, gamesInOpenRound: Int): Player? =
+    if (seatOrder.isEmpty()) null
+    else seatOrder[(seatOrder.size - 1 + gamesInOpenRound) % seatOrder.size]
 
 data class PlayGameUiState(
     val gameName: String = "",
@@ -90,6 +101,10 @@ class PlayGameViewModel @Inject constructor(
                         val settings = gameSet.gameSettings ?: GameSettings.default()
 
                         val roundGroups = gameSet.rounds?.sortedBy { it.sequence }?.map { r ->
+                            val seatOrder = r.playerIds
+                                ?.mapNotNull { pid -> players.find { it.id == pid } }
+                                ?.takeIf { it.size == players.size }
+                                ?: players // legacy rounds predate seat-order snapshots
                             val games = r.marriageGames?.sortedBy { it.sequence }?.map { g ->
                                 val winnerName = players.find { it.id == g.winnerId }?.name ?: "Unknown"
                                 val playerEntries = players.map { p ->
@@ -121,17 +136,22 @@ class PlayGameViewModel @Inject constructor(
                                 roundSequence = r.sequence,
                                 isCompleted = r.completed,
                                 games = games,
-                                totalScoreByPlayer = r.totalScore?.mapValues { it.value.toInt() } ?: emptyMap()
+                                totalScoreByPlayer = r.totalScore?.mapValues { it.value.toInt() } ?: emptyMap(),
+                                seatOrder = seatOrder
                             )
                         } ?: emptyList()
 
                         val totalGamesPlayed = roundGroups.sumOf { it.games.size }
-                        // Must match RoundInputViewModel.loadGameData's dealer formula (roundNumber - 2 + size) % size,
-                        // where roundNumber = totalGamesPlayed + 1: simplifies to (totalGamesPlayed - 1 + size) % size.
-                        val nextDealerIndex = if (players.isNotEmpty()) (totalGamesPlayed - 1 + players.size) % players.size else 0
-                        val nextDealer = players.getOrNull(nextDealerIndex)
+                        // Dealer rotates within the round: the open round's seat order if one
+                        // exists, otherwise the (possibly reshuffled) game-set order for the
+                        // round about to start. Must match RoundInputViewModel.loadGameData.
+                        val openRound = roundGroups.lastOrNull { !it.isCompleted }
+                        val nextDealer = nextDealerFor(
+                            seatOrder = openRound?.seatOrder ?: players,
+                            gamesInOpenRound = openRound?.games?.size ?: 0
+                        )
 
-                        val standings = gameSetPlayers.mapIndexed { index, gsp ->
+                        val standings = gameSetPlayers.map { gsp ->
                             val p = gsp.player ?: Player(id = gsp.playerId, name = "Unknown")
                             var netPoints = 0
                             gameSet.rounds?.forEach { r ->
@@ -142,7 +162,7 @@ class PlayGameViewModel @Inject constructor(
                                 player = p,
                                 netPoints = netPoints,
                                 totalMoney = netPoints * settings.pointRate,
-                                isNextDealer = index == nextDealerIndex
+                                isNextDealer = p.id == nextDealer?.id
                             )
                         }
 
@@ -191,7 +211,14 @@ class PlayGameViewModel @Inject constructor(
                     val orderedGames = roundEntities.sortedBy { it.roundNumber }
                     val roundGroups = mutableListOf<RoundGroup>()
                     var bucket = mutableListOf<GameEntry>()
+                    var bucketSeatCsv: String? = null
                     var roundSeq = 1
+
+                    fun seatsFrom(csv: String?): List<Player> = csv
+                        ?.split(",")
+                        ?.mapNotNull { id -> players.find { it.id == id } }
+                        ?.takeIf { it.size == players.size }
+                        ?: players // legacy games predate seat-order snapshots
 
                     fun flushBucket(isCompleted: Boolean) {
                         if (bucket.isEmpty()) return
@@ -203,10 +230,12 @@ class PlayGameViewModel @Inject constructor(
                                 games = bucket.toList(),
                                 totalScoreByPlayer = bucket.flatMap { it.playerEntries }
                                     .groupBy { it.playerId }
-                                    .mapValues { entry -> entry.value.sumOf { e -> e.score } }
+                                    .mapValues { entry -> entry.value.sumOf { e -> e.score } },
+                                seatOrder = seatsFrom(bucketSeatCsv)
                             )
                         )
                         bucket = mutableListOf()
+                        bucketSeatCsv = null
                         roundSeq++
                     }
 
@@ -227,6 +256,7 @@ class PlayGameViewModel @Inject constructor(
                                 money = (pScore?.score ?: 0) * settings.pointRate
                             )
                         }
+                        if (bucket.isEmpty()) bucketSeatCsv = r.seatOrder.takeIf { it.isNotBlank() }
                         bucket.add(
                             GameEntry(
                                 gameId = r.id.toString(),
@@ -245,18 +275,22 @@ class PlayGameViewModel @Inject constructor(
                     flushBucket(isCompleted = false)
 
                     val totalGamesPlayed = orderedGames.size
-                    // Must match RoundInputViewModel's dealer formula: (totalGamesPlayed - 1 + size) % size.
-                    val nextDealerIndex = if (players.isNotEmpty()) (totalGamesPlayed - 1 + players.size) % players.size else 0
-                    val nextDealer = players.getOrNull(nextDealerIndex)
+                    // Dealer rotates within the round - same rule as the online branch and
+                    // RoundInputViewModel.loadGameData.
+                    val openRound = roundGroups.lastOrNull { !it.isCompleted }
+                    val nextDealer = nextDealerFor(
+                        seatOrder = openRound?.seatOrder ?: players,
+                        gamesInOpenRound = openRound?.games?.size ?: 0
+                    )
 
-                    val standings = players.mapIndexed { index, p ->
+                    val standings = players.map { p ->
                         val pScores = allScores.filter { it.playerId == p.id.toInt() }
                         val netPoints = pScores.sumOf { it.score }
                         PlayerStandings(
                             player = p,
                             netPoints = netPoints,
                             totalMoney = netPoints * settings.pointRate,
-                            isNextDealer = index == nextDealerIndex
+                            isNextDealer = p.id == nextDealer?.id
                         )
                     }
 

@@ -69,17 +69,31 @@ class RoundInputViewModel @Inject constructor(
             val isLocalId = gameSetIdStr.toIntOrNull() != null
             val isOnline = sessionManager.isOnlineMode() && !isLocalId
 
-            val players: List<Player>
+            // Seat order for the round this game belongs to (the open round's snapshot, or the
+            // game set's current - possibly just reshuffled - order if a fresh round is starting),
+            // plus how many games that round already has. Dealer rotation is relative to the
+            // round: its first game is dealt by the LAST player in the seat order (the lowest-card
+            // picker at reshuffle), then the deal wraps to the top of the list. Must match
+            // PlayGameViewModel's nextDealerFor.
+            val seatOrder: List<Player>
+            val gamesInOpenRound: Int
             val settings: GameSettings
 
             if (isOnline) {
                 when (val result = gameSetRepository.getGameSet(gameSetIdStr)) {
                     is ApiResult.Success -> {
                         val gameSet = result.data
-                        players = gameSet.gameSetPlayers?.values
+                        val players = gameSet.gameSetPlayers?.values
                             ?.sortedBy { it.position }
                             ?.mapNotNull { it.player } ?: emptyList()
                         settings = gameSet.gameSettings ?: GameSettings.default()
+
+                        val openRound = gameSet.rounds?.sortedBy { it.sequence }?.lastOrNull { !it.completed }
+                        gamesInOpenRound = openRound?.marriageGames?.size ?: 0
+                        seatOrder = openRound?.playerIds
+                            ?.mapNotNull { pid -> players.find { it.id == pid } }
+                            ?.takeIf { it.size == players.size }
+                            ?: players
                     }
                     is ApiResult.Error -> {
                         _uiState.value = _uiState.value.copy(error = result.message)
@@ -89,17 +103,24 @@ class RoundInputViewModel @Inject constructor(
                 }
             } else {
                 val gameSetId = gameSetIdStr.toIntOrNull() ?: return@launch
-                players = offlineGameRepository.getGameSetPlayers(gameSetId)
+                val players = offlineGameRepository.getGameSetPlayers(gameSetId)
                 val gameSetEntity = offlineGameRepository.getGameSet(gameSetId) ?: return@launch
                 settings = offlineGameRepository.getGameSettings(gameSetEntity.settingsId) ?: GameSettings.default()
+
+                val openState = offlineGameRepository.getOpenRoundState(gameSetId, players.size)
+                gamesInOpenRound = openState.gamesInOpenRound
+                seatOrder = openState.seatOrderIds
+                    ?.mapNotNull { id -> players.find { it.id == id } }
+                    ?.takeIf { it.size == players.size }
+                    ?: players
             }
 
-            val dealerIndex = if (players.isNotEmpty()) (roundNumber - 2 + players.size) % players.size else -1
-            val dealer = players.getOrNull(dealerIndex)
+            val dealerIndex = if (seatOrder.isNotEmpty()) (seatOrder.size - 1 + gamesInOpenRound) % seatOrder.size else -1
+            val dealer = seatOrder.getOrNull(dealerIndex)
 
             _uiState.value = _uiState.value.copy(
                 gameSetId = gameSetIdStr,
-                playerStates = players.mapIndexed { idx, player ->
+                playerStates = seatOrder.mapIndexed { idx, player ->
                     PlayerRoundState(
                         player = player,
                         isDealer = idx == dealerIndex

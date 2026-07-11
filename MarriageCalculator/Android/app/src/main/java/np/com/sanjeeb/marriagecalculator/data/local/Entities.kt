@@ -79,6 +79,8 @@ data class RoundEntity(
     val totalMaal: Int = 0,
     /** True if this game is the last one of its logical round (either N games were reached, or the round was closed early). */
     val closesRound: Boolean = false,
+    /** Comma-separated player ids in seat order at the time this game was played - a later reshuffle must not rewrite history. */
+    val seatOrder: String = "",
     val createdAt: Long = System.currentTimeMillis(),
     val remoteId: String? = null,
     val synced: Boolean = false

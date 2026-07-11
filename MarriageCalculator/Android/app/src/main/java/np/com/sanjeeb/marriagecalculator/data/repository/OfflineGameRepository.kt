@@ -167,12 +167,15 @@ class OfflineGameRepository @Inject constructor(
         playerScores: List<RoundScoreData>
     ): Int {
         val roundNumber = roundDao.getRoundCount(gameSetId) + 1
+        val seatOrder = gameSetPlayerDao.getPlayersForGameSet(gameSetId)
+            .joinToString(",") { it.id.toString() }
         val roundEntity = RoundEntity(
             gameSetId = gameSetId,
             roundNumber = roundNumber,
             winnerId = winnerId,
             dealerId = dealerId,
-            totalMaal = totalMaal
+            totalMaal = totalMaal,
+            seatOrder = seatOrder
         )
         val roundId = roundDao.insert(roundEntity).toInt()
 
@@ -195,6 +198,28 @@ class OfflineGameRepository @Inject constructor(
     suspend fun closeCurrentRound(gameSetId: Int) {
         val latest = roundDao.getLatestGame(gameSetId) ?: return
         roundDao.closeRoundAt(latest.id)
+    }
+
+    /**
+     * State of the current open logical round: how many games it has so far (0 if the last round
+     * closed and a new one hasn't started), and the seat order its first game was played with
+     * (null if the round is empty or predates seat-order snapshots).
+     * Mirrors the bucket-chunking rule used for display: a round closes after playerCount games
+     * or when a game carries closesRound.
+     */
+    suspend fun getOpenRoundState(gameSetId: Int, playerCount: Int): OpenRoundState {
+        if (playerCount <= 0) return OpenRoundState(0, null)
+        val games = roundDao.getRoundsForGameSet(gameSetId).first().sortedBy { it.roundNumber }
+        var bucket = mutableListOf<RoundEntity>()
+        for (g in games) {
+            bucket.add(g)
+            if (bucket.size >= playerCount || g.closesRound) bucket = mutableListOf()
+        }
+        val seatCsv = bucket.firstOrNull()?.seatOrder?.takeIf { it.isNotBlank() }
+        return OpenRoundState(
+            gamesInOpenRound = bucket.size,
+            seatOrderIds = seatCsv?.split(",")
+        )
     }
 
     /** Removes only the most recently played game (undo), e.g. to fix a mistake. */
@@ -260,6 +285,11 @@ data class RoundScoreData(
     val isSeen: Boolean,
     val isWinner: Boolean,
     val isDublee: Boolean
+)
+
+data class OpenRoundState(
+    val gamesInOpenRound: Int,
+    val seatOrderIds: List<String>?
 )
 
 // ── Mapping Extensions ──
