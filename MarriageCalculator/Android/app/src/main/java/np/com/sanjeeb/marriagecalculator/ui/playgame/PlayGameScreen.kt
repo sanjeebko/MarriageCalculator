@@ -184,63 +184,6 @@ fun PlayGameScreen(
                     }
                 }
 
-                // Reshuffle seating notice once the latest round has completed
-                val lastRealRound = uiState.roundGroups.lastOrNull()
-                val latestRoundCompleted = lastRealRound?.isCompleted == true
-
-                if (latestRoundCompleted && !uiState.isSettled && uiState.isHost) {
-                    Card(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(bottom = 16.dp),
-                        shape = RoundedCornerShape(12.dp),
-                        colors = CardDefaults.cardColors(containerColor = MarigoldOrange.copy(alpha = 0.1f)),
-                        border = androidx.compose.foundation.BorderStroke(1.dp, MarigoldOrange.copy(alpha = 0.3f))
-                    ) {
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(12.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.SpaceBetween
-                        ) {
-                            Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.weight(1f)) {
-                                Icon(Icons.Default.Refresh, null, tint = MarigoldOrange, modifier = Modifier.size(20.dp))
-                                Spacer(modifier = Modifier.width(8.dp))
-                                Column {
-                                    Text(
-                                        text = "Round ${lastRealRound?.roundSequence} Complete!",
-                                        color = Color.White,
-                                        fontWeight = FontWeight.Bold,
-                                        fontSize = 13.sp
-                                    )
-                                    Text(
-                                        text = "Every player has dealt. Time to reshuffle seats for the next round?",
-                                        color = Color.White.copy(alpha = 0.7f),
-                                        fontSize = 11.sp
-                                    )
-                                }
-                            }
-                            TextButton(
-                                onClick = { showReorderDialog = true },
-                                contentPadding = PaddingValues(horizontal = 8.dp, vertical = 4.dp)
-                            ) {
-                                Text("Reshuffle", color = MarigoldOrange, fontWeight = FontWeight.Bold, fontSize = 12.sp)
-                            }
-                        }
-                    }
-                }
-
-                // Rounds Section Title
-                Text(
-                    text = "ROUND",
-                    color = GoldAccent,
-                    fontSize = 12.sp,
-                    fontWeight = FontWeight.Bold,
-                    letterSpacing = 1.5.sp,
-                    modifier = Modifier.padding(bottom = 8.dp)
-                )
-
                 CompactRoundsTable(
                     roundGroups = uiState.roundGroups,
                     players = uiState.players,
@@ -252,7 +195,8 @@ fun PlayGameScreen(
                     onPlayerHeaderClick = { player, position, size -> tooltipAnchor = PlayerTooltipAnchor(player, position, size) },
                     onCloseRound = { viewModel.closeCurrentRound(gameSetId) },
                     onDeleteLastGame = { showDeleteLastGameConfirm = true },
-                    onDeleteRound = { round -> roundPendingDeletion = round }
+                    onDeleteRound = { round -> roundPendingDeletion = round },
+                    onReshuffle = { showReorderDialog = true }
                 )
 
                 Spacer(modifier = Modifier.height(24.dp))
@@ -691,7 +635,8 @@ private fun CompactRoundsTable(
     onPlayerHeaderClick: (Player, Offset, IntSize) -> Unit,
     onCloseRound: () -> Unit,
     onDeleteLastGame: () -> Unit,
-    onDeleteRound: (RoundGroup) -> Unit
+    onDeleteRound: (RoundGroup) -> Unit,
+    onReshuffle: () -> Unit
 ) {
     var mode by remember { mutableStateOf(RoundDisplayMode.MAAL) }
 
@@ -734,7 +679,8 @@ private fun CompactRoundsTable(
                 onPlayerHeaderClick = onPlayerHeaderClick,
                 onCloseRound = onCloseRound,
                 onDeleteLastGame = onDeleteLastGame,
-                onDeleteRound = { onDeleteRound(group) }
+                onDeleteRound = { onDeleteRound(group) },
+                onReshuffle = onReshuffle
             )
             Spacer(modifier = Modifier.height(10.dp))
         }
@@ -756,7 +702,8 @@ private fun RoundBlock(
     onPlayerHeaderClick: (Player, Offset, IntSize) -> Unit,
     onCloseRound: () -> Unit,
     onDeleteLastGame: () -> Unit,
-    onDeleteRound: () -> Unit
+    onDeleteRound: () -> Unit,
+    onReshuffle: () -> Unit
 ) {
     val scrollState = rememberScrollState()
 
@@ -773,16 +720,30 @@ private fun RoundBlock(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text(
-                    text = "Round ${group.roundSequence}" + when {
-                        group.isCompleted -> ""
-                        group.games.isEmpty() -> " · not started"
-                        else -> " · in progress"
-                    },
-                    color = GoldAccent,
-                    fontSize = 12.sp,
-                    fontWeight = FontWeight.Bold
-                )
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        text = "Round ${group.roundSequence}" + when {
+                            group.isCompleted -> ""
+                            group.games.isEmpty() -> " · not started"
+                            else -> " · in progress"
+                        },
+                        color = GoldAccent,
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+                    // Reshuffling only happens between rounds, so the icon lives on the round
+                    // that hasn't started yet - it configures that round's seating.
+                    if (isHost && !group.isCompleted && group.games.isEmpty()) {
+                        IconButton(onClick = onReshuffle, modifier = Modifier.size(24.dp)) {
+                            Icon(
+                                imageVector = Icons.Default.Shuffle,
+                                contentDescription = "Reshuffle seats",
+                                tint = MarigoldOrange,
+                                modifier = Modifier.size(14.dp)
+                            )
+                        }
+                    }
+                }
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     if (isHost && !group.isCompleted && group.games.isNotEmpty()) {
                         Text(

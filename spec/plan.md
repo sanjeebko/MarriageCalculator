@@ -258,6 +258,8 @@ User feedback on the actual table rules: after a round completes, players reshuf
 - [x] Step 21.1: Each submitted game's winner is immutable, so the winner's cell in the rounds table gets a permanent frosted-glass pill: rounded 8dp rectangle, translucent white→green→transparent vertical gradient fill, and a light-catching gradient border (`CompactRoundCell` gains `isWinner`, set from the stored `game.winnerId` - never the pending placeholder row). The details dialog's green winner glow is unchanged.
 - [x] Step 21.2: Verify — build/tests green; live on the emulator: Round 1's pill sits on AAR (400p winner) and Round 2's on SUS - correctly following the *stored* winner rather than the biggest earner (PLA out-earned SUS via maal that game but didn't win it).
 - **COMMIT**: "feat: frosted-glass highlight on each game's winner cell"
+- [x] Step 21.3: **User feedback (screen compaction)** — Removed the "Round N Complete!" banner card entirely; reshuffling now lives as a small `Shuffle` icon right next to the not-started round's header ("Round 3 · not started ⤨"), which opens the same Arrange Seats dialog - it configures exactly that round's seating, and only appears when reshuffling is legal (host, no round in progress). Also removed the "ROUND" section title above the table. The table now starts directly under the top bar and all three rounds fit on one screen. Verified live: banner and title gone, icon present only on the not-started round, tapping it opens Arrange Seats with the DEALER chip on the last seat.
+- **COMMIT**: "feat: replace reshuffle banner with header icon and drop ROUND title"
 
 ---
 
