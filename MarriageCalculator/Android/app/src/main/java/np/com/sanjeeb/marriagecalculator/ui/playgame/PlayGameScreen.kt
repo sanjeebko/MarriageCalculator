@@ -284,16 +284,25 @@ fun PlayGameScreen(
                         )
                     }
                     if (standingsExpanded && uiState.isHost && !uiState.isSettled) {
+                        // A round's seat order is fixed once it starts - reshuffling only
+                        // happens between rounds, so disable this while a round is in progress.
+                        val roundInProgress = uiState.roundGroups.any { !it.isCompleted && it.games.isNotEmpty() }
                         Row(
                             modifier = Modifier
                                 .clip(RoundedCornerShape(4.dp))
-                                .clickable { showReorderDialog = true }
+                                .then(if (!roundInProgress) Modifier.clickable { showReorderDialog = true } else Modifier)
                                 .padding(horizontal = 6.dp, vertical = 2.dp),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Icon(Icons.Default.Reorder, null, tint = GoldAccent, modifier = Modifier.size(16.dp))
+                            val tint = if (roundInProgress) GoldAccent.copy(alpha = 0.3f) else GoldAccent
+                            Icon(Icons.Default.Reorder, null, tint = tint, modifier = Modifier.size(16.dp))
                             Spacer(modifier = Modifier.width(4.dp))
-                            Text("Arrange Seats", color = GoldAccent, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                            Text(
+                                text = if (roundInProgress) "Seats locked until round ends" else "Arrange Seats",
+                                color = tint,
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.Bold
+                            )
                         }
                     }
                 }

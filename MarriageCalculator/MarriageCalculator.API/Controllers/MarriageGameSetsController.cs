@@ -139,6 +139,10 @@ public class MarriageGameSetsController : ControllerBase
 
             return Ok(gameSet);
         }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(ex.Message);
+        }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error updating marriage game set with ID {GameSetId}", id);

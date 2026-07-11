@@ -45,11 +45,17 @@ class OfflineGameRepository @Inject constructor(
     }
 
     suspend fun updateGameSetPlayerPositions(gameSetId: Int, playerIds: List<Int>) {
-        // Freeze history before a reshuffle: games saved before per-game seat snapshots existed
-        // have a blank seatOrder and would otherwise re-render in the new order. Stamp them with
-        // the outgoing order - the seating they were actually played with.
         val oldOrder = gameSetPlayerDao.getPlayersForGameSet(gameSetId)
         if (oldOrder.isNotEmpty() && oldOrder.map { it.id } != playerIds) {
+            // A round's seat order is fixed once it starts - reshuffling only happens between
+            // rounds, so reject order changes while a round is still open.
+            if (getOpenRoundState(gameSetId, oldOrder.size).gamesInOpenRound > 0) {
+                throw IllegalStateException("Seats can only be rearranged after the current round is completed.")
+            }
+
+            // Freeze history: games saved before per-game seat snapshots existed have a blank
+            // seatOrder and would otherwise re-render in the new order. Stamp them with the
+            // outgoing order - the seating they were actually played with.
             roundDao.backfillSeatOrder(gameSetId, oldOrder.joinToString(",") { it.id.toString() })
         }
 

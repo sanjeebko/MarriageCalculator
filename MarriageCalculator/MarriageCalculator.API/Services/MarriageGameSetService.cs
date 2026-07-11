@@ -107,6 +107,16 @@ public class MarriageGameSetService : IMarriageGameSetService
         if (existing != null && existing.PlayerIds.Count > 0 &&
             !existing.PlayerIds.SequenceEqual(updateDto.PlayerIds))
         {
+            // A round's seat order is fixed once it starts - reshuffling only happens between
+            // rounds, so reject order changes while a round is still open.
+            var openRoundExists = await _context.MarriageGameRounds
+                .Find(r => r.MarriageGameSetId == id && !r.Completed)
+                .AnyAsync();
+            if (openRoundExists)
+            {
+                throw new InvalidOperationException("Seats can only be rearranged after the current round is completed.");
+            }
+
             // Legacy round docs predate the PlayerIds field entirely, so the filter must match
             // both a missing field and an empty array ($size: 0 alone misses absent fields).
             var unsnapshotted = Builders<MarriageGameRound>.Filter.And(
