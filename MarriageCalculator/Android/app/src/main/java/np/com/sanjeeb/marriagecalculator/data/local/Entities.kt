@@ -218,6 +218,9 @@ interface RoundDao {
 
     @Query("UPDATE rounds SET roundNumber = :roundNumber WHERE id = :id")
     suspend fun renumber(id: Int, roundNumber: Int)
+
+    @Query("UPDATE rounds SET seatOrder = :seatOrderCsv WHERE gameSetId = :gameSetId AND seatOrder = ''")
+    suspend fun backfillSeatOrder(gameSetId: Int, seatOrderCsv: String)
 }
 
 @Dao

@@ -100,6 +100,25 @@ public class MarriageGameSetService : IMarriageGameSetService
 
     public async Task<MarriageGameSetDto?> UpdateGameSetAsync(string id, CreateMarriageGameSetDto updateDto, string hostUserId)
     {
+        // Freeze history before a reshuffle: legacy rounds created before per-round seat
+        // snapshots existed have no PlayerIds and would otherwise re-render in the new order.
+        // Stamp them with the outgoing order - the seating they were actually played with.
+        var existing = await _gameSetRepository.GetByIdRawAsync(id);
+        if (existing != null && existing.PlayerIds.Count > 0 &&
+            !existing.PlayerIds.SequenceEqual(updateDto.PlayerIds))
+        {
+            // Legacy round docs predate the PlayerIds field entirely, so the filter must match
+            // both a missing field and an empty array ($size: 0 alone misses absent fields).
+            var unsnapshotted = Builders<MarriageGameRound>.Filter.And(
+                Builders<MarriageGameRound>.Filter.Eq(r => r.MarriageGameSetId, id),
+                Builders<MarriageGameRound>.Filter.Or(
+                    Builders<MarriageGameRound>.Filter.Exists(r => r.PlayerIds, false),
+                    Builders<MarriageGameRound>.Filter.Size(r => r.PlayerIds, 0)));
+            await _context.MarriageGameRounds.UpdateManyAsync(
+                unsnapshotted,
+                Builders<MarriageGameRound>.Update.Set(r => r.PlayerIds, existing.PlayerIds));
+        }
+
         var gameSetToUpdate = new MarriageGameSet
         {
             HostUserId = updateDto.HostUserId,

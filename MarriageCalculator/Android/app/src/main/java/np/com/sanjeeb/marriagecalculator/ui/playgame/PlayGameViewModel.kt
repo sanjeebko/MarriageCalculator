@@ -123,7 +123,11 @@ class PlayGameViewModel @Inject constructor(
                                 GameEntry(
                                     gameId = g.id,
                                     gameSequenceInRound = g.sequence,
-                                    dealerId = g.dealerId,
+                                    // Legacy games predate dealer recording - derive from the
+                                    // round's rotation so every row still shows its dealer.
+                                    dealerId = g.dealerId.ifBlank {
+                                        nextDealerFor(seatOrder, g.sequence - 1)?.id ?: ""
+                                    },
                                     winnerId = g.winnerId,
                                     winnerName = winnerName,
                                     totalMaal = g.totalMaal,
@@ -261,7 +265,10 @@ class PlayGameViewModel @Inject constructor(
                             GameEntry(
                                 gameId = r.id.toString(),
                                 gameSequenceInRound = bucket.size + 1,
-                                dealerId = r.dealerId.toString(),
+                                // Legacy games predate dealer recording (dealerId 0) - derive
+                                // from the round's rotation so every row still shows its dealer.
+                                dealerId = if (r.dealerId != 0) r.dealerId.toString()
+                                    else nextDealerFor(seatsFrom(bucketSeatCsv), bucket.size)?.id ?: "0",
                                 winnerId = r.winnerId.toString(),
                                 winnerName = winnerName,
                                 totalMaal = r.totalMaal,
