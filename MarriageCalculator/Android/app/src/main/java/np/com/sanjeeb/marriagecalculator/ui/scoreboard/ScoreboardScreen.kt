@@ -1,5 +1,7 @@
 package np.com.sanjeeb.marriagecalculator.ui.scoreboard
 
+import np.com.sanjeeb.marriagecalculator.ui.theme.AppTheme
+
 import android.app.Activity
 import android.content.Context
 import android.content.ContextWrapper
@@ -32,10 +34,6 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import np.com.sanjeeb.marriagecalculator.data.model.Currency
 import np.com.sanjeeb.marriagecalculator.data.model.Player
-import np.com.sanjeeb.marriagecalculator.ui.theme.DeepRedTika
-import np.com.sanjeeb.marriagecalculator.ui.theme.GoldAccent
-import np.com.sanjeeb.marriagecalculator.ui.theme.MarigoldOrange
-import np.com.sanjeeb.marriagecalculator.ui.theme.TiharNightBlue
 
 private fun Context.findActivity(): Activity? {
     var context = this
@@ -86,11 +84,11 @@ fun ScoreboardScreen(
         topBar = {
             TopAppBar(
                 title = {
-                    Text("Scoreboard", color = GoldAccent, fontFamily = FontFamily.Serif, fontWeight = FontWeight.Bold)
+                    Text("Scoreboard", color = AppTheme.palette.accent, fontFamily = FontFamily.Serif, fontWeight = FontWeight.Bold)
                 },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, null, tint = GoldAccent)
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, null, tint = AppTheme.palette.accent)
                     }
                 },
                 actions = {
@@ -98,11 +96,11 @@ fun ScoreboardScreen(
                         Icon(
                             if (uiState.showHistory) Icons.Default.TableChart else Icons.Default.History,
                             null,
-                            tint = GoldAccent
+                            tint = AppTheme.palette.accent
                         )
                     }
                 },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = TiharNightBlue)
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = AppTheme.palette.surface)
             )
         },
         containerColor = Color.Transparent
@@ -110,7 +108,7 @@ fun ScoreboardScreen(
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .background(Brush.verticalGradient(listOf(TiharNightBlue, Color(0xFF0D0D1A))))
+                .background(Brush.verticalGradient(listOf(AppTheme.palette.backgroundTop, AppTheme.palette.backgroundBottom)))
                 .padding(padding)
         ) {
             if (uiState.showHistory) {
@@ -158,11 +156,11 @@ private fun ScoreboardView(uiState: ScoreboardUiState, onSettle: () -> Unit) {
                         .fillMaxWidth()
                         .height(48.dp),
                     shape = RoundedCornerShape(12.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = DeepRedTika)
+                    colors = ButtonDefaults.buttonColors(containerColor = AppTheme.palette.cta)
                 ) {
-                    Icon(Icons.Default.AccountBalance, null, tint = GoldAccent)
+                    Icon(Icons.Default.AccountBalance, null, tint = AppTheme.palette.accent)
                     Spacer(modifier = Modifier.width(8.dp))
-                    Text("Settle & Freeze", color = GoldAccent, fontWeight = FontWeight.Bold)
+                    Text("Settle & Freeze", color = AppTheme.palette.accent, fontWeight = FontWeight.Bold)
                 }
             }
         }
@@ -174,7 +172,7 @@ private fun PlayerScoreRow(playerScore: PlayerTotalScore, rank: Int, currency: C
     val scoreColor = when {
         playerScore.totalPoints > 0 -> Color(0xFF4CAF50)
         playerScore.totalPoints < 0 -> Color(0xFFFF5252)
-        else -> Color.White.copy(alpha = 0.5f)
+        else -> AppTheme.palette.tint.copy(alpha = 0.5f)
     }
     val medalEmoji = when (rank) {
         1 -> "🥇"
@@ -187,7 +185,7 @@ private fun PlayerScoreRow(playerScore: PlayerTotalScore, rank: Int, currency: C
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(12.dp),
         colors = CardDefaults.cardColors(
-            containerColor = if (rank == 1) DeepRedTika.copy(alpha = 0.3f) else Color.White.copy(alpha = 0.05f)
+            containerColor = if (rank == 1) AppTheme.palette.cta.copy(alpha = 0.3f) else AppTheme.palette.tint.copy(alpha = 0.05f)
         )
     ) {
         Row(
@@ -201,7 +199,7 @@ private fun PlayerScoreRow(playerScore: PlayerTotalScore, rank: Int, currency: C
                 modifier = Modifier
                     .size(36.dp)
                     .clip(CircleShape)
-                    .background(if (rank == 1) GoldAccent else Color.White.copy(alpha = 0.1f)),
+                    .background(if (rank == 1) AppTheme.palette.accent else AppTheme.palette.tint.copy(alpha = 0.1f)),
                 contentAlignment = Alignment.Center
             ) {
                 if (medalEmoji.isNotEmpty()) {
@@ -209,7 +207,7 @@ private fun PlayerScoreRow(playerScore: PlayerTotalScore, rank: Int, currency: C
                 } else {
                     Text(
                         "#$rank",
-                        color = Color.White,
+                        color = AppTheme.palette.textPrimary,
                         fontSize = 14.sp,
                         fontWeight = FontWeight.Bold
                     )
@@ -222,13 +220,13 @@ private fun PlayerScoreRow(playerScore: PlayerTotalScore, rank: Int, currency: C
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     playerScore.player.name,
-                    color = Color.White,
+                    color = AppTheme.palette.textPrimary,
                     fontSize = 16.sp,
                     fontWeight = FontWeight.Bold
                 )
                 Text(
                     "${playerScore.gamesWon}W / ${playerScore.gamesPlayed}G",
-                    color = Color.White.copy(alpha = 0.4f),
+                    color = AppTheme.palette.tint.copy(alpha = 0.4f),
                     fontSize = 11.sp
                 )
             }
@@ -256,12 +254,12 @@ private fun WhoOwesWhomSection(players: List<PlayerTotalScore>, pointRate: Doubl
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(12.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White.copy(alpha = 0.05f))
+        colors = CardDefaults.cardColors(containerColor = AppTheme.palette.tint.copy(alpha = 0.05f))
     ) {
         Column(modifier = Modifier.padding(12.dp)) {
             Text(
                 "💰 Settlement Summary",
-                color = GoldAccent,
+                color = AppTheme.palette.accent,
                 fontSize = 16.sp,
                 fontWeight = FontWeight.Bold,
                 fontFamily = FontFamily.Serif
@@ -280,7 +278,7 @@ private fun WhoOwesWhomSection(players: List<PlayerTotalScore>, pointRate: Doubl
                 .toMutableList()
 
             if (receivers.isEmpty() || givers.isEmpty()) {
-                Text("All settled!", color = Color.White.copy(alpha = 0.5f))
+                Text("All settled!", color = AppTheme.palette.tint.copy(alpha = 0.5f))
                 return@Column
             }
 
@@ -302,12 +300,12 @@ private fun WhoOwesWhomSection(players: List<PlayerTotalScore>, pointRate: Doubl
                     ) {
                         Text(
                             "$giverName → $receiverName",
-                            color = Color.White.copy(alpha = 0.7f),
+                            color = AppTheme.palette.tint.copy(alpha = 0.7f),
                             fontSize = 13.sp
                         )
                         Text(
                             currency.formatMoney(amount),
-                            color = GoldAccent,
+                            color = AppTheme.palette.accent,
                             fontSize = 13.sp,
                             fontWeight = FontWeight.Bold
                         )
@@ -327,7 +325,7 @@ private fun WhoOwesWhomSection(players: List<PlayerTotalScore>, pointRate: Doubl
             }
 
             if (!printedAny) {
-                Text("All settled!", color = Color.White.copy(alpha = 0.5f))
+                Text("All settled!", color = AppTheme.palette.tint.copy(alpha = 0.5f))
             }
         }
     }
@@ -376,7 +374,7 @@ private fun RoundHistoryView(uiState: ScoreboardUiState) {
             modifier = Modifier.fillMaxSize(),
             contentAlignment = Alignment.Center
         ) {
-            Text("No rounds played yet", color = Color.White.copy(alpha = 0.5f))
+            Text("No rounds played yet", color = AppTheme.palette.tint.copy(alpha = 0.5f))
         }
         return
     }
@@ -388,7 +386,7 @@ private fun RoundHistoryView(uiState: ScoreboardUiState) {
     Column(modifier = Modifier.fillMaxSize().padding(vertical = 12.dp)) {
         Text(
             "Rate: ${uiState.settings.pointRate} ${currency.displayName().substringAfter("(", "").substringBefore(")")} / point",
-            color = Color.White.copy(alpha = 0.5f),
+            color = AppTheme.palette.tint.copy(alpha = 0.5f),
             fontSize = 11.sp,
             modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp)
         )
@@ -402,11 +400,11 @@ private fun RoundHistoryView(uiState: ScoreboardUiState) {
         ) {
             TableCell("", LABEL_COL_WIDTH_DP, Color.Transparent)
             players.forEach { p ->
-                TableCell(p.name, PLAYER_COL_WIDTH_DP, GoldAccent, bold = true)
+                TableCell(p.name, PLAYER_COL_WIDTH_DP, AppTheme.palette.accent, bold = true)
             }
-            TableCell("Total\nMaal", TOTAL_COL_WIDTH_DP, GoldAccent, bold = true)
+            TableCell("Total\nMaal", TOTAL_COL_WIDTH_DP, AppTheme.palette.accent, bold = true)
         }
-        HorizontalDivider(color = Color.White.copy(alpha = 0.15f), modifier = Modifier.padding(top = 4.dp))
+        HorizontalDivider(color = AppTheme.palette.tint.copy(alpha = 0.15f), modifier = Modifier.padding(top = 4.dp))
 
         LazyColumn(
             modifier = Modifier.fillMaxSize(),
@@ -447,11 +445,11 @@ private fun RoundBlock(
         ) {
             Text(
                 "Round ${round.roundNumber}",
-                color = GoldAccent,
+                color = AppTheme.palette.accent,
                 fontWeight = FontWeight.Bold,
                 fontSize = 13.sp
             )
-            Text("👑 ${round.winnerName}", color = MarigoldOrange, fontSize = 12.sp)
+            Text("👑 ${round.winnerName}", color = AppTheme.palette.accentAlt, fontSize = 12.sp)
         }
 
         Row(
@@ -460,11 +458,11 @@ private fun RoundBlock(
                 .padding(horizontal = 12.dp, vertical = 4.dp)
         ) {
             Column {
-                TableCell("Seen", LABEL_COL_WIDTH_DP, Color.White.copy(alpha = 0.6f))
-                TableCell("Dublee", LABEL_COL_WIDTH_DP, Color.White.copy(alpha = 0.6f))
-                TableCell("Maal", LABEL_COL_WIDTH_DP, Color.White.copy(alpha = 0.6f))
-                TableCell("Points", LABEL_COL_WIDTH_DP, Color.White.copy(alpha = 0.6f))
-                TableCell("Money", LABEL_COL_WIDTH_DP, Color.White.copy(alpha = 0.6f))
+                TableCell("Seen", LABEL_COL_WIDTH_DP, AppTheme.palette.tint.copy(alpha = 0.6f))
+                TableCell("Dublee", LABEL_COL_WIDTH_DP, AppTheme.palette.tint.copy(alpha = 0.6f))
+                TableCell("Maal", LABEL_COL_WIDTH_DP, AppTheme.palette.tint.copy(alpha = 0.6f))
+                TableCell("Points", LABEL_COL_WIDTH_DP, AppTheme.palette.tint.copy(alpha = 0.6f))
+                TableCell("Money", LABEL_COL_WIDTH_DP, AppTheme.palette.tint.copy(alpha = 0.6f))
             }
             players.forEach { p ->
                 val entry = round.playerEntries.find { it.playerId == p.id }
@@ -472,31 +470,31 @@ private fun RoundBlock(
                     TableCell(
                         if (entry?.isSeen == true) "Yes" else "No",
                         PLAYER_COL_WIDTH_DP,
-                        if (entry?.isSeen == true) Color(0xFF4CAF50) else Color.White.copy(alpha = 0.4f)
+                        if (entry?.isSeen == true) Color(0xFF4CAF50) else AppTheme.palette.tint.copy(alpha = 0.4f)
                     )
                     TableCell(
                         if (entry?.isDublee == true) "Yes" else "-",
                         PLAYER_COL_WIDTH_DP,
-                        Color.White.copy(alpha = 0.7f)
+                        AppTheme.palette.tint.copy(alpha = 0.7f)
                     )
-                    TableCell("${entry?.maal ?: 0}", PLAYER_COL_WIDTH_DP, Color.White)
+                    TableCell("${entry?.maal ?: 0}", PLAYER_COL_WIDTH_DP, AppTheme.palette.textPrimary)
                     val score = entry?.score ?: 0
                     TableCell(
                         "${if (score > 0) "+" else ""}$score",
                         PLAYER_COL_WIDTH_DP,
-                        if (score > 0) Color(0xFF4CAF50) else if (score < 0) Color(0xFFFF5252) else Color.White,
+                        if (score > 0) Color(0xFF4CAF50) else if (score < 0) Color(0xFFFF5252) else AppTheme.palette.textPrimary,
                         bold = true
                     )
                     TableCell(
                         currency.formatMoney(entry?.money ?: 0.0),
                         PLAYER_COL_WIDTH_DP,
-                        Color.White.copy(alpha = 0.8f)
+                        AppTheme.palette.tint.copy(alpha = 0.8f)
                     )
                 }
             }
             Column {
                 repeat(2) { TableCell("", TOTAL_COL_WIDTH_DP, Color.Transparent) }
-                TableCell("${round.totalMaal}", TOTAL_COL_WIDTH_DP, GoldAccent, bold = true)
+                TableCell("${round.totalMaal}", TOTAL_COL_WIDTH_DP, AppTheme.palette.accent, bold = true)
                 repeat(2) { TableCell("", TOTAL_COL_WIDTH_DP, Color.Transparent) }
             }
         }
@@ -510,20 +508,20 @@ private fun TotalRow(
     scrollState: ScrollState,
     currency: Currency
 ) {
-    HorizontalDivider(color = Color.White.copy(alpha = 0.2f), modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp))
+    HorizontalDivider(color = AppTheme.palette.tint.copy(alpha = 0.2f), modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp))
     Row(
         modifier = Modifier
             .horizontalScroll(scrollState)
             .padding(horizontal = 12.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        TableCell("Total", LABEL_COL_WIDTH_DP, GoldAccent, bold = true)
+        TableCell("Total", LABEL_COL_WIDTH_DP, AppTheme.palette.accent, bold = true)
         players.forEach { p ->
             val total = playerTotals.find { it.player.id == p.id }?.totalMoney ?: 0.0
             TableCell(
                 currency.formatMoney(total),
                 PLAYER_COL_WIDTH_DP,
-                if (total > 0) Color(0xFF4CAF50) else if (total < 0) Color(0xFFFF5252) else Color.White,
+                if (total > 0) Color(0xFF4CAF50) else if (total < 0) Color(0xFFFF5252) else AppTheme.palette.textPrimary,
                 bold = true
             )
         }

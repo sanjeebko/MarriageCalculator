@@ -21,6 +21,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
@@ -66,7 +67,9 @@ fun DashboardScreen(
     viewModel: DashboardViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
+    val currentTheme by viewModel.theme.collectAsState()
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
+    var showThemeDialog by remember { mutableStateOf(false) }
 
     // The ViewModel is scoped to this destination's nav back-stack entry, so it survives
     // navigating away and back (e.g. resuming or deleting a game) without being recreated -
@@ -83,6 +86,14 @@ fun DashboardScreen(
     }
     val scope = rememberCoroutineScope()
 
+    if (showThemeDialog) {
+        ThemePickerDialog(
+            current = currentTheme,
+            onSelect = { viewModel.setTheme(it) },
+            onDismiss = { showThemeDialog = false }
+        )
+    }
+
     ModalNavigationDrawer(
         drawerState = drawerState,
         drawerContent = {
@@ -98,15 +109,15 @@ fun DashboardScreen(
                         .background(
                             brush = Brush.linearGradient(
                                 colors = listOf(
-                                    Color(0xFF1A1A2E).copy(alpha = 0.95f),
-                                    Color(0xFF0D0D1A).copy(alpha = 0.9f)
+                                    AppTheme.palette.surface.copy(alpha = 0.97f),
+                                    AppTheme.palette.backgroundBottom.copy(alpha = 0.95f)
                                 )
                             )
                         )
                         .border(
                             width = 1.dp,
                             brush = Brush.horizontalGradient(
-                                colors = listOf(Color.White.copy(alpha = 0.2f), Color.Transparent)
+                                colors = listOf(AppTheme.palette.tint.copy(alpha = 0.2f), Color.Transparent)
                             ),
                             shape = RoundedCornerShape(topEnd = 24.dp, bottomEnd = 24.dp)
                         )
@@ -118,7 +129,7 @@ fun DashboardScreen(
                             .background(
                                 brush = Brush.verticalGradient(
                                     colors = listOf(
-                                        Color.White.copy(alpha = 0.05f),
+                                        AppTheme.palette.tint.copy(alpha = 0.05f),
                                         Color.Transparent,
                                         Color.Black.copy(alpha = 0.05f)
                                     )
@@ -130,10 +141,10 @@ fun DashboardScreen(
                         Spacer(Modifier.height(56.dp))
                         
                         val drawerItemColors = NavigationDrawerItemDefaults.colors(
-                            unselectedContainerColor = Color.White.copy(alpha = 0.05f),
-                            selectedContainerColor = Color.White.copy(alpha = 0.15f),
-                            unselectedIconColor = GoldAccent.copy(alpha = 0.9f),
-                            unselectedTextColor = Color.White
+                            unselectedContainerColor = AppTheme.palette.tint.copy(alpha = 0.05f),
+                            selectedContainerColor = AppTheme.palette.tint.copy(alpha = 0.15f),
+                            unselectedIconColor = AppTheme.palette.accent.copy(alpha = 0.9f),
+                            unselectedTextColor = AppTheme.palette.textPrimary
                         )
 
                         val drawerItemModifier = Modifier
@@ -168,6 +179,15 @@ fun DashboardScreen(
                             shape = RoundedCornerShape(8.dp)
                         )
                         NavigationDrawerItem(
+                            label = { Text("App Theme", fontSize = 14.sp, fontWeight = FontWeight.Medium) },
+                            selected = false,
+                            onClick = { scope.launch { drawerState.close() }; showThemeDialog = true },
+                            icon = { Icon(Icons.Default.Palette, null, modifier = Modifier.size(18.dp)) },
+                            colors = drawerItemColors,
+                            modifier = drawerItemModifier,
+                            shape = RoundedCornerShape(8.dp)
+                        )
+                        NavigationDrawerItem(
                             label = { Text("About", fontSize = 14.sp, fontWeight = FontWeight.Medium) },
                             selected = false,
                             onClick = { scope.launch { drawerState.close() } },
@@ -190,7 +210,7 @@ fun DashboardScreen(
                         
                         HorizontalDivider(
                             modifier = Modifier.padding(horizontal = 24.dp),
-                            color = Color.White.copy(alpha = 0.15f)
+                            color = AppTheme.palette.tint.copy(alpha = 0.15f)
                         )
                         
                         NavigationDrawerItem(
@@ -235,7 +255,7 @@ fun DashboardScreen(
                                         Icon(
                                             imageVector = Icons.Default.AccountCircle,
                                             contentDescription = null,
-                                            tint = GoldAccent,
+                                            tint = AppTheme.palette.accent,
                                             modifier = Modifier.size(36.dp)
                                         )
                                     }
@@ -244,7 +264,7 @@ fun DashboardScreen(
                                     Surface(
                                         modifier = Modifier.size(12.dp).offset(x = 2.dp, y = 2.dp),
                                         shape = RoundedCornerShape(6.dp),
-                                        color = Color.White
+                                        color = AppTheme.palette.textPrimary
                                     ) {
                                         Image(
                                             painter = painterResource(id = R.drawable.ic_google_logo),
@@ -258,7 +278,7 @@ fun DashboardScreen(
                                 
                                 Text(
                                     text = "नमस्ते, ${user.displayName}!",
-                                    color = GoldAccent,
+                                    color = AppTheme.palette.accent,
                                     fontSize = 18.sp,
                                     fontWeight = FontWeight.Bold,
                                     fontFamily = FontFamily.Serif,
@@ -270,12 +290,12 @@ fun DashboardScreen(
                     },
                     navigationIcon = {
                         IconButton(onClick = { scope.launch { drawerState.open() } }) {
-                            Icon(Icons.Default.Menu, contentDescription = "Menu", tint = GoldAccent)
+                            Icon(Icons.Default.Menu, contentDescription = "Menu", tint = AppTheme.palette.accent)
                         }
                     },
                     colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
-                        containerColor = TiharNightBlue,
-                        titleContentColor = GoldAccent
+                        containerColor = AppTheme.palette.surface,
+                        titleContentColor = AppTheme.palette.accent
                     )
                 )
             },
@@ -287,7 +307,7 @@ fun DashboardScreen(
                     .padding(padding)
                     .background(
                         Brush.verticalGradient(
-                            colors = listOf(TiharNightBlue, Color(0xFF0D0D1A))
+                            colors = listOf(AppTheme.palette.backgroundTop, AppTheme.palette.backgroundBottom)
                         )
                     )
             ) {
@@ -308,12 +328,12 @@ fun DashboardScreen(
                         GlassButton(
                             onClick = onNewGame,
                             text = "New Game",
-                            containerColor = DeepRedTika.copy(alpha = 0.35f),
-                            textColor = GoldAccent,
+                            containerColor = AppTheme.palette.cta.copy(alpha = 0.35f),
+                            textColor = AppTheme.palette.accent,
                             height = 44,
                             modifier = Modifier.weight(1f),
                             leadingIcon = {
-                                Icon(Icons.Default.Add, null, tint = GoldAccent, modifier = Modifier.size(18.dp))
+                                Icon(Icons.Default.Add, null, tint = AppTheme.palette.accent, modifier = Modifier.size(18.dp))
                             }
                         )
 
@@ -321,12 +341,12 @@ fun DashboardScreen(
                             GlassButton(
                                 onClick = onFriends,
                                 text = "Friends",
-                                containerColor = Color.White.copy(alpha = 0.12f),
-                                textColor = Color.White,
+                                containerColor = AppTheme.palette.tint.copy(alpha = 0.12f),
+                                textColor = AppTheme.palette.textPrimary,
                                 height = 44,
                                 modifier = Modifier.weight(1f),
                                 leadingIcon = {
-                                    Icon(Icons.Default.People, null, tint = GoldAccent, modifier = Modifier.size(18.dp))
+                                    Icon(Icons.Default.People, null, tint = AppTheme.palette.accent, modifier = Modifier.size(18.dp))
                                 }
                             )
                         }
@@ -336,9 +356,9 @@ fun DashboardScreen(
                     if (uiState.isOfflineMode) {
                         Spacer(modifier = Modifier.height(8.dp))
                         Row(verticalAlignment = Alignment.CenterVertically) {
-                            Icon(Icons.Default.WifiOff, null, tint = MarigoldOrange, modifier = Modifier.size(12.dp))
+                            Icon(Icons.Default.WifiOff, null, tint = AppTheme.palette.accentAlt, modifier = Modifier.size(12.dp))
                             Spacer(modifier = Modifier.width(4.dp))
-                            Text("Offline Mode", color = MarigoldOrange, fontSize = 10.sp)
+                            Text("Offline Mode", color = AppTheme.palette.accentAlt, fontSize = 10.sp)
                         }
                     }
 
@@ -353,7 +373,7 @@ fun DashboardScreen(
                         ) {
                             Text(
                                 text = "Active Games",
-                                color = GoldAccent,
+                                color = AppTheme.palette.accent,
                                 fontSize = 16.sp,
                                 fontWeight = FontWeight.Bold,
                                 fontFamily = FontFamily.Serif
@@ -362,7 +382,7 @@ fun DashboardScreen(
                                 CircularProgressIndicator(
                                     modifier = Modifier.size(16.dp),
                                     strokeWidth = 2.dp,
-                                    color = GoldAccent
+                                    color = AppTheme.palette.accent
                                 )
                             }
                         }
@@ -384,6 +404,93 @@ fun DashboardScreen(
     }
 }
 
+/**
+ * Picker for the 4 built-in color themes (2 dark, 2 light). Selection applies instantly and is
+ * stored on the device only.
+ */
+@Composable
+private fun ThemePickerDialog(
+    current: AppThemeOption,
+    onSelect: (AppThemeOption) -> Unit,
+    onDismiss: () -> Unit
+) {
+    val pal = AppTheme.palette
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("App Theme", color = pal.accent, fontFamily = FontFamily.Serif, fontWeight = FontWeight.Bold) },
+        text = {
+            Column {
+                listOf("Dark" to AppThemeOption.entries.filter { it.palette.isDark },
+                       "Light" to AppThemeOption.entries.filter { !it.palette.isDark }).forEach { (label, options) ->
+                    Text(
+                        text = label.uppercase(),
+                        color = pal.textPrimary.copy(alpha = 0.5f),
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.Bold,
+                        letterSpacing = 1.5.sp,
+                        modifier = Modifier.padding(top = 8.dp, bottom = 4.dp)
+                    )
+                    options.forEach { option ->
+                        val selected = option == current
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clip(RoundedCornerShape(10.dp))
+                                .background(if (selected) pal.tint.copy(alpha = 0.12f) else Color.Transparent)
+                                .border(
+                                    1.dp,
+                                    if (selected) pal.accent.copy(alpha = 0.6f) else pal.tint.copy(alpha = 0.12f),
+                                    RoundedCornerShape(10.dp)
+                                )
+                                .clickable { onSelect(option) }
+                                .padding(horizontal = 10.dp, vertical = 8.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            // Mini palette preview: background, accent, cta swatches
+                            Row {
+                                listOf(
+                                    option.palette.backgroundTop,
+                                    option.palette.accent,
+                                    option.palette.cta
+                                ).forEach { swatch ->
+                                    Box(
+                                        modifier = Modifier
+                                            .padding(end = 3.dp)
+                                            .size(16.dp)
+                                            .clip(CircleShape)
+                                            .background(swatch)
+                                            .border(0.5.dp, pal.tint.copy(alpha = 0.3f), CircleShape)
+                                    )
+                                }
+                            }
+                            Spacer(Modifier.width(10.dp))
+                            Text(
+                                text = option.displayName,
+                                color = pal.textPrimary,
+                                fontSize = 14.sp,
+                                fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium,
+                                modifier = Modifier.weight(1f)
+                            )
+                            if (selected) {
+                                Icon(Icons.Default.Check, null, tint = pal.accent, modifier = Modifier.size(18.dp))
+                            }
+                        }
+                        Spacer(Modifier.height(6.dp))
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Done", color = pal.accent, fontWeight = FontWeight.Bold)
+            }
+        },
+        containerColor = pal.surface,
+        shape = RoundedCornerShape(16.dp),
+        modifier = Modifier.border(1.dp, pal.accent.copy(alpha = 0.5f), RoundedCornerShape(16.dp))
+    )
+}
+
 @Composable
 private fun ActiveGameCardCompact(game: MarriageGameSet, onResume: () -> Unit) {
     Card(
@@ -391,15 +498,15 @@ private fun ActiveGameCardCompact(game: MarriageGameSet, onResume: () -> Unit) {
             .fillMaxWidth()
             .clickable { onResume() },
         shape = RoundedCornerShape(12.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White.copy(alpha = 0.05f)),
-        border = BorderStroke(1.dp, Color.White.copy(alpha = 0.1f))
+        colors = CardDefaults.cardColors(containerColor = AppTheme.palette.tint.copy(alpha = 0.05f)),
+        border = BorderStroke(1.dp, AppTheme.palette.tint.copy(alpha = 0.1f))
     ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
                 .background(
                     Brush.verticalGradient(
-                        colors = listOf(Color.White.copy(alpha = 0.05f), Color.Transparent)
+                        colors = listOf(AppTheme.palette.tint.copy(alpha = 0.05f), Color.Transparent)
                     )
                 )
                 .padding(16.dp),
@@ -409,7 +516,7 @@ private fun ActiveGameCardCompact(game: MarriageGameSet, onResume: () -> Unit) {
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = game.name,
-                    color = Color.White,
+                    color = AppTheme.palette.textPrimary,
                     fontSize = 15.sp,
                     fontWeight = FontWeight.ExtraBold,
                     maxLines = 1,
@@ -418,7 +525,7 @@ private fun ActiveGameCardCompact(game: MarriageGameSet, onResume: () -> Unit) {
                 Spacer(Modifier.height(2.dp))
                 Text(
                     text = "Last played: ${game.lastPlayed.take(10)}",
-                    color = Color.White.copy(alpha = 0.5f),
+                    color = AppTheme.palette.tint.copy(alpha = 0.5f),
                     fontSize = 11.sp,
                     fontWeight = FontWeight.Medium
                 )
@@ -426,13 +533,13 @@ private fun ActiveGameCardCompact(game: MarriageGameSet, onResume: () -> Unit) {
             Surface(
                 modifier = Modifier.size(32.dp),
                 shape = RoundedCornerShape(16.dp),
-                color = GoldAccent.copy(alpha = 0.15f),
-                border = BorderStroke(1.dp, GoldAccent.copy(alpha = 0.3f))
+                color = AppTheme.palette.accent.copy(alpha = 0.15f),
+                border = BorderStroke(1.dp, AppTheme.palette.accent.copy(alpha = 0.3f))
             ) {
                 Icon(
                     Icons.Default.PlayArrow,
                     contentDescription = "Resume",
-                    tint = GoldAccent,
+                    tint = AppTheme.palette.accent,
                     modifier = Modifier.padding(4.dp)
                 )
             }

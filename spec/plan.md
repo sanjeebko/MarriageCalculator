@@ -3,7 +3,7 @@
 ## Problem Statement
 Build a full-featured Android (Kotlin/Compose) app for the Marriage card game calculator, backed by the existing .NET API. The app must handle 2-6 players with efficient screen space usage, support offline/online modes, real-time score display, and integrate with the C# API hosted on Kubernetes. The Maui version is archived and replaced by this native Android app.
 
-## Status: Phases 1-22 COMPLETE ✅
+## Status: Phases 1-23 COMPLETE ✅
 - 44 C# tests (12 Core + 32 API) + 74 Android unit tests all passing
 - Android APK builds successfully (`assembleDebug`)
 - .NET API builds successfully
@@ -274,6 +274,17 @@ User feedback: the + FAB is redundant - the current game's blank row should BE t
 - [x] Step 22.5: **Colors** — new frost palette in theme (`FrostWhite` 0xFFE9EEF6, `FrostBlue` 0xFFA6BEE0): all gold accents inside the table, standings, and tooltip replaced (round titles, column initials, seq numbers, Σ, Maal/Points tabs, D badges, DEALER chip, icons); top bar and dialogs keep the festive gold branding.
 - [x] Step 22.6: Verify — `dotnet test` 47/47, Android tests/assemble green, Docker API redeployed; live: pending row tap opened Add Score; previous-game tap showed the warning; Modify opened the prefilled Edit Game screen (Total Maal 19, +23 pts/+£2.30 preview matching stored values, dealer label on AAR); saving with identical inputs round-tripped the new PUT and reproduced identical table values - rescoring is consistent.
 - **COMMIT**: "feat: tap-to-score rows, edit previous games, and frost glass palette"
+
+---
+
+## Phase 23: Selectable Color Themes (Complete)
+Four designed themes - 2 dark, 2 light - selectable in-app; the choice is a purely device-local setting (SharedPreferences), deliberately NOT synced to the database or API.
+- [x] Step 23.1: **Palette model** — `AppPalette` (backgroundTop/Bottom, surface, accent, accentAlt, cta, frostText, frostAccent, textPrimary, tint) + `AppThemeOption` enum with the 4 designs: **Tihar Night** (default; the existing festive dark: night blue, gold, deep red), **Midnight Frost** (dark: slate blues, ice-blue accent, teal secondary), **Marigold Day** (light: warm ivory, bronze-gold accent, deep red CTA), **Himalayan Mist** (light: cool pale blues, slate accents). The `tint` field is the glassmorphism base - white on dark themes, ink on light - so `tint.copy(alpha=…)` overlays keep frosted pills/borders visible in both modes.
+- [x] Step 23.2: **Plumbing** — `LocalAppPalette` CompositionLocal + `AppTheme.palette` accessor; `MarriageCalculatorTheme(theme)` builds a matching Material3 dark/light color scheme, flips status-bar icon appearance for light themes, and provides the palette; `ThemePreference` (@Singleton, SharedPreferences `app_theme`) exposes a StateFlow; `MainActivity` collects it so switching re-themes the whole app instantly.
+- [x] Step 23.3: **Picker UI** — "App Theme" drawer item on the Dashboard opens a dialog grouped DARK/LIGHT, each option showing 3 palette swatches + name + check; selection applies immediately (`DashboardViewModel.setTheme`).
+- [x] Step 23.4: **Color routing** — all hardcoded theme colors in Dashboard, PlayGame, Scoreboard, RoundInput, GameSetup, and Friend screens rewired to `AppTheme.palette.*` (including `Color.White` text → `textPrimary` and `Color.White.copy(…)` glass overlays → `tint.copy(…)`); Login/Splash and the metallic branded buttons keep their fixed festive look. Fixed two stragglers found live: Dashboard's screen/drawer gradients and FriendScreen's gradient/textfield had hardcoded dark bottoms that broke light themes.
+- [x] Step 23.5: Verify — build/tests green; live on the emulator: picker shows all 4 with swatches; Midnight Frost re-themed the app instantly; Marigold Day verified on the game page (glass pending-row pill, winner pills, and frost headers all legible on ivory); Himalayan Mist verified; force-stop + relaunch came back in the selected theme (persistence); restored Tihar Night as the active default.
+- **COMMIT**: "feat: four selectable color themes with device-local persistence"
 
 ---
 

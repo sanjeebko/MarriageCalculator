@@ -5,9 +5,12 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.lifecycle.lifecycleScope
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.navigation.compose.rememberNavController
 import com.google.firebase.messaging.FirebaseMessaging
 import np.com.sanjeeb.marriagecalculator.data.repository.SessionManager
+import np.com.sanjeeb.marriagecalculator.data.repository.ThemePreference
 import np.com.sanjeeb.marriagecalculator.data.repository.UserRepository
 import np.com.sanjeeb.marriagecalculator.navigation.MarriageNavGraph
 import np.com.sanjeeb.marriagecalculator.ui.theme.MarriageCalculatorTheme
@@ -24,13 +27,17 @@ class MainActivity : ComponentActivity() {
     @Inject
     lateinit var userRepository: UserRepository
 
+    @Inject
+    lateinit var themePreference: ThemePreference
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         fetchAndRegisterFcmToken()
 
         setContent {
-            MarriageCalculatorTheme {
+            val theme by themePreference.theme.collectAsState()
+            MarriageCalculatorTheme(theme = theme) {
                 val navController = rememberNavController()
                 MarriageNavGraph(
                     navController = navController,

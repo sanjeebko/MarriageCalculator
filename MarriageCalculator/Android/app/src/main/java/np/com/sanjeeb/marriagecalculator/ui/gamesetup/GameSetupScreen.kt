@@ -1,5 +1,7 @@
 package np.com.sanjeeb.marriagecalculator.ui.gamesetup
 
+import np.com.sanjeeb.marriagecalculator.ui.theme.AppTheme
+
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -50,10 +52,6 @@ import android.net.Uri
 import np.com.sanjeeb.marriagecalculator.data.model.Currency
 import np.com.sanjeeb.marriagecalculator.data.model.GameSettings
 import np.com.sanjeeb.marriagecalculator.data.model.Player
-import np.com.sanjeeb.marriagecalculator.ui.theme.DeepRedTika
-import np.com.sanjeeb.marriagecalculator.ui.theme.GoldAccent
-import np.com.sanjeeb.marriagecalculator.ui.theme.MarigoldOrange
-import np.com.sanjeeb.marriagecalculator.ui.theme.TiharNightBlue
 import np.com.sanjeeb.marriagecalculator.ui.components.MetallicButton
 import np.com.sanjeeb.marriagecalculator.ui.components.MetallicRedFace
 import np.com.sanjeeb.marriagecalculator.ui.components.MetallicRedRim
@@ -79,17 +77,17 @@ fun GameSetupScreen(
                 title = {
                     Text(
                         "New Game",
-                        color = GoldAccent,
+                        color = AppTheme.palette.accent,
                         fontFamily = FontFamily.Serif,
                         fontWeight = FontWeight.Bold
                     )
                 },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, null, tint = GoldAccent)
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, null, tint = AppTheme.palette.accent)
                     }
                 },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = TiharNightBlue)
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = AppTheme.palette.surface)
             )
         },
         containerColor = Color.Transparent
@@ -97,7 +95,7 @@ fun GameSetupScreen(
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .background(Brush.verticalGradient(listOf(TiharNightBlue, Color(0xFF0D0D1A))))
+                .background(Brush.verticalGradient(listOf(AppTheme.palette.backgroundTop, AppTheme.palette.backgroundBottom)))
                 .padding(padding)
         ) {
             Column(
@@ -110,13 +108,13 @@ fun GameSetupScreen(
                 OutlinedTextField(
                     value = uiState.gameName,
                     onValueChange = { viewModel.setGameName(it) },
-                    label = { Text("Game Name (optional)", color = GoldAccent.copy(alpha = 0.7f)) },
+                    label = { Text("Game Name (optional)", color = AppTheme.palette.accent.copy(alpha = 0.7f)) },
                     modifier = Modifier.fillMaxWidth(),
                     colors = OutlinedTextFieldDefaults.colors(
-                        focusedTextColor = Color.White,
-                        unfocusedTextColor = Color.White,
-                        focusedBorderColor = GoldAccent,
-                        unfocusedBorderColor = GoldAccent.copy(alpha = 0.3f)
+                        focusedTextColor = AppTheme.palette.textPrimary,
+                        unfocusedTextColor = AppTheme.palette.textPrimary,
+                        focusedBorderColor = AppTheme.palette.accent,
+                        unfocusedBorderColor = AppTheme.palette.accent.copy(alpha = 0.3f)
                     ),
                     singleLine = true
                 )
@@ -158,12 +156,12 @@ fun GameSetupScreen(
                     text = "Start Game (${uiState.selectedPlayerIds.size} players)",
                     rimColors = MetallicRedRim,
                     faceColors = MetallicRedFace,
-                    textColor = GoldAccent,
+                    textColor = AppTheme.palette.accent,
                     modifier = Modifier.height(56.dp),
                     enabled = uiState.selectedPlayerIds.size in 2..6,
                     isLoading = uiState.isLoading,
                     leadingIcon = {
-                        Icon(Icons.Default.PlayArrow, null, tint = GoldAccent)
+                        Icon(Icons.Default.PlayArrow, null, tint = AppTheme.palette.accent)
                     }
                 )
 
@@ -205,14 +203,14 @@ private fun PlayerSelectionSection(
     ) {
         Text(
             "Players",
-            color = Color.White,
+            color = AppTheme.palette.textPrimary,
             fontSize = 20.sp,
             fontWeight = FontWeight.Bold,
             fontFamily = FontFamily.Serif
         )
         Text(
             "${selectedIds.size} / 6 JOINED",
-            color = GoldAccent,
+            color = AppTheme.palette.accent,
             fontWeight = FontWeight.Bold,
             fontSize = 10.sp
         )
@@ -241,23 +239,24 @@ private fun PlayerSelectionSection(
                         .clickable { showPlayerSheet = true },
                     contentAlignment = Alignment.Center
                 ) {
+                    val dashColor = AppTheme.palette.tint.copy(alpha = 0.3f)
                     androidx.compose.foundation.Canvas(modifier = Modifier.matchParentSize()) {
                         drawRoundRect(
-                            color = Color.White.copy(alpha = 0.3f),
+                            color = dashColor,
                             style = Stroke(width = 4f, pathEffect = PathEffect.dashPathEffect(floatArrayOf(10f, 10f), 0f)),
                             cornerRadius = androidx.compose.ui.geometry.CornerRadius(8.dp.toPx())
                         )
                     }
-                    Icon(Icons.Default.Add, contentDescription = "Add Player", tint = Color.White)
+                    Icon(Icons.Default.Add, contentDescription = "Add Player", tint = AppTheme.palette.textPrimary)
                 }
             } else {
-                Box(modifier = emptyModifier.background(Color.White.copy(alpha = 0.05f), RoundedCornerShape(8.dp)))
+                Box(modifier = emptyModifier.background(AppTheme.palette.tint.copy(alpha = 0.05f), RoundedCornerShape(8.dp)))
             }
         }
     }
 
     if (showPlayerSheet) {
-        ModalBottomSheet(onDismissRequest = { showPlayerSheet = false }, containerColor = TiharNightBlue) {
+        ModalBottomSheet(onDismissRequest = { showPlayerSheet = false }, containerColor = AppTheme.palette.surface) {
             PlayerSelectionSheetContent(
                 allPlayers = allPlayers,
                 selectedIds = selectedIds,
@@ -272,7 +271,7 @@ private fun PlayerSelectionSection(
     }
 
     if (showCreateSheet) {
-        ModalBottomSheet(onDismissRequest = { showCreateSheet = false }, containerColor = TiharNightBlue) {
+        ModalBottomSheet(onDismissRequest = { showCreateSheet = false }, containerColor = AppTheme.palette.surface) {
             CreatePlayerSheetContent(
                 onPlayerCreated = { name, uri ->
                     onAddNewPlayer(name, uri)
@@ -287,7 +286,7 @@ private fun PlayerSelectionSection(
 fun PlayerSlot(player: Player, modifier: Modifier, onClick: () -> Unit) {
     Box(
         modifier = modifier
-            .background(Color.White.copy(alpha = 0.1f), RoundedCornerShape(8.dp))
+            .background(AppTheme.palette.tint.copy(alpha = 0.1f), RoundedCornerShape(8.dp))
             .clickable { onClick() }
     ) {
         if (!player.photoUri.isNullOrEmpty()) {
@@ -307,7 +306,7 @@ fun PlayerSlot(player: Player, modifier: Modifier, onClick: () -> Unit) {
             )
         } else {
              Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                 Text(player.name.take(1).uppercase(), color = Color.White, fontSize = 18.sp, fontWeight = FontWeight.Bold)
+                 Text(player.name.take(1).uppercase(), color = AppTheme.palette.textPrimary, fontSize = 18.sp, fontWeight = FontWeight.Bold)
              }
         }
         
@@ -319,7 +318,7 @@ fun PlayerSlot(player: Player, modifier: Modifier, onClick: () -> Unit) {
                 .padding(vertical = 4.dp),
             contentAlignment = Alignment.Center
         ) {
-            Text(player.name, color = Color.White, fontSize = 9.sp, maxLines = 1)
+            Text(player.name, color = AppTheme.palette.textPrimary, fontSize = 9.sp, maxLines = 1)
         }
     }
 }
@@ -334,11 +333,11 @@ fun PlayerSelectionSheetContent(
 ) {
     Column(modifier = Modifier.padding(16.dp).fillMaxWidth().heightIn(min = 300.dp)) {
         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-            Text("Select Player", fontSize = 20.sp, fontWeight = FontWeight.Bold, color = GoldAccent, fontFamily = FontFamily.Serif)
+            Text("Select Player", fontSize = 20.sp, fontWeight = FontWeight.Bold, color = AppTheme.palette.accent, fontFamily = FontFamily.Serif)
             TextButton(onClick = onCreateNewClicked) {
-                Icon(Icons.Default.Add, null, tint = GoldAccent, modifier = Modifier.size(16.dp))
+                Icon(Icons.Default.Add, null, tint = AppTheme.palette.accent, modifier = Modifier.size(16.dp))
                 Spacer(modifier = Modifier.width(4.dp))
-                Text("New Player", color = GoldAccent)
+                Text("New Player", color = AppTheme.palette.accent)
             }
         }
         Spacer(modifier = Modifier.height(16.dp))
@@ -356,9 +355,9 @@ fun PlayerSelectionSheetContent(
                         mePlayer?.let { onTogglePlayer(it.id) }
                     }
                     .padding(vertical = 8.dp),
-                border = BorderStroke(1.dp, if (isMeSelected) GoldAccent else Color.White.copy(alpha = 0.2f)),
+                border = BorderStroke(1.dp, if (isMeSelected) AppTheme.palette.accent else AppTheme.palette.tint.copy(alpha = 0.2f)),
                 colors = CardDefaults.cardColors(
-                    containerColor = if (isMeSelected) DeepRedTika.copy(alpha = 0.2f) else Color.White.copy(alpha = 0.05f)
+                    containerColor = if (isMeSelected) AppTheme.palette.cta.copy(alpha = 0.2f) else AppTheme.palette.tint.copy(alpha = 0.05f)
                 )
             ) {
                 Row(
@@ -369,7 +368,7 @@ fun PlayerSelectionSheetContent(
                         modifier = Modifier
                             .size(40.dp)
                             .clip(CircleShape)
-                            .background(Color.White.copy(alpha = 0.1f)),
+                            .background(AppTheme.palette.tint.copy(alpha = 0.1f)),
                         contentAlignment = Alignment.Center
                     ) {
                         if (!currentUser.photoUrl.isNullOrEmpty()) {
@@ -382,7 +381,7 @@ fun PlayerSelectionSheetContent(
                         } else {
                             Text(
                                 text = currentUser.displayName.take(1).uppercase(),
-                                color = Color.White,
+                                color = AppTheme.palette.textPrimary,
                                 fontWeight = FontWeight.Bold,
                                 fontSize = 18.sp
                             )
@@ -390,13 +389,13 @@ fun PlayerSelectionSheetContent(
                     }
                     Spacer(modifier = Modifier.width(12.dp))
                     Column(modifier = Modifier.weight(1f)) {
-                        Text(currentUser.displayName, color = Color.White, fontWeight = FontWeight.Bold, fontSize = 14.sp)
-                        Text("You (${currentUser.email})", color = Color.White.copy(alpha = 0.5f), fontSize = 12.sp)
+                        Text(currentUser.displayName, color = AppTheme.palette.textPrimary, fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                        Text("You (${currentUser.email})", color = AppTheme.palette.tint.copy(alpha = 0.5f), fontSize = 12.sp)
                     }
                     if (isMeSelected) {
-                        Icon(Icons.Default.CheckCircle, contentDescription = "Selected", tint = GoldAccent)
+                        Icon(Icons.Default.CheckCircle, contentDescription = "Selected", tint = AppTheme.palette.accent)
                     } else {
-                        Text("Add Me", color = GoldAccent, fontWeight = FontWeight.Bold, fontSize = 12.sp)
+                        Text("Add Me", color = AppTheme.palette.accent, fontWeight = FontWeight.Bold, fontSize = 12.sp)
                     }
                 }
             }
@@ -419,8 +418,8 @@ fun PlayerSelectionSheetContent(
         ) {
             items(gridPlayers) { player ->
                 val isSelected = selectedIds.contains(player.id)
-                val bgColor = if (isSelected) DeepRedTika else Color.White.copy(alpha = 0.05f)
-                val borderColor = if (isSelected) GoldAccent else Color.White.copy(alpha = 0.2f)
+                val bgColor = if (isSelected) AppTheme.palette.cta else AppTheme.palette.tint.copy(alpha = 0.05f)
+                val borderColor = if (isSelected) AppTheme.palette.accent else AppTheme.palette.tint.copy(alpha = 0.2f)
 
                 Column(
                     modifier = Modifier
@@ -435,7 +434,7 @@ fun PlayerSelectionSheetContent(
                         modifier = Modifier
                             .size(40.dp)
                             .clip(CircleShape)
-                            .background(if (isSelected) GoldAccent else Color.White.copy(alpha = 0.1f)),
+                            .background(if (isSelected) AppTheme.palette.accent else AppTheme.palette.tint.copy(alpha = 0.1f)),
                         contentAlignment = Alignment.Center
                     ) {
                         if (!player.photoUri.isNullOrEmpty()) {
@@ -448,7 +447,7 @@ fun PlayerSelectionSheetContent(
                         } else {
                             Text(
                                 text = player.name.take(1).uppercase(),
-                                color = if (isSelected) DeepRedTika else Color.White,
+                                color = if (isSelected) AppTheme.palette.cta else AppTheme.palette.textPrimary,
                                 fontWeight = FontWeight.Bold,
                                 fontSize = 18.sp
                             )
@@ -457,7 +456,7 @@ fun PlayerSelectionSheetContent(
                     Spacer(modifier = Modifier.height(4.dp))
                     Text(
                         text = player.name,
-                        color = if (isSelected) GoldAccent else Color.White.copy(alpha = 0.7f),
+                        color = if (isSelected) AppTheme.palette.accent else AppTheme.palette.tint.copy(alpha = 0.7f),
                         fontSize = 12.sp,
                         textAlign = TextAlign.Center,
                         maxLines = 1
@@ -483,25 +482,25 @@ fun CreatePlayerSheetContent(onPlayerCreated: (String, String?) -> Unit) {
     }
 
     Column(modifier = Modifier.padding(16.dp).fillMaxWidth().padding(bottom = 32.dp)) {
-        Text("Create New Player", fontSize = 20.sp, fontWeight = FontWeight.Bold, color = GoldAccent, fontFamily = FontFamily.Serif)
+        Text("Create New Player", fontSize = 20.sp, fontWeight = FontWeight.Bold, color = AppTheme.palette.accent, fontFamily = FontFamily.Serif)
         Spacer(modifier = Modifier.height(16.dp))
 
         OutlinedTextField(
             value = name,
             onValueChange = { name = it },
-            label = { Text("Player Name", color = GoldAccent.copy(alpha = 0.7f)) },
+            label = { Text("Player Name", color = AppTheme.palette.accent.copy(alpha = 0.7f)) },
             modifier = Modifier.fillMaxWidth(),
             colors = OutlinedTextFieldDefaults.colors(
-                focusedTextColor = Color.White,
-                unfocusedTextColor = Color.White,
-                focusedBorderColor = GoldAccent,
-                unfocusedBorderColor = GoldAccent.copy(alpha = 0.3f)
+                focusedTextColor = AppTheme.palette.textPrimary,
+                unfocusedTextColor = AppTheme.palette.textPrimary,
+                focusedBorderColor = AppTheme.palette.accent,
+                unfocusedBorderColor = AppTheme.palette.accent.copy(alpha = 0.3f)
             ),
             singleLine = true
         )
         
         Spacer(modifier = Modifier.height(24.dp))
-        Text("Select Photo", color = Color.White.copy(alpha = 0.7f), fontSize = 14.sp)
+        Text("Select Photo", color = AppTheme.palette.tint.copy(alpha = 0.7f), fontSize = 14.sp)
         Spacer(modifier = Modifier.height(8.dp))
         
         Row(horizontalArrangement = Arrangement.spacedBy(16.dp), modifier = Modifier.horizontalScroll(rememberScrollState())) {
@@ -509,15 +508,15 @@ fun CreatePlayerSheetContent(onPlayerCreated: (String, String?) -> Unit) {
                 val isSelected = selectedPhotoUri?.contains(avatarName) == true
                 Box(modifier = Modifier.size(64.dp).clip(RoundedCornerShape(8.dp)).clickable { 
                     selectedPhotoUri = "android.resource://${context.packageName}/drawable/$avatarName" 
-                }.border(if (isSelected) 2.dp else 0.dp, GoldAccent, RoundedCornerShape(8.dp))) {
+                }.border(if (isSelected) 2.dp else 0.dp, AppTheme.palette.accent, RoundedCornerShape(8.dp))) {
                     AsyncImage(model = "android.resource://${context.packageName}/drawable/$avatarName", contentDescription = null, modifier = Modifier.fillMaxSize())
                 }
             }
 
-            Box(modifier = Modifier.size(64.dp).clip(RoundedCornerShape(8.dp)).background(Color.White.copy(alpha = 0.1f)).clickable { 
+            Box(modifier = Modifier.size(64.dp).clip(RoundedCornerShape(8.dp)).background(AppTheme.palette.tint.copy(alpha = 0.1f)).clickable { 
                 galleryLauncher.launch("image/*") 
             }, contentAlignment = Alignment.Center) {
-                Icon(Icons.Default.PhotoLibrary, "Gallery", tint = GoldAccent)
+                Icon(Icons.Default.PhotoLibrary, "Gallery", tint = AppTheme.palette.accent)
             }
         }
         
@@ -527,7 +526,7 @@ fun CreatePlayerSheetContent(onPlayerCreated: (String, String?) -> Unit) {
             onClick = { onPlayerCreated(name, selectedPhotoUri) },
             modifier = Modifier.fillMaxWidth().height(50.dp),
             enabled = name.isNotBlank(),
-            colors = ButtonDefaults.buttonColors(containerColor = DeepRedTika, contentColor = GoldAccent)
+            colors = ButtonDefaults.buttonColors(containerColor = AppTheme.palette.cta, contentColor = AppTheme.palette.accent)
         ) {
             Text("Save & Add Player")
         }
@@ -551,7 +550,7 @@ private fun SettingsSection(settings: GameSettings, onSettingsChange: (GameSetti
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(12.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White.copy(alpha = 0.05f))
+        colors = CardDefaults.cardColors(containerColor = AppTheme.palette.tint.copy(alpha = 0.05f))
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
             Row(
@@ -563,7 +562,7 @@ private fun SettingsSection(settings: GameSettings, onSettingsChange: (GameSetti
             ) {
                 Text(
                     "Game Settings",
-                    color = GoldAccent,
+                    color = AppTheme.palette.accent,
                     fontSize = 18.sp,
                     fontWeight = FontWeight.Bold,
                     fontFamily = FontFamily.Serif
@@ -571,7 +570,7 @@ private fun SettingsSection(settings: GameSettings, onSettingsChange: (GameSetti
                 Icon(
                     if (expanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
                     null,
-                    tint = GoldAccent
+                    tint = AppTheme.palette.accent
                 )
             }
 
@@ -579,7 +578,7 @@ private fun SettingsSection(settings: GameSettings, onSettingsChange: (GameSetti
                 Spacer(modifier = Modifier.height(16.dp))
 
                 // Game Mode
-                Text("Game Mode", color = Color.White.copy(alpha = 0.7f), fontSize = 14.sp)
+                Text("Game Mode", color = AppTheme.palette.tint.copy(alpha = 0.7f), fontSize = 14.sp)
                 Spacer(modifier = Modifier.height(4.dp))
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     GameModeChip("Murder", settings.murder) {
@@ -611,7 +610,7 @@ private fun SettingsSection(settings: GameSettings, onSettingsChange: (GameSetti
                 Spacer(modifier = Modifier.height(12.dp))
 
                 // Currency
-                Text("Currency", color = Color.White.copy(alpha = 0.7f), fontSize = 14.sp)
+                Text("Currency", color = AppTheme.palette.tint.copy(alpha = 0.7f), fontSize = 14.sp)
                 Spacer(modifier = Modifier.height(4.dp))
                 Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
                     Currency.entries.forEach { currency ->
@@ -620,8 +619,8 @@ private fun SettingsSection(settings: GameSettings, onSettingsChange: (GameSetti
                             onClick = { onSettingsChange(settings.copy(currency = currency)) },
                             label = { Text(currency.displayName(), fontSize = 11.sp) },
                             colors = FilterChipDefaults.filterChipColors(
-                                selectedContainerColor = DeepRedTika,
-                                selectedLabelColor = GoldAccent
+                                selectedContainerColor = AppTheme.palette.cta,
+                                selectedLabelColor = AppTheme.palette.accent
                             ),
                             modifier = Modifier.height(32.dp)
                         )
@@ -636,11 +635,11 @@ private fun SettingsSection(settings: GameSettings, onSettingsChange: (GameSetti
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
-                    Text("Dublee", color = Color.White.copy(alpha = 0.7f))
+                    Text("Dublee", color = AppTheme.palette.tint.copy(alpha = 0.7f))
                     Switch(
                         checked = settings.dublee,
                         onCheckedChange = { onSettingsChange(settings.copy(dublee = it)) },
-                        colors = SwitchDefaults.colors(checkedTrackColor = DeepRedTika, checkedThumbColor = GoldAccent)
+                        colors = SwitchDefaults.colors(checkedTrackColor = AppTheme.palette.cta, checkedThumbColor = AppTheme.palette.accent)
                     )
                 }
             }
@@ -655,9 +654,9 @@ private fun GameModeChip(label: String, isSelected: Boolean, onClick: () -> Unit
         onClick = onClick,
         label = { Text(label, fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal) },
         colors = FilterChipDefaults.filterChipColors(
-            selectedContainerColor = DeepRedTika,
-            selectedLabelColor = GoldAccent,
-            labelColor = Color.White.copy(alpha = 0.6f)
+            selectedContainerColor = AppTheme.palette.cta,
+            selectedLabelColor = AppTheme.palette.accent,
+            labelColor = AppTheme.palette.tint.copy(alpha = 0.6f)
         )
     )
 }
@@ -667,13 +666,13 @@ private fun SettingField(label: String, value: String, modifier: Modifier = Modi
     OutlinedTextField(
         value = value,
         onValueChange = onValueChange,
-        label = { Text(label, color = GoldAccent.copy(alpha = 0.7f), fontSize = 10.sp) },
+        label = { Text(label, color = AppTheme.palette.accent.copy(alpha = 0.7f), fontSize = 10.sp) },
         modifier = modifier,
         colors = OutlinedTextFieldDefaults.colors(
-            focusedTextColor = Color.White,
-            unfocusedTextColor = Color.White,
-            focusedBorderColor = GoldAccent,
-            unfocusedBorderColor = GoldAccent.copy(alpha = 0.3f)
+            focusedTextColor = AppTheme.palette.textPrimary,
+            unfocusedTextColor = AppTheme.palette.textPrimary,
+            focusedBorderColor = AppTheme.palette.accent,
+            unfocusedBorderColor = AppTheme.palette.accent.copy(alpha = 0.3f)
         ),
         singleLine = true
     )

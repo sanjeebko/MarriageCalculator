@@ -1,5 +1,7 @@
 package np.com.sanjeeb.marriagecalculator.ui.roundinput
 
+import np.com.sanjeeb.marriagecalculator.ui.theme.AppTheme
+
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -30,8 +32,6 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import np.com.sanjeeb.marriagecalculator.data.model.Currency
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
-import np.com.sanjeeb.marriagecalculator.ui.theme.DeepRedTika
-import np.com.sanjeeb.marriagecalculator.ui.theme.GoldAccent
 import java.io.File
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -62,18 +62,18 @@ fun RoundInputScreen(
                 title = { },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, null, tint = GoldAccent)
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, null, tint = AppTheme.palette.accent)
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent)
             )
         },
-        containerColor = Color(0xFF151515)
+        containerColor = AppTheme.palette.backgroundBottom
     ) { padding ->
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .background(Brush.verticalGradient(listOf(Color(0xFF2C2C2C), Color(0xFF121212))))
+                .background(Brush.verticalGradient(listOf(AppTheme.palette.backgroundTop, AppTheme.palette.backgroundBottom)))
                 .padding(padding)
         ) {
             Column(
@@ -86,7 +86,7 @@ fun RoundInputScreen(
                 // Header
                 Text(
                     text = if (uiState.editGameId != null) "EDITING PREVIOUS GAME" else "CURRENT MATCH",
-                    color = GoldAccent.copy(alpha = 0.8f),
+                    color = AppTheme.palette.accent.copy(alpha = 0.8f),
                     fontSize = 11.sp,
                     fontWeight = FontWeight.Bold,
                     letterSpacing = 2.sp
@@ -94,7 +94,7 @@ fun RoundInputScreen(
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(
                     text = if (uiState.editGameId != null) "Edit Game" else "Round $roundNumber",
-                    color = Color.White,
+                    color = AppTheme.palette.textPrimary,
                     fontSize = 32.sp,
                     fontFamily = FontFamily.Serif,
                     fontWeight = FontWeight.Bold
@@ -105,24 +105,24 @@ fun RoundInputScreen(
                 val totalMaal = uiState.playerStates.sumOf { if (it.seen) it.seenPoints else 0 }
                 Card(
                     shape = RoundedCornerShape(8.dp),
-                    colors = CardDefaults.cardColors(containerColor = GoldAccent.copy(alpha = 0.15f)),
-                    border = androidx.compose.foundation.BorderStroke(1.dp, GoldAccent.copy(alpha = 0.4f)),
+                    colors = CardDefaults.cardColors(containerColor = AppTheme.palette.accent.copy(alpha = 0.15f)),
+                    border = androidx.compose.foundation.BorderStroke(1.dp, AppTheme.palette.accent.copy(alpha = 0.4f)),
                     modifier = Modifier.padding(vertical = 4.dp)
                 ) {
                     Row(
                         modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Icon(Icons.Default.Casino, null, tint = GoldAccent, modifier = Modifier.size(18.dp))
+                        Icon(Icons.Default.Casino, null, tint = AppTheme.palette.accent, modifier = Modifier.size(18.dp))
                         Spacer(modifier = Modifier.width(8.dp))
                         Text(
                             text = "Total Maal Collected: ",
-                            color = Color.White.copy(alpha = 0.8f),
+                            color = AppTheme.palette.tint.copy(alpha = 0.8f),
                             fontSize = 14.sp
                         )
                         Text(
                             text = "$totalMaal",
-                            color = GoldAccent,
+                            color = AppTheme.palette.accent,
                             fontWeight = FontWeight.Bold,
                             fontSize = 16.sp
                         )
@@ -130,7 +130,7 @@ fun RoundInputScreen(
                 }
 
                 Spacer(modifier = Modifier.height(16.dp))
-                Box(modifier = Modifier.width(40.dp).height(3.dp).background(GoldAccent))
+                Box(modifier = Modifier.width(40.dp).height(3.dp).background(AppTheme.palette.accent))
                 Spacer(modifier = Modifier.height(24.dp))
 
                 // Player cards
@@ -171,10 +171,10 @@ fun RoundInputScreen(
 
                 OutlinedButton(
                     onClick = { onBack() },
-                    border = androidx.compose.foundation.BorderStroke(1.dp, Color.White.copy(alpha = 0.1f)),
+                    border = androidx.compose.foundation.BorderStroke(1.dp, AppTheme.palette.tint.copy(alpha = 0.1f)),
                     modifier = Modifier.fillMaxWidth().height(56.dp),
                     shape = RoundedCornerShape(8.dp),
-                    colors = ButtonDefaults.outlinedButtonColors(contentColor = Color.White)
+                    colors = ButtonDefaults.outlinedButtonColors(contentColor = AppTheme.palette.textPrimary)
                 ) {
                     Text("Discard & Return")
                 }
@@ -219,14 +219,14 @@ private fun PlayerScoreCard(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(12.dp),
         colors = CardDefaults.cardColors(containerColor = Color(0xFF1E1E1E)),
-        border = androidx.compose.foundation.BorderStroke(1.dp, if (isWinner) GoldAccent else if (isDealer) Color.White.copy(alpha = 0.2f) else Color.White.copy(alpha = 0.05f))
+        border = androidx.compose.foundation.BorderStroke(1.dp, if (isWinner) AppTheme.palette.accent else if (isDealer) AppTheme.palette.tint.copy(alpha = 0.2f) else AppTheme.palette.tint.copy(alpha = 0.05f))
     ) {
         Row(modifier = Modifier.fillMaxWidth().height(IntrinsicSize.Min)) {
             // Left border indicator
             if (isWinner) {
-                Box(modifier = Modifier.fillMaxHeight().width(4.dp).background(GoldAccent))
+                Box(modifier = Modifier.fillMaxHeight().width(4.dp).background(AppTheme.palette.accent))
             } else if (isDealer) {
-                Box(modifier = Modifier.fillMaxHeight().width(4.dp).background(Color.White.copy(alpha = 0.4f)))
+                Box(modifier = Modifier.fillMaxHeight().width(4.dp).background(AppTheme.palette.tint.copy(alpha = 0.4f)))
             }
             
             Column(modifier = Modifier.padding(16.dp).fillMaxWidth()) {
@@ -257,10 +257,10 @@ private fun PlayerScoreCard(
                             )
                         } else {
                             Box(
-                                modifier = Modifier.size(48.dp).clip(RoundedCornerShape(8.dp)).background(Color.DarkGray),
+                                modifier = Modifier.size(48.dp).clip(RoundedCornerShape(8.dp)).background(AppTheme.palette.tint.copy(alpha = 0.25f)),
                                 contentAlignment = Alignment.Center
                             ) {
-                                Text(state.player.name.take(1).uppercase(), color = Color.White, fontWeight = FontWeight.Bold, fontSize = 20.sp)
+                                Text(state.player.name.take(1).uppercase(), color = AppTheme.palette.textPrimary, fontWeight = FontWeight.Bold, fontSize = 20.sp)
                             }
                         }
 
@@ -269,14 +269,14 @@ private fun PlayerScoreCard(
                         Column {
                             Text(
                                 text = state.player.name,
-                                color = Color.White,
+                                color = AppTheme.palette.textPrimary,
                                 fontSize = 18.sp,
                                 fontFamily = FontFamily.Serif,
                                 fontWeight = FontWeight.Bold
                             )
                             Text(
                                 text = if (isDealer) "DEALER" else "PLAYER",
-                                color = Color.White.copy(alpha = 0.5f),
+                                color = AppTheme.palette.tint.copy(alpha = 0.5f),
                                 fontSize = 10.sp,
                                 letterSpacing = 1.sp
                             )
@@ -288,7 +288,7 @@ private fun PlayerScoreCard(
                         Icon(
                             imageVector = Icons.Default.EmojiEvents,
                             contentDescription = "Select Winner",
-                            tint = if (isWinner) GoldAccent else Color.White.copy(alpha = 0.15f),
+                            tint = if (isWinner) AppTheme.palette.accent else AppTheme.palette.tint.copy(alpha = 0.15f),
                             modifier = Modifier.size(28.dp)
                         )
                     }
@@ -306,8 +306,8 @@ private fun PlayerScoreCard(
                         modifier = Modifier
                             .weight(1f)
                             .clip(RoundedCornerShape(8.dp))
-                            .background(if (state.seen) GoldAccent.copy(alpha = 0.1f) else Color(0xFF252525))
-                            .border(0.5.dp, if (state.seen) GoldAccent.copy(alpha = 0.3f) else Color.Transparent, RoundedCornerShape(8.dp))
+                            .background(if (state.seen) AppTheme.palette.accent.copy(alpha = 0.1f) else Color(0xFF252525))
+                            .border(0.5.dp, if (state.seen) AppTheme.palette.accent.copy(alpha = 0.3f) else Color.Transparent, RoundedCornerShape(8.dp))
                             .clickable(enabled = !isWinner) { onToggleSeen() } // Winner is always seen
                             .padding(horizontal = 12.dp, vertical = 10.dp),
                         verticalAlignment = Alignment.CenterVertically,
@@ -315,14 +315,14 @@ private fun PlayerScoreCard(
                     ) {
                         Text(
                             text = "Seen Joker?",
-                            color = if (state.seen) GoldAccent else Color.White.copy(alpha = 0.7f),
+                            color = if (state.seen) AppTheme.palette.accent else AppTheme.palette.tint.copy(alpha = 0.7f),
                             fontSize = 12.sp,
                             fontWeight = if (state.seen) FontWeight.Bold else FontWeight.Normal
                         )
                         Icon(
                             imageVector = if (state.seen) Icons.Default.CheckBox else Icons.Default.CheckBoxOutlineBlank,
                             contentDescription = "Seen status",
-                            tint = if (state.seen) GoldAccent else Color.White.copy(alpha = 0.2f),
+                            tint = if (state.seen) AppTheme.palette.accent else AppTheme.palette.tint.copy(alpha = 0.2f),
                             modifier = Modifier.size(16.dp)
                         )
                     }
@@ -332,8 +332,8 @@ private fun PlayerScoreCard(
                         modifier = Modifier
                             .weight(1f)
                             .clip(RoundedCornerShape(8.dp))
-                            .background(if (state.duply) DeepRedTika.copy(alpha = 0.1f) else Color(0xFF252525))
-                            .border(0.5.dp, if (state.duply) DeepRedTika.copy(alpha = 0.3f) else Color.Transparent, RoundedCornerShape(8.dp))
+                            .background(if (state.duply) AppTheme.palette.cta.copy(alpha = 0.1f) else Color(0xFF252525))
+                            .border(0.5.dp, if (state.duply) AppTheme.palette.cta.copy(alpha = 0.3f) else Color.Transparent, RoundedCornerShape(8.dp))
                             .clickable { onToggleDuply() }
                             .padding(horizontal = 12.dp, vertical = 10.dp),
                         verticalAlignment = Alignment.CenterVertically,
@@ -341,14 +341,14 @@ private fun PlayerScoreCard(
                     ) {
                         Text(
                             text = "Dublee?",
-                            color = if (state.duply) DeepRedTika else Color.White.copy(alpha = 0.7f),
+                            color = if (state.duply) AppTheme.palette.cta else AppTheme.palette.tint.copy(alpha = 0.7f),
                             fontSize = 12.sp,
                             fontWeight = if (state.duply) FontWeight.Bold else FontWeight.Normal
                         )
                         Icon(
                             imageVector = if (state.duply) Icons.Default.CheckBox else Icons.Default.CheckBoxOutlineBlank,
                             contentDescription = "Dublee status",
-                            tint = if (state.duply) DeepRedTika else Color.White.copy(alpha = 0.2f),
+                            tint = if (state.duply) AppTheme.palette.cta else AppTheme.palette.tint.copy(alpha = 0.2f),
                             modifier = Modifier.size(16.dp)
                         )
                     }
@@ -360,7 +360,7 @@ private fun PlayerScoreCard(
                     Column(modifier = Modifier.fillMaxWidth()) {
                         Text(
                             text = "MAAL (0 - 99)",
-                            color = GoldAccent.copy(alpha = 0.8f),
+                            color = AppTheme.palette.accent.copy(alpha = 0.8f),
                             fontSize = 10.sp,
                             fontWeight = FontWeight.Bold,
                             letterSpacing = 0.5.sp
@@ -378,12 +378,12 @@ private fun PlayerScoreCard(
                                 colors = OutlinedTextFieldDefaults.colors(
                                     focusedContainerColor = Color(0xFF2A2A2A),
                                     unfocusedContainerColor = Color(0xFF2A2A2A),
-                                    focusedBorderColor = GoldAccent.copy(alpha = 0.5f),
+                                    focusedBorderColor = AppTheme.palette.accent.copy(alpha = 0.5f),
                                     unfocusedBorderColor = Color.Transparent,
-                                    focusedTextColor = Color.White,
-                                    unfocusedTextColor = Color.White
+                                    focusedTextColor = AppTheme.palette.textPrimary,
+                                    unfocusedTextColor = AppTheme.palette.textPrimary
                                 ),
-                                placeholder = { Text("Enter Maal points", color = Color.White.copy(alpha = 0.2f), fontSize = 13.sp) },
+                                placeholder = { Text("Enter Maal points", color = AppTheme.palette.tint.copy(alpha = 0.2f), fontSize = 13.sp) },
                                 singleLine = true,
                                 shape = RoundedCornerShape(8.dp)
                             )
@@ -394,13 +394,13 @@ private fun PlayerScoreCard(
                                 modifier = Modifier
                                     .size(50.dp)
                                     .clip(RoundedCornerShape(8.dp))
-                                    .background(GoldAccent.copy(alpha = 0.12f))
-                                    .border(1.dp, GoldAccent.copy(alpha = 0.4f), RoundedCornerShape(8.dp))
+                                    .background(AppTheme.palette.accent.copy(alpha = 0.12f))
+                                    .border(1.dp, AppTheme.palette.accent.copy(alpha = 0.4f), RoundedCornerShape(8.dp))
                             ) {
                                 Icon(
                                     imageVector = Icons.Default.Calculate,
                                     contentDescription = "Open Maal calculator",
-                                    tint = GoldAccent,
+                                    tint = AppTheme.palette.accent,
                                     modifier = Modifier.size(24.dp)
                                 )
                             }
@@ -414,7 +414,7 @@ private fun PlayerScoreCard(
                     val scoreColor = when {
                         state.previewScore > 0 -> Color(0xFF4CAF50)
                         state.previewScore < 0 -> Color(0xFFFF5252)
-                        else -> Color.White.copy(alpha = 0.6f)
+                        else -> AppTheme.palette.tint.copy(alpha = 0.6f)
                     }
                     Row(
                         modifier = Modifier

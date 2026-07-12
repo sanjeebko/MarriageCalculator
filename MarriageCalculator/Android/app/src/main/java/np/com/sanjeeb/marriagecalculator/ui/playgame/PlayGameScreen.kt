@@ -1,5 +1,7 @@
 package np.com.sanjeeb.marriagecalculator.ui.playgame
 
+import np.com.sanjeeb.marriagecalculator.ui.theme.AppTheme
+
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.expandVertically
@@ -59,12 +61,6 @@ import np.com.sanjeeb.marriagecalculator.data.model.User
 import np.com.sanjeeb.marriagecalculator.ui.gamesetup.PlayerMappingDialog
 import np.com.sanjeeb.marriagecalculator.ui.gamesetup.RearrangeSeatsDialog
 import np.com.sanjeeb.marriagecalculator.ui.scoreboard.RoundPlayerEntry
-import np.com.sanjeeb.marriagecalculator.ui.theme.DeepRedTika
-import np.com.sanjeeb.marriagecalculator.ui.theme.FrostBlue
-import np.com.sanjeeb.marriagecalculator.ui.theme.FrostWhite
-import np.com.sanjeeb.marriagecalculator.ui.theme.GoldAccent
-import np.com.sanjeeb.marriagecalculator.ui.theme.MarigoldOrange
-import np.com.sanjeeb.marriagecalculator.ui.theme.TiharNightBlue
 import java.io.File
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -100,7 +96,7 @@ fun PlayGameScreen(
                 title = {
                     Text(
                         text = uiState.gameName,
-                        color = GoldAccent,
+                        color = AppTheme.palette.accent,
                         fontFamily = FontFamily.Serif,
                         fontWeight = FontWeight.Bold,
                         fontSize = 20.sp
@@ -108,23 +104,23 @@ fun PlayGameScreen(
                 },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, null, tint = GoldAccent)
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, null, tint = AppTheme.palette.accent)
                     }
                 },
                 actions = {
                     // Transfer host is disabled for now - the feature isn't fully designed yet.
                     if (uiState.isHost && uiState.isOnlineMode && !uiState.isSettled) {
                         IconButton(onClick = {}, enabled = false) {
-                            Icon(Icons.Default.SwapHoriz, "Transfer Host (coming soon)", tint = GoldAccent.copy(alpha = 0.3f))
+                            Icon(Icons.Default.SwapHoriz, "Transfer Host (coming soon)", tint = AppTheme.palette.accent.copy(alpha = 0.3f))
                         }
                     }
                     IconButton(onClick = onViewScoreboard) {
-                        Icon(Icons.Default.Leaderboard, "Scoreboard", tint = GoldAccent)
+                        Icon(Icons.Default.Leaderboard, "Scoreboard", tint = AppTheme.palette.accent)
                     }
                     if (uiState.isHost) {
                         Box {
                             IconButton(onClick = { showOverflowMenu = true }) {
-                                Icon(Icons.Default.MoreVert, "More options", tint = GoldAccent)
+                                Icon(Icons.Default.MoreVert, "More options", tint = AppTheme.palette.accent)
                             }
                             DropdownMenu(expanded = showOverflowMenu, onDismissRequest = { showOverflowMenu = false }) {
                                 DropdownMenuItem(
@@ -139,7 +135,7 @@ fun PlayGameScreen(
                         }
                     }
                 },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = TiharNightBlue)
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = AppTheme.palette.surface)
             )
         },
         containerColor = Color.Transparent
@@ -147,7 +143,7 @@ fun PlayGameScreen(
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .background(Brush.verticalGradient(listOf(TiharNightBlue, Color(0xFF0D0D1A))))
+                .background(Brush.verticalGradient(listOf(AppTheme.palette.backgroundTop, AppTheme.palette.backgroundBottom)))
                 .padding(padding)
         ) {
             Column(
@@ -172,7 +168,7 @@ fun PlayGameScreen(
                             Spacer(modifier = Modifier.width(12.dp))
                             Text(text = err, color = Color(0xFFFF8888), fontSize = 14.sp, modifier = Modifier.weight(1f))
                             IconButton(onClick = { viewModel.clearError() }) {
-                                Icon(Icons.Default.Close, contentDescription = "Clear error", tint = Color.White)
+                                Icon(Icons.Default.Close, contentDescription = "Clear error", tint = AppTheme.palette.textPrimary)
                             }
                         }
                     }
@@ -210,7 +206,7 @@ fun PlayGameScreen(
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Text(
                             text = "STANDINGS",
-                            color = FrostBlue,
+                            color = AppTheme.palette.frostAccent,
                             fontSize = 12.sp,
                             fontWeight = FontWeight.Bold,
                             letterSpacing = 1.5.sp
@@ -219,7 +215,7 @@ fun PlayGameScreen(
                         Icon(
                             imageVector = if (standingsExpanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
                             contentDescription = null,
-                            tint = FrostBlue.copy(alpha = 0.7f),
+                            tint = AppTheme.palette.frostAccent.copy(alpha = 0.7f),
                             modifier = Modifier.size(18.dp)
                         )
                     }
@@ -234,7 +230,7 @@ fun PlayGameScreen(
                                 .padding(horizontal = 6.dp, vertical = 2.dp),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            val tint = if (roundInProgress) FrostBlue.copy(alpha = 0.35f) else FrostBlue
+                            val tint = if (roundInProgress) AppTheme.palette.frostAccent.copy(alpha = 0.35f) else AppTheme.palette.frostAccent
                             Icon(Icons.Default.Reorder, null, tint = tint, modifier = Modifier.size(16.dp))
                             Spacer(modifier = Modifier.width(4.dp))
                             Text(
@@ -294,7 +290,7 @@ fun PlayGameScreen(
             title = {
                 Text(
                     text = "Transfer Game Host",
-                    color = GoldAccent,
+                    color = AppTheme.palette.accent,
                     fontFamily = FontFamily.Serif,
                     fontWeight = FontWeight.Bold
                 )
@@ -303,7 +299,7 @@ fun PlayGameScreen(
                 Column {
                     Text(
                         text = "Select a registered player to transfer ownership of this game set. Once transferred, you will have read-only access.",
-                        color = Color.White.copy(alpha = 0.7f),
+                        color = AppTheme.palette.tint.copy(alpha = 0.7f),
                         fontSize = 14.sp,
                         modifier = Modifier.padding(bottom = 16.dp)
                     )
@@ -313,7 +309,7 @@ fun PlayGameScreen(
                     }
 
                     if (otherPlayers.isEmpty()) {
-                        Text("No other registered players in this game to transfer ownership to.", color = Color.White.copy(alpha = 0.4f))
+                        Text("No other registered players in this game to transfer ownership to.", color = AppTheme.palette.tint.copy(alpha = 0.4f))
                     } else {
                         LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                             items(otherPlayers) { pStandings ->
@@ -324,17 +320,17 @@ fun PlayGameScreen(
                                             viewModel.transferHost(pStandings.player.id, gameSetId)
                                             showTransferDialog = false
                                         },
-                                    colors = CardDefaults.cardColors(containerColor = Color.White.copy(alpha = 0.05f))
+                                    colors = CardDefaults.cardColors(containerColor = AppTheme.palette.tint.copy(alpha = 0.05f))
                                 ) {
                                     Row(
                                         modifier = Modifier.padding(12.dp),
                                         verticalAlignment = Alignment.CenterVertically
                                     ) {
-                                        Icon(Icons.Default.Person, null, tint = GoldAccent)
+                                        Icon(Icons.Default.Person, null, tint = AppTheme.palette.accent)
                                         Spacer(modifier = Modifier.width(12.dp))
                                         Column {
-                                            Text(pStandings.player.name, color = Color.White, fontWeight = FontWeight.Bold)
-                                            Text(pStandings.player.email, color = Color.White.copy(alpha = 0.5f), fontSize = 12.sp)
+                                            Text(pStandings.player.name, color = AppTheme.palette.textPrimary, fontWeight = FontWeight.Bold)
+                                            Text(pStandings.player.email, color = AppTheme.palette.tint.copy(alpha = 0.5f), fontSize = 12.sp)
                                         }
                                     }
                                 }
@@ -346,12 +342,12 @@ fun PlayGameScreen(
             confirmButton = {},
             dismissButton = {
                 TextButton(onClick = { showTransferDialog = false }) {
-                    Text("Cancel", color = GoldAccent)
+                    Text("Cancel", color = AppTheme.palette.accent)
                 }
             },
-            containerColor = TiharNightBlue,
+            containerColor = AppTheme.palette.surface,
             shape = RoundedCornerShape(16.dp),
-            modifier = Modifier.border(1.dp, GoldAccent, RoundedCornerShape(16.dp))
+            modifier = Modifier.border(1.dp, AppTheme.palette.accent, RoundedCornerShape(16.dp))
         )
     }
 
@@ -419,7 +415,7 @@ fun PlayGameScreen(
             title = "Modify Previous Game?",
             message = "You are about to change the score of game ${game.gameSequenceInRound} - a previous game, not the current one. Its scores will be recalculated.",
             confirmLabel = "Modify",
-            confirmColor = MarigoldOrange,
+            confirmColor = AppTheme.palette.accentAlt,
             onConfirm = {
                 gamePendingEdit = null
                 onEditGame(game.gameId)
@@ -440,8 +436,8 @@ private fun ConfirmDeleteDialog(
 ) {
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text(title, color = GoldAccent, fontFamily = FontFamily.Serif, fontWeight = FontWeight.Bold) },
-        text = { Text(message, color = Color.White.copy(alpha = 0.7f), fontSize = 14.sp) },
+        title = { Text(title, color = AppTheme.palette.accent, fontFamily = FontFamily.Serif, fontWeight = FontWeight.Bold) },
+        text = { Text(message, color = AppTheme.palette.tint.copy(alpha = 0.7f), fontSize = 14.sp) },
         confirmButton = {
             TextButton(onClick = onConfirm) {
                 Text(confirmLabel, color = confirmColor, fontWeight = FontWeight.Bold)
@@ -449,12 +445,12 @@ private fun ConfirmDeleteDialog(
         },
         dismissButton = {
             TextButton(onClick = onDismiss) {
-                Text("Cancel", color = GoldAccent)
+                Text("Cancel", color = AppTheme.palette.accent)
             }
         },
-        containerColor = TiharNightBlue,
+        containerColor = AppTheme.palette.surface,
         shape = RoundedCornerShape(16.dp),
-        modifier = Modifier.border(1.dp, GoldAccent, RoundedCornerShape(16.dp))
+        modifier = Modifier.border(1.dp, AppTheme.palette.accent, RoundedCornerShape(16.dp))
     )
 }
 
@@ -472,7 +468,7 @@ private fun PlayerStandingsRow(
     val scoreColor = when {
         standings.netPoints > 0 -> Color(0xFF4CAF50)
         standings.netPoints < 0 -> Color(0xFFFF5252)
-        else -> Color.White
+        else -> AppTheme.palette.textPrimary
     }
     val isGuest = standings.player.email.isBlank()
 
@@ -483,7 +479,7 @@ private fun PlayerStandingsRow(
                 if (isHost && isGuest) Modifier.clickable { onMapClick() } else Modifier
             ),
         shape = RoundedCornerShape(6.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White.copy(alpha = 0.05f))
+        colors = CardDefaults.cardColors(containerColor = AppTheme.palette.tint.copy(alpha = 0.05f))
     ) {
         Row(
             modifier = Modifier
@@ -516,12 +512,12 @@ private fun PlayerStandingsRow(
                     modifier = Modifier
                         .size(26.dp)
                         .clip(RoundedCornerShape(5.dp))
-                        .background(Color.DarkGray),
+                        .background(AppTheme.palette.tint.copy(alpha = 0.25f)),
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
                         text = standings.player.name.take(1).uppercase(),
-                        color = Color.White,
+                        color = AppTheme.palette.textPrimary,
                         fontWeight = FontWeight.Bold,
                         fontSize = 12.sp
                     )
@@ -535,7 +531,7 @@ private fun PlayerStandingsRow(
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text(
                         text = standings.player.name,
-                        color = Color.White,
+                        color = AppTheme.palette.textPrimary,
                         fontSize = 13.sp,
                         fontWeight = FontWeight.Bold
                     )
@@ -544,7 +540,7 @@ private fun PlayerStandingsRow(
                         Icon(
                             imageVector = Icons.Default.Link,
                             contentDescription = "Link Account",
-                            tint = FrostBlue.copy(alpha = 0.8f),
+                            tint = AppTheme.palette.frostAccent.copy(alpha = 0.8f),
                             modifier = Modifier.size(13.dp)
                         )
                     }
@@ -553,13 +549,13 @@ private fun PlayerStandingsRow(
                         Box(
                             modifier = Modifier
                                 .clip(RoundedCornerShape(4.dp))
-                                .background(FrostBlue.copy(alpha = 0.18f))
-                                .border(0.5.dp, FrostBlue, RoundedCornerShape(4.dp))
+                                .background(AppTheme.palette.frostAccent.copy(alpha = 0.18f))
+                                .border(0.5.dp, AppTheme.palette.frostAccent, RoundedCornerShape(4.dp))
                                 .padding(horizontal = 4.dp, vertical = 1.dp)
                         ) {
                             Text(
                                 text = "DEALER",
-                                color = FrostBlue,
+                                color = AppTheme.palette.frostAccent,
                                 fontSize = 7.sp,
                                 fontWeight = FontWeight.Bold
                             )
@@ -577,7 +573,7 @@ private fun PlayerStandingsRow(
                     Icon(
                         imageVector = Icons.Default.NotificationsActive,
                         contentDescription = "Nudge Player",
-                        tint = FrostBlue,
+                        tint = AppTheme.palette.frostAccent,
                         modifier = Modifier.size(16.dp)
                     )
                 }
@@ -730,7 +726,7 @@ private fun RoundBlock(
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(8.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White.copy(alpha = 0.03f))
+        colors = CardDefaults.cardColors(containerColor = AppTheme.palette.tint.copy(alpha = 0.03f))
     ) {
         Column {
             Row(
@@ -747,7 +743,7 @@ private fun RoundBlock(
                             group.games.isEmpty() -> " · not started"
                             else -> " · in progress"
                         },
-                        color = FrostWhite,
+                        color = AppTheme.palette.frostText,
                         fontSize = 12.sp,
                         fontWeight = FontWeight.Bold
                     )
@@ -758,7 +754,7 @@ private fun RoundBlock(
                             Icon(
                                 imageVector = Icons.Default.Shuffle,
                                 contentDescription = "Reshuffle seats",
-                                tint = FrostBlue,
+                                tint = AppTheme.palette.frostAccent,
                                 modifier = Modifier.size(14.dp)
                             )
                         }
@@ -768,7 +764,7 @@ private fun RoundBlock(
                     if (isHost && !group.isCompleted && group.games.isNotEmpty()) {
                         Text(
                             text = "Close Round",
-                            color = DeepRedTika,
+                            color = AppTheme.palette.cta,
                             fontSize = 10.sp,
                             fontWeight = FontWeight.Bold,
                             modifier = Modifier
@@ -782,7 +778,7 @@ private fun RoundBlock(
                             Icon(
                                 imageVector = Icons.AutoMirrored.Filled.Undo,
                                 contentDescription = "Undo last game",
-                                tint = FrostBlue.copy(alpha = 0.8f),
+                                tint = AppTheme.palette.frostAccent.copy(alpha = 0.8f),
                                 modifier = Modifier.size(14.dp)
                             )
                         }
@@ -800,7 +796,7 @@ private fun RoundBlock(
                 }
             }
 
-            HorizontalDivider(color = Color.White.copy(alpha = 0.08f))
+            HorizontalDivider(color = AppTheme.palette.tint.copy(alpha = 0.08f))
 
             // Header: player initials, tappable for a tooltip with the full name
             Row(
@@ -824,7 +820,7 @@ private fun RoundBlock(
                         ) {
                             Text(
                                 text = p.name.take(3).uppercase(),
-                                color = FrostBlue,
+                                color = AppTheme.palette.frostAccent,
                                 fontSize = 10.sp,
                                 fontWeight = FontWeight.Bold
                             )
@@ -833,7 +829,7 @@ private fun RoundBlock(
                 }
             }
 
-            HorizontalDivider(color = Color.White.copy(alpha = 0.08f))
+            HorizontalDivider(color = AppTheme.palette.tint.copy(alpha = 0.08f))
 
             val pendingSeq = group.games.size + 1
             val rowsAscending = if (!group.isCompleted) {
@@ -854,16 +850,16 @@ private fun RoundBlock(
                         .background(
                             Brush.verticalGradient(
                                 listOf(
-                                    Color.White.copy(alpha = 0.12f),
-                                    FrostBlue.copy(alpha = 0.07f),
-                                    Color.White.copy(alpha = 0.03f)
+                                    AppTheme.palette.tint.copy(alpha = 0.12f),
+                                    AppTheme.palette.frostAccent.copy(alpha = 0.07f),
+                                    AppTheme.palette.tint.copy(alpha = 0.03f)
                                 )
                             )
                         )
                         .border(
                             width = 1.dp,
                             brush = Brush.verticalGradient(
-                                listOf(Color.White.copy(alpha = 0.40f), Color.White.copy(alpha = 0.06f))
+                                listOf(AppTheme.palette.tint.copy(alpha = 0.40f), AppTheme.palette.tint.copy(alpha = 0.06f))
                             ),
                             shape = RoundedCornerShape(10.dp)
                         )
@@ -872,7 +868,7 @@ private fun RoundBlock(
                 } else {
                     Modifier
                         .fillMaxWidth()
-                        .background(if (index % 2 == 0) Color.White.copy(alpha = 0.06f) else Color.Transparent)
+                        .background(if (index % 2 == 0) AppTheme.palette.tint.copy(alpha = 0.06f) else Color.Transparent)
                         .then(if (isHost) Modifier.clickable { onEditGame(game) } else Modifier)
                         .padding(vertical = 3.dp)
                 }
@@ -888,7 +884,7 @@ private fun RoundBlock(
                     ) {
                         Text(
                             text = "${game.gameSequenceInRound}",
-                            color = if (isPending) Color.White.copy(alpha = 0.35f) else FrostBlue,
+                            color = if (isPending) AppTheme.palette.tint.copy(alpha = 0.35f) else AppTheme.palette.frostAccent,
                             fontSize = 12.sp,
                             fontWeight = FontWeight.Bold
                         )
@@ -911,7 +907,7 @@ private fun RoundBlock(
             }
 
             if (group.games.isNotEmpty()) {
-                HorizontalDivider(color = Color.White.copy(alpha = 0.1f), modifier = Modifier.padding(horizontal = 8.dp))
+                HorizontalDivider(color = AppTheme.palette.tint.copy(alpha = 0.1f), modifier = Modifier.padding(horizontal = 8.dp))
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -919,7 +915,7 @@ private fun RoundBlock(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Box(modifier = Modifier.width(ROUND_SEQ_COL_WIDTH_DP.dp), contentAlignment = Alignment.Center) {
-                        Text("Σ", color = FrostBlue.copy(alpha = 0.75f), fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                        Text("Σ", color = AppTheme.palette.frostAccent.copy(alpha = 0.75f), fontSize = 12.sp, fontWeight = FontWeight.Bold)
                     }
                     Row(modifier = Modifier.horizontalScroll(scrollState)) {
                         players.forEach { p ->
@@ -931,7 +927,7 @@ private fun RoundBlock(
                                     color = when {
                                         money > 0 -> Color(0xFF4CAF50)
                                         money < 0 -> Color(0xFFFF5252)
-                                        else -> Color.White.copy(alpha = 0.6f)
+                                        else -> AppTheme.palette.tint.copy(alpha = 0.6f)
                                     },
                                     fontSize = 11.sp,
                                     fontWeight = FontWeight.Bold
@@ -949,12 +945,12 @@ private fun RoundBlock(
 private fun ModeTab(label: String, selected: Boolean, onClick: () -> Unit) {
     Text(
         text = label,
-        color = if (selected) FrostWhite else Color.White.copy(alpha = 0.4f),
+        color = if (selected) AppTheme.palette.frostText else AppTheme.palette.tint.copy(alpha = 0.4f),
         fontSize = 12.sp,
         fontWeight = if (selected) FontWeight.Bold else FontWeight.Normal,
         modifier = Modifier
             .clip(RoundedCornerShape(6.dp))
-            .then(if (selected) Modifier.background(Color.White.copy(alpha = 0.12f)) else Modifier)
+            .then(if (selected) Modifier.background(AppTheme.palette.tint.copy(alpha = 0.12f)) else Modifier)
             .clickable(onClick = onClick)
             .padding(horizontal = 12.dp, vertical = 4.dp)
     )
@@ -976,13 +972,13 @@ private fun CompactRoundCell(
     val topColor = when {
         mode == RoundDisplayMode.POINTS && topValue > 0 -> Color(0xFF4CAF50)
         mode == RoundDisplayMode.POINTS && topValue < 0 -> Color(0xFFFF5252)
-        else -> Color.White.copy(alpha = 0.85f)
+        else -> AppTheme.palette.tint.copy(alpha = 0.85f)
     }
     val money = entry?.money ?: 0.0
     val moneyColor = when {
         money > 0 -> Color(0xFF4CAF50)
         money < 0 -> Color(0xFFFF5252)
-        else -> Color.White.copy(alpha = 0.5f)
+        else -> AppTheme.palette.tint.copy(alpha = 0.5f)
     }
     val cellAlpha = if (entry?.isSeen == true) 1f else 0.5f
 
@@ -995,9 +991,9 @@ private fun CompactRoundCell(
             .background(
                 Brush.verticalGradient(
                     listOf(
-                        Color.White.copy(alpha = 0.22f),
+                        AppTheme.palette.tint.copy(alpha = 0.22f),
                         Color(0xFF4CAF50).copy(alpha = 0.10f),
-                        Color.White.copy(alpha = 0.04f)
+                        AppTheme.palette.tint.copy(alpha = 0.04f)
                     )
                 )
             )
@@ -1005,9 +1001,9 @@ private fun CompactRoundCell(
                 width = 1.dp,
                 brush = Brush.verticalGradient(
                     listOf(
-                        Color.White.copy(alpha = 0.50f),
+                        AppTheme.palette.tint.copy(alpha = 0.50f),
                         Color(0xFF4CAF50).copy(alpha = 0.25f),
-                        Color.White.copy(alpha = 0.06f)
+                        AppTheme.palette.tint.copy(alpha = 0.06f)
                     )
                 ),
                 shape = RoundedCornerShape(8.dp)
@@ -1032,10 +1028,10 @@ private fun CompactRoundCell(
                     modifier = Modifier
                         .size(12.dp)
                         .clip(CircleShape)
-                        .background(FrostBlue.copy(alpha = 0.22f)),
+                        .background(AppTheme.palette.frostAccent.copy(alpha = 0.22f)),
                     contentAlignment = Alignment.Center
                 ) {
-                    Text("D", color = FrostBlue, fontSize = 8.sp, fontWeight = FontWeight.Bold)
+                    Text("D", color = AppTheme.palette.frostAccent, fontSize = 8.sp, fontWeight = FontWeight.Bold)
                 }
             }
         }
@@ -1055,7 +1051,7 @@ private fun RoundDetailsDialog(game: GameEntry, currency: Currency, onDismiss: (
         title = {
             Text(
                 text = "Game ${game.gameSequenceInRound} Details",
-                color = GoldAccent,
+                color = AppTheme.palette.accent,
                 fontFamily = FontFamily.Serif,
                 fontWeight = FontWeight.Bold
             )
@@ -1063,15 +1059,15 @@ private fun RoundDetailsDialog(game: GameEntry, currency: Currency, onDismiss: (
         text = {
             Column {
                 Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(bottom = 4.dp)) {
-                    Icon(Icons.Default.EmojiEvents, null, tint = MarigoldOrange, modifier = Modifier.size(16.dp))
+                    Icon(Icons.Default.EmojiEvents, null, tint = AppTheme.palette.accentAlt, modifier = Modifier.size(16.dp))
                     Spacer(modifier = Modifier.width(6.dp))
-                    Text("${game.winnerName} won  ·  Total Maal: ${game.totalMaal}", color = Color.White.copy(alpha = 0.8f), fontSize = 13.sp)
+                    Text("${game.winnerName} won  ·  Total Maal: ${game.totalMaal}", color = AppTheme.palette.tint.copy(alpha = 0.8f), fontSize = 13.sp)
                 }
                 if (!dealerName.isNullOrBlank()) {
                     Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(bottom = 12.dp)) {
-                        Icon(Icons.Default.Casino, null, tint = GoldAccent.copy(alpha = 0.7f), modifier = Modifier.size(14.dp))
+                        Icon(Icons.Default.Casino, null, tint = AppTheme.palette.accent.copy(alpha = 0.7f), modifier = Modifier.size(14.dp))
                         Spacer(modifier = Modifier.width(6.dp))
-                        Text("Dealer: $dealerName", color = Color.White.copy(alpha = 0.6f), fontSize = 12.sp)
+                        Text("Dealer: $dealerName", color = AppTheme.palette.tint.copy(alpha = 0.6f), fontSize = 12.sp)
                     }
                 } else {
                     Spacer(modifier = Modifier.height(8.dp))
@@ -1093,7 +1089,7 @@ private fun RoundDetailsDialog(game: GameEntry, currency: Currency, onDismiss: (
                                     } else Modifier
                                 )
                                 .clip(RoundedCornerShape(8.dp))
-                                .background(if (entry.isWinner) winnerGlow.copy(alpha = 0.15f) else Color.White.copy(alpha = 0.05f))
+                                .background(if (entry.isWinner) winnerGlow.copy(alpha = 0.15f) else AppTheme.palette.tint.copy(alpha = 0.05f))
                                 .then(
                                     if (entry.isWinner) {
                                         Modifier.border(1.5.dp, winnerGlow.copy(alpha = 0.7f), RoundedCornerShape(8.dp))
@@ -1104,13 +1100,13 @@ private fun RoundDetailsDialog(game: GameEntry, currency: Currency, onDismiss: (
                         ) {
                             Column(modifier = Modifier.weight(1f)) {
                                 Row(verticalAlignment = Alignment.CenterVertically) {
-                                    Text(entry.playerName, color = Color.White, fontWeight = FontWeight.Bold, fontSize = 13.sp)
+                                    Text(entry.playerName, color = AppTheme.palette.textPrimary, fontWeight = FontWeight.Bold, fontSize = 13.sp)
                                     if (entry.isWinner) {
                                         Spacer(modifier = Modifier.width(4.dp))
                                         Icon(
                                             imageVector = Icons.Default.EmojiEvents,
                                             contentDescription = "Winner",
-                                            tint = MarigoldOrange,
+                                            tint = AppTheme.palette.accentAlt,
                                             modifier = Modifier.size(14.dp)
                                         )
                                     }
@@ -1120,37 +1116,37 @@ private fun RoundDetailsDialog(game: GameEntry, currency: Currency, onDismiss: (
                                             modifier = Modifier
                                                 .size(14.dp)
                                                 .clip(CircleShape)
-                                                .background(FrostBlue.copy(alpha = 0.22f)),
+                                                .background(AppTheme.palette.frostAccent.copy(alpha = 0.22f)),
                                             contentAlignment = Alignment.Center
                                         ) {
-                                            Text("D", color = FrostBlue, fontSize = 8.sp, fontWeight = FontWeight.Bold)
+                                            Text("D", color = AppTheme.palette.frostAccent, fontSize = 8.sp, fontWeight = FontWeight.Bold)
                                         }
                                     }
                                 }
                                 Row(verticalAlignment = Alignment.CenterVertically) {
                                     Text(
                                         if (entry.isSeen) "Seen" else "Unseen",
-                                        color = if (entry.isSeen) Color(0xFF4CAF50) else Color.White.copy(alpha = 0.4f),
+                                        color = if (entry.isSeen) Color(0xFF4CAF50) else AppTheme.palette.tint.copy(alpha = 0.4f),
                                         fontSize = 11.sp
                                     )
                                     if (entry.isDublee) {
                                         Spacer(modifier = Modifier.width(6.dp))
-                                        Icon(Icons.Default.Diversity3, "Dublee", tint = DeepRedTika, modifier = Modifier.size(12.dp))
+                                        Icon(Icons.Default.Diversity3, "Dublee", tint = AppTheme.palette.cta, modifier = Modifier.size(12.dp))
                                     }
                                     Spacer(modifier = Modifier.width(6.dp))
-                                    Text("Maal: ${entry.maal}", color = Color.White.copy(alpha = 0.5f), fontSize = 11.sp)
+                                    Text("Maal: ${entry.maal}", color = AppTheme.palette.tint.copy(alpha = 0.5f), fontSize = 11.sp)
                                 }
                             }
                             Column(horizontalAlignment = Alignment.End) {
                                 Text(
                                     text = "${entry.score} pts",
-                                    color = if (entry.score > 0) Color(0xFF4CAF50) else if (entry.score < 0) Color(0xFFFF5252) else Color.White,
+                                    color = if (entry.score > 0) Color(0xFF4CAF50) else if (entry.score < 0) Color(0xFFFF5252) else AppTheme.palette.textPrimary,
                                     fontWeight = FontWeight.Bold,
                                     fontSize = 14.sp
                                 )
                                 Text(
                                     text = currency.formatMoney(entry.money),
-                                    color = Color.White.copy(alpha = 0.6f),
+                                    color = AppTheme.palette.tint.copy(alpha = 0.6f),
                                     fontSize = 11.sp
                                 )
                             }
@@ -1161,12 +1157,12 @@ private fun RoundDetailsDialog(game: GameEntry, currency: Currency, onDismiss: (
         },
         confirmButton = {
             TextButton(onClick = onDismiss) {
-                Text("Close", color = GoldAccent)
+                Text("Close", color = AppTheme.palette.accent)
             }
         },
-        containerColor = TiharNightBlue,
+        containerColor = AppTheme.palette.surface,
         shape = RoundedCornerShape(16.dp),
-        modifier = Modifier.border(1.dp, GoldAccent, RoundedCornerShape(16.dp))
+        modifier = Modifier.border(1.dp, AppTheme.palette.accent, RoundedCornerShape(16.dp))
     )
 }
 
@@ -1225,8 +1221,8 @@ private fun PlayerNameTooltip(anchor: PlayerTooltipAnchor, onDismiss: () -> Unit
         ) {
             Card(
                 shape = RoundedCornerShape(12.dp),
-                colors = CardDefaults.cardColors(containerColor = TiharNightBlue),
-                border = androidx.compose.foundation.BorderStroke(1.dp, Color.White.copy(alpha = 0.35f)),
+                colors = CardDefaults.cardColors(containerColor = AppTheme.palette.surface),
+                border = androidx.compose.foundation.BorderStroke(1.dp, AppTheme.palette.tint.copy(alpha = 0.35f)),
                 elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
             ) {
                 Row(
@@ -1251,31 +1247,31 @@ private fun PlayerNameTooltip(anchor: PlayerTooltipAnchor, onDismiss: () -> Unit
                             modifier = Modifier
                                 .size(32.dp)
                                 .clip(CircleShape)
-                                .border(1.dp, FrostBlue, CircleShape)
+                                .border(1.dp, AppTheme.palette.frostAccent, CircleShape)
                         )
                     } else {
                         Box(
                             modifier = Modifier
                                 .size(32.dp)
                                 .clip(CircleShape)
-                                .background(FrostBlue.copy(alpha = 0.18f))
-                                .border(1.dp, FrostBlue, CircleShape),
+                                .background(AppTheme.palette.frostAccent.copy(alpha = 0.18f))
+                                .border(1.dp, AppTheme.palette.frostAccent, CircleShape),
                             contentAlignment = Alignment.Center
                         ) {
-                            Text(anchor.player.name.take(1).uppercase(), color = FrostBlue, fontSize = 13.sp, fontWeight = FontWeight.Bold)
+                            Text(anchor.player.name.take(1).uppercase(), color = AppTheme.palette.frostAccent, fontSize = 13.sp, fontWeight = FontWeight.Bold)
                         }
                     }
                     Spacer(modifier = Modifier.width(8.dp))
                     Column {
                         Text(
                             text = anchor.player.name,
-                            color = Color.White,
+                            color = AppTheme.palette.textPrimary,
                             fontSize = 13.sp,
                             fontWeight = FontWeight.Bold,
                             fontFamily = FontFamily.Serif
                         )
                         if (anchor.player.email.isNotBlank()) {
-                            Text(anchor.player.email, color = Color.White.copy(alpha = 0.5f), fontSize = 10.sp)
+                            Text(anchor.player.email, color = AppTheme.palette.tint.copy(alpha = 0.5f), fontSize = 10.sp)
                         }
                     }
                 }

@@ -1,5 +1,7 @@
 package np.com.sanjeeb.marriagecalculator.ui.friend
 
+import np.com.sanjeeb.marriagecalculator.ui.theme.AppTheme
+
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -21,9 +23,6 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import np.com.sanjeeb.marriagecalculator.data.model.User
 import np.com.sanjeeb.marriagecalculator.data.remote.FriendshipDto
-import np.com.sanjeeb.marriagecalculator.ui.theme.GoldAccent
-import np.com.sanjeeb.marriagecalculator.ui.theme.MarigoldOrange
-import np.com.sanjeeb.marriagecalculator.ui.theme.TiharNightBlue
 import np.com.sanjeeb.marriagecalculator.ui.components.MetallicButton
 import androidx.compose.material3.TabRowDefaults.tabIndicatorOffset
 
@@ -42,7 +41,7 @@ fun FriendScreen(
             .fillMaxSize()
             .background(
                 Brush.verticalGradient(
-                    colors = listOf(TiharNightBlue, Color(0xFF0D0D1A))
+                    colors = listOf(AppTheme.palette.backgroundTop, AppTheme.palette.backgroundBottom)
                 )
             )
     ) {
@@ -52,7 +51,7 @@ fun FriendScreen(
                 title = {
                     Text(
                         text = "Friends & Social",
-                        color = GoldAccent,
+                        color = AppTheme.palette.accent,
                         fontFamily = FontFamily.Serif,
                         fontWeight = FontWeight.Bold
                     )
@@ -62,7 +61,7 @@ fun FriendScreen(
                         Icon(
                             imageVector = Icons.Default.ArrowBack,
                             contentDescription = "Back",
-                            tint = GoldAccent
+                            tint = AppTheme.palette.accent
                         )
                     }
                 },
@@ -75,12 +74,12 @@ fun FriendScreen(
             val tabs = listOf("My Friends", "Requests", "Find Users")
             TabRow(
                 selectedTabIndex = selectedTabIndex,
-                containerColor = Color.White.copy(alpha = 0.03f),
-                contentColor = GoldAccent,
+                containerColor = AppTheme.palette.tint.copy(alpha = 0.03f),
+                contentColor = AppTheme.palette.accent,
                 indicator = { tabPositions ->
                     TabRowDefaults.SecondaryIndicator(
                         Modifier.tabIndicatorOffset(tabPositions[selectedTabIndex]),
-                        color = GoldAccent
+                        color = AppTheme.palette.accent
                     )
                 }
             ) {
@@ -93,13 +92,13 @@ fun FriendScreen(
                             Row(verticalAlignment = Alignment.CenterVertically) {
                                 Text(
                                     text = title,
-                                    color = if (selectedTabIndex == index) GoldAccent else Color.White.copy(alpha = 0.6f),
+                                    color = if (selectedTabIndex == index) AppTheme.palette.accent else AppTheme.palette.tint.copy(alpha = 0.6f),
                                     fontWeight = if (selectedTabIndex == index) FontWeight.Bold else FontWeight.Normal
                                 )
                                 if (badgeCount > 0) {
                                     Spacer(modifier = Modifier.width(6.dp))
-                                    Badge(containerColor = MarigoldOrange) {
-                                        Text(text = badgeCount.toString(), color = Color.White)
+                                    Badge(containerColor = AppTheme.palette.accentAlt) {
+                                        Text(text = badgeCount.toString(), color = AppTheme.palette.textPrimary)
                                     }
                                 }
                             }
@@ -124,7 +123,7 @@ fun FriendScreen(
                         Spacer(modifier = Modifier.width(12.dp))
                         Text(text = err, color = Color(0xFFFF8888), fontSize = 14.sp, modifier = Modifier.weight(1f))
                         IconButton(onClick = { viewModel.clearError() }) {
-                            Icon(Icons.Default.Close, contentDescription = "Clear error", tint = Color.White)
+                            Icon(Icons.Default.Close, contentDescription = "Clear error", tint = AppTheme.palette.textPrimary)
                         }
                     }
                 }
@@ -139,7 +138,7 @@ fun FriendScreen(
             ) {
                 if (uiState.isLoading && selectedTabIndex != 2) {
                     CircularProgressIndicator(
-                        color = GoldAccent,
+                        color = AppTheme.palette.accent,
                         modifier = Modifier.align(Alignment.Center)
                     )
                 } else {
@@ -187,18 +186,18 @@ private fun FriendsTab(
                 Icon(
                     imageVector = Icons.Default.People,
                     contentDescription = null,
-                    tint = Color.White.copy(alpha = 0.2f),
+                    tint = AppTheme.palette.tint.copy(alpha = 0.2f),
                     modifier = Modifier.size(64.dp)
                 )
                 Spacer(modifier = Modifier.height(16.dp))
-                Text(text = "No friends added yet.", color = Color.White.copy(alpha = 0.4f))
+                Text(text = "No friends added yet.", color = AppTheme.palette.tint.copy(alpha = 0.4f))
             }
         }
     } else {
         LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
             items(friends) { friend ->
                 Card(
-                    colors = CardDefaults.cardColors(containerColor = Color.White.copy(alpha = 0.06f)),
+                    colors = CardDefaults.cardColors(containerColor = AppTheme.palette.tint.copy(alpha = 0.06f)),
                     shape = RoundedCornerShape(12.dp)
                 ) {
                     Row(
@@ -211,12 +210,12 @@ private fun FriendsTab(
                         Box(
                             modifier = Modifier
                                 .size(40.dp)
-                                .background(GoldAccent.copy(alpha = 0.1f), RoundedCornerShape(20.dp)),
+                                .background(AppTheme.palette.accent.copy(alpha = 0.1f), RoundedCornerShape(20.dp)),
                             contentAlignment = Alignment.Center
                         ) {
                             Text(
                                 text = friend.displayName.take(1).uppercase(),
-                                color = GoldAccent,
+                                color = AppTheme.palette.accent,
                                 fontWeight = FontWeight.Bold,
                                 fontSize = 18.sp
                             )
@@ -225,7 +224,7 @@ private fun FriendsTab(
                         Column(modifier = Modifier.weight(1f)) {
                             Text(
                                 text = friend.displayName,
-                                color = Color.White,
+                                color = AppTheme.palette.textPrimary,
                                 fontWeight = FontWeight.Bold,
                                 fontSize = 16.sp,
                                 maxLines = 1,
@@ -233,7 +232,7 @@ private fun FriendsTab(
                             )
                             Text(
                                 text = friend.email,
-                                color = Color.White.copy(alpha = 0.5f),
+                                color = AppTheme.palette.tint.copy(alpha = 0.5f),
                                 fontSize = 12.sp,
                                 maxLines = 1,
                                 overflow = TextOverflow.Ellipsis
@@ -268,14 +267,14 @@ private fun RequestsTab(
             item {
                 Text(
                     text = "Received Requests",
-                    color = GoldAccent,
+                    color = AppTheme.palette.accent,
                     fontSize = 16.sp,
                     fontWeight = FontWeight.Bold
                 )
             }
             items(received) { req ->
                 Card(
-                    colors = CardDefaults.cardColors(containerColor = Color.White.copy(alpha = 0.08f)),
+                    colors = CardDefaults.cardColors(containerColor = AppTheme.palette.tint.copy(alpha = 0.08f)),
                     shape = RoundedCornerShape(12.dp)
                 ) {
                     Row(
@@ -285,8 +284,8 @@ private fun RequestsTab(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Column(modifier = Modifier.weight(1f)) {
-                            Text(text = req.requesterName, color = Color.White, fontWeight = FontWeight.Bold)
-                            Text(text = req.requesterEmail, color = Color.White.copy(alpha = 0.5f), fontSize = 12.sp)
+                            Text(text = req.requesterName, color = AppTheme.palette.textPrimary, fontWeight = FontWeight.Bold)
+                            Text(text = req.requesterEmail, color = AppTheme.palette.tint.copy(alpha = 0.5f), fontSize = 12.sp)
                         }
                         IconButton(onClick = { onRespond(req.id, true) }) {
                             Icon(Icons.Default.Check, contentDescription = "Accept", tint = Color.Green)
@@ -303,14 +302,14 @@ private fun RequestsTab(
             item {
                 Text(
                     text = "Sent Requests",
-                    color = GoldAccent,
+                    color = AppTheme.palette.accent,
                     fontSize = 16.sp,
                     fontWeight = FontWeight.Bold
                 )
             }
             items(sent) { req ->
                 Card(
-                    colors = CardDefaults.cardColors(containerColor = Color.White.copy(alpha = 0.04f)),
+                    colors = CardDefaults.cardColors(containerColor = AppTheme.palette.tint.copy(alpha = 0.04f)),
                     shape = RoundedCornerShape(12.dp)
                 ) {
                     Row(
@@ -320,8 +319,8 @@ private fun RequestsTab(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Column(modifier = Modifier.weight(1f)) {
-                            Text(text = req.receiverName, color = Color.White, fontWeight = FontWeight.Bold)
-                            Text(text = req.receiverEmail, color = Color.White.copy(alpha = 0.5f), fontSize = 12.sp)
+                            Text(text = req.receiverName, color = AppTheme.palette.textPrimary, fontWeight = FontWeight.Bold)
+                            Text(text = req.receiverEmail, color = AppTheme.palette.tint.copy(alpha = 0.5f), fontSize = 12.sp)
                         }
                         IconButton(onClick = { onCancel(req.id) }) {
                             Icon(Icons.Default.Delete, contentDescription = "Cancel request", tint = Color.LightGray)
@@ -339,7 +338,7 @@ private fun RequestsTab(
                         .padding(bottom = 64.dp),
                     contentAlignment = Alignment.Center
                 ) {
-                    Text(text = "No pending invitations.", color = Color.White.copy(alpha = 0.4f))
+                    Text(text = "No pending invitations.", color = AppTheme.palette.tint.copy(alpha = 0.4f))
                 }
             }
         }
@@ -361,20 +360,20 @@ private fun SearchTab(
         OutlinedTextField(
             value = query,
             onValueChange = onQueryChange,
-            label = { Text("Search users", color = GoldAccent) },
-            placeholder = { Text("Enter email or display name", color = Color.White.copy(alpha = 0.3f)) },
-            leadingIcon = { Icon(Icons.Default.Search, contentDescription = null, tint = GoldAccent) },
+            label = { Text("Search users", color = AppTheme.palette.accent) },
+            placeholder = { Text("Enter email or display name", color = AppTheme.palette.tint.copy(alpha = 0.3f)) },
+            leadingIcon = { Icon(Icons.Default.Search, contentDescription = null, tint = AppTheme.palette.accent) },
             modifier = Modifier.fillMaxWidth(),
             singleLine = true,
             colors = OutlinedTextFieldDefaults.colors(
                 focusedContainerColor = Color(0xFF1C1C1C),
-                unfocusedContainerColor = Color(0xFF121212),
-                focusedBorderColor = GoldAccent,
-                unfocusedBorderColor = Color.White.copy(alpha = 0.1f),
-                focusedLabelColor = GoldAccent,
-                unfocusedLabelColor = Color.White.copy(alpha = 0.5f),
-                focusedTextColor = Color.White,
-                unfocusedTextColor = Color.White
+                unfocusedContainerColor = AppTheme.palette.tint.copy(alpha = 0.08f),
+                focusedBorderColor = AppTheme.palette.accent,
+                unfocusedBorderColor = AppTheme.palette.tint.copy(alpha = 0.1f),
+                focusedLabelColor = AppTheme.palette.accent,
+                unfocusedLabelColor = AppTheme.palette.tint.copy(alpha = 0.5f),
+                focusedTextColor = AppTheme.palette.textPrimary,
+                unfocusedTextColor = AppTheme.palette.textPrimary
             ),
             shape = RoundedCornerShape(12.dp)
         )
@@ -383,7 +382,7 @@ private fun SearchTab(
 
         if (loading) {
             Box(modifier = Modifier.weight(1f).fillMaxWidth(), contentAlignment = Alignment.Center) {
-                CircularProgressIndicator(color = GoldAccent)
+                CircularProgressIndicator(color = AppTheme.palette.accent)
             }
         } else if (error != null) {
             Box(modifier = Modifier.weight(1f).fillMaxWidth(), contentAlignment = Alignment.Center) {
@@ -391,7 +390,7 @@ private fun SearchTab(
             }
         } else if (results.isEmpty() && query.trim().isNotEmpty()) {
             Box(modifier = Modifier.weight(1f).fillMaxWidth(), contentAlignment = Alignment.Center) {
-                Text(text = "No users found matching search.", color = Color.White.copy(alpha = 0.4f))
+                Text(text = "No users found matching search.", color = AppTheme.palette.tint.copy(alpha = 0.4f))
             }
         } else {
             LazyColumn(
@@ -403,7 +402,7 @@ private fun SearchTab(
                     val alreadySent = sentList.any { it.receiverUserId == user.userId }
 
                     Card(
-                        colors = CardDefaults.cardColors(containerColor = Color.White.copy(alpha = 0.06f)),
+                        colors = CardDefaults.cardColors(containerColor = AppTheme.palette.tint.copy(alpha = 0.06f)),
                         shape = RoundedCornerShape(12.dp)
                     ) {
                         Row(
@@ -413,8 +412,8 @@ private fun SearchTab(
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Column(modifier = Modifier.weight(1f)) {
-                                Text(text = user.displayName, color = Color.White, fontWeight = FontWeight.Bold)
-                                Text(text = user.email, color = Color.White.copy(alpha = 0.5f), fontSize = 12.sp)
+                                Text(text = user.displayName, color = AppTheme.palette.textPrimary, fontWeight = FontWeight.Bold)
+                                Text(text = user.email, color = AppTheme.palette.tint.copy(alpha = 0.5f), fontSize = 12.sp)
                             }
 
                             when {
@@ -422,11 +421,11 @@ private fun SearchTab(
                                     Text(text = "Friends", color = Color.Green, fontSize = 14.sp, fontWeight = FontWeight.Bold)
                                 }
                                 alreadySent -> {
-                                    Text(text = "Pending", color = MarigoldOrange, fontSize = 14.sp)
+                                    Text(text = "Pending", color = AppTheme.palette.accentAlt, fontSize = 14.sp)
                                 }
                                 else -> {
                                     IconButton(onClick = { onSendRequest(user.email) }) {
-                                        Icon(Icons.Default.PersonAdd, contentDescription = "Add friend", tint = GoldAccent)
+                                        Icon(Icons.Default.PersonAdd, contentDescription = "Add friend", tint = AppTheme.palette.accent)
                                     }
                                 }
                             }

@@ -8,6 +8,8 @@ import np.com.sanjeeb.marriagecalculator.data.repository.ApiResult
 import np.com.sanjeeb.marriagecalculator.data.repository.GameSetRepository
 import np.com.sanjeeb.marriagecalculator.data.repository.OfflineGameRepository
 import np.com.sanjeeb.marriagecalculator.data.repository.SessionManager
+import np.com.sanjeeb.marriagecalculator.data.repository.ThemePreference
+import np.com.sanjeeb.marriagecalculator.ui.theme.AppThemeOption
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -28,11 +30,17 @@ data class DashboardUiState(
 class DashboardViewModel @Inject constructor(
     private val gameSetRepository: GameSetRepository,
     private val offlineGameRepository: OfflineGameRepository,
-    private val sessionManager: SessionManager
+    private val sessionManager: SessionManager,
+    private val themePreference: ThemePreference
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(DashboardUiState())
     val uiState: StateFlow<DashboardUiState> = _uiState.asStateFlow()
+
+    /** Device-local color theme - persisted in SharedPreferences only, never synced. */
+    val theme: StateFlow<AppThemeOption> = themePreference.theme
+
+    fun setTheme(option: AppThemeOption) = themePreference.setTheme(option)
 
     init {
         _uiState.value = _uiState.value.copy(user = sessionManager.getUserProfile())
