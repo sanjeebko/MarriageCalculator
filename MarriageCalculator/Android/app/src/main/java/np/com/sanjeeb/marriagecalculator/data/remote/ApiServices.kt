@@ -78,6 +78,13 @@ interface MarriageGameSetApiService {
         @Path("roundId") roundId: String
     ): Response<MarriageGameRound>
 
+    @PUT("MarriageGameSets/{id}/games/{gameId}")
+    suspend fun updateGame(
+        @Path("id") id: String,
+        @Path("gameId") gameId: String,
+        @Body request: SubmitRoundRequest
+    ): Response<MarriageGameRound>
+
     @DELETE("MarriageGameSets/{id}/games/last")
     suspend fun deleteLastGame(@Path("id") id: String): Response<Unit>
 

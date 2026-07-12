@@ -60,6 +60,8 @@ import np.com.sanjeeb.marriagecalculator.ui.gamesetup.PlayerMappingDialog
 import np.com.sanjeeb.marriagecalculator.ui.gamesetup.RearrangeSeatsDialog
 import np.com.sanjeeb.marriagecalculator.ui.scoreboard.RoundPlayerEntry
 import np.com.sanjeeb.marriagecalculator.ui.theme.DeepRedTika
+import np.com.sanjeeb.marriagecalculator.ui.theme.FrostBlue
+import np.com.sanjeeb.marriagecalculator.ui.theme.FrostWhite
 import np.com.sanjeeb.marriagecalculator.ui.theme.GoldAccent
 import np.com.sanjeeb.marriagecalculator.ui.theme.MarigoldOrange
 import np.com.sanjeeb.marriagecalculator.ui.theme.TiharNightBlue
@@ -70,6 +72,7 @@ import java.io.File
 fun PlayGameScreen(
     gameSetId: String,
     onAddRound: (String) -> Unit,
+    onEditGame: (String) -> Unit,
     onViewScoreboard: () -> Unit,
     onBack: () -> Unit,
     viewModel: PlayGameViewModel = hiltViewModel()
@@ -85,6 +88,7 @@ fun PlayGameScreen(
     var showDeleteGameSetConfirm by remember { mutableStateOf(false) }
     var showDeleteLastGameConfirm by remember { mutableStateOf(false) }
     var roundPendingDeletion by remember { mutableStateOf<RoundGroup?>(null) }
+    var gamePendingEdit by remember { mutableStateOf<GameEntry?>(null) }
 
     LaunchedEffect(gameSetId) {
         viewModel.loadGame(gameSetId)
@@ -138,17 +142,6 @@ fun PlayGameScreen(
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = TiharNightBlue)
             )
         },
-        floatingActionButton = {
-            if (!uiState.isSettled && uiState.isHost) {
-                FloatingActionButton(
-                    onClick = { onAddRound((uiState.totalGamesPlayed + 1).toString()) },
-                    containerColor = DeepRedTika,
-                    contentColor = GoldAccent
-                ) {
-                    Icon(Icons.Default.Add, contentDescription = "Add Round")
-                }
-            }
-        },
         containerColor = Color.Transparent
     ) { padding ->
         Box(
@@ -197,7 +190,9 @@ fun PlayGameScreen(
                     onCloseRound = { viewModel.closeCurrentRound(gameSetId) },
                     onDeleteLastGame = { showDeleteLastGameConfirm = true },
                     onDeleteRound = { round -> roundPendingDeletion = round },
-                    onReshuffle = { showReorderDialog = true }
+                    onReshuffle = { showReorderDialog = true },
+                    onAddGame = { onAddRound((uiState.totalGamesPlayed + 1).toString()) },
+                    onEditGame = { game -> gamePendingEdit = game }
                 )
 
                 Spacer(modifier = Modifier.height(24.dp))
@@ -215,7 +210,7 @@ fun PlayGameScreen(
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Text(
                             text = "STANDINGS",
-                            color = GoldAccent,
+                            color = FrostBlue,
                             fontSize = 12.sp,
                             fontWeight = FontWeight.Bold,
                             letterSpacing = 1.5.sp
@@ -224,7 +219,7 @@ fun PlayGameScreen(
                         Icon(
                             imageVector = if (standingsExpanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
                             contentDescription = null,
-                            tint = GoldAccent.copy(alpha = 0.6f),
+                            tint = FrostBlue.copy(alpha = 0.7f),
                             modifier = Modifier.size(18.dp)
                         )
                     }
@@ -239,7 +234,7 @@ fun PlayGameScreen(
                                 .padding(horizontal = 6.dp, vertical = 2.dp),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            val tint = if (roundInProgress) GoldAccent.copy(alpha = 0.3f) else GoldAccent
+                            val tint = if (roundInProgress) FrostBlue.copy(alpha = 0.35f) else FrostBlue
                             Icon(Icons.Default.Reorder, null, tint = tint, modifier = Modifier.size(16.dp))
                             Spacer(modifier = Modifier.width(4.dp))
                             Text(
@@ -418,17 +413,38 @@ fun PlayGameScreen(
             onDismiss = { showDeleteGameSetConfirm = false }
         )
     }
+
+    gamePendingEdit?.let { game ->
+        ConfirmDeleteDialog(
+            title = "Modify Previous Game?",
+            message = "You are about to change the score of game ${game.gameSequenceInRound} - a previous game, not the current one. Its scores will be recalculated.",
+            confirmLabel = "Modify",
+            confirmColor = MarigoldOrange,
+            onConfirm = {
+                gamePendingEdit = null
+                onEditGame(game.gameId)
+            },
+            onDismiss = { gamePendingEdit = null }
+        )
+    }
 }
 
 @Composable
-private fun ConfirmDeleteDialog(title: String, message: String, onConfirm: () -> Unit, onDismiss: () -> Unit) {
+private fun ConfirmDeleteDialog(
+    title: String,
+    message: String,
+    confirmLabel: String = "Delete",
+    confirmColor: Color = Color(0xFFFF5252),
+    onConfirm: () -> Unit,
+    onDismiss: () -> Unit
+) {
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text(title, color = GoldAccent, fontFamily = FontFamily.Serif, fontWeight = FontWeight.Bold) },
         text = { Text(message, color = Color.White.copy(alpha = 0.7f), fontSize = 14.sp) },
         confirmButton = {
             TextButton(onClick = onConfirm) {
-                Text("Delete", color = Color(0xFFFF5252), fontWeight = FontWeight.Bold)
+                Text(confirmLabel, color = confirmColor, fontWeight = FontWeight.Bold)
             }
         },
         dismissButton = {
@@ -528,7 +544,7 @@ private fun PlayerStandingsRow(
                         Icon(
                             imageVector = Icons.Default.Link,
                             contentDescription = "Link Account",
-                            tint = GoldAccent.copy(alpha = 0.7f),
+                            tint = FrostBlue.copy(alpha = 0.8f),
                             modifier = Modifier.size(13.dp)
                         )
                     }
@@ -537,13 +553,13 @@ private fun PlayerStandingsRow(
                         Box(
                             modifier = Modifier
                                 .clip(RoundedCornerShape(4.dp))
-                                .background(GoldAccent.copy(alpha = 0.2f))
-                                .border(0.5.dp, GoldAccent, RoundedCornerShape(4.dp))
+                                .background(FrostBlue.copy(alpha = 0.18f))
+                                .border(0.5.dp, FrostBlue, RoundedCornerShape(4.dp))
                                 .padding(horizontal = 4.dp, vertical = 1.dp)
                         ) {
                             Text(
                                 text = "DEALER",
-                                color = GoldAccent,
+                                color = FrostBlue,
                                 fontSize = 7.sp,
                                 fontWeight = FontWeight.Bold
                             )
@@ -561,7 +577,7 @@ private fun PlayerStandingsRow(
                     Icon(
                         imageVector = Icons.Default.NotificationsActive,
                         contentDescription = "Nudge Player",
-                        tint = GoldAccent,
+                        tint = FrostBlue,
                         modifier = Modifier.size(16.dp)
                     )
                 }
@@ -634,7 +650,9 @@ private fun CompactRoundsTable(
     onCloseRound: () -> Unit,
     onDeleteLastGame: () -> Unit,
     onDeleteRound: (RoundGroup) -> Unit,
-    onReshuffle: () -> Unit
+    onReshuffle: () -> Unit,
+    onAddGame: () -> Unit,
+    onEditGame: (GameEntry) -> Unit
 ) {
     var mode by remember { mutableStateOf(RoundDisplayMode.MAAL) }
 
@@ -678,7 +696,9 @@ private fun CompactRoundsTable(
                 onCloseRound = onCloseRound,
                 onDeleteLastGame = onDeleteLastGame,
                 onDeleteRound = { onDeleteRound(group) },
-                onReshuffle = onReshuffle
+                onReshuffle = onReshuffle,
+                onAddGame = onAddGame,
+                onEditGame = onEditGame
             )
             Spacer(modifier = Modifier.height(10.dp))
         }
@@ -701,7 +721,9 @@ private fun RoundBlock(
     onCloseRound: () -> Unit,
     onDeleteLastGame: () -> Unit,
     onDeleteRound: () -> Unit,
-    onReshuffle: () -> Unit
+    onReshuffle: () -> Unit,
+    onAddGame: () -> Unit,
+    onEditGame: (GameEntry) -> Unit
 ) {
     val scrollState = rememberScrollState()
 
@@ -725,7 +747,7 @@ private fun RoundBlock(
                             group.games.isEmpty() -> " · not started"
                             else -> " · in progress"
                         },
-                        color = GoldAccent,
+                        color = FrostWhite,
                         fontSize = 12.sp,
                         fontWeight = FontWeight.Bold
                     )
@@ -736,7 +758,7 @@ private fun RoundBlock(
                             Icon(
                                 imageVector = Icons.Default.Shuffle,
                                 contentDescription = "Reshuffle seats",
-                                tint = MarigoldOrange,
+                                tint = FrostBlue,
                                 modifier = Modifier.size(14.dp)
                             )
                         }
@@ -760,7 +782,7 @@ private fun RoundBlock(
                             Icon(
                                 imageVector = Icons.AutoMirrored.Filled.Undo,
                                 contentDescription = "Undo last game",
-                                tint = GoldAccent.copy(alpha = 0.7f),
+                                tint = FrostBlue.copy(alpha = 0.8f),
                                 modifier = Modifier.size(14.dp)
                             )
                         }
@@ -802,7 +824,7 @@ private fun RoundBlock(
                         ) {
                             Text(
                                 text = p.name.take(3).uppercase(),
-                                color = GoldAccent.copy(alpha = 0.8f),
+                                color = FrostBlue,
                                 fontSize = 10.sp,
                                 fontWeight = FontWeight.Bold
                             )
@@ -821,12 +843,41 @@ private fun RoundBlock(
 
             rowsDisplay.forEachIndexed { index, game ->
                 val isPending = game.gameId == "pending"
-                val rowBackground = if (index % 2 == 0) Color.White.copy(alpha = 0.06f) else Color.Transparent
-                Row(
-                    modifier = Modifier
+                // The current (not yet played) game row is the entry point for score input:
+                // highlighted with a glass pill and tappable. Already-played rows are tappable
+                // too, but route through a "you're modifying a previous game" confirmation.
+                val rowModifier = if (isPending) {
+                    Modifier
                         .fillMaxWidth()
-                        .background(rowBackground)
-                        .padding(vertical = 3.dp),
+                        .padding(horizontal = 4.dp, vertical = 3.dp)
+                        .clip(RoundedCornerShape(10.dp))
+                        .background(
+                            Brush.verticalGradient(
+                                listOf(
+                                    Color.White.copy(alpha = 0.12f),
+                                    FrostBlue.copy(alpha = 0.07f),
+                                    Color.White.copy(alpha = 0.03f)
+                                )
+                            )
+                        )
+                        .border(
+                            width = 1.dp,
+                            brush = Brush.verticalGradient(
+                                listOf(Color.White.copy(alpha = 0.40f), Color.White.copy(alpha = 0.06f))
+                            ),
+                            shape = RoundedCornerShape(10.dp)
+                        )
+                        .then(if (isHost) Modifier.clickable(onClick = onAddGame) else Modifier)
+                        .padding(vertical = 4.dp)
+                } else {
+                    Modifier
+                        .fillMaxWidth()
+                        .background(if (index % 2 == 0) Color.White.copy(alpha = 0.06f) else Color.Transparent)
+                        .then(if (isHost) Modifier.clickable { onEditGame(game) } else Modifier)
+                        .padding(vertical = 3.dp)
+                }
+                Row(
+                    modifier = rowModifier,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Box(
@@ -837,7 +888,7 @@ private fun RoundBlock(
                     ) {
                         Text(
                             text = "${game.gameSequenceInRound}",
-                            color = if (isPending) Color.White.copy(alpha = 0.3f) else GoldAccent,
+                            color = if (isPending) Color.White.copy(alpha = 0.35f) else FrostBlue,
                             fontSize = 12.sp,
                             fontWeight = FontWeight.Bold
                         )
@@ -868,7 +919,7 @@ private fun RoundBlock(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Box(modifier = Modifier.width(ROUND_SEQ_COL_WIDTH_DP.dp), contentAlignment = Alignment.Center) {
-                        Text("Σ", color = GoldAccent.copy(alpha = 0.6f), fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                        Text("Σ", color = FrostBlue.copy(alpha = 0.75f), fontSize = 12.sp, fontWeight = FontWeight.Bold)
                     }
                     Row(modifier = Modifier.horizontalScroll(scrollState)) {
                         players.forEach { p ->
@@ -898,12 +949,12 @@ private fun RoundBlock(
 private fun ModeTab(label: String, selected: Boolean, onClick: () -> Unit) {
     Text(
         text = label,
-        color = if (selected) GoldAccent else Color.White.copy(alpha = 0.4f),
+        color = if (selected) FrostWhite else Color.White.copy(alpha = 0.4f),
         fontSize = 12.sp,
         fontWeight = if (selected) FontWeight.Bold else FontWeight.Normal,
         modifier = Modifier
             .clip(RoundedCornerShape(6.dp))
-            .then(if (selected) Modifier.background(GoldAccent.copy(alpha = 0.15f)) else Modifier)
+            .then(if (selected) Modifier.background(Color.White.copy(alpha = 0.12f)) else Modifier)
             .clickable(onClick = onClick)
             .padding(horizontal = 12.dp, vertical = 4.dp)
     )
@@ -981,10 +1032,10 @@ private fun CompactRoundCell(
                     modifier = Modifier
                         .size(12.dp)
                         .clip(CircleShape)
-                        .background(GoldAccent.copy(alpha = 0.25f)),
+                        .background(FrostBlue.copy(alpha = 0.22f)),
                     contentAlignment = Alignment.Center
                 ) {
-                    Text("D", color = GoldAccent, fontSize = 8.sp, fontWeight = FontWeight.Bold)
+                    Text("D", color = FrostBlue, fontSize = 8.sp, fontWeight = FontWeight.Bold)
                 }
             }
         }
@@ -1069,10 +1120,10 @@ private fun RoundDetailsDialog(game: GameEntry, currency: Currency, onDismiss: (
                                             modifier = Modifier
                                                 .size(14.dp)
                                                 .clip(CircleShape)
-                                                .background(GoldAccent.copy(alpha = 0.25f)),
+                                                .background(FrostBlue.copy(alpha = 0.22f)),
                                             contentAlignment = Alignment.Center
                                         ) {
-                                            Text("D", color = GoldAccent, fontSize = 8.sp, fontWeight = FontWeight.Bold)
+                                            Text("D", color = FrostBlue, fontSize = 8.sp, fontWeight = FontWeight.Bold)
                                         }
                                     }
                                 }
@@ -1175,7 +1226,7 @@ private fun PlayerNameTooltip(anchor: PlayerTooltipAnchor, onDismiss: () -> Unit
             Card(
                 shape = RoundedCornerShape(12.dp),
                 colors = CardDefaults.cardColors(containerColor = TiharNightBlue),
-                border = androidx.compose.foundation.BorderStroke(1.dp, GoldAccent.copy(alpha = 0.5f)),
+                border = androidx.compose.foundation.BorderStroke(1.dp, Color.White.copy(alpha = 0.35f)),
                 elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
             ) {
                 Row(
@@ -1200,18 +1251,18 @@ private fun PlayerNameTooltip(anchor: PlayerTooltipAnchor, onDismiss: () -> Unit
                             modifier = Modifier
                                 .size(32.dp)
                                 .clip(CircleShape)
-                                .border(1.dp, GoldAccent, CircleShape)
+                                .border(1.dp, FrostBlue, CircleShape)
                         )
                     } else {
                         Box(
                             modifier = Modifier
                                 .size(32.dp)
                                 .clip(CircleShape)
-                                .background(GoldAccent.copy(alpha = 0.2f))
-                                .border(1.dp, GoldAccent, CircleShape),
+                                .background(FrostBlue.copy(alpha = 0.18f))
+                                .border(1.dp, FrostBlue, CircleShape),
                             contentAlignment = Alignment.Center
                         ) {
-                            Text(anchor.player.name.take(1).uppercase(), color = GoldAccent, fontSize = 13.sp, fontWeight = FontWeight.Bold)
+                            Text(anchor.player.name.take(1).uppercase(), color = FrostBlue, fontSize = 13.sp, fontWeight = FontWeight.Bold)
                         }
                     }
                     Spacer(modifier = Modifier.width(8.dp))

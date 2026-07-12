@@ -198,6 +198,9 @@ interface RoundDao {
     @Query("SELECT * FROM rounds WHERE gameSetId = :gameSetId ORDER BY roundNumber DESC LIMIT 1")
     suspend fun getLatestGame(gameSetId: Int): RoundEntity?
 
+    @Query("SELECT * FROM rounds WHERE id = :id")
+    suspend fun getGameById(id: Int): RoundEntity?
+
     @Query("UPDATE rounds SET closesRound = 1 WHERE id = :id")
     suspend fun closeRoundAt(id: Int)
 

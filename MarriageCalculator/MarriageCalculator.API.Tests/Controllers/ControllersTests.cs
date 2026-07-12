@@ -205,6 +205,73 @@ public class ControllersTests
     }
 
     [Fact]
+    public async Task MarriageGameSetsController_UpdateGame_ReturnsOkWithRound()
+    {
+        // Arrange
+        var serviceMock = new Mock<IMarriageGameSetService>();
+        var loggerMock = new Mock<ILogger<MarriageGameSetsController>>();
+        var controller = new MarriageGameSetsController(serviceMock.Object, loggerMock.Object);
+        SetControllerUser(controller, "mock-host-456");
+
+        var submitDto = new SubmitRoundDto
+        {
+            WinnerId = "p2",
+            Players = new List<RoundPlayerInputDto> { new() { PlayerId = "p1", Maal = 3 }, new() { PlayerId = "p2", Seen = true, Maal = 7 } }
+        };
+        var roundDto = new MarriageGameRoundDto { Id = "round-1", Sequence = 1, MarriageGameSetId = "set-1" };
+        serviceMock.Setup(s => s.UpdateGameAsync("set-1", "game-1", "mock-host-456", submitDto))
+            .ReturnsAsync(roundDto);
+
+        // Act
+        var result = await controller.UpdateGame("set-1", "game-1", submitDto);
+
+        // Assert
+        var okResult = Assert.IsType<OkObjectResult>(result.Result);
+        var returnedRound = Assert.IsType<MarriageGameRoundDto>(okResult.Value);
+        Assert.Equal("round-1", returnedRound.Id);
+    }
+
+    [Fact]
+    public async Task MarriageGameSetsController_UpdateGame_UnknownGame_ReturnsNotFound()
+    {
+        // Arrange
+        var serviceMock = new Mock<IMarriageGameSetService>();
+        var loggerMock = new Mock<ILogger<MarriageGameSetsController>>();
+        var controller = new MarriageGameSetsController(serviceMock.Object, loggerMock.Object);
+        SetControllerUser(controller, "mock-host-456");
+
+        var submitDto = new SubmitRoundDto { WinnerId = "p1", Players = new List<RoundPlayerInputDto> { new() { PlayerId = "p1" }, new() { PlayerId = "p2" } } };
+        serviceMock.Setup(s => s.UpdateGameAsync("set-1", "missing-game", "mock-host-456", submitDto))
+            .ReturnsAsync((MarriageGameRoundDto?)null);
+
+        // Act
+        var result = await controller.UpdateGame("set-1", "missing-game", submitDto);
+
+        // Assert
+        Assert.IsType<NotFoundObjectResult>(result.Result);
+    }
+
+    [Fact]
+    public async Task MarriageGameSetsController_UpdateGame_Settled_ReturnsBadRequest()
+    {
+        // Arrange
+        var serviceMock = new Mock<IMarriageGameSetService>();
+        var loggerMock = new Mock<ILogger<MarriageGameSetsController>>();
+        var controller = new MarriageGameSetsController(serviceMock.Object, loggerMock.Object);
+        SetControllerUser(controller, "mock-host-456");
+
+        var submitDto = new SubmitRoundDto { WinnerId = "p1", Players = new List<RoundPlayerInputDto> { new() { PlayerId = "p1" }, new() { PlayerId = "p2" } } };
+        serviceMock.Setup(s => s.UpdateGameAsync("set-1", "game-1", "mock-host-456", submitDto))
+            .ThrowsAsync(new InvalidOperationException("Cannot modify a settled game set."));
+
+        // Act
+        var result = await controller.UpdateGame("set-1", "game-1", submitDto);
+
+        // Assert
+        Assert.IsType<BadRequestObjectResult>(result.Result);
+    }
+
+    [Fact]
     public async Task MarriageGameSetsController_DeleteLastGame_ReturnsOkWithRound()
     {
         // Arrange

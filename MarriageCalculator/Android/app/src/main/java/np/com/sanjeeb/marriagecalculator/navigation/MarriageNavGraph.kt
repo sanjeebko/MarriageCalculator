@@ -92,6 +92,9 @@ fun MarriageNavGraph(
                 onAddRound = { roundId ->
                     navController.navigate(Screen.RoundInput.createRoute(gameSetId, roundId))
                 },
+                onEditGame = { gameId ->
+                    navController.navigate(Screen.RoundInput.createEditRoute(gameSetId, gameId))
+                },
                 onViewScoreboard = {
                     navController.navigate(Screen.Scoreboard.createRoute(gameSetId))
                 },
@@ -103,7 +106,12 @@ fun MarriageNavGraph(
             route = Screen.RoundInput.route,
             arguments = listOf(
                 navArgument("gameSetId") { type = NavType.StringType },
-                navArgument("roundId") { type = NavType.StringType }
+                navArgument("roundId") { type = NavType.StringType },
+                navArgument("editGameId") {
+                    type = NavType.StringType
+                    nullable = true
+                    defaultValue = null
+                }
             )
         ) { backStackEntry ->
             val gameSetId = backStackEntry.arguments?.getString("gameSetId") ?: return@composable
@@ -111,6 +119,7 @@ fun MarriageNavGraph(
             RoundInputScreen(
                 gameSetId = gameSetId,
                 roundId = roundId,
+                editGameId = backStackEntry.arguments?.getString("editGameId"),
                 onScoreSubmitted = { navController.popBackStack() },
                 onBack = { navController.popBackStack() }
             )

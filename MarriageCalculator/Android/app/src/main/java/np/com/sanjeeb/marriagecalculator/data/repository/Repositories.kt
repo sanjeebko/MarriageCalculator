@@ -52,6 +52,9 @@ class GameSetRepository @Inject constructor(
     suspend fun closeRound(id: String, roundId: String): ApiResult<MarriageGameRound> = safeApiCall {
         api.closeRound(id, roundId)
     }
+    suspend fun updateGame(id: String, gameId: String, request: SubmitRoundRequest): ApiResult<MarriageGameRound> = safeApiCall {
+        api.updateGame(id, gameId, request)
+    }
     // These hit endpoints that can legitimately return 204 No Content (no body), so they can't
     // use safeApiCall - it treats a null body as an error even on success.
     suspend fun deleteLastGame(id: String): ApiResult<Unit> = safeUnitApiCall { api.deleteLastGame(id) }

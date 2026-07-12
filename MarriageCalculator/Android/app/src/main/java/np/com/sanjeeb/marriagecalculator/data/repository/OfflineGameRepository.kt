@@ -208,6 +208,38 @@ class OfflineGameRepository @Inject constructor(
         return roundId
     }
 
+    /**
+     * Re-scores an already-played game with corrected inputs. Dealer, seat order, and position
+     * in the round stay fixed; winner, maal, and the per-player score rows are replaced.
+     */
+    suspend fun updateGame(
+        gameId: Int,
+        winnerId: Int,
+        totalMaal: Int,
+        playerScores: List<RoundScoreData>
+    ) {
+        val game = roundDao.getGameById(gameId) ?: return
+        roundDao.insert(game.copy(winnerId = winnerId, totalMaal = totalMaal))
+        roundScoreDao.deleteForRound(gameId)
+        roundScoreDao.insertAll(playerScores.map {
+            RoundScoreEntity(
+                roundId = gameId,
+                playerId = it.playerId,
+                score = it.score,
+                maal = it.maal,
+                isSeen = it.isSeen,
+                isWinner = it.isWinner,
+                isDublee = it.isDublee
+            )
+        })
+    }
+
+    /** Returns one game row plus its per-player scores, for prefilling the edit screen. */
+    suspend fun getGameWithScores(gameId: Int): Pair<RoundEntity, List<RoundScoreEntity>>? {
+        val game = roundDao.getGameById(gameId) ?: return null
+        return game to roundScoreDao.getScoresForRound(gameId)
+    }
+
     /** Marks the most recently played game as closing out its logical round early. */
     suspend fun closeCurrentRound(gameSetId: Int) {
         val latest = roundDao.getLatestGame(gameSetId) ?: return

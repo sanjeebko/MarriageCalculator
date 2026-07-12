@@ -3,7 +3,7 @@
 ## Problem Statement
 Build a full-featured Android (Kotlin/Compose) app for the Marriage card game calculator, backed by the existing .NET API. The app must handle 2-6 players with efficient screen space usage, support offline/online modes, real-time score display, and integrate with the C# API hosted on Kubernetes. The Maui version is archived and replaced by this native Android app.
 
-## Status: Phases 1-21 COMPLETE ✅
+## Status: Phases 1-22 COMPLETE ✅
 - 44 C# tests (12 Core + 32 API) + 74 Android unit tests all passing
 - Android APK builds successfully (`assembleDebug`)
 - .NET API builds successfully
@@ -262,6 +262,18 @@ User feedback on the actual table rules: after a round completes, players reshuf
 - **COMMIT**: "feat: replace reshuffle banner with header icon and drop ROUND title"
 - [x] Step 21.4: **User feedback (currency display)** — Rates are entered in minor units for GBP/USD/AUD (pence/cents), but amounts should read in major units: 230p → £2.30, 230¢ → $2.30 (AUD: A$2.30). NPR/INR rates are whole rupees, displayed with their signs: ₨230 / ₹230 (matching the setup screen's "NPR (₨)" / "INR (₹)" labels). Implemented as `Currency.formatMoney(amount)` on the enum - the single source of money formatting - and rewired every display site to pass `Currency` instead of a symbol string: rounds-table cells/totals, Standings rows, round details dialog (PlayGameScreen), score preview boxes (RoundInputScreen), and player totals + Who-Owes-Whom settlement + round history (ScoreboardScreen); the old per-screen `currencySymbol()`/`formatMoney()` string helpers were deleted. Negatives format as -£2.30. Verified live on the GBP game: table shows £2.30/£0.30/-£2.90/£4.00, scoreboard shows £4.30 (43 pts × 10p) and settlements like "apple → Aariya Ojha £3.90".
 - **COMMIT**: "feat: display money in major currency units with proper signs"
+
+---
+
+## Phase 22: Row-Tap Score Entry, Edit Previous Games, Frost Palette (Complete)
+User feedback: the + FAB is redundant - the current game's blank row should BE the entry point; previous games must stay editable (with a warning that you're not editing the current game); and the gold text clashes with the glassmorphism design.
+- [x] Step 22.1: **API** — `PUT MarriageGameSets/{id}/games/{gameId}` (`UpdateGameAsync`): re-scores an already-played game with corrected inputs via `ScoringEngine`; winner/seen/dublee/maal replaced, dealer and round position fixed; old score docs deleted and re-inserted; host-only, blocked when settled; 3 new controller tests (47 total: 12 Core + 35 API).
+- [x] Step 22.2: **Android navigation** — `Screen.RoundInput` gains an optional `editGameId` query arg (`createEditRoute`); `PlayGameScreen` gains `onEditGame`.
+- [x] Step 22.3: **Android RoundInput edit mode** — `RoundInputUiState.editGameId`; `loadForEdit` prefills players (in the game's stored seat order), seen/dublee/maal, winner, dealer from the stored game (online via game-set fetch, offline via new `getGameWithScores`), header reads "EDITING PREVIOUS GAME / Edit Game"; submit branches to `updateGame` (online PUT / offline `OfflineGameRepository.updateGame`, which replaces score rows and keeps dealer/seat/rounding fields).
+- [x] Step 22.4: **Android game page** — FAB removed. The pending (current-game) row is highlighted with a frosted-glass pill and tapping it opens Add Score; tapping an already-played row shows "Modify Previous Game?" (message names the game number, warns scores will be recalculated) and on confirm opens the edit screen. The sequence-number cell still opens the details popup. Both taps host-only.
+- [x] Step 22.5: **Colors** — new frost palette in theme (`FrostWhite` 0xFFE9EEF6, `FrostBlue` 0xFFA6BEE0): all gold accents inside the table, standings, and tooltip replaced (round titles, column initials, seq numbers, Σ, Maal/Points tabs, D badges, DEALER chip, icons); top bar and dialogs keep the festive gold branding.
+- [x] Step 22.6: Verify — `dotnet test` 47/47, Android tests/assemble green, Docker API redeployed; live: pending row tap opened Add Score; previous-game tap showed the warning; Modify opened the prefilled Edit Game screen (Total Maal 19, +23 pts/+£2.30 preview matching stored values, dealer label on AAR); saving with identical inputs round-tripped the new PUT and reproduced identical table values - rescoring is consistent.
+- **COMMIT**: "feat: tap-to-score rows, edit previous games, and frost glass palette"
 
 ---
 

@@ -277,6 +277,51 @@ public class MarriageGameSetsController : ControllerBase
     }
 
     /// <summary>
+    /// Re-score an already-played game with corrected inputs (winner, seen/dublee, maal).
+    /// Dealer and round position stay fixed. Host-only, blocked once settled.
+    /// </summary>
+    [HttpPut("{id}/games/{gameId}")]
+    public async Task<ActionResult<MarriageGameRoundDto>> UpdateGame(string id, string gameId, [FromBody] SubmitRoundDto submitDto)
+    {
+        try
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
+            var hostUserId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? string.Empty;
+            var round = await _gameSetService.UpdateGameAsync(id, gameId, hostUserId, submitDto);
+            if (round == null)
+            {
+                return NotFound($"Game with ID {gameId} not found in game set {id}");
+            }
+            return Ok(round);
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(ex.Message);
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(ex.Message);
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(ex.Message);
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            return Forbid(ex.Message);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error updating game {GameId} for game set {GameSetId}", gameId, id);
+            return StatusCode(500, "An error occurred while updating the game.");
+        }
+    }
+
+    /// <summary>
     /// Delete only the most recently played game (undo), removing the round too if it was the
     /// round's only game. Blocked once the game set is settled.
     /// </summary>

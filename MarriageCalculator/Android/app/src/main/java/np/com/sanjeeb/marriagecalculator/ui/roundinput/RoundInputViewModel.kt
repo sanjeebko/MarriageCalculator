@@ -34,6 +34,8 @@ data class PlayerRoundState(
 
 data class RoundInputUiState(
     val gameSetId: String? = null,
+    /** Non-null when re-scoring an already-played game instead of adding a new one. */
+    val editGameId: String? = null,
     val playerStates: List<PlayerRoundState> = emptyList(),
     val settings: GameSettings = GameSettings.default(),
     val winnerId: String? = null,
@@ -64,10 +66,15 @@ class RoundInputViewModel @Inject constructor(
         )
     }
 
-    fun loadGameData(gameSetIdStr: String, roundNumber: Int) {
+    fun loadGameData(gameSetIdStr: String, roundNumber: Int, editGameId: String? = null) {
         viewModelScope.launch {
             val isLocalId = gameSetIdStr.toIntOrNull() != null
             val isOnline = sessionManager.isOnlineMode() && !isLocalId
+
+            if (editGameId != null) {
+                loadForEdit(gameSetIdStr, editGameId, isOnline)
+                return@launch
+            }
 
             // Seat order for the round this game belongs to (the open round's snapshot, or the
             // game set's current - possibly just reshuffled - order if a fresh round is starting),
@@ -129,6 +136,90 @@ class RoundInputViewModel @Inject constructor(
                 settings = settings,
                 dealerId = dealer?.id
             )
+        }
+    }
+
+    /** Prefills the screen with an already-played game's inputs so it can be re-scored. */
+    private suspend fun loadForEdit(gameSetIdStr: String, editGameId: String, isOnline: Boolean) {
+        if (isOnline) {
+            when (val result = gameSetRepository.getGameSet(gameSetIdStr)) {
+                is ApiResult.Success -> {
+                    val gameSet = result.data
+                    val players = gameSet.gameSetPlayers?.values
+                        ?.sortedBy { it.position }
+                        ?.mapNotNull { it.player } ?: emptyList()
+                    val settings = gameSet.gameSettings ?: GameSettings.default()
+
+                    val round = gameSet.rounds?.firstOrNull { r -> r.marriageGames?.any { it.id == editGameId } == true }
+                    val game = round?.marriageGames?.firstOrNull { it.id == editGameId }
+                    if (round == null || game == null) {
+                        _uiState.value = _uiState.value.copy(error = "Game not found")
+                        return
+                    }
+
+                    val seatOrder = round.playerIds
+                        ?.mapNotNull { pid -> players.find { it.id == pid } }
+                        ?.takeIf { it.size == players.size }
+                        ?: players
+
+                    _uiState.value = _uiState.value.copy(
+                        gameSetId = gameSetIdStr,
+                        editGameId = editGameId,
+                        playerStates = seatOrder.map { player ->
+                            val score = game.marriageGameScores?.get(player.id)
+                            PlayerRoundState(
+                                player = player,
+                                seen = score?.seen ?: false,
+                                seenPoints = score?.maal ?: 0,
+                                duply = score?.duply ?: false,
+                                isWinner = player.id == game.winnerId,
+                                isDealer = player.id == game.dealerId
+                            )
+                        },
+                        settings = settings,
+                        winnerId = game.winnerId,
+                        dealerId = game.dealerId
+                    )
+                    calculatePreview()
+                }
+                is ApiResult.Error -> _uiState.value = _uiState.value.copy(error = result.message)
+                is ApiResult.Loading -> {}
+            }
+        } else {
+            val gameSetId = gameSetIdStr.toIntOrNull() ?: return
+            val gameId = editGameId.toIntOrNull() ?: return
+            val players = offlineGameRepository.getGameSetPlayers(gameSetId)
+            val gameSetEntity = offlineGameRepository.getGameSet(gameSetId) ?: return
+            val settings = offlineGameRepository.getGameSettings(gameSetEntity.settingsId) ?: GameSettings.default()
+            val (game, scores) = offlineGameRepository.getGameWithScores(gameId) ?: run {
+                _uiState.value = _uiState.value.copy(error = "Game not found")
+                return
+            }
+
+            val seatOrder = game.seatOrder.split(",")
+                .mapNotNull { id -> players.find { it.id == id } }
+                .takeIf { it.size == players.size }
+                ?: players
+
+            _uiState.value = _uiState.value.copy(
+                gameSetId = gameSetIdStr,
+                editGameId = editGameId,
+                playerStates = seatOrder.map { player ->
+                    val score = scores.find { it.playerId.toString() == player.id }
+                    PlayerRoundState(
+                        player = player,
+                        seen = score?.isSeen ?: false,
+                        seenPoints = score?.maal ?: 0,
+                        duply = score?.isDublee ?: false,
+                        isWinner = player.id == game.winnerId.toString(),
+                        isDealer = player.id == game.dealerId.toString()
+                    )
+                },
+                settings = settings,
+                winnerId = game.winnerId.toString(),
+                dealerId = game.dealerId.toString()
+            )
+            calculatePreview()
         }
     }
 
@@ -309,7 +400,12 @@ class RoundInputViewModel @Inject constructor(
                         )
                     }
                 )
-                when (val result = gameSetRepository.submitRound(gameSetIdStr, request)) {
+                val result = if (state.editGameId != null) {
+                    gameSetRepository.updateGame(gameSetIdStr, state.editGameId, request)
+                } else {
+                    gameSetRepository.submitRound(gameSetIdStr, request)
+                }
+                when (result) {
                     is ApiResult.Success -> {
                         _uiState.value = state.copy(submitted = true, error = null)
                     }
@@ -337,13 +433,23 @@ class RoundInputViewModel @Inject constructor(
                     )
                 }
 
-                offlineGameRepository.saveRound(
-                    gameSetId = gameSetId,
-                    winnerId = winnerId.toIntOrNull() ?: return@launch,
-                    dealerId = state.dealerId?.toIntOrNull() ?: 0,
-                    totalMaal = totalMaal,
-                    playerScores = scores
-                )
+                val editGameId = state.editGameId?.toIntOrNull()
+                if (editGameId != null) {
+                    offlineGameRepository.updateGame(
+                        gameId = editGameId,
+                        winnerId = winnerId.toIntOrNull() ?: return@launch,
+                        totalMaal = totalMaal,
+                        playerScores = scores
+                    )
+                } else {
+                    offlineGameRepository.saveRound(
+                        gameSetId = gameSetId,
+                        winnerId = winnerId.toIntOrNull() ?: return@launch,
+                        dealerId = state.dealerId?.toIntOrNull() ?: 0,
+                        totalMaal = totalMaal,
+                        playerScores = scores
+                    )
+                }
 
                 _uiState.value = state.copy(submitted = true, error = null)
             } catch (e: Exception) {

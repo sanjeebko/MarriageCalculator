@@ -375,6 +375,89 @@ public class MarriageGameSetService : IMarriageGameSetService
     }
 
     /// <summary>
+    /// Re-scores an already-played game (any game, not just the latest) with corrected inputs.
+    /// The dealer and position in the round stay fixed; winner, seen/dublee flags, and maal are
+    /// replaced and scores recomputed server-side. Host-only, blocked once settled.
+    /// </summary>
+    public async Task<MarriageGameRoundDto?> UpdateGameAsync(string gameSetId, string gameId, string hostUserId, SubmitRoundDto dto)
+    {
+        var gameSet = await _gameSetRepository.GetByIdRawAsync(gameSetId);
+        if (gameSet == null)
+        {
+            throw new KeyNotFoundException($"Marriage game set with ID {gameSetId} not found");
+        }
+
+        if (gameSet.HostUserId != hostUserId)
+        {
+            throw new UnauthorizedAccessException("Only the game host can edit a game.");
+        }
+
+        if (!gameSet.IsActive)
+        {
+            throw new InvalidOperationException("Cannot modify a settled game set.");
+        }
+
+        if (dto.Players.Count < 2)
+        {
+            throw new ArgumentException("At least 2 players are required.");
+        }
+
+        if (!dto.Players.Any(p => p.PlayerId == dto.WinnerId))
+        {
+            throw new ArgumentException("Winner must be one of the players in this game.");
+        }
+
+        var game = await _context.MarriageGames.Find(g => g.Id == gameId).FirstOrDefaultAsync();
+        if (game == null) return null;
+
+        var round = await _context.MarriageGameRounds
+            .Find(r => r.Id == game.MarriageGameRoundId && r.MarriageGameSetId == gameSetId)
+            .FirstOrDefaultAsync();
+        if (round == null) return null;
+
+        var settingsDoc = !string.IsNullOrEmpty(gameSet.GameSettingsId)
+            ? await _context.GameSettings.Find(s => s.Id == gameSet.GameSettingsId).FirstOrDefaultAsync()
+            : null;
+        var settings = settingsDoc ?? new GameSettings();
+
+        game.WinnerId = dto.WinnerId;
+        game.MarriageGameScores.Clear();
+        foreach (var p in dto.Players)
+        {
+            game.MarriageGameScores[p.PlayerId] = new MarriageGameScore
+            {
+                PlayerId = p.PlayerId,
+                Seen = p.Seen || p.PlayerId == dto.WinnerId,
+                Playing = true,
+                Maal = p.Maal,
+                Duply = p.Duply,
+                Winner = p.PlayerId == dto.WinnerId,
+                Deal = p.PlayerId == game.DealerId
+            };
+        }
+        ScoringEngine.CalculateScores(game, settings);
+
+        await _context.MarriageGames.UpdateOneAsync(
+            g => g.Id == game.Id,
+            Builders<MarriageGame>.Update
+                .Set(g => g.WinnerId, game.WinnerId)
+                .Set(g => g.TotalMaal, game.TotalMaal));
+
+        await _context.MarriageGameScores.DeleteManyAsync(s => s.MarriageGameId == game.Id);
+        var scoreDocs = game.MarriageGameScores.Values.Select(s =>
+        {
+            s.MarriageGameId = game.Id;
+            return s;
+        }).ToList();
+        await _context.MarriageGameScores.InsertManyAsync(scoreDocs);
+
+        gameSet.LastPlayed = DateTime.UtcNow;
+        await _gameSetRepository.UpdateAsync(gameSetId, gameSet, hostUserId);
+
+        return await BuildRoundDtoAsync(round);
+    }
+
+    /// <summary>
     /// Removes only the most recently played game (the last game of the last round), to undo a
     /// mistake. If that was the round's only game, the now-empty round is removed too. Blocked
     /// once the game set is settled (IsActive = false).

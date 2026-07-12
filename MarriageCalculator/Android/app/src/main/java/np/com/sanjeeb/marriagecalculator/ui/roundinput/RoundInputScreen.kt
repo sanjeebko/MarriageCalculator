@@ -39,6 +39,7 @@ import java.io.File
 fun RoundInputScreen(
     gameSetId: String,
     roundId: String,
+    editGameId: String? = null,
     onScoreSubmitted: () -> Unit,
     onBack: () -> Unit,
     viewModel: RoundInputViewModel = hiltViewModel()
@@ -48,7 +49,7 @@ fun RoundInputScreen(
     var maalDialogPlayerId by remember { mutableStateOf<String?>(null) }
 
     LaunchedEffect(gameSetId) {
-        viewModel.loadGameData(gameSetId, roundNumber)
+        viewModel.loadGameData(gameSetId, roundNumber, editGameId)
     }
 
     LaunchedEffect(uiState.submitted) {
@@ -84,7 +85,7 @@ fun RoundInputScreen(
             ) {
                 // Header
                 Text(
-                    text = "CURRENT MATCH",
+                    text = if (uiState.editGameId != null) "EDITING PREVIOUS GAME" else "CURRENT MATCH",
                     color = GoldAccent.copy(alpha = 0.8f),
                     fontSize = 11.sp,
                     fontWeight = FontWeight.Bold,
@@ -92,7 +93,7 @@ fun RoundInputScreen(
                 )
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(
-                    text = "Round $roundNumber",
+                    text = if (uiState.editGameId != null) "Edit Game" else "Round $roundNumber",
                     color = Color.White,
                     fontSize = 32.sp,
                     fontFamily = FontFamily.Serif,
