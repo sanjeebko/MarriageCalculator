@@ -1,5 +1,7 @@
 package np.com.sanjeeb.marriagecalculator.ui.friend
 
+import android.content.Context
+import android.content.Intent
 import np.com.sanjeeb.marriagecalculator.ui.theme.AppTheme
 
 import androidx.compose.foundation.background
@@ -35,6 +37,10 @@ fun FriendScreen(
     val uiState by viewModel.uiState.collectAsState()
     var selectedTabIndex by remember { mutableIntStateOf(0) }
     var searchQuery by remember { mutableStateOf("") }
+
+    LaunchedEffect(Unit) {
+        viewModel.loadData()
+    }
 
     Box(
         modifier = Modifier
@@ -161,6 +167,7 @@ fun FriendScreen(
                             error = uiState.searchError,
                             sentList = uiState.pendingSent,
                             friendsList = uiState.friends,
+                            currentUser = uiState.currentUser,
                             onSendRequest = { email ->
                                 viewModel.sendFriendRequest(email) {
                                     searchQuery = ""
@@ -354,9 +361,50 @@ private fun SearchTab(
     error: String?,
     sentList: List<FriendshipDto>,
     friendsList: List<User>,
+    currentUser: User?,
     onSendRequest: (String) -> Unit
 ) {
+    val context = androidx.compose.ui.platform.LocalContext.current
+    
     Column(modifier = Modifier.fillMaxSize()) {
+        // User's own info for sharing
+        currentUser?.let { user ->
+            Card(
+                colors = CardDefaults.cardColors(containerColor = AppTheme.palette.accent.copy(alpha = 0.1f)),
+                shape = RoundedCornerShape(12.dp),
+                modifier = Modifier.padding(bottom = 16.dp)
+            ) {
+                Row(
+                    modifier = Modifier.padding(12.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(text = "Your Email / Username", color = AppTheme.palette.accent, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                        Text(text = user.email, color = AppTheme.palette.textPrimary, fontSize = 16.sp)
+                    }
+                    IconButton(onClick = {
+                        val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as android.content.ClipboardManager
+                        val clip = android.content.ClipData.newPlainText("Marriage Friend Code", user.email)
+                        clipboard.setPrimaryClip(clip)
+                        android.widget.Toast.makeText(context, "Copied to clipboard", android.widget.Toast.LENGTH_SHORT).show()
+                    }) {
+                        Icon(Icons.Default.ContentCopy, contentDescription = "Copy", tint = AppTheme.palette.accent)
+                    }
+                    IconButton(onClick = {
+                        val sendIntent: Intent = Intent().apply {
+                            action = Intent.ACTION_SEND
+                            putExtra(Intent.EXTRA_TEXT, "Add me on Marriage Calculator! My email is: ${user.email}")
+                            type = "text/plain"
+                        }
+                        val shareIntent = Intent.createChooser(sendIntent, null)
+                        context.startActivity(shareIntent)
+                    }) {
+                        Icon(Icons.Default.Share, contentDescription = "Share", tint = AppTheme.palette.accent)
+                    }
+                }
+            }
+        }
+
         OutlinedTextField(
             value = query,
             onValueChange = onQueryChange,

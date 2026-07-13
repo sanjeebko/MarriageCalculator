@@ -127,4 +127,37 @@ public class FcmService : IFcmService
             _logger.LogError(ex, "FCM: Error sending push notification to token {Token}", token);
         }
     }
+
+    public async Task SendDataMessageAsync(string token, Dictionary<string, string> data)
+    {
+        if (string.IsNullOrWhiteSpace(token))
+        {
+            _logger.LogWarning("FCM: Cannot send data message because the destination token is null or empty.");
+            return;
+        }
+
+        if (!_isFirebaseEnabled)
+        {
+            _logger.LogInformation("FCM [Mock Mode]: Sending data-only push message.\n  To Token: {Token}\n  Data: {Data}",
+                token, string.Join(", ", data));
+            return;
+        }
+
+        try
+        {
+            // No Notification block on purpose - see IFcmService.SendDataMessageAsync doc comment.
+            var message = new Message
+            {
+                Token = token,
+                Data = data
+            };
+
+            var response = await FirebaseMessaging.DefaultInstance.SendAsync(message);
+            _logger.LogInformation("FCM [Production Mode]: Successfully sent data message. Response: {Response}", response);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "FCM: Error sending data message to token {Token}", token);
+        }
+    }
 }

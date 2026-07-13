@@ -136,7 +136,14 @@ fun MarriageNavGraph(
             )
         }
 
-        composable(Screen.Friend.route) {
+        composable(
+            route = Screen.Friend.route,
+            deepLinks = listOf(
+                androidx.navigation.navDeepLink {
+                    uriPattern = "marriagecalculator://friends"
+                }
+            )
+        ) {
             FriendScreen(
                 onBack = { navController.popBackStack() }
             )

@@ -35,7 +35,16 @@
                 <category android:name="android.intent.category.BROWSABLE" />
                 <data android:scheme="marriagecalculator" android:host="playgame" />
             </intent-filter>
+
+            <intent-filter android:autoVerify="true">
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="marriagecalculator" android:host="friends" />
+            </intent-filter>
         </activity>
+
+        <receiver android:name=".data.remote.FriendRequestReceiver" android:exported="false" />
 
         <service
             android:name=".data.remote.MyFirebaseMessagingService"

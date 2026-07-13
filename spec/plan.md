@@ -3,7 +3,7 @@
 ## Problem Statement
 Build a full-featured Android (Kotlin/Compose) app for the Marriage card game calculator, backed by the existing .NET API. The app must handle 2-6 players with efficient screen space usage, support offline/online modes, real-time score display, and integrate with the C# API hosted on Kubernetes. The Maui version is archived and replaced by this native Android app.
 
-## Status: Phases 1-23 COMPLETE ✅
+## Status: Phases 1-24 COMPLETE ✅
 - 44 C# tests (12 Core + 32 API) + 74 Android unit tests all passing
 - Android APK builds successfully (`assembleDebug`)
 - .NET API builds successfully
@@ -285,6 +285,17 @@ Four designed themes - 2 dark, 2 light - selectable in-app; the choice is a pure
 - [x] Step 23.4: **Color routing** — all hardcoded theme colors in Dashboard, PlayGame, Scoreboard, RoundInput, GameSetup, and Friend screens rewired to `AppTheme.palette.*` (including `Color.White` text → `textPrimary` and `Color.White.copy(…)` glass overlays → `tint.copy(…)`); Login/Splash and the metallic branded buttons keep their fixed festive look. Fixed two stragglers found live: Dashboard's screen/drawer gradients and FriendScreen's gradient/textfield had hardcoded dark bottoms that broke light themes.
 - [x] Step 23.5: Verify — build/tests green; live on the emulator: picker shows all 4 with swatches; Midnight Frost re-themed the app instantly; Marigold Day verified on the game page (glass pending-row pill, winner pills, and frost headers all legible on ivory); Himalayan Mist verified; force-stop + relaunch came back in the selected theme (persistence); restored Tihar Night as the active default.
 - **COMMIT**: "feat: four selectable color themes with device-local persistence"
+
+---
+
+## Phase 24: Add Friends - Actionable Push Notifications (Complete)
+User self-implemented the client-side "Add Friends" feature (actionable Accept/Decline push notifications, deep linking, friend search/share UI); review found 2 blocking backend gaps and 1 Android reliability gap, all fixed.
+- [x] Step 24.1: **Backend FCM wiring** — `FriendshipService` previously never called `IFcmService` at all, so no push was ever triggered on a new/reopened friend request or on acceptance. Injected `IFcmService`, added `SendFriendRequestPushAsync`/`SendFriendAcceptedPushAsync` private helpers (look up the target's `FcmToken`, no-op if absent), wired them into all three `SendFriendRequestAsync` branches (new, reopened-rejected, mutual-auto-accept) and into `RespondFriendRequestAsync` on accept.
+- [x] Step 24.2: **Data-only FCM payload** — added `IFcmService.SendDataMessageAsync(token, data)` alongside the existing `SendNotificationAsync`, building a `Message` with no `Notification` block. Required because a message with a `Notification` block is auto-rendered by the OS when the app is backgrounded/killed, bypassing the client's `onMessageReceived()` — which is where the Accept/Decline action buttons are built. `FRIEND_REQUEST`/`FRIEND_ACCEPTED` pushes now use the data-only path.
+- [x] Step 24.3: **`FriendRequestReceiver.goAsync()`** — the receiver's `onReceive()` starts a coroutine to call the respond-friend-request API, but `onReceive()` returning early can let the OS reclaim the process before the network call finishes. Added `goAsync()`/`pendingResult.finish()` so the receiver's process lifetime extends to cover the async call.
+- [x] Step 24.4: Verify — `dotnet build`/`dotnet test` (47/47 passing) and Android `testDebugUnitTest`/`assembleDebug` green; Docker API rebuilt/redeployed. Live on emulator: sent a real friend request (Aariya → Sanjeeb) — confirmed via direct Mongo query that `SendFriendRequestPushAsync` correctly no-ops when the receiver has no `FcmToken` (expected, not a bug). Planted a test `FcmToken` on the receiver's user document, re-sent the request, and confirmed via Docker logs that the backend attempted a real (non-mock) `FirebaseMessaging.SendAsync` call with the data-only payload, failing only because the planted token wasn't a real device token — proving the send path fires correctly end-to-end. Test data (dummy token, test friendship) cleaned up after verification.
+- **Note (not fixed, out of scope)**: the friend-request delete endpoint appears to return an empty body that the Android client fails to parse, surfacing a spurious "Empty response body" error toast even though the delete succeeds server-side. Minor pre-existing client bug in the user's own implementation, flagged but not part of this fix.
+- **COMMIT**: "fix: wire FCM push notifications for friend requests and harden background receiver"
 
 ---
 

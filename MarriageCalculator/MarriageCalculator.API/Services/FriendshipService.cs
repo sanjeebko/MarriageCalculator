@@ -12,11 +12,13 @@ public class FriendshipService : IFriendshipService
 {
     private readonly IFriendshipRepository _friendshipRepository;
     private readonly IUserRepository _userRepository;
+    private readonly IFcmService _fcmService;
 
-    public FriendshipService(IFriendshipRepository friendshipRepository, IUserRepository userRepository)
+    public FriendshipService(IFriendshipRepository friendshipRepository, IUserRepository userRepository, IFcmService fcmService)
     {
         _friendshipRepository = friendshipRepository;
         _userRepository = userRepository;
+        _fcmService = fcmService;
     }
 
     public async Task<IEnumerable<FriendshipDto>> GetPendingRequestsAsync(string userId)
@@ -105,6 +107,9 @@ public class FriendshipService : IFriendshipService
             throw new ArgumentException("Cannot send a friend request to yourself.");
         }
 
+        var requesterUser = await _userRepository.GetByUserIdAsync(requesterUserId);
+        var requesterName = requesterUser?.DisplayName ?? "Someone";
+
         var existing = await _friendshipRepository.GetByUsersAsync(requesterUserId, receiver.UserId);
         if (existing != null)
         {
@@ -124,10 +129,11 @@ public class FriendshipService : IFriendshipService
                     existing.Status = "Accepted";
                     existing.ActionAt = DateTime.UtcNow;
                     await _friendshipRepository.UpdateAsync(existing.Id, existing);
+                    await SendFriendAcceptedPushAsync(existing.RequesterUserId, requesterName);
                     return await MapToDtoAsync(existing);
                 }
             }
-            
+
             // Re-open rejected request
             existing.RequesterUserId = requesterUserId;
             existing.ReceiverUserId = receiver.UserId;
@@ -135,6 +141,7 @@ public class FriendshipService : IFriendshipService
             existing.CreatedAt = DateTime.UtcNow;
             existing.ActionAt = null;
             await _friendshipRepository.UpdateAsync(existing.Id, existing);
+            await SendFriendRequestPushAsync(existing.ReceiverUserId, existing.Id, requesterName);
             return await MapToDtoAsync(existing);
         }
 
@@ -147,6 +154,7 @@ public class FriendshipService : IFriendshipService
         };
 
         var created = await _friendshipRepository.CreateAsync(friendship);
+        await SendFriendRequestPushAsync(created.ReceiverUserId, created.Id, requesterName);
         return await MapToDtoAsync(created);
     }
 
@@ -172,7 +180,41 @@ public class FriendshipService : IFriendshipService
         friendship.ActionAt = DateTime.UtcNow;
 
         var updated = await _friendshipRepository.UpdateAsync(id, friendship);
+
+        if (respondDto.Accept && updated != null)
+        {
+            var accepter = await _userRepository.GetByUserIdAsync(receiverUserId);
+            await SendFriendAcceptedPushAsync(friendship.RequesterUserId, accepter?.DisplayName ?? "Someone");
+        }
+
         return updated != null ? await MapToDtoAsync(updated) : null;
+    }
+
+    /// <summary>Notifies the receiver of a new (or reopened) pending friend request.</summary>
+    private async Task SendFriendRequestPushAsync(string receiverUserId, string friendshipId, string requesterName)
+    {
+        var receiver = await _userRepository.GetByUserIdAsync(receiverUserId);
+        if (receiver == null || string.IsNullOrEmpty(receiver.FcmToken)) return;
+
+        await _fcmService.SendDataMessageAsync(receiver.FcmToken, new Dictionary<string, string>
+        {
+            { "type", "FRIEND_REQUEST" },
+            { "friendshipId", friendshipId },
+            { "requesterName", requesterName }
+        });
+    }
+
+    /// <summary>Notifies the original requester that their friend request was accepted.</summary>
+    private async Task SendFriendAcceptedPushAsync(string notifyUserId, string accepterName)
+    {
+        var notifyUser = await _userRepository.GetByUserIdAsync(notifyUserId);
+        if (notifyUser == null || string.IsNullOrEmpty(notifyUser.FcmToken)) return;
+
+        await _fcmService.SendDataMessageAsync(notifyUser.FcmToken, new Dictionary<string, string>
+        {
+            { "type", "FRIEND_ACCEPTED" },
+            { "requesterName", accepterName }
+        });
     }
 
     public async Task<bool> RemoveFriendAsync(string id, string userId)

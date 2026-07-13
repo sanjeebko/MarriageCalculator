@@ -6,6 +6,7 @@ import np.com.sanjeeb.marriagecalculator.data.model.User
 import np.com.sanjeeb.marriagecalculator.data.remote.FriendshipDto
 import np.com.sanjeeb.marriagecalculator.data.repository.ApiResult
 import np.com.sanjeeb.marriagecalculator.data.repository.FriendRepository
+import np.com.sanjeeb.marriagecalculator.data.repository.SessionManager
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -19,6 +20,7 @@ data class FriendUiState(
     val pendingReceived: List<FriendshipDto> = emptyList(),
     val pendingSent: List<FriendshipDto> = emptyList(),
     val searchResults: List<User> = emptyList(),
+    val currentUser: User? = null,
     val error: String? = null,
     val searchError: String? = null,
     val searchLoading: Boolean = false
@@ -26,13 +28,15 @@ data class FriendUiState(
 
 @HiltViewModel
 class FriendViewModel @Inject constructor(
-    private val friendRepository: FriendRepository
+    private val friendRepository: FriendRepository,
+    private val sessionManager: SessionManager
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(FriendUiState())
     val uiState: StateFlow<FriendUiState> = _uiState.asStateFlow()
 
     init {
+        _uiState.value = _uiState.value.copy(currentUser = sessionManager.getUserProfile())
         loadData()
     }
 
