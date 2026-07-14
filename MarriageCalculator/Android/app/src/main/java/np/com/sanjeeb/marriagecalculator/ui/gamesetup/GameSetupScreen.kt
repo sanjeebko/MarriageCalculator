@@ -52,9 +52,7 @@ import android.net.Uri
 import np.com.sanjeeb.marriagecalculator.data.model.Currency
 import np.com.sanjeeb.marriagecalculator.data.model.GameSettings
 import np.com.sanjeeb.marriagecalculator.data.model.Player
-import np.com.sanjeeb.marriagecalculator.ui.components.MetallicButton
-import np.com.sanjeeb.marriagecalculator.ui.components.MetallicRedFace
-import np.com.sanjeeb.marriagecalculator.ui.components.MetallicRedRim
+import np.com.sanjeeb.marriagecalculator.ui.components.GlassButton
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -151,13 +149,12 @@ fun GameSetupScreen(
                 }
 
                 // Start Game Button
-                MetallicButton(
+                GlassButton(
                     onClick = { showRearrangeSetupDialog = true },
                     text = "Start Game (${uiState.selectedPlayerIds.size} players)",
-                    rimColors = MetallicRedRim,
-                    faceColors = MetallicRedFace,
+                    containerColor = AppTheme.palette.cta.copy(alpha = 0.35f),
                     textColor = AppTheme.palette.accent,
-                    modifier = Modifier.height(56.dp),
+                    height = 56,
                     enabled = uiState.selectedPlayerIds.size in 2..6,
                     isLoading = uiState.isLoading,
                     leadingIcon = {

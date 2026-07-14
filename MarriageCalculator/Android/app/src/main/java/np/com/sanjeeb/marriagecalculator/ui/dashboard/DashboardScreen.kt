@@ -52,9 +52,6 @@ import kotlinx.coroutines.launch
 import np.com.sanjeeb.marriagecalculator.R
 import np.com.sanjeeb.marriagecalculator.data.model.MarriageGameSet
 import np.com.sanjeeb.marriagecalculator.ui.components.GlassButton
-import np.com.sanjeeb.marriagecalculator.ui.components.MetallicButton
-import np.com.sanjeeb.marriagecalculator.ui.components.MetallicRedFace
-import np.com.sanjeeb.marriagecalculator.ui.components.MetallicRedRim
 import np.com.sanjeeb.marriagecalculator.ui.theme.*
 
 @OptIn(ExperimentalMaterial3Api::class)

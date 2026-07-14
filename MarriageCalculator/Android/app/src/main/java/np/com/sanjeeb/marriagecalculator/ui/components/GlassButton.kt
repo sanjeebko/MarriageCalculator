@@ -51,7 +51,8 @@ fun GlassButton(
                 .background(
                     brush = Brush.verticalGradient(
                         colors = listOf(
-                            containerColor.copy(alpha = containerColor.alpha * 1.5f),
+                            // Clamp: a high-alpha container (e.g. 0.85) would otherwise overflow past 1
+                            containerColor.copy(alpha = (containerColor.alpha * 1.5f).coerceAtMost(1f)),
                             containerColor
                         )
                     ),

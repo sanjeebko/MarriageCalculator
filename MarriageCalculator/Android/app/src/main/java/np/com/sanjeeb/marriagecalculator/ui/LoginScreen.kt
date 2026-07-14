@@ -37,7 +37,7 @@ import com.google.android.libraries.identity.googleid.GetSignInWithGoogleOption
 import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
 import androidx.hilt.navigation.compose.hiltViewModel
 import np.com.sanjeeb.marriagecalculator.R
-import np.com.sanjeeb.marriagecalculator.ui.components.MetallicButton
+import np.com.sanjeeb.marriagecalculator.ui.components.GlassButton
 import kotlinx.coroutines.launch
 
 // Metallic Noir Color Palette
@@ -122,8 +122,8 @@ fun LoginScreen(
                     shape = RoundedCornerShape(12.dp)
                 )
 
-                // Google Button (Polished Silver Bezel)
-                MetallicButton(
+                // Google Button
+                GlassButton(
                     onClick = {
                         val webClientIdResId = context.resources.getIdentifier(
                             "default_web_client_id",
@@ -180,10 +180,9 @@ fun LoginScreen(
                         }
                     },
                     text = "Continue with Google",
-                    rimColors = listOf(Color(0xFFFFFFFF), Color(0xFF606060)),
-                    faceColors = listOf(Color(0xFFFFFFFF), Color(0xFFDDDDDD)),
+                    containerColor = Color.White.copy(alpha = 0.85f),
                     textColor = Color(0xFF333333),
-                    modifier = Modifier.height(64.dp),
+                    height = 64,
                     isLoading = uiState is LoginUiState.Loading,
                     leadingIcon = {
                         Image(
@@ -197,24 +196,22 @@ fun LoginScreen(
                 )
 
                 // Developer Mock Sign-In
-                MetallicButton(
+                GlassButton(
                     onClick = { viewModel.loginWithMockToken(username) },
                     text = "Developer Mock Sign-In",
-                    rimColors = listOf(MetalGold, Color(0xFF6A5415)),
-                    faceColors = listOf(Color(0xFFFFEA9F), Color(0xFFD4AF37)),
-                    textColor = Color(0xFF1E1402),
-                    modifier = Modifier.height(52.dp),
+                    containerColor = MetalGold.copy(alpha = 0.35f),
+                    textColor = MetalGold,
+                    height = 52,
                     isLoading = uiState is LoginUiState.Loading
                 )
 
                 // Continue as Guest (Offline)
-                MetallicButton(
+                GlassButton(
                     onClick = { viewModel.loginAsGuest() },
-                    rimColors = listOf(Color(0xFF888888), Color(0xFF333333)),
-                    faceColors = listOf(Color(0xFF555555), Color(0xFF222222)),
-                    textColor = Color.White,
                     text = "Continue as Guest (Offline)",
-                    modifier = Modifier.height(52.dp),
+                    containerColor = Color.White.copy(alpha = 0.12f),
+                    textColor = Color.White,
+                    height = 52,
                     isLoading = uiState is LoginUiState.Loading
                 )
 

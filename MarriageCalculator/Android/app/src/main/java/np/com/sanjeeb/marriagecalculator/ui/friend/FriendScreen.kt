@@ -25,7 +25,6 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import np.com.sanjeeb.marriagecalculator.data.model.User
 import np.com.sanjeeb.marriagecalculator.data.remote.FriendshipDto
-import np.com.sanjeeb.marriagecalculator.ui.components.MetallicButton
 import androidx.compose.material3.TabRowDefaults.tabIndicatorOffset
 
 @OptIn(ExperimentalMaterial3Api::class)

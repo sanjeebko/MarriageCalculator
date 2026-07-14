@@ -362,6 +362,8 @@ Three user-reported issues on the Round Input screen:
 - [x] Step 30.3: **Consistent buttons** — replaced the screen's ad-hoc yellow `Button` and `OutlinedButton` with the shared `GlassButton` component (the one the Dashboard uses), styled with the same primary (cta glass + accent text + icon) and secondary (tint glass) parameters. `GlassButton` already exposes container/text colors, height, and icon parameters for per-page fitting, so future look-and-feel changes to the component propagate everywhere.
 - [x] Step 30.4: Verify — tests/build green; live on emulator: save-without-winner showed the error, picking a winner cleared it instantly; title showed "Round 3 · Game 1"; both buttons render in the Dashboard's glass style. Input discarded after verification.
 - **COMMIT**: "fix: round input error clearing, game number in title, shared glass buttons"
+- [x] Step 30.5: **Full MetallicButton → GlassButton migration** (user follow-up) — Login's three buttons (Google: bright white glass + dark text; Mock Sign-In: gold glass; Guest: neutral glass) and Game Setup's Start Game (cta glass, keeps enabled/isLoading/icon) now use `GlassButton`; `MetallicButton.kt` and its rim/face color presets deleted; stale imports removed from Dashboard/Friend screens. Fixed a crash found live: GlassButton's top-gradient `alpha × 1.5` overflowed past 1.0 for high-alpha containers (Google button, 0.85) — now clamped in the component. Verified live: login renders and signs in, Game Setup shows the glass Start button (correct disabled state), Dashboard unchanged.
+- **COMMIT**: "refactor: migrate all metallic buttons to shared GlassButton"
 
 ---
 
