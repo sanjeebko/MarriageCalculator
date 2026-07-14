@@ -81,11 +81,11 @@ class MaalCalculatorTest {
     }
 
     @Test
-    fun `manuk printed joker uses the same tiers as alter`() {
-        assertEquals(5, MaalCalculator.total(mapOf(MaalItem.MANUK to 1)))
-        assertEquals(15, MaalCalculator.total(mapOf(MaalItem.MANUK to 2)))
-        assertEquals(30, MaalCalculator.total(mapOf(MaalItem.MANUK to 3)))
-        assertEquals(3, MaalItem.MANUK.maxCount)
+    fun `joker printed card uses the same tiers as alter`() {
+        assertEquals(5, MaalCalculator.total(mapOf(MaalItem.JOKER to 1)))
+        assertEquals(15, MaalCalculator.total(mapOf(MaalItem.JOKER to 2)))
+        assertEquals(30, MaalCalculator.total(mapOf(MaalItem.JOKER to 3)))
+        assertEquals(3, MaalItem.JOKER.maxCount)
     }
 
     @Test
@@ -119,7 +119,7 @@ class MaalCalculatorTest {
     @Test
     fun `oversized counts clamp to the item max`() {
         // e.g. from stale persisted state
-        assertEquals(30, MaalCalculator.total(mapOf(MaalItem.MANUK to 7)))
+        assertEquals(30, MaalCalculator.total(mapOf(MaalItem.JOKER to 7)))
         assertEquals(45, MaalCalculator.total(mapOf(MaalItem.TUNNELA to 20)))
     }
 
@@ -141,13 +141,13 @@ class MaalCalculatorTest {
 
     @Test
     fun `decrement subtracts one and clamps at zero`() {
-        var counts = mapOf(MaalItem.MANUK to 2)
-        counts = MaalCalculator.decrement(counts, MaalItem.MANUK)
-        assertEquals(1, counts[MaalItem.MANUK])
+        var counts = mapOf(MaalItem.JOKER to 2)
+        counts = MaalCalculator.decrement(counts, MaalItem.JOKER)
+        assertEquals(1, counts[MaalItem.JOKER])
 
-        counts = MaalCalculator.decrement(counts, MaalItem.MANUK)
-        counts = MaalCalculator.decrement(counts, MaalItem.MANUK)
-        assertEquals(0, counts[MaalItem.MANUK])
+        counts = MaalCalculator.decrement(counts, MaalItem.JOKER)
+        counts = MaalCalculator.decrement(counts, MaalItem.JOKER)
+        assertEquals(0, counts[MaalItem.JOKER])
     }
 
     @Test

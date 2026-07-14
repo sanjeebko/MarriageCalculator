@@ -26,7 +26,7 @@ enum class MaalItem(
     POPLU_JHIPLU_TUNNELA("Poplu/Jhiplu Tunnela", listOf(10, 30, 45)),
     ALTER_TUNNELA("Alter Tunnela", listOf(35)),
     JOKER_TUNNELA("Joker Tunnela", listOf(35)),
-    MANUK("Manuk (Printed Joker)", listOf(5, 15, 30));
+    JOKER("Joker (Printed Card)", listOf(5, 15, 30));
 
     /** How many of this item a player can possibly hold. */
     val maxCount: Int get() = tiers.size
