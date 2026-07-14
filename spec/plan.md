@@ -3,7 +3,7 @@
 ## Problem Statement
 Build a full-featured Android (Kotlin/Compose) app for the Marriage card game calculator, backed by the existing .NET API. The app must handle 2-6 players with efficient screen space usage, support offline/online modes, real-time score display, and integrate with the C# API hosted on Kubernetes. The Maui version is archived and replaced by this native Android app.
 
-## Status: Phases 1-29 COMPLETE ✅ (except 25.9: Android invite-code UI, pending)
+## Status: Phases 1-30 COMPLETE ✅ (except 25.9: Android invite-code UI, pending)
 - 44 C# tests (12 Core + 32 API) + 74 Android unit tests all passing
 - Android APK builds successfully (`assembleDebug`)
 - .NET API builds successfully
@@ -352,6 +352,16 @@ User-defined fixed rules for dublee play, replacing the inert per-loser `DubleeP
 - [x] Step 29.4: **UI** — Round Input shows "Dublee win: +5 Maal added to the total Maal." under the grid whenever the selected winner has DUB ticked, and the header Maal chip includes the +5.
 - [x] Step 29.5: Verify — 3 new C# engine tests (winner +5 maal & TotalMaal, seen-dublee-loser exemption, unseen-dublee-loser still pays) — 14/14 Core + 41/41 API green; Android tests/build green; Docker API redeployed. Live on emulator: winner+DUB showed the message, Maal chip 5, each unseen loser −15 (10 penalty + 5 maal); ticking a loser SEEN+DUB changed them to −5 (maal diff only, seen penalty waived) with zero-sum preserved. Input discarded after verification.
 - **COMMIT**: "feat: dublee scoring rules - winner +5 maal, seen dublee loser exempt"
+
+---
+
+## Phase 30: Round Input Polish — Error Clearing, Game Number, Consistent Buttons (Complete)
+Three user-reported issues on the Round Input screen:
+- [x] Step 30.1: **Stale error** — "Please select a winner" (set by submit) never cleared when a winner was then selected; `setWinner` now resets `error`.
+- [x] Step 30.2: **Game number in title** — header now reads "Round N · Game M" for new games (M = games already in the open round + 1, tracked as `gameNumber` in the ui state); edit mode keeps "Edit Game".
+- [x] Step 30.3: **Consistent buttons** — replaced the screen's ad-hoc yellow `Button` and `OutlinedButton` with the shared `GlassButton` component (the one the Dashboard uses), styled with the same primary (cta glass + accent text + icon) and secondary (tint glass) parameters. `GlassButton` already exposes container/text colors, height, and icon parameters for per-page fitting, so future look-and-feel changes to the component propagate everywhere.
+- [x] Step 30.4: Verify — tests/build green; live on emulator: save-without-winner showed the error, picking a winner cleared it instantly; title showed "Round 3 · Game 1"; both buttons render in the Dashboard's glass style. Input discarded after verification.
+- **COMMIT**: "fix: round input error clearing, game number in title, shared glass buttons"
 
 ---
 

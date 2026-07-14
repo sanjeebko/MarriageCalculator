@@ -40,6 +40,8 @@ data class RoundInputUiState(
     val settings: GameSettings = GameSettings.default(),
     val winnerId: String? = null,
     val dealerId: String? = null,
+    /** 1-indexed number of the game being entered within its round (null in edit mode). */
+    val gameNumber: Int? = null,
     val isLoading: Boolean = false,
     val error: String? = null,
     val submitted: Boolean = false,
@@ -142,7 +144,8 @@ class RoundInputViewModel @Inject constructor(
                     )
                 },
                 settings = settings,
-                dealerId = dealer?.id
+                dealerId = dealer?.id,
+                gameNumber = gamesInOpenRound + 1
             )
         }
     }
@@ -242,7 +245,9 @@ class RoundInputViewModel @Inject constructor(
         }
         _uiState.value = current.copy(
             playerStates = newStates,
-            winnerId = playerId
+            winnerId = playerId,
+            // Picking a winner resolves the "Please select a winner" error
+            error = null
         )
         calculatePreview()
     }

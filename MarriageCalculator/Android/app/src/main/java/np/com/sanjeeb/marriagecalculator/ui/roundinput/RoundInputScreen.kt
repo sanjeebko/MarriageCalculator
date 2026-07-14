@@ -1,6 +1,7 @@
 package np.com.sanjeeb.marriagecalculator.ui.roundinput
 
 import np.com.sanjeeb.marriagecalculator.ui.components.DealerBadge
+import np.com.sanjeeb.marriagecalculator.ui.components.GlassButton
 import np.com.sanjeeb.marriagecalculator.ui.theme.AppTheme
 
 import androidx.compose.foundation.background
@@ -108,7 +109,11 @@ fun RoundInputScreen(
                             letterSpacing = 2.sp
                         )
                         Text(
-                            text = if (uiState.editGameId != null) "Edit Game" else "Round $roundNumber",
+                            text = when {
+                                uiState.editGameId != null -> "Edit Game"
+                                uiState.gameNumber != null -> "Round $roundNumber · Game ${uiState.gameNumber}"
+                                else -> "Round $roundNumber"
+                            },
                             color = AppTheme.palette.textPrimary,
                             fontSize = 24.sp,
                             fontFamily = FontFamily.Serif,
@@ -182,29 +187,27 @@ fun RoundInputScreen(
                     Text(it, color = Color.Red, fontSize = 14.sp, modifier = Modifier.padding(bottom = 12.dp))
                 }
 
-                // Buttons
-                Button(
+                // Buttons - shared GlassButton, same primary/secondary styling as the Dashboard
+                GlassButton(
                     onClick = { viewModel.submitRound() },
-                    modifier = Modifier.fillMaxWidth().height(52.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFDCD451)),
-                    shape = RoundedCornerShape(8.dp)
-                ) {
-                    Icon(Icons.Default.Calculate, contentDescription = null, tint = Color(0xFF3E2723))
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text("Save Round Results", color = Color(0xFF3E2723), fontWeight = FontWeight.Bold, fontSize = 16.sp)
-                }
+                    text = "Save Round Results",
+                    containerColor = AppTheme.palette.cta.copy(alpha = 0.35f),
+                    textColor = AppTheme.palette.accent,
+                    height = 52,
+                    leadingIcon = {
+                        Icon(Icons.Default.Calculate, null, tint = AppTheme.palette.accent, modifier = Modifier.size(18.dp))
+                    }
+                )
 
                 Spacer(modifier = Modifier.height(10.dp))
 
-                OutlinedButton(
+                GlassButton(
                     onClick = { onBack() },
-                    border = androidx.compose.foundation.BorderStroke(1.dp, AppTheme.palette.tint.copy(alpha = 0.1f)),
-                    modifier = Modifier.fillMaxWidth().height(48.dp),
-                    shape = RoundedCornerShape(8.dp),
-                    colors = ButtonDefaults.outlinedButtonColors(contentColor = AppTheme.palette.textPrimary)
-                ) {
-                    Text("Discard & Return")
-                }
+                    text = "Discard & Return",
+                    containerColor = AppTheme.palette.tint.copy(alpha = 0.12f),
+                    textColor = AppTheme.palette.textPrimary,
+                    height = 48
+                )
 
                 Spacer(modifier = Modifier.height(24.dp))
             }
