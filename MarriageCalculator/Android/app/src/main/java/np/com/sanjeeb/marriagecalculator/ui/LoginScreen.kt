@@ -78,6 +78,15 @@ fun LoginScreen(
             modifier = Modifier.fillMaxSize()
         )
 
+        // Faint card background overlay
+        Image(
+            painter = painterResource(id = R.drawable.card_bg_pattern),
+            contentDescription = null,
+            contentScale = ContentScale.Crop,
+            modifier = Modifier.fillMaxSize(),
+            alpha = 0.05f
+        )
+
         Column(
             modifier = Modifier.fillMaxSize(),
             horizontalAlignment = Alignment.CenterHorizontally,

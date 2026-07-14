@@ -96,6 +96,7 @@ public class FirebaseOrMockAuthenticationHandler : AuthenticationHandler<Firebas
                 string userId = root.TryGetProperty("sub", out var subProp) ? subProp.GetString() ?? string.Empty : string.Empty;
                 string email = root.TryGetProperty("email", out var emailProp) ? emailProp.GetString() ?? string.Empty : string.Empty;
                 string name = root.TryGetProperty("name", out var nameProp) ? nameProp.GetString() ?? string.Empty : string.Empty;
+                string picture = root.TryGetProperty("picture", out var pictureProp) ? pictureProp.GetString() ?? string.Empty : string.Empty;
 
                 if (string.IsNullOrEmpty(userId))
                 {
@@ -124,6 +125,7 @@ public class FirebaseOrMockAuthenticationHandler : AuthenticationHandler<Firebas
                     new Claim(ClaimTypes.NameIdentifier, userId),
                     new Claim(ClaimTypes.Name, string.IsNullOrEmpty(name) ? userId : name),
                     new Claim(ClaimTypes.Email, email),
+                    new Claim("picture", picture),
                     new Claim("auth_provider", "firebase")
                 };
             }

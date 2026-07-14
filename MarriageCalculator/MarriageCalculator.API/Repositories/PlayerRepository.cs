@@ -28,6 +28,11 @@ public class PlayerRepository : IPlayerRepository
         return await _collection.Find(p => p.Email.ToLower() == email.ToLower() && !p.Deleted).ToListAsync();
     }
 
+    public async Task<IEnumerable<Player>> GetByCreatedByAsync(string createdByUserId)
+    {
+        return await _collection.Find(p => p.CreatedByUserId == createdByUserId && !p.Deleted).ToListAsync();
+    }
+
     public async Task<Player> CreateAsync(Player player)
     {
         await _collection.InsertOneAsync(player);
@@ -38,7 +43,8 @@ public class PlayerRepository : IPlayerRepository
     {
         var update = Builders<Player>.Update
             .Set(p => p.Name, player.Name)
-            .Set(p => p.Email, player.Email);
+            .Set(p => p.Email, player.Email)
+            .Set(p => p.PhotoUri, player.PhotoUri);
 
         var result = await _collection.FindOneAndUpdateAsync(
             p => p.Id == id && !p.Deleted,

@@ -215,9 +215,16 @@ public class MarriageGameSetService : IMarriageGameSetService
         }
 
         var player = await _playerRepository.GetByIdAsync(playerId);
-        if (player == null || string.IsNullOrEmpty(player.Email)) return false;
+        string? email = player?.Email;
+        if (player == null)
+        {
+            var user = await _userRepository.GetByIdAsync(playerId);
+            email = user?.Email;
+        }
 
-        var targetUser = await _userRepository.GetByEmailAsync(player.Email);
+        if (string.IsNullOrEmpty(email)) return false;
+
+        var targetUser = await _userRepository.GetByEmailAsync(email);
         if (targetUser == null || string.IsNullOrEmpty(targetUser.FcmToken)) return false;
 
         var hostUser = await _userRepository.GetByUserIdAsync(hostUserId);
@@ -619,13 +626,32 @@ public class MarriageGameSetService : IMarriageGameSetService
             var playerId = gameSet.PlayerIds[i];
             var player = await _context.Players.Find(p => p.Id == playerId).FirstOrDefaultAsync();
             
+            User? user = null;
+            if (player == null)
+            {
+                user = await _context.Users.Find(u => u.Id == playerId).FirstOrDefaultAsync();
+            }
+            else if (!string.IsNullOrEmpty(player.Email))
+            {
+                user = await _context.Users.Find(u => u.Email.ToLower() == player.Email.ToLower()).FirstOrDefaultAsync();
+            }
+
             var playerDto = player != null ? new PlayerDto
             {
                 Id = player.Id,
                 Name = player.Name,
                 Email = player.Email,
+                PhotoUri = (user != null && !string.IsNullOrEmpty(user.PhotoUrl)) ? user.PhotoUrl : player.PhotoUri,
+                CreatedByUserId = player.CreatedByUserId,
                 Deleted = player.Deleted
-            } : null;
+            } : (user != null ? new PlayerDto
+            {
+                Id = user.Id,
+                Name = user.DisplayName,
+                Email = user.Email,
+                PhotoUri = user.PhotoUrl,
+                Deleted = false
+            } : null);
 
             dto.GameSetPlayers[playerId] = new MarriageGameSetPlayerDto
             {

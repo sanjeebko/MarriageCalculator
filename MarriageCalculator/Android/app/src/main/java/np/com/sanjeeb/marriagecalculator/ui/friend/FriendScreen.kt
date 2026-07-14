@@ -5,6 +5,7 @@ import android.content.Intent
 import np.com.sanjeeb.marriagecalculator.ui.theme.AppTheme
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -40,6 +41,7 @@ fun FriendScreen(
 ) {
     val uiState by viewModel.uiState.collectAsState()
     var selectedTabIndex by remember { mutableIntStateOf(0) }
+    var friendToDelete by remember { mutableStateOf<User?>(null) }
 
     LaunchedEffect(Unit) {
         viewModel.loadData()
@@ -183,7 +185,7 @@ fun FriendScreen(
                     )
                 } else {
                     when (selectedTabIndex) {
-                        0 -> FriendsTab(uiState.friends, onRemoveFriend = { viewModel.removeFriend(it.userId) })
+                        0 -> FriendsTab(uiState.friends, onRemoveFriend = { friendToDelete = it })
                         1 -> RequestsTab(
                             received = uiState.pendingReceived,
                             sent = uiState.pendingSent,
@@ -201,6 +203,46 @@ fun FriendScreen(
                     }
                 }
             }
+        }
+
+        // Confirmation Dialog for removing a friend
+        if (friendToDelete != null) {
+            val pal = AppTheme.palette
+            AlertDialog(
+                onDismissRequest = { friendToDelete = null },
+                title = {
+                    Text(
+                        text = "Remove Friend",
+                        color = pal.accent,
+                        fontFamily = FontFamily.Serif,
+                        fontWeight = FontWeight.Bold
+                    )
+                },
+                text = {
+                    Text(
+                        text = "Are you sure you want to remove ${friendToDelete?.displayName} from your friends list?",
+                        color = pal.textPrimary
+                    )
+                },
+                confirmButton = {
+                    TextButton(
+                        onClick = {
+                            friendToDelete?.let { viewModel.removeFriend(it.userId) }
+                            friendToDelete = null
+                        }
+                    ) {
+                        Text("Remove", color = Color(0xFFFF5252), fontWeight = FontWeight.Bold)
+                    }
+                },
+                dismissButton = {
+                    TextButton(onClick = { friendToDelete = null }) {
+                        Text("Cancel", color = pal.textPrimary.copy(alpha = 0.6f))
+                    }
+                },
+                containerColor = pal.surface,
+                shape = RoundedCornerShape(16.dp),
+                modifier = Modifier.border(1.dp, pal.accent.copy(alpha = 0.5f), RoundedCornerShape(16.dp))
+            )
         }
     }
 }

@@ -7,6 +7,7 @@ public interface IPlayerRepository
     Task<IEnumerable<Player>> GetAllAsync();
     Task<Player?> GetByIdAsync(string id);
     Task<IEnumerable<Player>> GetPlayersByEmailAsync(string email);
+    Task<IEnumerable<Player>> GetByCreatedByAsync(string createdByUserId);
     Task<Player> CreateAsync(Player player);
     Task<Player?> UpdateAsync(string id, Player player);
     Task<bool> DeleteAsync(string id);

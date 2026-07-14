@@ -22,6 +22,6 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "Marriage Calculator"
+rootProject.name = "AAA Marriage Calculator"
 include(":app")
  

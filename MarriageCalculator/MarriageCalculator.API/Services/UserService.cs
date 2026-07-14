@@ -52,7 +52,8 @@ public class UserService : IUserService
         {
             UserId = createUserDto.UserId,
             DisplayName = createUserDto.DisplayName,
-            Email = createUserDto.Email
+            Email = createUserDto.Email,
+            PhotoUrl = createUserDto.PhotoUrl
         };
 
         var createdUser = await _userRepository.CreateAsync(user);
@@ -64,7 +65,8 @@ public class UserService : IUserService
         var userToUpdate = new User
         {
             DisplayName = updateUserDto.DisplayName,
-            Email = updateUserDto.Email
+            Email = updateUserDto.Email,
+            PhotoUrl = updateUserDto.PhotoUrl
         };
 
         var updatedUser = await _userRepository.UpdateAsync(id, userToUpdate);
@@ -103,12 +105,14 @@ public class UserService : IUserService
 
         var email = principal.FindFirst(ClaimTypes.Email)?.Value ?? string.Empty;
         var name = principal.FindFirst(ClaimTypes.Name)?.Value ?? string.Empty;
+        var photoUrl = principal.FindFirst("picture")?.Value ?? principal.FindFirst("photo_url")?.Value ?? string.Empty;
 
         var newUser = new User
         {
             UserId = userId,
             DisplayName = string.IsNullOrEmpty(name) ? userId : name,
-            Email = email
+            Email = email,
+            PhotoUrl = string.IsNullOrEmpty(photoUrl) ? null : photoUrl
         };
 
         var created = await _userRepository.CreateAsync(newUser);
@@ -124,6 +128,7 @@ public class UserService : IUserService
             DisplayName = user.DisplayName,
             Email = user.Email,
             FcmToken = user.FcmToken,
+            PhotoUrl = user.PhotoUrl,
             CreatedAt = user.CreatedAt
         };
     }

@@ -281,7 +281,12 @@ public class FriendshipService : IFriendshipService
 
     public async Task<bool> RemoveFriendAsync(string id, string userId)
     {
-        var friendship = await _friendshipRepository.GetByIdAsync(id);
+        Friendship? friendship = null;
+        if (MongoDB.Bson.ObjectId.TryParse(id, out _))
+        {
+            friendship = await _friendshipRepository.GetByIdAsync(id);
+        }
+
         if (friendship == null)
         {
             friendship = await _friendshipRepository.GetByUsersAsync(userId, id);

@@ -33,6 +33,7 @@ data class GameSetupUiState(
 @HiltViewModel
 class GameSetupViewModel @Inject constructor(
     private val playerRepository: PlayerRepository,
+    private val friendRepository: FriendRepository,
     private val gameSettingsRepository: GameSettingsRepository,
     private val gameSetRepository: GameSetRepository,
     private val offlineGameRepository: OfflineGameRepository,
@@ -77,58 +78,65 @@ class GameSetupViewModel @Inject constructor(
 
             val isOnline = sessionManager.isOnlineMode()
             if (isOnline) {
-                when (val result = playerRepository.getPlayers()) {
-                    is ApiResult.Success -> {
-                        val remotePlayersList = result.data.filter { !it.deleted }.toMutableList()
-                        val hasRemoteMe = remotePlayersList.any { it.email.equals(currentUser?.email, ignoreCase = true) }
-                        
-                        if (currentUser != null && currentUser.email.isNotEmpty() && !hasRemoteMe) {
-                            try {
-                                val createReq = CreatePlayerRequest(
-                                    name = currentUser.displayName,
-                                    email = currentUser.email,
-                                    photoUri = currentUser.photoUrl
-                                )
-                                when (val createResult = playerRepository.createPlayer(createReq)) {
-                                    is ApiResult.Success -> {
-                                        val newRemotePlayer = createResult.data
-                                        remotePlayersList.add(newRemotePlayer)
-                                        // Link local player entity to remote ID
-                                        val localMe = localDbPlayers.find { it.email.equals(currentUser.email, ignoreCase = true) }
-                                        localMe?.id?.toIntOrNull()?.let { localId ->
-                                            offlineGameRepository.updatePlayerRemoteId(localId, newRemotePlayer.id)
-                                        }
-                                        localDbPlayers = offlineGameRepository.getAllPlayers().first()
-                                    }
-                                    else -> {}
-                                }
-                            } catch (e: Exception) {
-                                // Ignore remote player creation errors
-                            }
-                        }
+                val playersResult = playerRepository.getPlayers()
+                val friendsResult = friendRepository.getFriends()
 
-                        _uiState.value = _uiState.value.copy(
-                            isLoading = false,
-                            players = remotePlayersList,
-                            localPlayers = localDbPlayers,
-                            isOfflineMode = false
+                if (playersResult is ApiResult.Success && friendsResult is ApiResult.Success) {
+                    val remotePlayersList = playersResult.data.filter { !it.deleted }.toMutableList()
+                    val friendsList = friendsResult.data.map { friend ->
+                        Player(
+                            id = friend.id,
+                            name = friend.displayName,
+                            email = friend.email,
+                            photoUri = friend.photoUrl
                         )
-                        if (_uiState.value.gameName.isEmpty()) {
-                            _uiState.value = _uiState.value.copy(gameName = fetchDefaultGameName(false))
+                    }
+                    val combinedPlayers = (remotePlayersList + friendsList).toMutableList()
+                    val hasRemoteMe = combinedPlayers.any { it.email.equals(currentUser?.email, ignoreCase = true) }
+                    
+                    if (currentUser != null && currentUser.email.isNotEmpty() && !hasRemoteMe) {
+                        try {
+                            val createReq = CreatePlayerRequest(
+                                name = currentUser.displayName,
+                                email = currentUser.email,
+                                photoUri = currentUser.photoUrl
+                            )
+                            when (val createResult = playerRepository.createPlayer(createReq)) {
+                                is ApiResult.Success -> {
+                                    val newRemotePlayer = createResult.data
+                                    combinedPlayers.add(newRemotePlayer)
+                                    // Link local player entity to remote ID
+                                    val localMe = localDbPlayers.find { it.email.equals(currentUser.email, ignoreCase = true) }
+                                    localMe?.id?.toIntOrNull()?.let { localId ->
+                                        offlineGameRepository.updatePlayerRemoteId(localId, newRemotePlayer.id)
+                                    }
+                                    localDbPlayers = offlineGameRepository.getAllPlayers().first()
+                                }
+                                else -> {}
+                            }
+                        } catch (e: Exception) {
+                            // Ignore remote player creation errors
                         }
                     }
-                    is ApiResult.Error -> {
-                        // Fallback to offline mode with local players
-                        _uiState.value = _uiState.value.copy(
-                            isLoading = false,
-                            players = localDbPlayers,
-                            isOfflineMode = true
-                        )
-                        if (_uiState.value.gameName.isEmpty()) {
-                            _uiState.value = _uiState.value.copy(gameName = fetchDefaultGameName(true))
-                        }
+
+                    _uiState.value = _uiState.value.copy(
+                        isLoading = false,
+                        players = combinedPlayers,
+                        localPlayers = localDbPlayers,
+                        isOfflineMode = false
+                    )
+                    if (_uiState.value.gameName.isEmpty()) {
+                        _uiState.value = _uiState.value.copy(gameName = fetchDefaultGameName(false))
                     }
-                    is ApiResult.Loading -> {}
+                } else {
+                    _uiState.value = _uiState.value.copy(
+                        isLoading = false,
+                        players = localDbPlayers,
+                        isOfflineMode = true
+                    )
+                    if (_uiState.value.gameName.isEmpty()) {
+                        _uiState.value = _uiState.value.copy(gameName = fetchDefaultGameName(true))
+                    }
                 }
             } else {
                 _uiState.value = _uiState.value.copy(
@@ -219,6 +227,10 @@ class GameSetupViewModel @Inject constructor(
                     val currentIsLocal = player.id.toIntOrNull() != null || player.id.startsWith("local_")
                     if (existingIsLocal && !currentIsLocal) {
                         uniquePlayers[existingIndex] = player
+                    } else if (!existingIsLocal && !currentIsLocal) {
+                        if (existing.photoUri.isNullOrEmpty() && !player.photoUri.isNullOrEmpty()) {
+                            uniquePlayers[existingIndex] = player
+                        }
                     }
                     continue
                 }

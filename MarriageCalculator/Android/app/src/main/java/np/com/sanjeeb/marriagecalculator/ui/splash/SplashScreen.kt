@@ -63,6 +63,15 @@ fun SplashScreen(onSplashComplete: () -> Unit) {
             ),
         contentAlignment = Alignment.Center
     ) {
+        // Faint card background overlay
+        Image(
+            painter = painterResource(id = R.drawable.card_bg_pattern),
+            contentDescription = null,
+            contentScale = ContentScale.Crop,
+            modifier = Modifier.fillMaxSize(),
+            alpha = 0.05f
+        )
+
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center

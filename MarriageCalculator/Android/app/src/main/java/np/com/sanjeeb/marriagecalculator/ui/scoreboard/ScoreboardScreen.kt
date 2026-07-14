@@ -34,6 +34,7 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import np.com.sanjeeb.marriagecalculator.data.model.Currency
 import np.com.sanjeeb.marriagecalculator.data.model.Player
+import np.com.sanjeeb.marriagecalculator.ui.components.AppBackground
 
 private fun Context.findActivity(): Activity? {
     var context = this
@@ -100,21 +101,22 @@ fun ScoreboardScreen(
                         )
                     }
                 },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = AppTheme.palette.surface)
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent)
             )
         },
         containerColor = Color.Transparent
     ) { padding ->
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(Brush.verticalGradient(listOf(AppTheme.palette.backgroundTop, AppTheme.palette.backgroundBottom)))
-                .padding(padding)
-        ) {
-            if (uiState.showHistory) {
-                RoundHistoryView(uiState)
-            } else {
-                ScoreboardView(uiState, viewModel::settleGame)
+        AppBackground {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(padding)
+            ) {
+                if (uiState.showHistory) {
+                    RoundHistoryView(uiState)
+                } else {
+                    ScoreboardView(uiState, viewModel::settleGame)
+                }
             }
         }
     }

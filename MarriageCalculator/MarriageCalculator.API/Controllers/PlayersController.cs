@@ -1,11 +1,14 @@
 using MarriageCalculator.Core.DTOs;
 using MarriageCalculator.API.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
 
 namespace MarriageCalculator.API.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
+[Authorize]
 public class PlayersController : ControllerBase
 {
     private readonly IPlayerService _playerService;
@@ -25,7 +28,8 @@ public class PlayersController : ControllerBase
     {
         try
         {
-            var players = await _playerService.GetAllPlayersAsync();
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? string.Empty;
+            var players = await _playerService.GetPlayersByCreatedByAsync(userId);
             return Ok(players);
         }
         catch (Exception ex)
@@ -71,7 +75,8 @@ public class PlayersController : ControllerBase
                 return BadRequest(ModelState);
             }
 
-            var player = await _playerService.CreatePlayerAsync(createPlayerDto);
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? string.Empty;
+            var player = await _playerService.CreatePlayerAsync(createPlayerDto, userId);
             return CreatedAtAction(nameof(GetPlayer), new { id = player.Id }, player);
         }
         catch (Exception ex)

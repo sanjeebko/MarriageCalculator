@@ -24,7 +24,7 @@ class FriendRepository @Inject constructor(
         api.respondFriendRequest(id, RespondFriendRequestDto(accept))
     }
 
-    suspend fun removeFriend(id: String): ApiResult<Unit> = safeApiCall { api.removeFriend(id) }
+    suspend fun removeFriend(id: String): ApiResult<Unit> = safeUnitApiCall { api.removeFriend(id) }
 
     /** My shareable 7-day invite code (server creates one if none is active). */
     suspend fun getInviteCode(): ApiResult<InviteCodeDto> = safeApiCall { api.getInviteCode() }

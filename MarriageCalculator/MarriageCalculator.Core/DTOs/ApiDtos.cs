@@ -5,6 +5,8 @@ public class PlayerDto
     public string Id { get; set; } = string.Empty;
     public string Name { get; set; } = string.Empty;
     public string Email { get; set; } = string.Empty;
+    public string? PhotoUri { get; set; }
+    public string? CreatedByUserId { get; set; }
     public bool Deleted { get; set; }
 }
 
@@ -12,12 +14,14 @@ public class CreatePlayerDto
 {
     public string Name { get; set; } = string.Empty;
     public string Email { get; set; } = string.Empty;
+    public string? PhotoUri { get; set; }
 }
 
 public class UpdatePlayerDto
 {
     public string Name { get; set; } = string.Empty;
     public string Email { get; set; } = string.Empty;
+    public string? PhotoUri { get; set; }
 }
 
 public class UserDto
@@ -27,6 +31,7 @@ public class UserDto
     public string DisplayName { get; set; } = string.Empty;
     public string Email { get; set; } = string.Empty;
     public string? FcmToken { get; set; }
+    public string? PhotoUrl { get; set; }
     public DateTime CreatedAt { get; set; }
 }
 
@@ -40,12 +45,14 @@ public class CreateUserDto
     public string UserId { get; set; } = string.Empty;
     public string DisplayName { get; set; } = string.Empty;
     public string Email { get; set; } = string.Empty;
+    public string? PhotoUrl { get; set; }
 }
 
 public class UpdateUserDto
 {
     public string DisplayName { get; set; } = string.Empty;
     public string Email { get; set; } = string.Empty;
+    public string? PhotoUrl { get; set; }
 }
 
 public class GameSettingsDto

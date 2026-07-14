@@ -51,6 +51,7 @@ import coil.request.ImageRequest
 import kotlinx.coroutines.launch
 import np.com.sanjeeb.marriagecalculator.R
 import np.com.sanjeeb.marriagecalculator.data.model.MarriageGameSet
+import np.com.sanjeeb.marriagecalculator.ui.components.AppBackground
 import np.com.sanjeeb.marriagecalculator.ui.components.GlassButton
 import np.com.sanjeeb.marriagecalculator.ui.theme.*
 
@@ -291,26 +292,18 @@ fun DashboardScreen(
                         }
                     },
                     colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
-                        containerColor = AppTheme.palette.surface,
+                        containerColor = Color.Transparent,
                         titleContentColor = AppTheme.palette.accent
                     )
                 )
             },
             containerColor = Color.Transparent
         ) { padding ->
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(padding)
-                    .background(
-                        Brush.verticalGradient(
-                            colors = listOf(AppTheme.palette.backgroundTop, AppTheme.palette.backgroundBottom)
-                        )
-                    )
-            ) {
+            AppBackground {
                 Column(
                     modifier = Modifier
                         .fillMaxSize()
+                        .padding(padding)
                         .padding(horizontal = 16.dp),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {

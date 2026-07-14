@@ -51,7 +51,8 @@ public class UserRepository : IUserRepository
     {
         var update = Builders<User>.Update
             .Set(u => u.DisplayName, user.DisplayName)
-            .Set(u => u.Email, user.Email);
+            .Set(u => u.Email, user.Email)
+            .Set(u => u.PhotoUrl, user.PhotoUrl);
 
         var result = await _collection.FindOneAndUpdateAsync(
             u => u.Id == id,

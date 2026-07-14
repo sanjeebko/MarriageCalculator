@@ -6,7 +6,8 @@ public interface IPlayerService
 {
     Task<IEnumerable<PlayerDto>> GetAllPlayersAsync();
     Task<PlayerDto?> GetPlayerByIdAsync(string id);
-    Task<PlayerDto> CreatePlayerAsync(CreatePlayerDto createPlayerDto);
+    Task<IEnumerable<PlayerDto>> GetPlayersByCreatedByAsync(string createdByUserId);
+    Task<PlayerDto> CreatePlayerAsync(CreatePlayerDto createPlayerDto, string createdByUserId);
     Task<PlayerDto?> UpdatePlayerAsync(string id, UpdatePlayerDto updatePlayerDto);
     Task<bool> DeletePlayerAsync(string id);
     Task<bool> PlayerExistsAsync(string id);

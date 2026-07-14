@@ -16,7 +16,7 @@ docker compose down >nul 2>&1
 echo ===================================================
 echo   DEPLOYING NEW API CONTAINER LOCALLY
 echo ===================================================
-docker compose up -d
+docker compose up -d --build
 
 if %ERRORLEVEL% NEQ 0 (
     echo [ERROR] Failed to launch docker compose!

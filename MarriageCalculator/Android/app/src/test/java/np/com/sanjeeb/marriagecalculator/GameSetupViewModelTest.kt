@@ -19,6 +19,7 @@ class GameSetupViewModelTest {
     private val testDispatcher = UnconfinedTestDispatcher()
 
     private val playerRepository: PlayerRepository = mockk(relaxed = true)
+    private val friendRepository: FriendRepository = mockk(relaxed = true)
     private val gameSettingsRepository: GameSettingsRepository = mockk(relaxed = true)
     private val gameSetRepository: GameSetRepository = mockk(relaxed = true)
     private val offlineGameRepository: OfflineGameRepository = mockk(relaxed = true)
@@ -27,6 +28,7 @@ class GameSetupViewModelTest {
     @Before
     fun setup() {
         Dispatchers.setMain(testDispatcher)
+        coEvery { friendRepository.getFriends() } returns ApiResult.Success(emptyList())
     }
 
     @After
@@ -37,6 +39,7 @@ class GameSetupViewModelTest {
     private fun createViewModel(): GameSetupViewModel {
         return GameSetupViewModel(
             playerRepository,
+            friendRepository,
             gameSettingsRepository,
             gameSetRepository,
             offlineGameRepository,
