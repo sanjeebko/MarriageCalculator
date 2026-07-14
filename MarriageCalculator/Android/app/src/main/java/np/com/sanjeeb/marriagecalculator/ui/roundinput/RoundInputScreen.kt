@@ -116,8 +116,11 @@ fun RoundInputScreen(
                         )
                     }
 
-                    // Total Maal chip
-                    val totalMaal = uiState.playerStates.sumOf { if (it.seen) it.seenPoints else 0 }
+                    // Total Maal chip (includes the dublee winner's fixed +5 bonus)
+                    val dubleeBonusApplied = uiState.playerStates.any { it.isWinner && it.duply } &&
+                        uiState.settings.dublee
+                    val totalMaal = uiState.playerStates.sumOf { if (it.seen) it.seenPoints else 0 } +
+                        (if (dubleeBonusApplied) RoundInputViewModel.DUBLEE_WINNER_MAAL_BONUS else 0)
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
                         modifier = Modifier
@@ -159,6 +162,17 @@ fun RoundInputScreen(
                             onOpenMaalCalculator = { maalDialogPlayerId = playerState.player.id }
                         )
                     }
+                }
+
+                // Dublee winner notice: the +5 is applied automatically, so say so
+                if (uiState.playerStates.any { it.isWinner && it.duply } && uiState.settings.dublee) {
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(
+                        text = "Dublee win: +${RoundInputViewModel.DUBLEE_WINNER_MAAL_BONUS} Maal added to the total Maal.",
+                        color = AppTheme.palette.accent,
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.SemiBold
+                    )
                 }
 
                 Spacer(modifier = Modifier.height(16.dp))

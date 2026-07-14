@@ -56,6 +56,14 @@ class RoundInputViewModel @Inject constructor(
     private val sessionManager: SessionManager
 ) : ViewModel() {
 
+    companion object {
+        /**
+         * Extra Maal a dublee winner scores on top of their actual maal.
+         * Fixed game rule mirroring C# ScoringEngine.DubleeWinnerMaalBonus.
+         */
+        const val DUBLEE_WINNER_MAAL_BONUS = 5
+    }
+
     private val _uiState = MutableStateFlow(RoundInputUiState())
     val uiState: StateFlow<RoundInputUiState> = _uiState.asStateFlow()
 
@@ -315,6 +323,12 @@ class RoundInputViewModel @Inject constructor(
         val maalValues = players.map { if (it.seen) it.seenPoints else 0 }.toMutableList()
         val seenFlags = players.map { it.seen || it.isWinner }.toMutableList()
 
+        // Dublee winner rule: their maal counts DUBLEE_WINNER_MAAL_BONUS above
+        // the maal they actually held (mirrors C# ScoringEngine).
+        if (players[winnerIdx].duply && settings.dublee) {
+            maalValues[winnerIdx] += DUBLEE_WINNER_MAAL_BONUS
+        }
+
         if (settings.kidnap) {
             for (i in players.indices) {
                 if (!seenFlags[i] && !players[i].isWinner) {
@@ -332,14 +346,16 @@ class RoundInputViewModel @Inject constructor(
 
         val scores = MutableList(players.size) { 0 }
 
-        // Fixed penalties
+        // Fixed penalties. A seen loser playing dublee is exempt from the seen penalty.
         for (i in players.indices) {
             if (players[i].isWinner) continue
-            val penalty = if (!seenFlags[i]) settings.unseenPoint else settings.seenPoint
-            val bonus = if (players[winnerIdx].duply && settings.dublee) settings.dubleePointBonus else 0
-            val total = penalty + bonus
-            scores[i] -= total
-            scores[winnerIdx] += total
+            val penalty = when {
+                !seenFlags[i] -> settings.unseenPoint
+                players[i].duply && settings.dublee -> 0
+                else -> settings.seenPoint
+            }
+            scores[i] -= penalty
+            scores[winnerIdx] += penalty
         }
 
         // Maal distribution
@@ -419,19 +435,22 @@ class RoundInputViewModel @Inject constructor(
 
             val gameSetId = gameSetIdStr.toIntOrNull() ?: return@launch
             try {
-                val totalMaal = state.playerStates.sumOf { if (it.seen) it.seenPoints else 0 }
-
                 val scores = state.playerStates.map { ps ->
                     val isPlayerWinner = ps.player.id == state.winnerId
+                    // Persist the dublee winner's maal with the fixed +5 bonus applied,
+                    // matching what the C# ScoringEngine stores in online mode.
+                    val dubleeBonus =
+                        if (isPlayerWinner && ps.duply && state.settings.dublee) DUBLEE_WINNER_MAAL_BONUS else 0
                     np.com.sanjeeb.marriagecalculator.data.repository.RoundScoreData(
                         playerId = ps.player.id.toInt(),
                         score = ps.previewScore,
-                        maal = if (ps.seen) ps.seenPoints else 0,
+                        maal = (if (ps.seen) ps.seenPoints else 0) + dubleeBonus,
                         isSeen = ps.seen || isPlayerWinner,
                         isWinner = isPlayerWinner,
                         isDublee = ps.duply
                     )
                 }
+                val totalMaal = scores.filter { it.isSeen }.sumOf { it.maal }
 
                 val editGameId = state.editGameId?.toIntOrNull()
                 if (editGameId != null) {

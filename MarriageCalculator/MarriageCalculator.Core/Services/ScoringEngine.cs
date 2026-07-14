@@ -9,6 +9,13 @@ using MarriageCalculator.Core.Models;
 public class ScoringEngine
 {
     /// <summary>
+    /// Extra Maal a dublee winner scores on top of their actual maal.
+    /// Fixed game rule, deliberately not read from settings (whose
+    /// DubleePointBonus defaults to 0 in stored configurations).
+    /// </summary>
+    public const int DubleeWinnerMaalBonus = 5;
+
+    /// <summary>
     /// Calculates scores for all players in a game using the Central Collection technique.
     /// Winner collects all penalties, then distributes Maal points.
     /// </summary>
@@ -21,6 +28,13 @@ public class ScoringEngine
         if (winner == null) return;
 
         int playerCount = scores.Count;
+
+        // Dublee winner rule: their Maal counts DubleeWinnerMaalBonus above the
+        // maal they actually held, flowing through maal distribution and TotalMaal.
+        if (winner.Duply && settings.Dublee)
+        {
+            winner.Maal += DubleeWinnerMaalBonus;
+        }
 
         // Adjust Maal based on game mode
         ApplyGameMode(scores, winner, settings);
@@ -72,7 +86,7 @@ public class ScoringEngine
     /// <summary>
     /// Winner collects fixed game points from all losers.
     /// Unseen pay unseenPoint, Seen pay seenPoint.
-    /// Dublee winner gets bonus from all players.
+    /// A seen loser who was playing dublee is exempt from the seen penalty.
     /// </summary>
     private static int CollectPenalties(List<MarriageGameScore> scores, MarriageGameScore winner, GameSettings settings, int playerCount)
     {
@@ -85,15 +99,14 @@ public class ScoringEngine
             {
                 penalty = settings.UnseenPoint;
             }
+            else if (loser.Duply && settings.Dublee)
+            {
+                // Dublee loser who has seen the joker doesn't pay the seen penalty.
+                penalty = 0;
+            }
             else
             {
                 penalty = settings.SeenPoint;
-            }
-
-            // Add dublee bonus if winner won with dublee
-            if (winner.Duply && settings.Dublee)
-            {
-                penalty += settings.DubleePointBonus;
             }
 
             loser.Score -= penalty;

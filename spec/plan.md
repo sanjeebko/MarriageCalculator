@@ -3,7 +3,7 @@
 ## Problem Statement
 Build a full-featured Android (Kotlin/Compose) app for the Marriage card game calculator, backed by the existing .NET API. The app must handle 2-6 players with efficient screen space usage, support offline/online modes, real-time score display, and integrate with the C# API hosted on Kubernetes. The Maui version is archived and replaced by this native Android app.
 
-## Status: Phases 1-28 COMPLETE ✅ (except 25.9: Android invite-code UI, pending)
+## Status: Phases 1-29 COMPLETE ✅ (except 25.9: Android invite-code UI, pending)
 - 44 C# tests (12 Core + 32 API) + 74 Android unit tests all passing
 - Android APK builds successfully (`assembleDebug`)
 - .NET API builds successfully
@@ -341,6 +341,17 @@ User supplied the definitive scoring rules (3-deck game): every maal item scores
 - **COMMIT**: "feat: fixed Maal tier tables with physical max-count validation"
 - [x] Step 28.5: **Points table popup** — info icon in the calculator's header opens a "Maal Points" reference dialog: rows = all 10 maal items (short names), columns ×1..×4 showing the tier totals, "–" beyond an item's max, with a "totals, not per card" footnote. Zebra-striped, scrolls if needed. Verified live on emulator.
 - **COMMIT**: "feat: maal points reference table popup in calculator"
+
+---
+
+## Phase 29: Dublee Scoring Rules (Complete)
+User-defined fixed rules for dublee play, replacing the inert per-loser `DubleePointBonus` mechanic (whose stored setting defaulted to 0):
+- [x] Step 29.1: **Winner rule** — a winner who played dublee scores a fixed **+5 Maal** on top of their actual maal (`ScoringEngine.DubleeWinnerMaalBonus`, deliberately a constant rather than the settings value). Applied by mutating `winner.Maal` before mode/penalty/distribution so it flows through maal exchange and `TotalMaal`, same as the Kidnap steal does.
+- [x] Step 29.2: **Loser rule** — a loser who played dublee AND has seen the joker is exempt from the seen penalty (pays 0 instead of `SeenPoint`); an unseen dublee loser still pays `UnseenPoint`. Old winner-dublee per-loser penalty bonus removed.
+- [x] Step 29.3: **Android mirror** — `RoundInputViewModel.calculatePreview` reproduces both rules (`DUBLEE_WINNER_MAAL_BONUS = 5`); offline submit persists the winner's maal WITH the +5 (matching what the C# engine stores online) and total maal now sums the adjusted values.
+- [x] Step 29.4: **UI** — Round Input shows "Dublee win: +5 Maal added to the total Maal." under the grid whenever the selected winner has DUB ticked, and the header Maal chip includes the +5.
+- [x] Step 29.5: Verify — 3 new C# engine tests (winner +5 maal & TotalMaal, seen-dublee-loser exemption, unseen-dublee-loser still pays) — 14/14 Core + 41/41 API green; Android tests/build green; Docker API redeployed. Live on emulator: winner+DUB showed the message, Maal chip 5, each unseen loser −15 (10 penalty + 5 maal); ticking a loser SEEN+DUB changed them to −5 (maal diff only, seen penalty waived) with zero-sum preserved. Input discarded after verification.
+- **COMMIT**: "feat: dublee scoring rules - winner +5 maal, seen dublee loser exempt"
 
 ---
 
