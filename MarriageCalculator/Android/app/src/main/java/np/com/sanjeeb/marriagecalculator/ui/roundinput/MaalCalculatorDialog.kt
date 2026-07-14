@@ -12,6 +12,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Remove
+import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -42,7 +43,12 @@ fun MaalCalculatorDialog(
     onDismiss: () -> Unit
 ) {
     var counts by remember { mutableStateOf(initialCounts) }
+    var showPointsTable by remember { mutableStateOf(false) }
     val total = MaalCalculator.total(counts)
+
+    if (showPointsTable) {
+        MaalPointsTableDialog(onDismiss = { showPointsTable = false })
+    }
 
     Dialog(onDismissRequest = onDismiss) {
         Card(
@@ -77,8 +83,17 @@ fun MaalCalculatorDialog(
                             fontSize = 11.sp
                         )
                     }
-                    IconButton(onClick = onDismiss) {
-                        Icon(Icons.Default.Close, contentDescription = "Close", tint = GoldAccent)
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        IconButton(onClick = { showPointsTable = true }) {
+                            Icon(
+                                Icons.Outlined.Info,
+                                contentDescription = "Show maal points table",
+                                tint = GoldAccent.copy(alpha = 0.8f)
+                            )
+                        }
+                        IconButton(onClick = onDismiss) {
+                            Icon(Icons.Default.Close, contentDescription = "Close", tint = GoldAccent)
+                        }
                     }
                 }
 
@@ -166,6 +181,120 @@ fun MaalCalculatorDialog(
 private fun tierLabel(item: MaalItem): String =
     if (item.maxCount == 1) "${item.tiers[0]} pts"
     else item.tiers.mapIndexed { i, pts -> "${i + 1} = $pts" }.joinToString(" · ") + " pts"
+
+/** Reference popup: full maal-vs-points table (rows = items, columns = count held). */
+@Composable
+private fun MaalPointsTableDialog(onDismiss: () -> Unit) {
+    val maxColumns = MaalItem.entries.maxOf { it.maxCount }
+    val countColumnWidth = 44.dp
+
+    Dialog(onDismissRequest = onDismiss) {
+        Card(
+            modifier = Modifier
+                .fillMaxWidth()
+                .border(1.dp, GoldAccent, RoundedCornerShape(16.dp)),
+            shape = RoundedCornerShape(16.dp),
+            colors = CardDefaults.cardColors(containerColor = TiharNightBlue)
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp)
+            ) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "Maal Points",
+                        color = GoldAccent,
+                        fontFamily = FontFamily.Serif,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 18.sp
+                    )
+                    IconButton(onClick = onDismiss) {
+                        Icon(Icons.Default.Close, contentDescription = "Close", tint = GoldAccent)
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(4.dp))
+
+                // Header: MAAL | 1 | 2 | 3 | 4 (count held)
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 8.dp, vertical = 6.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "MAAL",
+                        color = GoldAccent.copy(alpha = 0.8f),
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.weight(1f)
+                    )
+                    (1..maxColumns).forEach { n ->
+                        Text(
+                            text = "×$n",
+                            color = GoldAccent.copy(alpha = 0.8f),
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.Bold,
+                            modifier = Modifier.width(countColumnWidth),
+                            textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                        )
+                    }
+                }
+
+                Column(
+                    modifier = Modifier
+                        .heightIn(max = 480.dp)
+                        .verticalScroll(rememberScrollState())
+                ) {
+                    MaalItem.entries.forEachIndexed { index, item ->
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .background(
+                                    if (index % 2 == 0) Color.White.copy(alpha = 0.05f) else Color.Transparent,
+                                    RoundedCornerShape(6.dp)
+                                )
+                                .padding(horizontal = 8.dp, vertical = 8.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            // Short name (strip the parenthetical description to keep rows on one line)
+                            Text(
+                                text = item.displayName.substringBefore(" ("),
+                                color = Color.White,
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.SemiBold,
+                                modifier = Modifier.weight(1f)
+                            )
+                            (1..maxColumns).forEach { n ->
+                                Text(
+                                    text = if (n <= item.maxCount) item.points(n).toString() else "–",
+                                    color = if (n <= item.maxCount) GoldAccent else Color.White.copy(alpha = 0.25f),
+                                    fontSize = 12.sp,
+                                    fontWeight = if (n <= item.maxCount) FontWeight.Bold else FontWeight.Normal,
+                                    modifier = Modifier.width(countColumnWidth),
+                                    textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                                )
+                            }
+                        }
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                Text(
+                    text = "Points are totals for the count held, not per card.",
+                    color = Color.White.copy(alpha = 0.45f),
+                    fontSize = 10.sp
+                )
+            }
+        }
+    }
+}
 
 @Composable
 private fun MaalItemRow(

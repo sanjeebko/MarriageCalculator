@@ -339,6 +339,8 @@ User supplied the definitive scoring rules (3-deck game): every maal item scores
 - [x] Step 28.3: **Tests** — `MaalCalculatorTest` rewritten: exact tier assertions for all 10 items, per-item caps (stepper increments and stale oversized counts both clamp), 99 total clamp, zero/negative-count safety, and an every-item invariant (`maxCount == tiers.size`, `points(max) == tiers.last()`).
 - [x] Step 28.4: Verify — `testDebugUnitTest` + `assembleDebug` green; live on emulator: dialog shows all items with tier labels, 3 taps on Tiplu + stopped at 2 with the + button greyed out, total showed the tiered 8 (not linear 6), adding 2 Tunnela gave 23 (8+15), Apply wrote 23 to the player's Maal field and header chip; input then discarded to leave game data untouched.
 - **COMMIT**: "feat: fixed Maal tier tables with physical max-count validation"
+- [x] Step 28.5: **Points table popup** — info icon in the calculator's header opens a "Maal Points" reference dialog: rows = all 10 maal items (short names), columns ×1..×4 showing the tier totals, "–" beyond an item's max, with a "totals, not per card" footnote. Zebra-striped, scrolls if needed. Verified live on emulator.
+- **COMMIT**: "feat: maal points reference table popup in calculator"
 
 ---
 
