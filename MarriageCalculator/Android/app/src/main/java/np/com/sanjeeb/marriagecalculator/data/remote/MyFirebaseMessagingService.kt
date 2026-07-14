@@ -63,6 +63,10 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
                 val requesterName = remoteMessage.data["requesterName"] ?: "Someone"
                 sendNotification("Friend Request Accepted", "$requesterName is now your friend!", null)
             }
+            "FRIEND_ADDED_VIA_CODE" -> {
+                val friendName = remoteMessage.data["friendName"] ?: "Someone"
+                sendNotification("New Friend", "$friendName added you using your invite code!", null)
+            }
             else -> {
                 val gameSetId = remoteMessage.data["gameSetId"]
                 sendNotification(title, body, gameSetId)

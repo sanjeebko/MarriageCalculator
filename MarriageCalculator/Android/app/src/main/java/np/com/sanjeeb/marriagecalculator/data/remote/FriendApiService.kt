@@ -25,6 +25,37 @@ data class RespondFriendRequestDto(
     @SerializedName("accept") val accept: Boolean
 )
 
+/** My shareable friend invite code (7-day, multi-use). */
+data class InviteCodeDto(
+    @SerializedName("code") val code: String = "",
+    @SerializedName("expiresAt") val expiresAt: String = ""
+)
+
+data class RedeemInviteCodeDto(
+    @SerializedName("code") val code: String
+)
+
+/** Result of redeeming a code: instant, auto-accepted friendship. */
+data class RedeemInviteCodeResultDto(
+    @SerializedName("message") val message: String = "",
+    @SerializedName("friendship") val friendship: FriendshipDto? = null
+)
+
+/**
+ * Result of a complete-email friend request. The message is deliberately
+ * identical whether or not the email belongs to a registered user.
+ */
+data class FriendRequestResultDto(
+    @SerializedName("status") val status: String = "",
+    @SerializedName("message") val message: String = "",
+    @SerializedName("friendship") val friendship: FriendshipDto? = null
+)
+
+/** Result of claiming pending email invites after login. */
+data class ClaimInvitesResultDto(
+    @SerializedName("claimed") val claimed: Int = 0
+)
+
 data class TransferHostDto(
     @SerializedName("newHostUserId") val newHostUserId: String
 )
@@ -40,7 +71,16 @@ interface FriendApiService {
     suspend fun getSentRequests(): Response<List<FriendshipDto>>
 
     @POST("Friendships/request")
-    suspend fun sendFriendRequest(@Body request: SendFriendRequestDto): Response<FriendshipDto>
+    suspend fun sendFriendRequest(@Body request: SendFriendRequestDto): Response<FriendRequestResultDto>
+
+    @POST("Friendships/invite-code")
+    suspend fun getInviteCode(): Response<InviteCodeDto>
+
+    @POST("Friendships/invite-code/redeem")
+    suspend fun redeemInviteCode(@Body request: RedeemInviteCodeDto): Response<RedeemInviteCodeResultDto>
+
+    @POST("Friendships/claim-invites")
+    suspend fun claimInvites(): Response<ClaimInvitesResultDto>
 
     @POST("Friendships/respond/{id}")
     suspend fun respondFriendRequest(

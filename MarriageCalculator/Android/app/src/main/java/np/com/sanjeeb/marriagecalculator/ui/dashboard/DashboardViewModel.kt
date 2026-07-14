@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import np.com.sanjeeb.marriagecalculator.data.model.MarriageGameSet
 import np.com.sanjeeb.marriagecalculator.data.model.User
 import np.com.sanjeeb.marriagecalculator.data.repository.ApiResult
+import np.com.sanjeeb.marriagecalculator.data.repository.FriendRepository
 import np.com.sanjeeb.marriagecalculator.data.repository.GameSetRepository
 import np.com.sanjeeb.marriagecalculator.data.repository.OfflineGameRepository
 import np.com.sanjeeb.marriagecalculator.data.repository.SessionManager
@@ -30,6 +31,7 @@ data class DashboardUiState(
 class DashboardViewModel @Inject constructor(
     private val gameSetRepository: GameSetRepository,
     private val offlineGameRepository: OfflineGameRepository,
+    private val friendRepository: FriendRepository,
     private val sessionManager: SessionManager,
     private val themePreference: ThemePreference
 ) : ViewModel() {
@@ -45,6 +47,19 @@ class DashboardViewModel @Inject constructor(
     init {
         _uiState.value = _uiState.value.copy(user = sessionManager.getUserProfile())
         loadActiveGames()
+        claimPendingInvites()
+    }
+
+    /**
+     * Converts email invites addressed to this account into pending friend
+     * requests (requirement §4.4). Fire-and-forget: runs once per session
+     * start, idempotent on the server, failures are silently ignored.
+     */
+    private fun claimPendingInvites() {
+        if (!sessionManager.isOnlineMode()) return
+        viewModelScope.launch {
+            friendRepository.claimInvites()
+        }
     }
 
     fun loadActiveGames() {

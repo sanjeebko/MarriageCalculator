@@ -7,8 +7,7 @@ import javax.inject.Singleton
 
 @Singleton
 class FriendRepository @Inject constructor(
-    private val api: FriendApiService,
-    private val userApi: UserApiService
+    private val api: FriendApiService
 ) {
     suspend fun getFriends(): ApiResult<List<User>> = safeApiCall { api.getFriends() }
 
@@ -16,8 +15,9 @@ class FriendRepository @Inject constructor(
 
     suspend fun getSentRequests(): ApiResult<List<FriendshipDto>> = safeApiCall { api.getSentRequests() }
 
-    suspend fun sendFriendRequest(emailOrUsername: String): ApiResult<FriendshipDto> = safeApiCall {
-        api.sendFriendRequest(SendFriendRequestDto(emailOrUsername))
+    /** Complete-email friend request; the result message never reveals whether the email is registered. */
+    suspend fun sendFriendRequest(email: String): ApiResult<FriendRequestResultDto> = safeApiCall {
+        api.sendFriendRequest(SendFriendRequestDto(email))
     }
 
     suspend fun respondFriendRequest(id: String, accept: Boolean): ApiResult<FriendshipDto> = safeApiCall {
@@ -26,5 +26,14 @@ class FriendRepository @Inject constructor(
 
     suspend fun removeFriend(id: String): ApiResult<Unit> = safeApiCall { api.removeFriend(id) }
 
-    suspend fun searchUsers(query: String): ApiResult<List<User>> = safeApiCall { userApi.searchUsers(query) }
+    /** My shareable 7-day invite code (server creates one if none is active). */
+    suspend fun getInviteCode(): ApiResult<InviteCodeDto> = safeApiCall { api.getInviteCode() }
+
+    /** Redeem a friend's code — instant, auto-accepted friendship. */
+    suspend fun redeemInviteCode(code: String): ApiResult<RedeemInviteCodeResultDto> = safeApiCall {
+        api.redeemInviteCode(RedeemInviteCodeDto(code))
+    }
+
+    /** Convert email invites addressed to me into pending requests (call after login). */
+    suspend fun claimInvites(): ApiResult<ClaimInvitesResultDto> = safeApiCall { api.claimInvites() }
 }

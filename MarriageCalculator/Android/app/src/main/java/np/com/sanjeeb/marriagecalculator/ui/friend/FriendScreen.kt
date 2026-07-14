@@ -8,7 +8,9 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
@@ -25,6 +27,9 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import np.com.sanjeeb.marriagecalculator.data.model.User
 import np.com.sanjeeb.marriagecalculator.data.remote.FriendshipDto
+import np.com.sanjeeb.marriagecalculator.data.remote.InviteCodeDto
+import np.com.sanjeeb.marriagecalculator.ui.components.AppBackground
+import np.com.sanjeeb.marriagecalculator.ui.components.GlassButton
 import androidx.compose.material3.TabRowDefaults.tabIndicatorOffset
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -35,21 +40,17 @@ fun FriendScreen(
 ) {
     val uiState by viewModel.uiState.collectAsState()
     var selectedTabIndex by remember { mutableIntStateOf(0) }
-    var searchQuery by remember { mutableStateOf("") }
 
     LaunchedEffect(Unit) {
         viewModel.loadData()
     }
 
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(
-                Brush.verticalGradient(
-                    colors = listOf(AppTheme.palette.backgroundTop, AppTheme.palette.backgroundBottom)
-                )
-            )
-    ) {
+    // Fetch my invite code when the Add Friends tab is first opened
+    LaunchedEffect(selectedTabIndex) {
+        if (selectedTabIndex == 2) viewModel.loadInviteCode()
+    }
+
+    AppBackground {
         Column(modifier = Modifier.fillMaxSize()) {
             // Top Bar
             TopAppBar(
@@ -76,7 +77,7 @@ fun FriendScreen(
             )
 
             // Tabs
-            val tabs = listOf("My Friends", "Requests", "Find Users")
+            val tabs = listOf("My Friends", "Requests", "Add Friends")
             TabRow(
                 selectedTabIndex = selectedTabIndex,
                 containerColor = AppTheme.palette.tint.copy(alpha = 0.03f),
@@ -109,6 +110,28 @@ fun FriendScreen(
                             }
                         }
                     )
+                }
+            }
+
+            // Success feedback (code redeemed / request sent)
+            uiState.actionMessage?.let { msg ->
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp),
+                    colors = CardDefaults.cardColors(containerColor = Color(0xFF4CAF50).copy(alpha = 0.15f))
+                ) {
+                    Row(
+                        modifier = Modifier.padding(16.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(Icons.Default.CheckCircle, contentDescription = null, tint = Color(0xFF4CAF50))
+                        Spacer(modifier = Modifier.width(12.dp))
+                        Text(text = msg, color = Color(0xFF81C784), fontSize = 14.sp, modifier = Modifier.weight(1f))
+                        IconButton(onClick = { viewModel.clearActionMessage() }) {
+                            Icon(Icons.Default.Close, contentDescription = "Dismiss", tint = AppTheme.palette.textPrimary)
+                        }
+                    }
                 }
             }
 
@@ -155,24 +178,13 @@ fun FriendScreen(
                             onRespond = { id, accept -> viewModel.respondToRequest(id, accept) },
                             onCancel = { id -> viewModel.removeFriend(id) }
                         )
-                        2 -> SearchTab(
-                            query = searchQuery,
-                            onQueryChange = {
-                                searchQuery = it
-                                viewModel.searchUsers(it)
-                            },
-                            loading = uiState.searchLoading,
-                            results = uiState.searchResults,
-                            error = uiState.searchError,
-                            sentList = uiState.pendingSent,
-                            friendsList = uiState.friends,
-                            currentUser = uiState.currentUser,
-                            onSendRequest = { email ->
-                                viewModel.sendFriendRequest(email) {
-                                    searchQuery = ""
-                                    selectedTabIndex = 1
-                                }
-                            }
+                        2 -> AddFriendsTab(
+                            inviteCode = uiState.inviteCode,
+                            inviteCodeLoading = uiState.inviteCodeLoading,
+                            redeemLoading = uiState.redeemLoading,
+                            addEmailLoading = uiState.addEmailLoading,
+                            onRedeemCode = { code -> viewModel.redeemInviteCode(code) },
+                            onSendRequest = { email -> viewModel.sendFriendRequest(email) }
                         )
                     }
                 }
@@ -351,135 +363,191 @@ private fun RequestsTab(
     }
 }
 
+/**
+ * Private friend discovery (requirement §4.4): no open user search.
+ * Friends are added by sharing/redeeming an invite code, or by a
+ * complete email address (the reply never reveals whether it's registered).
+ */
 @Composable
-private fun SearchTab(
-    query: String,
-    onQueryChange: (String) -> Unit,
-    loading: Boolean,
-    results: List<User>,
-    error: String?,
-    sentList: List<FriendshipDto>,
-    friendsList: List<User>,
-    currentUser: User?,
+private fun AddFriendsTab(
+    inviteCode: InviteCodeDto?,
+    inviteCodeLoading: Boolean,
+    redeemLoading: Boolean,
+    addEmailLoading: Boolean,
+    onRedeemCode: (String) -> Unit,
     onSendRequest: (String) -> Unit
 ) {
     val context = androidx.compose.ui.platform.LocalContext.current
-    
-    Column(modifier = Modifier.fillMaxSize()) {
-        // User's own info for sharing
-        currentUser?.let { user ->
-            Card(
-                colors = CardDefaults.cardColors(containerColor = AppTheme.palette.accent.copy(alpha = 0.1f)),
-                shape = RoundedCornerShape(12.dp),
-                modifier = Modifier.padding(bottom = 16.dp)
-            ) {
-                Row(
-                    modifier = Modifier.padding(12.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text(text = "Your Email / Username", color = AppTheme.palette.accent, fontSize = 12.sp, fontWeight = FontWeight.Bold)
-                        Text(text = user.email, color = AppTheme.palette.textPrimary, fontSize = 16.sp)
-                    }
-                    IconButton(onClick = {
-                        val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as android.content.ClipboardManager
-                        val clip = android.content.ClipData.newPlainText("Marriage Friend Code", user.email)
-                        clipboard.setPrimaryClip(clip)
-                        android.widget.Toast.makeText(context, "Copied to clipboard", android.widget.Toast.LENGTH_SHORT).show()
-                    }) {
-                        Icon(Icons.Default.ContentCopy, contentDescription = "Copy", tint = AppTheme.palette.accent)
-                    }
-                    IconButton(onClick = {
-                        val sendIntent: Intent = Intent().apply {
-                            action = Intent.ACTION_SEND
-                            putExtra(Intent.EXTRA_TEXT, "Add me on Marriage Calculator! My email is: ${user.email}")
-                            type = "text/plain"
+    var codeInput by remember { mutableStateOf("") }
+    var emailInput by remember { mutableStateOf("") }
+
+    val fieldColors = OutlinedTextFieldDefaults.colors(
+        focusedContainerColor = AppTheme.palette.tint.copy(alpha = 0.08f),
+        unfocusedContainerColor = AppTheme.palette.tint.copy(alpha = 0.05f),
+        focusedBorderColor = AppTheme.palette.accent,
+        unfocusedBorderColor = AppTheme.palette.tint.copy(alpha = 0.1f),
+        focusedLabelColor = AppTheme.palette.accent,
+        unfocusedLabelColor = AppTheme.palette.tint.copy(alpha = 0.5f),
+        focusedTextColor = AppTheme.palette.textPrimary,
+        unfocusedTextColor = AppTheme.palette.textPrimary
+    )
+
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .verticalScroll(rememberScrollState())
+    ) {
+        // ---- My invite code ----
+        Card(
+            colors = CardDefaults.cardColors(containerColor = AppTheme.palette.accent.copy(alpha = 0.1f)),
+            shape = RoundedCornerShape(12.dp),
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Column(modifier = Modifier.padding(16.dp)) {
+                Text(
+                    text = "MY INVITE CODE",
+                    color = AppTheme.palette.accent,
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.Bold,
+                    letterSpacing = 1.5.sp
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                if (inviteCodeLoading) {
+                    CircularProgressIndicator(
+                        color = AppTheme.palette.accent,
+                        modifier = Modifier.size(24.dp),
+                        strokeWidth = 2.dp
+                    )
+                } else if (inviteCode != null) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text(
+                            text = inviteCode.code,
+                            color = AppTheme.palette.textPrimary,
+                            fontSize = 26.sp,
+                            fontWeight = FontWeight.Bold,
+                            fontFamily = FontFamily.Monospace,
+                            letterSpacing = 3.sp,
+                            modifier = Modifier.weight(1f)
+                        )
+                        IconButton(onClick = {
+                            val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as android.content.ClipboardManager
+                            clipboard.setPrimaryClip(android.content.ClipData.newPlainText("Invite code", inviteCode.code))
+                            android.widget.Toast.makeText(context, "Code copied", android.widget.Toast.LENGTH_SHORT).show()
+                        }) {
+                            Icon(Icons.Default.ContentCopy, contentDescription = "Copy code", tint = AppTheme.palette.accent)
                         }
-                        val shareIntent = Intent.createChooser(sendIntent, null)
-                        context.startActivity(shareIntent)
-                    }) {
-                        Icon(Icons.Default.Share, contentDescription = "Share", tint = AppTheme.palette.accent)
+                        IconButton(onClick = {
+                            val sendIntent = Intent().apply {
+                                action = Intent.ACTION_SEND
+                                putExtra(
+                                    Intent.EXTRA_TEXT,
+                                    "Add me on AAA Marriage Calculator! Open Friends → Add Friends and enter my invite code: ${inviteCode.code}"
+                                )
+                                type = "text/plain"
+                            }
+                            context.startActivity(Intent.createChooser(sendIntent, null))
+                        }) {
+                            Icon(Icons.Default.Share, contentDescription = "Share code", tint = AppTheme.palette.accent)
+                        }
                     }
+                    val expiryDate = inviteCode.expiresAt.take(10)
+                    if (expiryDate.isNotEmpty()) {
+                        Text(
+                            text = "Anyone with this code becomes your friend instantly · valid until $expiryDate",
+                            color = AppTheme.palette.tint.copy(alpha = 0.5f),
+                            fontSize = 11.sp
+                        )
+                    }
+                } else {
+                    Text(
+                        text = "Couldn't load your code. Pull back and retry.",
+                        color = AppTheme.palette.tint.copy(alpha = 0.5f),
+                        fontSize = 12.sp
+                    )
                 }
             }
         }
 
+        Spacer(modifier = Modifier.height(24.dp))
+
+        // ---- Redeem a friend's code ----
+        Text(
+            text = "Have a friend's code?",
+            color = AppTheme.palette.accent,
+            fontSize = 14.sp,
+            fontWeight = FontWeight.Bold
+        )
+        Spacer(modifier = Modifier.height(8.dp))
         OutlinedTextField(
-            value = query,
-            onValueChange = onQueryChange,
-            label = { Text("Search users", color = AppTheme.palette.accent) },
-            placeholder = { Text("Enter email or display name", color = AppTheme.palette.tint.copy(alpha = 0.3f)) },
-            leadingIcon = { Icon(Icons.Default.Search, contentDescription = null, tint = AppTheme.palette.accent) },
+            value = codeInput,
+            onValueChange = { codeInput = it.uppercase() },
+            label = { Text("Enter invite code") },
+            leadingIcon = { Icon(Icons.Default.Key, contentDescription = null, tint = AppTheme.palette.accent) },
             modifier = Modifier.fillMaxWidth(),
             singleLine = true,
-            colors = OutlinedTextFieldDefaults.colors(
-                focusedContainerColor = Color(0xFF1C1C1C),
-                unfocusedContainerColor = AppTheme.palette.tint.copy(alpha = 0.08f),
-                focusedBorderColor = AppTheme.palette.accent,
-                unfocusedBorderColor = AppTheme.palette.tint.copy(alpha = 0.1f),
-                focusedLabelColor = AppTheme.palette.accent,
-                unfocusedLabelColor = AppTheme.palette.tint.copy(alpha = 0.5f),
-                focusedTextColor = AppTheme.palette.textPrimary,
-                unfocusedTextColor = AppTheme.palette.textPrimary
-            ),
+            colors = fieldColors,
             shape = RoundedCornerShape(12.dp)
         )
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        if (loading) {
-            Box(modifier = Modifier.weight(1f).fillMaxWidth(), contentAlignment = Alignment.Center) {
-                CircularProgressIndicator(color = AppTheme.palette.accent)
+        Spacer(modifier = Modifier.height(8.dp))
+        GlassButton(
+            onClick = {
+                onRedeemCode(codeInput)
+                codeInput = ""
+            },
+            text = "Add Friend by Code",
+            containerColor = AppTheme.palette.cta.copy(alpha = 0.35f),
+            textColor = AppTheme.palette.accent,
+            height = 48,
+            enabled = codeInput.trim().isNotEmpty(),
+            isLoading = redeemLoading,
+            leadingIcon = {
+                Icon(Icons.Default.PersonAdd, null, tint = AppTheme.palette.accent, modifier = Modifier.size(18.dp))
             }
-        } else if (error != null) {
-            Box(modifier = Modifier.weight(1f).fillMaxWidth(), contentAlignment = Alignment.Center) {
-                Text(text = error, color = Color(0xFFFF5252))
-            }
-        } else if (results.isEmpty() && query.trim().isNotEmpty()) {
-            Box(modifier = Modifier.weight(1f).fillMaxWidth(), contentAlignment = Alignment.Center) {
-                Text(text = "No users found matching search.", color = AppTheme.palette.tint.copy(alpha = 0.4f))
-            }
-        } else {
-            LazyColumn(
-                modifier = Modifier.weight(1f),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                items(results) { user ->
-                    val alreadyFriends = friendsList.any { it.userId == user.userId }
-                    val alreadySent = sentList.any { it.receiverUserId == user.userId }
+        )
 
-                    Card(
-                        colors = CardDefaults.cardColors(containerColor = AppTheme.palette.tint.copy(alpha = 0.06f)),
-                        shape = RoundedCornerShape(12.dp)
-                    ) {
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(12.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Column(modifier = Modifier.weight(1f)) {
-                                Text(text = user.displayName, color = AppTheme.palette.textPrimary, fontWeight = FontWeight.Bold)
-                                Text(text = user.email, color = AppTheme.palette.tint.copy(alpha = 0.5f), fontSize = 12.sp)
-                            }
+        Spacer(modifier = Modifier.height(24.dp))
 
-                            when {
-                                alreadyFriends -> {
-                                    Text(text = "Friends", color = Color.Green, fontSize = 14.sp, fontWeight = FontWeight.Bold)
-                                }
-                                alreadySent -> {
-                                    Text(text = "Pending", color = AppTheme.palette.accentAlt, fontSize = 14.sp)
-                                }
-                                else -> {
-                                    IconButton(onClick = { onSendRequest(user.email) }) {
-                                        Icon(Icons.Default.PersonAdd, contentDescription = "Add friend", tint = AppTheme.palette.accent)
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
+        // ---- Add by email ----
+        Text(
+            text = "Or add by email",
+            color = AppTheme.palette.accent,
+            fontSize = 14.sp,
+            fontWeight = FontWeight.Bold
+        )
+        Spacer(modifier = Modifier.height(8.dp))
+        OutlinedTextField(
+            value = emailInput,
+            onValueChange = { emailInput = it },
+            label = { Text("Friend's full email address") },
+            leadingIcon = { Icon(Icons.Default.Email, contentDescription = null, tint = AppTheme.palette.accent) },
+            modifier = Modifier.fillMaxWidth(),
+            singleLine = true,
+            colors = fieldColors,
+            shape = RoundedCornerShape(12.dp)
+        )
+        Spacer(modifier = Modifier.height(8.dp))
+        GlassButton(
+            onClick = {
+                onSendRequest(emailInput)
+                emailInput = ""
+            },
+            text = "Send Friend Request",
+            containerColor = AppTheme.palette.tint.copy(alpha = 0.12f),
+            textColor = AppTheme.palette.textPrimary,
+            height = 48,
+            enabled = emailInput.trim().isNotEmpty(),
+            isLoading = addEmailLoading,
+            leadingIcon = {
+                Icon(Icons.Default.Send, null, tint = AppTheme.palette.accent, modifier = Modifier.size(16.dp))
             }
-        }
+        )
+        Text(
+            text = "If they're not on the app yet, we'll email them an invitation — your request is waiting when they join.",
+            color = AppTheme.palette.tint.copy(alpha = 0.4f),
+            fontSize = 11.sp,
+            modifier = Modifier.padding(top = 6.dp)
+        )
+
+        Spacer(modifier = Modifier.height(24.dp))
     }
 }

@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import np.com.sanjeeb.marriagecalculator.data.model.User
 import np.com.sanjeeb.marriagecalculator.data.remote.FriendshipDto
+import np.com.sanjeeb.marriagecalculator.data.remote.InviteCodeDto
 import np.com.sanjeeb.marriagecalculator.data.repository.ApiResult
 import np.com.sanjeeb.marriagecalculator.data.repository.FriendRepository
 import np.com.sanjeeb.marriagecalculator.data.repository.SessionManager
@@ -19,11 +20,15 @@ data class FriendUiState(
     val friends: List<User> = emptyList(),
     val pendingReceived: List<FriendshipDto> = emptyList(),
     val pendingSent: List<FriendshipDto> = emptyList(),
-    val searchResults: List<User> = emptyList(),
     val currentUser: User? = null,
     val error: String? = null,
-    val searchError: String? = null,
-    val searchLoading: Boolean = false
+    /** My shareable invite code (fetched lazily for the Add Friends tab). */
+    val inviteCode: InviteCodeDto? = null,
+    val inviteCodeLoading: Boolean = false,
+    val redeemLoading: Boolean = false,
+    val addEmailLoading: Boolean = false,
+    /** Success feedback from redeeming a code or sending an email request. */
+    val actionMessage: String? = null
 )
 
 @HiltViewModel
@@ -71,43 +76,62 @@ class FriendViewModel @Inject constructor(
         }
     }
 
-    fun searchUsers(query: String) {
-        if (query.trim().isEmpty()) {
-            _uiState.value = _uiState.value.copy(searchResults = emptyList(), searchError = null)
-            return
-        }
-
+    /** Fetches (or creates) my shareable invite code. No-op if already loaded. */
+    fun loadInviteCode() {
+        if (_uiState.value.inviteCode != null || _uiState.value.inviteCodeLoading) return
         viewModelScope.launch {
-            _uiState.value = _uiState.value.copy(searchLoading = true, searchError = null)
-            when (val result = friendRepository.searchUsers(query)) {
+            _uiState.value = _uiState.value.copy(inviteCodeLoading = true)
+            when (val result = friendRepository.getInviteCode()) {
                 is ApiResult.Success -> {
-                    _uiState.value = _uiState.value.copy(
-                        searchLoading = false,
-                        searchResults = result.data
-                    )
+                    _uiState.value = _uiState.value.copy(inviteCodeLoading = false, inviteCode = result.data)
                 }
                 is ApiResult.Error -> {
-                    _uiState.value = _uiState.value.copy(
-                        searchLoading = false,
-                        searchError = result.message
-                    )
+                    _uiState.value = _uiState.value.copy(inviteCodeLoading = false, error = result.message)
                 }
                 is ApiResult.Loading -> {}
             }
         }
     }
 
-    fun sendFriendRequest(emailOrUsername: String, onSuccess: () -> Unit = {}) {
+    /** Redeems a friend's invite code — success creates an instant friendship. */
+    fun redeemInviteCode(code: String, onSuccess: () -> Unit = {}) {
+        val trimmed = code.trim()
+        if (trimmed.isEmpty()) return
         viewModelScope.launch {
-            _uiState.value = _uiState.value.copy(isLoading = true, error = null)
-            when (val result = friendRepository.sendFriendRequest(emailOrUsername)) {
+            _uiState.value = _uiState.value.copy(redeemLoading = true, error = null, actionMessage = null)
+            when (val result = friendRepository.redeemInviteCode(trimmed)) {
                 is ApiResult.Success -> {
+                    _uiState.value = _uiState.value.copy(redeemLoading = false, actionMessage = result.data.message)
+                    loadData()
+                    onSuccess()
+                }
+                is ApiResult.Error -> {
+                    _uiState.value = _uiState.value.copy(redeemLoading = false, error = result.message)
+                }
+                is ApiResult.Loading -> {}
+            }
+        }
+    }
+
+    /** Complete-email friend request; the reply never reveals whether the email is registered. */
+    fun sendFriendRequest(email: String, onSuccess: () -> Unit = {}) {
+        val trimmed = email.trim()
+        if (trimmed.isEmpty()) return
+        if (!trimmed.contains("@") || !trimmed.substringAfter("@").contains(".")) {
+            _uiState.value = _uiState.value.copy(error = "Please enter a complete email address")
+            return
+        }
+        viewModelScope.launch {
+            _uiState.value = _uiState.value.copy(addEmailLoading = true, error = null, actionMessage = null)
+            when (val result = friendRepository.sendFriendRequest(trimmed)) {
+                is ApiResult.Success -> {
+                    _uiState.value = _uiState.value.copy(addEmailLoading = false, actionMessage = result.data.message)
                     loadData()
                     onSuccess()
                 }
                 is ApiResult.Error -> {
                     _uiState.value = _uiState.value.copy(
-                        isLoading = false,
+                        addEmailLoading = false,
                         error = result.message
                     )
                 }
@@ -153,6 +177,10 @@ class FriendViewModel @Inject constructor(
     }
 
     fun clearError() {
-        _uiState.value = _uiState.value.copy(error = null, searchError = null)
+        _uiState.value = _uiState.value.copy(error = null)
+    }
+
+    fun clearActionMessage() {
+        _uiState.value = _uiState.value.copy(actionMessage = null)
     }
 }
