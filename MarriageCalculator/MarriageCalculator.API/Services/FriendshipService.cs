@@ -10,15 +10,29 @@ namespace MarriageCalculator.API.Services;
 
 public class FriendshipService : IFriendshipService
 {
+    private const int EmailInviteTtlDays = 30;
+
     private readonly IFriendshipRepository _friendshipRepository;
     private readonly IUserRepository _userRepository;
     private readonly IFcmService _fcmService;
+    private readonly IPendingEmailInviteRepository _pendingInviteRepository;
+    private readonly IEmailService _emailService;
+    private readonly IConfiguration _configuration;
 
-    public FriendshipService(IFriendshipRepository friendshipRepository, IUserRepository userRepository, IFcmService fcmService)
+    public FriendshipService(
+        IFriendshipRepository friendshipRepository,
+        IUserRepository userRepository,
+        IFcmService fcmService,
+        IPendingEmailInviteRepository pendingInviteRepository,
+        IEmailService emailService,
+        IConfiguration configuration)
     {
         _friendshipRepository = friendshipRepository;
         _userRepository = userRepository;
         _fcmService = fcmService;
+        _pendingInviteRepository = pendingInviteRepository;
+        _emailService = emailService;
+        _configuration = configuration;
     }
 
     public async Task<IEnumerable<FriendshipDto>> GetPendingRequestsAsync(string userId)
@@ -80,35 +94,41 @@ public class FriendshipService : IFriendshipService
         return friendsList;
     }
 
-    public async Task<FriendshipDto> SendFriendRequestAsync(string requesterUserId, SendFriendRequestDto requestDto)
+    public async Task<FriendRequestResultDto> SendFriendRequestAsync(string requesterUserId, SendFriendRequestDto requestDto)
     {
-        var query = requestDto.ReceiverEmailOrUsername.Trim();
-        if (string.IsNullOrEmpty(query))
+        // Requirement §4.4 Private Friend Discovery: complete email address only.
+        // Display-name / partial search intentionally removed — it allowed harvesting users.
+        var email = requestDto.ReceiverEmailOrUsername.Trim().ToLowerInvariant();
+        if (!System.Text.RegularExpressions.Regex.IsMatch(email, @"^[^\s@]+@[^\s@]+\.[^\s@]+$"))
         {
-            throw new ArgumentException("Search query cannot be empty.");
+            throw new ArgumentException("Enter the complete email address of the player you want to add.");
         }
 
-        // Try getting by email
-        var receiver = await _userRepository.GetByEmailAsync(query);
-        if (receiver == null)
+        var requesterUser = await _userRepository.GetByUserIdAsync(requesterUserId);
+        var requesterName = requesterUser?.DisplayName ?? "Someone";
+        if (requesterUser != null && requesterUser.Email.Trim().ToLowerInvariant() == email)
         {
-            // Try getting by exact display name matching
-            var searchResults = await _userRepository.SearchUsersAsync(query);
-            receiver = searchResults.FirstOrDefault(u => u.DisplayName.Equals(query, StringComparison.OrdinalIgnoreCase));
+            throw new ArgumentException("Cannot send a friend request to yourself.");
         }
+
+        // Anti-enumeration: both branches below MUST produce this same message so the
+        // response never reveals whether an email is registered.
+        var genericMessage = $"Request sent to {email}.";
+
+        var receiver = await _userRepository.GetByEmailAsync(requestDto.ReceiverEmailOrUsername.Trim())
+                       ?? await _userRepository.GetByEmailAsync(email);
 
         if (receiver == null)
         {
-            throw new ArgumentException("User not found.");
+            // Unknown email → store an invite and email the person; claimed at their first login.
+            await CreateEmailInviteAsync(requesterUserId, requesterName, email);
+            return new FriendRequestResultDto { Status = "RequestSent", Message = genericMessage };
         }
 
         if (receiver.UserId == requesterUserId)
         {
             throw new ArgumentException("Cannot send a friend request to yourself.");
         }
-
-        var requesterUser = await _userRepository.GetByUserIdAsync(requesterUserId);
-        var requesterName = requesterUser?.DisplayName ?? "Someone";
 
         var existing = await _friendshipRepository.GetByUsersAsync(requesterUserId, receiver.UserId);
         if (existing != null)
@@ -123,15 +143,18 @@ public class FriendshipService : IFriendshipService
                 {
                     throw new ArgumentException("Friend request is already pending.");
                 }
-                else
+
+                // Receiver sent request previously, auto-accept it!
+                existing.Status = "Accepted";
+                existing.ActionAt = DateTime.UtcNow;
+                await _friendshipRepository.UpdateAsync(existing.Id, existing);
+                await SendFriendAcceptedPushAsync(existing.RequesterUserId, requesterName);
+                return new FriendRequestResultDto
                 {
-                    // Receiver sent request previously, auto-accept it!
-                    existing.Status = "Accepted";
-                    existing.ActionAt = DateTime.UtcNow;
-                    await _friendshipRepository.UpdateAsync(existing.Id, existing);
-                    await SendFriendAcceptedPushAsync(existing.RequesterUserId, requesterName);
-                    return await MapToDtoAsync(existing);
-                }
+                    Status = "AutoAccepted",
+                    Message = $"You are now friends with {receiver.DisplayName}.",
+                    Friendship = await MapToDtoAsync(existing),
+                };
             }
 
             // Re-open rejected request
@@ -142,7 +165,12 @@ public class FriendshipService : IFriendshipService
             existing.ActionAt = null;
             await _friendshipRepository.UpdateAsync(existing.Id, existing);
             await SendFriendRequestPushAsync(existing.ReceiverUserId, existing.Id, requesterName);
-            return await MapToDtoAsync(existing);
+            return new FriendRequestResultDto
+            {
+                Status = "RequestSent",
+                Message = genericMessage,
+                Friendship = await MapToDtoAsync(existing),
+            };
         }
 
         var friendship = new Friendship
@@ -150,12 +178,46 @@ public class FriendshipService : IFriendshipService
             RequesterUserId = requesterUserId,
             ReceiverUserId = receiver.UserId,
             Status = "Pending",
+            Source = "Email",
             CreatedAt = DateTime.UtcNow
         };
 
         var created = await _friendshipRepository.CreateAsync(friendship);
         await SendFriendRequestPushAsync(created.ReceiverUserId, created.Id, requesterName);
-        return await MapToDtoAsync(created);
+        return new FriendRequestResultDto
+        {
+            Status = "RequestSent",
+            Message = genericMessage,
+            Friendship = await MapToDtoAsync(created),
+        };
+    }
+
+    /// <summary>Stores a pending email invite (deduplicated) and sends the invitation email.</summary>
+    private async Task CreateEmailInviteAsync(string inviterUserId, string inviterName, string email)
+    {
+        var existing = await _pendingInviteRepository.GetPendingByInviterAndEmailAsync(inviterUserId, email);
+        if (existing != null)
+        {
+            return; // Same inviter already invited this address — don't spam.
+        }
+
+        await _pendingInviteRepository.CreateAsync(new PendingEmailInvite
+        {
+            InviterUserId = inviterUserId,
+            InviteeEmail = email,
+            Status = "Pending",
+            CreatedAt = DateTime.UtcNow,
+            ExpiresAt = DateTime.UtcNow.AddDays(EmailInviteTtlDays),
+        });
+
+        var downloadUrl = _configuration["App:DownloadUrl"] ?? "https://marriagecalculator.com";
+        await _emailService.SendAsync(
+            email,
+            $"{inviterName} invited you to Marriage Calculator!",
+            $"<p><b>{inviterName}</b> wants to add you as a friend on Marriage Calculator, " +
+            $"the digital scorer for the Marriage card game.</p>" +
+            $"<p><a href=\"{downloadUrl}\">Download the app</a>, then sign in with Google using " +
+            $"<b>this email address</b> — the friend request will be waiting for you.</p>");
     }
 
     public async Task<FriendshipDto?> RespondFriendRequestAsync(string id, string receiverUserId, RespondFriendRequestDto respondDto)

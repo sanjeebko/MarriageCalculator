@@ -279,6 +279,46 @@ public class RespondFriendRequestDto
     public bool Accept { get; set; }
 }
 
+/// <summary>My shareable friend invite code (requirement §4.4).</summary>
+public class InviteCodeDto
+{
+    public string Code { get; set; } = string.Empty;
+    public DateTime ExpiresAt { get; set; }
+}
+
+public class RedeemInviteCodeDto
+{
+    public string Code { get; set; } = string.Empty;
+}
+
+/// <summary>Result of redeeming an invite code: instant, auto-accepted friendship.</summary>
+public class RedeemInviteCodeResultDto
+{
+    /// <summary>e.g. "Code correct! You are now friends with Sanjeeb (s***@g***.com)."</summary>
+    public string Message { get; set; } = string.Empty;
+    public FriendshipDto? Friendship { get; set; }
+}
+
+/// <summary>
+/// Result of a complete-email friend request. Anti-enumeration: Message is identical
+/// whether the email belongs to a registered user or an invitation email was sent.
+/// </summary>
+public class FriendRequestResultDto
+{
+    /// <summary>"RequestSent" | "AutoAccepted" — never reveals unregistered emails.</summary>
+    public string Status { get; set; } = string.Empty;
+    public string Message { get; set; } = string.Empty;
+    /// <summary>Set only when a Friendship document exists for the caller (registered receiver).</summary>
+    public FriendshipDto? Friendship { get; set; }
+}
+
+/// <summary>Result of claiming pending email invites after login.</summary>
+public class ClaimInvitesResultDto
+{
+    /// <summary>Number of invites converted into pending friend requests.</summary>
+    public int Claimed { get; set; }
+}
+
 public class TransferHostDto
 {
     public string NewHostUserId { get; set; } = string.Empty;

@@ -16,6 +16,9 @@ public class Friendship
 
     public string Status { get; set; } = "Pending";             // Pending, Accepted, Rejected
 
+    /// <summary>How the friendship was initiated: "Code" (invite code, auto-accepted), "Email", or null (legacy/search).</summary>
+    public string? Source { get; set; }
+
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
     public DateTime? ActionAt { get; set; }

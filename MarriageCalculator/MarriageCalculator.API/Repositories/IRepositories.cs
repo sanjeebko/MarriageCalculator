@@ -77,3 +77,18 @@ public interface IFriendshipRepository
     Task<Friendship?> UpdateAsync(string id, Friendship friendship);
     Task<bool> DeleteAsync(string id);
 }
+
+public interface IFriendInviteCodeRepository
+{
+    Task<FriendInviteCode?> GetActiveByOwnerAsync(string ownerUserId);
+    Task<FriendInviteCode?> GetByCodeAsync(string code);
+    Task<FriendInviteCode> CreateAsync(FriendInviteCode inviteCode);
+}
+
+public interface IPendingEmailInviteRepository
+{
+    Task<IEnumerable<PendingEmailInvite>> GetPendingByEmailAsync(string email);
+    Task<PendingEmailInvite?> GetPendingByInviterAndEmailAsync(string inviterUserId, string email);
+    Task<PendingEmailInvite> CreateAsync(PendingEmailInvite invite);
+    Task<bool> MarkClaimedAsync(string id);
+}

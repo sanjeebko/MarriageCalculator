@@ -29,35 +29,153 @@ public class FriendshipsAndPermissionsTests
         };
     }
 
+    private static FriendshipsController CreateFriendshipsController(
+        Mock<IFriendshipService> serviceMock,
+        Mock<IFriendInviteService>? inviteServiceMock = null)
+    {
+        inviteServiceMock ??= new Mock<IFriendInviteService>();
+        var loggerMock = new Mock<ILogger<FriendshipsController>>();
+        return new FriendshipsController(serviceMock.Object, inviteServiceMock.Object, loggerMock.Object);
+    }
+
     [Fact]
-    public async Task FriendshipsController_SendFriendRequest_ReturnsOkWithFriendshipDto()
+    public async Task FriendshipsController_SendFriendRequest_ReturnsOkWithResultDto()
     {
         // Arrange
         var serviceMock = new Mock<IFriendshipService>();
-        var loggerMock = new Mock<ILogger<FriendshipsController>>();
-        var controller = new FriendshipsController(serviceMock.Object, loggerMock.Object);
+        var controller = CreateFriendshipsController(serviceMock);
         SetControllerUser(controller, "user-alice", "alice@example.com");
 
         var requestDto = new SendFriendRequestDto { ReceiverEmailOrUsername = "bob@example.com" };
-        var expectedDto = new FriendshipDto 
-        { 
-            Id = "friendship-1", 
-            RequesterUserId = "user-alice", 
-            ReceiverUserId = "user-bob", 
-            Status = "Pending" 
+        var expectedResult = new FriendRequestResultDto
+        {
+            Status = "RequestSent",
+            Message = "Request sent to bob@example.com.",
+            Friendship = new FriendshipDto
+            {
+                Id = "friendship-1",
+                RequesterUserId = "user-alice",
+                ReceiverUserId = "user-bob",
+                Status = "Pending"
+            }
         };
 
         serviceMock.Setup(s => s.SendFriendRequestAsync("user-alice", It.IsAny<SendFriendRequestDto>()))
-            .ReturnsAsync(expectedDto);
+            .ReturnsAsync(expectedResult);
 
         // Act
         var result = await controller.SendFriendRequest(requestDto);
 
         // Assert
         var okResult = Assert.IsType<OkObjectResult>(result.Result);
-        var returned = Assert.IsType<FriendshipDto>(okResult.Value);
-        Assert.Equal("friendship-1", returned.Id);
-        Assert.Equal("Pending", returned.Status);
+        var returned = Assert.IsType<FriendRequestResultDto>(okResult.Value);
+        Assert.Equal("RequestSent", returned.Status);
+        Assert.Equal("friendship-1", returned.Friendship!.Id);
+    }
+
+    [Fact]
+    public async Task FriendshipsController_SendFriendRequest_UnknownEmail_ReturnsSameGenericMessage()
+    {
+        // Anti-enumeration (requirement §4.4): an unregistered email must produce the
+        // same Ok + generic message as a registered one — never an error.
+        var serviceMock = new Mock<IFriendshipService>();
+        var controller = CreateFriendshipsController(serviceMock);
+        SetControllerUser(controller, "user-alice", "alice@example.com");
+
+        serviceMock.Setup(s => s.SendFriendRequestAsync("user-alice", It.IsAny<SendFriendRequestDto>()))
+            .ReturnsAsync(new FriendRequestResultDto
+            {
+                Status = "RequestSent",
+                Message = "Request sent to stranger@example.com.",
+                Friendship = null
+            });
+
+        var result = await controller.SendFriendRequest(
+            new SendFriendRequestDto { ReceiverEmailOrUsername = "stranger@example.com" });
+
+        var okResult = Assert.IsType<OkObjectResult>(result.Result);
+        var returned = Assert.IsType<FriendRequestResultDto>(okResult.Value);
+        Assert.Equal("RequestSent", returned.Status);
+        Assert.Null(returned.Friendship);
+    }
+
+    [Fact]
+    public async Task FriendshipsController_GetInviteCode_ReturnsCode()
+    {
+        var inviteMock = new Mock<IFriendInviteService>();
+        var controller = CreateFriendshipsController(new Mock<IFriendshipService>(), inviteMock);
+        SetControllerUser(controller, "user-alice", "alice@example.com");
+
+        inviteMock.Setup(s => s.GetOrCreateInviteCodeAsync("user-alice"))
+            .ReturnsAsync(new InviteCodeDto { Code = "K7PMQ4", ExpiresAt = DateTime.UtcNow.AddDays(7) });
+
+        var result = await controller.GetInviteCode();
+
+        var okResult = Assert.IsType<OkObjectResult>(result.Result);
+        var returned = Assert.IsType<InviteCodeDto>(okResult.Value);
+        Assert.Equal("K7PMQ4", returned.Code);
+    }
+
+    [Fact]
+    public async Task FriendshipsController_RedeemInviteCode_ReturnsAcceptedFriendship()
+    {
+        var inviteMock = new Mock<IFriendInviteService>();
+        var controller = CreateFriendshipsController(new Mock<IFriendshipService>(), inviteMock);
+        SetControllerUser(controller, "user-bob", "bob@example.com");
+
+        inviteMock.Setup(s => s.RedeemInviteCodeAsync("user-bob", It.IsAny<RedeemInviteCodeDto>()))
+            .ReturnsAsync(new RedeemInviteCodeResultDto
+            {
+                Message = "Code correct! You are now friends with Alice (a***@e***.com).",
+                Friendship = new FriendshipDto { Id = "friendship-2", Status = "Accepted" }
+            });
+
+        var result = await controller.RedeemInviteCode(new RedeemInviteCodeDto { Code = "K7PMQ4" });
+
+        var okResult = Assert.IsType<OkObjectResult>(result.Result);
+        var returned = Assert.IsType<RedeemInviteCodeResultDto>(okResult.Value);
+        Assert.Equal("Accepted", returned.Friendship!.Status);
+        Assert.DoesNotContain("alice@example.com", returned.Message); // full email never exposed
+    }
+
+    [Fact]
+    public async Task FriendshipsController_RedeemInviteCode_InvalidCode_ReturnsBadRequest()
+    {
+        var inviteMock = new Mock<IFriendInviteService>();
+        var controller = CreateFriendshipsController(new Mock<IFriendshipService>(), inviteMock);
+        SetControllerUser(controller, "user-bob", "bob@example.com");
+
+        inviteMock.Setup(s => s.RedeemInviteCodeAsync("user-bob", It.IsAny<RedeemInviteCodeDto>()))
+            .ThrowsAsync(new ArgumentException("Invalid or expired code."));
+
+        var result = await controller.RedeemInviteCode(new RedeemInviteCodeDto { Code = "WRONG1" });
+
+        Assert.IsType<BadRequestObjectResult>(result.Result);
+    }
+
+    [Fact]
+    public async Task FriendshipsController_ClaimInvites_ReturnsClaimedCount()
+    {
+        var inviteMock = new Mock<IFriendInviteService>();
+        var controller = CreateFriendshipsController(new Mock<IFriendshipService>(), inviteMock);
+        SetControllerUser(controller, "user-carol", "carol@example.com");
+
+        inviteMock.Setup(s => s.ClaimPendingInvitesAsync("user-carol"))
+            .ReturnsAsync(new ClaimInvitesResultDto { Claimed = 2 });
+
+        var result = await controller.ClaimInvites();
+
+        var okResult = Assert.IsType<OkObjectResult>(result.Result);
+        var returned = Assert.IsType<ClaimInvitesResultDto>(okResult.Value);
+        Assert.Equal(2, returned.Claimed);
+    }
+
+    [Fact]
+    public void FriendInviteService_MaskEmail_NeverRevealsFullAddress()
+    {
+        Assert.Equal("s***@g***.com", MarriageCalculator.API.Services.FriendInviteService.MaskEmail("sanjeeb@gmail.com"));
+        Assert.Equal("b***@e***.com", MarriageCalculator.API.Services.FriendInviteService.MaskEmail("bob@example.com"));
+        Assert.Equal("***", MarriageCalculator.API.Services.FriendInviteService.MaskEmail("not-an-email"));
     }
 
     [Fact]
@@ -65,8 +183,7 @@ public class FriendshipsAndPermissionsTests
     {
         // Arrange
         var serviceMock = new Mock<IFriendshipService>();
-        var loggerMock = new Mock<ILogger<FriendshipsController>>();
-        var controller = new FriendshipsController(serviceMock.Object, loggerMock.Object);
+        var controller = CreateFriendshipsController(serviceMock);
         SetControllerUser(controller, "user-bob", "bob@example.com");
 
         var respondDto = new RespondFriendRequestDto { Accept = true };
@@ -151,3 +268,4 @@ public class FriendshipsAndPermissionsTests
         Assert.Equal("user-bob", returned.HostUserId);
     }
 }
+

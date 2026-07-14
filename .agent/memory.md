@@ -14,6 +14,12 @@ This document stores application-specific and domain-specific knowledge for the 
     *   **Normal**: Unseen players count Maal to reduce penalty.
     *   **Kidnap**: Winner "steals" Unseen player's Maal points (add to Winner, subtract from Loser).
     *   **Murder**: Unseen player's Maal is voided (Zeroed). Winner does *not* get them.
+*   **Maal Values (FIXED rules — tiered by count held, NOT per-card multiples; Phase 28)**:
+    *   Tiplu 3/8 (max 2 — the 3rd tiplu is the maal card on the table); Poplu & Jhiplu 2/5/10 (max 3); Marriage 10/25 (max 2).
+    *   **Tunnela** (Nepali; 3 identical cards) 5/15/30/45 (capped at 4); **Poplu/Jhiplu Tunnela** 10/30/45 (max 3; a Tiplu tunnela can't exist); **Alter Tunnela** flat 35; **Joker Tunnela** flat 35.
+    *   Alter and Joker (printed card) 5/15/30 (max 3 each).
+    *   Point values are rules, not adjustable house preferences (the calculator's adjust-values toggle was removed).
+*   **Dublee rules (Phase 29, fixed)**: a dublee WINNER scores +5 Maal on top of actual maal (constant, not the DubleePointBonus setting); a dublee LOSER who has seen the joker pays NO seen penalty (unseen dublee loser still pays unseen penalty).
 *   **Scoring Components**:
     *   **Game Points**: Fixed penalty paid to Winner (e.g., 3 for Seen, 10 for Unseen).
     *   **Maal Points**: Variable exchange based on card combinations.
@@ -29,6 +35,7 @@ This document stores application-specific and domain-specific knowledge for the 
     *   **DB Migration**: Moving from SQL Server to **MongoDB** (Hosted at `192.168.0.229`).
     *   **Auth**: Firebase (Google Sign-In).
     *   **Social**: Friend System, Invite-only games.
+    *   **Friend Privacy (Phase 25)**: NO public/partial user search. Discovery only via (a) 7-day multi-use invite code → instant auto-accepted friendship (code = consent, owner's email always masked, redemption rate-limited), or (b) complete email → pending request if registered, invitation email + claimable `PendingEmailInvite` if not. The API response is identical either way — never reveal whether an email is registered.
     *   **Notifications**: FCM for "Nudge" feature (Offline push to Join/Resume).
 
 ## 4. Design & Aesthetic Patterns

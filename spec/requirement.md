@@ -151,7 +151,20 @@ The calculator handles the complex "give-and-take" logic:
 ### 4.4 Friends & Social
 *   **Friend System**:
     *   Users can send invitations to other users.
-    *   The other user must accept the request to become "Friends".
+    *   The other user must accept the request to become "Friends" (except the Invite-Code path below, where entering the code IS the consent).
+*   **Private Friend Discovery** (replaces open user search):
+    *   **No public search**: Partial-match search of registered users by name/email is not allowed. Discovery is only via (a) a friend invite code or (b) a complete email address.
+    *   **Invite Code path**:
+        *   Any signed-in user can generate a personal invite code: 6 characters, unambiguous alphabet (no 0/O, 1/I/L), valid for **7 days**, multi-use (any number of players may redeem the same code while valid). Requesting a code while one is still active returns the same code.
+        *   Redeeming a correct code creates the friendship **immediately, auto-accepted** — the code owner does not approve, since sharing the code implies consent. The redeemer sees a confirmation naming the owner with a **masked** email (e.g. `s***@g***.com`) — never the full address.
+        *   Wrong and expired codes return the same generic error (no oracle). Redemption attempts are rate-limited (5 attempts per 10 minutes per user).
+        *   The code owner receives an FCM push that someone became their friend via their code.
+    *   **Complete-Email path**:
+        *   Requester submits a full email address (exact match only, case-insensitive).
+        *   If a registered user matches → a normal **pending** friend request is created (receiver must accept; existing mutual-auto-accept rule still applies).
+        *   If no user matches → a **pending email invite** is stored (valid 30 days) and an invitation email is sent to that address with the app download link, telling them to sign in with this email.
+        *   **Anti-enumeration**: both outcomes return the identical generic response ("Request sent to <email>"). The API must never reveal whether an email is registered.
+    *   **Invite Claiming**: after login with a verified email, the client calls a claim endpoint; every pending email invite for that address becomes a normal pending friend request (with FCM push), then is marked claimed.
 *   **Player Mapping (Dummy-to-Real)**:
     *   A host can start a game with local "Dummy Players" (e.g., "Player 2").
     *   **Linking**: The host can later map a "Dummy Player" to a "Real Friend's Account" using their `UserId`.

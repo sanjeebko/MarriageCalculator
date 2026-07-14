@@ -104,6 +104,8 @@ builder.Services.AddScoped<IMarriageGameSetRepository, MarriageGameSetRepository
 builder.Services.AddScoped<IMarriageGameRepository, MarriageGameRepository>();
 builder.Services.AddScoped<IDatabaseRepository, DatabaseRepository>();
 builder.Services.AddScoped<IFriendshipRepository, FriendshipRepository>();
+builder.Services.AddScoped<IFriendInviteCodeRepository, FriendInviteCodeRepository>();
+builder.Services.AddScoped<IPendingEmailInviteRepository, PendingEmailInviteRepository>();
 
 // Register services
 builder.Services.AddSingleton<IFcmService, FcmService>();
@@ -114,6 +116,9 @@ builder.Services.AddScoped<IMarriageGameSetService, MarriageGameSetService>();
 builder.Services.AddScoped<IMarriageGameService, MarriageGameService>();
 builder.Services.AddScoped<IDatabaseService, DatabaseService>();
 builder.Services.AddScoped<IFriendshipService, FriendshipService>();
+builder.Services.AddScoped<IFriendInviteService, FriendInviteService>();
+builder.Services.AddSingleton<IEmailService, SmtpEmailService>();
+builder.Services.AddMemoryCache(); // invite-code redemption rate limiting
 
 // Register existing services
 builder.Services.AddScoped<IMarriageGameServices, MarriageGameServices>();
@@ -239,6 +244,9 @@ static async Task InitializeDatabaseAsync(WebApplication app)
         }
 
         logger.LogInformation("MongoDB connection verified successfully.");
+
+        // Ensure indexes for friend discovery (unique codes, TTL cleanup, invite lookups)
+        await mongoContext.EnsureIndexesAsync();
 
         // Seed default data if needed
         logger.LogInformation("Seeding default data...");

@@ -37,8 +37,13 @@ public class UserService : IUserService
 
     public async Task<IEnumerable<UserDto>> SearchUsersAsync(string query)
     {
-        var users = await _userRepository.SearchUsersAsync(query);
-        return users.Select(MapToDto);
+        // Requirement §4.4 Private Friend Discovery: partial-match search removed —
+        // it allowed harvesting registered users' names/emails. Only a COMPLETE email
+        // address returns a result (exact match); anything else returns an empty list.
+        var trimmed = query.Trim();
+        var user = await _userRepository.GetByEmailAsync(trimmed)
+                   ?? await _userRepository.GetByEmailAsync(trimmed.ToLowerInvariant());
+        return user != null ? new[] { MapToDto(user) } : Enumerable.Empty<UserDto>();
     }
 
     public async Task<UserDto> CreateUserAsync(CreateUserDto createUserDto)

@@ -77,7 +77,23 @@ public interface IFriendshipService
     Task<IEnumerable<FriendshipDto>> GetPendingRequestsAsync(string userId);
     Task<IEnumerable<FriendshipDto>> GetSentRequestsAsync(string userId);
     Task<IEnumerable<UserDto>> GetFriendsAsync(string userId);
-    Task<FriendshipDto> SendFriendRequestAsync(string requesterUserId, SendFriendRequestDto requestDto);
+    /// <summary>
+    /// Complete-email friend request (requirement §4.4). Exact email match only.
+    /// Registered receiver → pending request; unknown email → stored invite + invitation
+    /// email. Returns the identical generic message in both cases (anti-enumeration).
+    /// </summary>
+    Task<FriendRequestResultDto> SendFriendRequestAsync(string requesterUserId, SendFriendRequestDto requestDto);
     Task<FriendshipDto?> RespondFriendRequestAsync(string id, string receiverUserId, RespondFriendRequestDto respondDto);
     Task<bool> RemoveFriendAsync(string id, string userId);
+}
+
+/// <summary>Invite-code friend discovery + email-invite claiming (requirement §4.4).</summary>
+public interface IFriendInviteService
+{
+    /// <summary>Returns the caller's active invite code, creating one (valid 7 days) if none exists.</summary>
+    Task<InviteCodeDto> GetOrCreateInviteCodeAsync(string userId);
+    /// <summary>Redeems a code: instant auto-accepted friendship with the code owner. Rate-limited.</summary>
+    Task<RedeemInviteCodeResultDto> RedeemInviteCodeAsync(string userId, RedeemInviteCodeDto redeemDto);
+    /// <summary>Converts pending email invites addressed to the caller's email into pending friend requests.</summary>
+    Task<ClaimInvitesResultDto> ClaimPendingInvitesAsync(string userId);
 }

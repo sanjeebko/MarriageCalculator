@@ -39,6 +39,41 @@ public class MongoDbContext
     public IMongoCollection<MarriageGameScore> MarriageGameScores =>
         _database.GetCollection<MarriageGameScore>("marriageGameScores");
 
+    public IMongoCollection<FriendInviteCode> FriendInviteCodes =>
+        _database.GetCollection<FriendInviteCode>("friendInviteCodes");
+
+    public IMongoCollection<PendingEmailInvite> PendingEmailInvites =>
+        _database.GetCollection<PendingEmailInvite>("pendingEmailInvites");
+
+    /// <summary>
+    /// Idempotent index setup (called at startup). Unique invite codes, TTL cleanup of
+    /// expired codes/invites, and lookup indexes for the friend-discovery flows.
+    /// </summary>
+    public async Task EnsureIndexesAsync()
+    {
+        var ttl = new CreateIndexOptions { ExpireAfter = TimeSpan.Zero };
+
+        await FriendInviteCodes.Indexes.CreateManyAsync(new[]
+        {
+            new CreateIndexModel<FriendInviteCode>(
+                Builders<FriendInviteCode>.IndexKeys.Ascending(c => c.Code),
+                new CreateIndexOptions { Unique = true }),
+            new CreateIndexModel<FriendInviteCode>(
+                Builders<FriendInviteCode>.IndexKeys.Ascending(c => c.OwnerUserId)),
+            new CreateIndexModel<FriendInviteCode>(
+                Builders<FriendInviteCode>.IndexKeys.Ascending(c => c.ExpiresAt), ttl),
+        });
+
+        await PendingEmailInvites.Indexes.CreateManyAsync(new[]
+        {
+            new CreateIndexModel<PendingEmailInvite>(
+                Builders<PendingEmailInvite>.IndexKeys
+                    .Ascending(i => i.InviteeEmail).Ascending(i => i.Status)),
+            new CreateIndexModel<PendingEmailInvite>(
+                Builders<PendingEmailInvite>.IndexKeys.Ascending(i => i.ExpiresAt), ttl),
+        });
+    }
+
     public async Task<bool> CanConnectAsync()
     {
         try
