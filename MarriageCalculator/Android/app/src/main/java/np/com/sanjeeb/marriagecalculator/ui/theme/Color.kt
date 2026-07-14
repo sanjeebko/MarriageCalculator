@@ -31,7 +31,9 @@ data class AppPalette(
     val frostText: Color,     // primary text on glass tables
     val frostAccent: Color,   // labels/headers on glass tables
     val textPrimary: Color,
-    val tint: Color
+    val tint: Color,
+    val success: Color,       // positive feedback text, readable on this theme's background
+    val danger: Color         // error feedback text, readable on this theme's background
 )
 
 enum class AppThemeOption(val displayName: String, val palette: AppPalette) {
@@ -48,7 +50,9 @@ enum class AppThemeOption(val displayName: String, val palette: AppPalette) {
             frostText = Color(0xFFE9EEF6),
             frostAccent = Color(0xFFA6BEE0),
             textPrimary = Color.White,
-            tint = Color.White
+            tint = Color.White,
+            success = Color(0xFF81C784),
+            danger = Color(0xFFFF8888)
         )
     ),
     MIDNIGHT_FROST(
@@ -64,7 +68,9 @@ enum class AppThemeOption(val displayName: String, val palette: AppPalette) {
             frostText = Color(0xFFEAF0F8),
             frostAccent = Color(0xFF9DC1E8),
             textPrimary = Color(0xFFE8EDF5),
-            tint = Color.White
+            tint = Color.White,
+            success = Color(0xFF81C784),
+            danger = Color(0xFFFF8888)
         )
     ),
     MARIGOLD_DAY(
@@ -80,7 +86,9 @@ enum class AppThemeOption(val displayName: String, val palette: AppPalette) {
             frostText = Color(0xFF3A3226),
             frostAccent = Color(0xFF8C6A3F),
             textPrimary = Color(0xFF2B2118),
-            tint = Color(0xFF3A2E1E)
+            tint = Color(0xFF3A2E1E),
+            success = Color(0xFF1B5E20),
+            danger = Color(0xFFB71C1C)
         )
     ),
     HIMALAYAN_MIST(
@@ -96,7 +104,9 @@ enum class AppThemeOption(val displayName: String, val palette: AppPalette) {
             frostText = Color(0xFF2A3A50),
             frostAccent = Color(0xFF52708F),
             textPrimary = Color(0xFF1E2733),
-            tint = Color(0xFF22344A)
+            tint = Color(0xFF22344A),
+            success = Color(0xFF1B5E20),
+            danger = Color(0xFFB71C1C)
         )
     );
 

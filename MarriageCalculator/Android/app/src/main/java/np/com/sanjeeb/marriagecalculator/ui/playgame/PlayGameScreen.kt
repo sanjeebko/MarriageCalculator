@@ -58,6 +58,7 @@ import kotlinx.coroutines.delay
 import np.com.sanjeeb.marriagecalculator.data.model.Currency
 import np.com.sanjeeb.marriagecalculator.data.model.Player
 import np.com.sanjeeb.marriagecalculator.data.model.User
+import np.com.sanjeeb.marriagecalculator.ui.components.AppBackground
 import np.com.sanjeeb.marriagecalculator.ui.components.DealerBadge
 import np.com.sanjeeb.marriagecalculator.ui.gamesetup.PlayerMappingDialog
 import np.com.sanjeeb.marriagecalculator.ui.gamesetup.RearrangeSeatsDialog
@@ -136,21 +137,17 @@ fun PlayGameScreen(
                         }
                     }
                 },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = AppTheme.palette.surface)
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent)
             )
         },
         containerColor = Color.Transparent
     ) { padding ->
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(Brush.verticalGradient(listOf(AppTheme.palette.backgroundTop, AppTheme.palette.backgroundBottom)))
-                .padding(padding)
-        ) {
+        AppBackground {
             Column(
                 modifier = Modifier
                     .fillMaxSize()
                     .verticalScroll(rememberScrollState())
+                    .padding(padding)
                     .padding(horizontal = 16.dp, vertical = 12.dp)
             ) {
                 // Error display
@@ -167,7 +164,7 @@ fun PlayGameScreen(
                         ) {
                             Icon(Icons.Default.Error, contentDescription = null, tint = Color(0xFFFF5252))
                             Spacer(modifier = Modifier.width(12.dp))
-                            Text(text = err, color = Color(0xFFFF8888), fontSize = 14.sp, modifier = Modifier.weight(1f))
+                            Text(text = err, color = AppTheme.palette.danger, fontSize = 14.sp, modifier = Modifier.weight(1f))
                             IconButton(onClick = { viewModel.clearError() }) {
                                 Icon(Icons.Default.Close, contentDescription = "Clear error", tint = AppTheme.palette.textPrimary)
                             }

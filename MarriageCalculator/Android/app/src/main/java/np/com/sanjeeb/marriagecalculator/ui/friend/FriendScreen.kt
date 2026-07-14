@@ -125,9 +125,15 @@ fun FriendScreen(
                         modifier = Modifier.padding(16.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Icon(Icons.Default.CheckCircle, contentDescription = null, tint = Color(0xFF4CAF50))
+                        Icon(Icons.Default.CheckCircle, contentDescription = null, tint = AppTheme.palette.success)
                         Spacer(modifier = Modifier.width(12.dp))
-                        Text(text = msg, color = Color(0xFF81C784), fontSize = 14.sp, modifier = Modifier.weight(1f))
+                        Text(
+                            text = msg,
+                            color = AppTheme.palette.success,
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            modifier = Modifier.weight(1f)
+                        )
                         IconButton(onClick = { viewModel.clearActionMessage() }) {
                             Icon(Icons.Default.Close, contentDescription = "Dismiss", tint = AppTheme.palette.textPrimary)
                         }
@@ -147,9 +153,15 @@ fun FriendScreen(
                         modifier = Modifier.padding(16.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Icon(Icons.Default.Error, contentDescription = null, tint = Color(0xFFFF5252))
+                        Icon(Icons.Default.Error, contentDescription = null, tint = AppTheme.palette.danger)
                         Spacer(modifier = Modifier.width(12.dp))
-                        Text(text = err, color = Color(0xFFFF8888), fontSize = 14.sp, modifier = Modifier.weight(1f))
+                        Text(
+                            text = err,
+                            color = AppTheme.palette.danger,
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            modifier = Modifier.weight(1f)
+                        )
                         IconButton(onClick = { viewModel.clearError() }) {
                             Icon(Icons.Default.Close, contentDescription = "Clear error", tint = AppTheme.palette.textPrimary)
                         }
@@ -306,7 +318,7 @@ private fun RequestsTab(
                             Text(text = req.requesterEmail, color = AppTheme.palette.tint.copy(alpha = 0.5f), fontSize = 12.sp)
                         }
                         IconButton(onClick = { onRespond(req.id, true) }) {
-                            Icon(Icons.Default.Check, contentDescription = "Accept", tint = Color.Green)
+                            Icon(Icons.Default.Check, contentDescription = "Accept", tint = AppTheme.palette.success)
                         }
                         IconButton(onClick = { onRespond(req.id, false) }) {
                             Icon(Icons.Default.Close, contentDescription = "Decline", tint = Color(0xFFFF5252))
