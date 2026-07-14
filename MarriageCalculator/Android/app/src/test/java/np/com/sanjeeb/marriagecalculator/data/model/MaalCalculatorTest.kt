@@ -11,33 +11,102 @@ class MaalCalculatorTest {
     }
 
     @Test
-    fun `single tiplu uses default value`() {
-        val counts = mapOf(MaalItem.TIPLU to 1)
-        assertEquals(3, MaalCalculator.total(counts))
+    fun `tiplu scores 3 then 8 and is capped at two`() {
+        assertEquals(3, MaalCalculator.total(mapOf(MaalItem.TIPLU to 1)))
+        assertEquals(8, MaalCalculator.total(mapOf(MaalItem.TIPLU to 2)))
+        // Only 2 tiplu are available to players (the third is the maal card on the table)
+        assertEquals(2, MaalItem.TIPLU.maxCount)
+        assertEquals(8, MaalCalculator.total(mapOf(MaalItem.TIPLU to 5)))
     }
 
     @Test
-    fun `mixed counts sum with default values`() {
-        // 1 Tiplu(3) + 2 Poplu(2*2=4) + 1 Marriage(10) + 3 Alter(3*1=3) = 20
+    fun `poplu scores 2 5 10 and is capped at three`() {
+        assertEquals(2, MaalCalculator.total(mapOf(MaalItem.POPLU to 1)))
+        assertEquals(5, MaalCalculator.total(mapOf(MaalItem.POPLU to 2)))
+        assertEquals(10, MaalCalculator.total(mapOf(MaalItem.POPLU to 3)))
+        assertEquals(3, MaalItem.POPLU.maxCount)
+    }
+
+    @Test
+    fun `jhiplu scores the same tiers as poplu`() {
+        assertEquals(2, MaalCalculator.total(mapOf(MaalItem.JHIPLU to 1)))
+        assertEquals(5, MaalCalculator.total(mapOf(MaalItem.JHIPLU to 2)))
+        assertEquals(10, MaalCalculator.total(mapOf(MaalItem.JHIPLU to 3)))
+        assertEquals(3, MaalItem.JHIPLU.maxCount)
+    }
+
+    @Test
+    fun `marriage scores 10 then 25 and is capped at two`() {
+        assertEquals(10, MaalCalculator.total(mapOf(MaalItem.MARRIAGE to 1)))
+        assertEquals(25, MaalCalculator.total(mapOf(MaalItem.MARRIAGE to 2)))
+        assertEquals(2, MaalItem.MARRIAGE.maxCount)
+    }
+
+    @Test
+    fun `tunnela scores 5 15 30 45 and is capped at four`() {
+        assertEquals(5, MaalCalculator.total(mapOf(MaalItem.TUNNELA to 1)))
+        assertEquals(15, MaalCalculator.total(mapOf(MaalItem.TUNNELA to 2)))
+        assertEquals(30, MaalCalculator.total(mapOf(MaalItem.TUNNELA to 3)))
+        assertEquals(45, MaalCalculator.total(mapOf(MaalItem.TUNNELA to 4)))
+        assertEquals(4, MaalItem.TUNNELA.maxCount)
+    }
+
+    @Test
+    fun `poplu jhiplu tunnela scores 10 30 45 and is capped at three`() {
+        assertEquals(10, MaalCalculator.total(mapOf(MaalItem.POPLU_JHIPLU_TUNNELA to 1)))
+        assertEquals(30, MaalCalculator.total(mapOf(MaalItem.POPLU_JHIPLU_TUNNELA to 2)))
+        assertEquals(45, MaalCalculator.total(mapOf(MaalItem.POPLU_JHIPLU_TUNNELA to 3)))
+        assertEquals(3, MaalItem.POPLU_JHIPLU_TUNNELA.maxCount)
+    }
+
+    @Test
+    fun `alter tunnela is a flat 35`() {
+        assertEquals(35, MaalCalculator.total(mapOf(MaalItem.ALTER_TUNNELA to 1)))
+        assertEquals(1, MaalItem.ALTER_TUNNELA.maxCount)
+        assertEquals(35, MaalCalculator.total(mapOf(MaalItem.ALTER_TUNNELA to 3)))
+    }
+
+    @Test
+    fun `joker tunnela is a flat 35 like alter tunnela`() {
+        assertEquals(35, MaalCalculator.total(mapOf(MaalItem.JOKER_TUNNELA to 1)))
+        assertEquals(1, MaalItem.JOKER_TUNNELA.maxCount)
+    }
+
+    @Test
+    fun `alter scores 5 15 30 and is capped at three`() {
+        assertEquals(5, MaalCalculator.total(mapOf(MaalItem.ALTER to 1)))
+        assertEquals(15, MaalCalculator.total(mapOf(MaalItem.ALTER to 2)))
+        assertEquals(30, MaalCalculator.total(mapOf(MaalItem.ALTER to 3)))
+        assertEquals(3, MaalItem.ALTER.maxCount)
+    }
+
+    @Test
+    fun `manuk printed joker uses the same tiers as alter`() {
+        assertEquals(5, MaalCalculator.total(mapOf(MaalItem.MANUK to 1)))
+        assertEquals(15, MaalCalculator.total(mapOf(MaalItem.MANUK to 2)))
+        assertEquals(30, MaalCalculator.total(mapOf(MaalItem.MANUK to 3)))
+        assertEquals(3, MaalItem.MANUK.maxCount)
+    }
+
+    @Test
+    fun `mixed counts sum their tier values`() {
+        // 2 Tiplu(8) + 2 Poplu(5) + 1 Marriage(10) + 2 Tunnela(15) = 38
         val counts = mapOf(
-            MaalItem.TIPLU to 1,
+            MaalItem.TIPLU to 2,
             MaalItem.POPLU to 2,
             MaalItem.MARRIAGE to 1,
-            MaalItem.ALTER to 3
+            MaalItem.TUNNELA to 2
         )
-        assertEquals(20, MaalCalculator.total(counts))
-    }
-
-    @Test
-    fun `custom values override defaults`() {
-        val counts = mapOf(MaalItem.TIPLU to 2)
-        val values = mapOf(MaalItem.TIPLU to 5)
-        assertEquals(10, MaalCalculator.total(counts, values))
+        assertEquals(38, MaalCalculator.total(counts))
     }
 
     @Test
     fun `total is clamped to max 99`() {
-        val counts = mapOf(MaalItem.MARRIAGE to 20) // 200 raw
+        val counts = mapOf(
+            MaalItem.TUNNELA to 4,               // 45
+            MaalItem.POPLU_JHIPLU_TUNNELA to 3,  // 45
+            MaalItem.ALTER_TUNNELA to 1,         // 35 -> raw 125
+        )
         assertEquals(MaalCalculator.MAX_TOTAL, MaalCalculator.total(counts))
     }
 
@@ -48,21 +117,26 @@ class MaalCalculatorTest {
     }
 
     @Test
-    fun `negative values are treated as zero`() {
-        val counts = mapOf(MaalItem.TIPLU to 3)
-        val values = mapOf(MaalItem.TIPLU to -2)
-        assertEquals(0, MaalCalculator.total(counts, values))
+    fun `oversized counts clamp to the item max`() {
+        // e.g. from stale persisted state
+        assertEquals(30, MaalCalculator.total(mapOf(MaalItem.MANUK to 7)))
+        assertEquals(45, MaalCalculator.total(mapOf(MaalItem.TUNNELA to 20)))
     }
 
     @Test
-    fun `increment adds one and clamps at max`() {
+    fun `increment adds one and stops at the item max`() {
         var counts = emptyMap<MaalItem, Int>()
-        counts = MaalCalculator.increment(counts, MaalItem.TUNNEL)
-        assertEquals(1, counts[MaalItem.TUNNEL])
+        counts = MaalCalculator.increment(counts, MaalItem.TIPLU)
+        assertEquals(1, counts[MaalItem.TIPLU])
+        counts = MaalCalculator.increment(counts, MaalItem.TIPLU)
+        assertEquals(2, counts[MaalItem.TIPLU])
+        // Third increment must not go past tiplu's max of 2
+        counts = MaalCalculator.increment(counts, MaalItem.TIPLU)
+        assertEquals(2, counts[MaalItem.TIPLU])
 
-        counts = mapOf(MaalItem.TUNNEL to MaalCalculator.MAX_COUNT)
-        counts = MaalCalculator.increment(counts, MaalItem.TUNNEL)
-        assertEquals(MaalCalculator.MAX_COUNT, counts[MaalItem.TUNNEL])
+        counts = mapOf(MaalItem.ALTER_TUNNELA to 1)
+        counts = MaalCalculator.increment(counts, MaalItem.ALTER_TUNNELA)
+        assertEquals(1, counts[MaalItem.ALTER_TUNNELA])
     }
 
     @Test
@@ -77,15 +151,17 @@ class MaalCalculatorTest {
     }
 
     @Test
-    fun `default values map contains every item`() {
-        val defaults = MaalItem.defaultValues()
-        assertEquals(MaalItem.entries.size, defaults.size)
-        assertEquals(3, defaults[MaalItem.TIPLU])
-        assertEquals(2, defaults[MaalItem.POPLU])
-        assertEquals(2, defaults[MaalItem.JHIPLU])
-        assertEquals(1, defaults[MaalItem.ALTER])
-        assertEquals(10, defaults[MaalItem.MARRIAGE])
-        assertEquals(5, defaults[MaalItem.TUNNEL])
-        assertEquals(1, defaults[MaalItem.MANUK])
+    fun `points at zero count is zero for every item`() {
+        MaalItem.entries.forEach { item ->
+            assertEquals(0, item.points(0))
+        }
+    }
+
+    @Test
+    fun `every item max count matches its tier table size`() {
+        MaalItem.entries.forEach { item ->
+            assertEquals(item.tiers.size, item.maxCount)
+            assertEquals(item.tiers.last(), item.points(item.maxCount))
+        }
     }
 }

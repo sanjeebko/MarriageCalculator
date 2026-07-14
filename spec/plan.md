@@ -3,7 +3,7 @@
 ## Problem Statement
 Build a full-featured Android (Kotlin/Compose) app for the Marriage card game calculator, backed by the existing .NET API. The app must handle 2-6 players with efficient screen space usage, support offline/online modes, real-time score display, and integrate with the C# API hosted on Kubernetes. The Maui version is archived and replaced by this native Android app.
 
-## Status: Phases 1-24 COMPLETE ✅
+## Status: Phases 1-28 COMPLETE ✅ (except 25.9: Android invite-code UI, pending)
 - 44 C# tests (12 Core + 32 API) + 74 Android unit tests all passing
 - Android APK builds successfully (`assembleDebug`)
 - .NET API builds successfully
@@ -296,6 +296,49 @@ User self-implemented the client-side "Add Friends" feature (actionable Accept/D
 - [x] Step 24.4: Verify — `dotnet build`/`dotnet test` (47/47 passing) and Android `testDebugUnitTest`/`assembleDebug` green; Docker API rebuilt/redeployed. Live on emulator: sent a real friend request (Aariya → Sanjeeb) — confirmed via direct Mongo query that `SendFriendRequestPushAsync` correctly no-ops when the receiver has no `FcmToken` (expected, not a bug). Planted a test `FcmToken` on the receiver's user document, re-sent the request, and confirmed via Docker logs that the backend attempted a real (non-mock) `FirebaseMessaging.SendAsync` call with the data-only payload, failing only because the planted token wasn't a real device token — proving the send path fires correctly end-to-end. Test data (dummy token, test friendship) cleaned up after verification.
 - **Note (not fixed, out of scope)**: the friend-request delete endpoint appears to return an empty body that the Android client fails to parse, surfacing a spurious "Empty response body" error toast even though the delete succeeds server-side. Minor pre-existing client bug in the user's own implementation, flagged but not part of this fix.
 - **COMMIT**: "fix: wire FCM push notifications for friend requests and harden background receiver"
+
+---
+
+## Phase 25: Private Friend Discovery — Invite Codes & Email Invites (API complete, Android pending)
+Per requirement §4.4 "Private Friend Discovery": open user search is a privacy leak (partial-match harvesting of emails/names, and "User not found" errors let callers probe which emails are registered). Replaced by two private paths: a shareable 7-day multi-use invite code (redeeming = instant, auto-accepted friendship) and complete-email requests (pending request if registered, invitation email + claimable invite if not — identical response either way).
+- [x] Step 25.1: **Core** — `FriendInviteCode` and `PendingEmailInvite` models; `Friendship.Source` (optional: "Code" | "Email"); DTOs (`InviteCodeDto`, `RedeemInviteCodeDto`, `RedeemInviteCodeResultDto`, `FriendRequestResultDto`, `ClaimInvitesResultDto`).
+- [x] Step 25.2: **API data** — `friendInviteCodes` + `pendingEmailInvites` collections in `MongoDbContext`; startup `EnsureIndexesAsync` (unique code, TTL on both `ExpiresAt` fields, invitee-email lookup index) called from `InitializeDatabaseAsync`.
+- [x] Step 25.3: **API repositories** — `IFriendInviteCodeRepository` + `IPendingEmailInviteRepository` (+ implementations).
+- [x] Step 25.4: **API email** — `IEmailService` + `SmtpEmailService` (System.Net.Mail, config section `Email`; disabled no-op with warning when unconfigured). `App:DownloadUrl` config for the invite mail body. **Email:Host must be configured with an SMTP provider (e.g. Brevo/SendGrid free tier) before email invites actually send.**
+- [x] Step 25.5: **API service** — `FriendInviteService`: get-or-create code (reuses active), redeem (rate-limited 5/10min via IMemoryCache, generic invalid/expired error, auto-accepted friendship, masked-email confirmation, FCM push `FRIEND_ADDED_VIA_CODE` to code owner), claim pending invites on login (invite → pending friendship + FRIEND_REQUEST push).
+- [x] Step 25.6: **API service** — `FriendshipService.SendFriendRequestAsync` reworked: exact-email match only (display-name search removed), unknown email → stored `PendingEmailInvite` + invitation email, **identical generic response** whether or not the user exists; returns `FriendRequestResultDto`. `UserService.SearchUsersAsync` restricted to exact-email match (partial search removed — `GET Users/search` keeps its shape for old clients but no longer matches partially).
+- [x] Step 25.7: **API endpoints** — `POST Friendships/invite-code`, `POST Friendships/invite-code/redeem`, `POST Friendships/claim-invites`; `POST Friendships/request` now returns `FriendRequestResultDto` (**breaking for the Android client** — see 25.9).
+- [x] Step 25.8: **Tests + verify** — 7 new/updated controller tests (invite code, redeem incl. masked-email + BadRequest paths, claim count, anti-enumeration generic response, MaskEmail) in `FriendshipsAndPermissionsTests.cs`. Verified by full-source compile of Core, API, and API.Tests (Roslyn, all green). **Note**: the coding session's Linux sandbox had no NuGet access, so `dotnet build` + `dotnet test` must be re-run on the dev machine to confirm — expected green.
+- [ ] Step 25.9: **Android (follow-up, not started)** — Friend screen: replace search-based UI with "My invite code" (show/share/copy) + "Enter code" + "Add by email"; handle `FriendRequestResultDto`; call `claim-invites` after login; handle new FCM type `FRIEND_ADDED_VIA_CODE`.
+
+---
+
+## Phase 26: Compact Round Input Screen (Complete, pending device verification)
+User feedback with screenshot: the Round Input page's tall per-player cards (~180dp each: avatar header, toggle buttons, conditional Maal field, preview bar) forced scrolling with 4+ players. Replaced with a single tabular grid so all players fit on one screen — consistent with the compact-table language of Phases 15/16.
+- [x] Step 26.1: `RoundInputScreen.kt` rewritten — `PlayerScoreCard` (card per player) replaced by one grid card: header row `PLAYER | 🏆 | SEEN | DUB | MAAL` + one zebra-striped row per player. Fixed column widths shared between header and rows; winner row tinted with accent.
+- [x] Step 26.2: Row cells — small avatar (26dp) + name with "D" dealer badge; trophy tap-to-select winner; icon-checkboxes for Seen (locked for winner) / Dublee; compact `BasicTextField` Maal input (44×32dp) + mini calculator icon, both only active when Seen ("—" otherwise). Live points/money preview renders as a small colored line under the player name (no + prefix, per Phase 16 convention).
+- [x] Step 26.3: Header compacted — round title and Total Maal chip share one line; ViewModel untouched (pure UI change), MaalCalculatorDialog/submit/discard flows unchanged.
+- [x] Step 26.4: Verify — `./gradlew testDebugUnitTest` + `assembleDebug` green on the dev machine (run during Phase 28). Visual check on emulator during the Phase 28 walkthrough: all 5 players fit on one screen in the grid, Seen toggle reveals the Maal field + calculator icon, calculator dialog applies to the field and header chip, Discard & Return works. (Winner/dublee toggles not individually exercised.)
+
+---
+
+## Phase 27: Maal Scoring Correction — Progressive Alter/Manuk (Complete, pending device verification)
+User correction of Phase 13's house-rule defaults: Alter and Manuk (printed joker) score in **progressive tiers**, not per card — 1 = 5, 2 = 15, 3 = 30 (max 3 of each exist). "3 alters that are also a tunnella = 35" needs no special case: it's 3 Alters (30) + 1 Tunnel (5).
+- [x] Step 27.1: `MaalItem` gains `maxCount` + `progressive` flags; ALTER and MANUK defaults 1→5, capped at 3, progressive. `MaalCalculator.total` applies ×1/×3/×6 tier multipliers (scaling from the adjustable base value so house-rule edits stay proportional); `increment` clamps to the per-item max; new `itemPoints` helper.
+- [x] Step 27.2: `MaalCalculatorDialog` shows the tier table ("1 = 5 · 2 = 15 · 3 = 30 pts") instead of "5 pts each" for progressive items.
+- [x] Step 27.3: `MaalCalculatorTest` updated + new cases: tier values for Alter and Manuk, 3-alters+tunnel = 35, cap at 3 (stepper and stale persisted counts), custom-base scaling, updated defaults.
+- [x] Step 27.4: Business rule recorded in `.agent/memory.md` §2.
+- [x] Step 27.5: Verify — superseded by Phase 28 before device verification: the progressive-multiplier model was replaced by fixed per-item tier tables (which keep Alter/Manuk at 5/15/30). Tests/build green as part of Phase 28.
+
+---
+
+## Phase 28: Maal Calculator Validation — Fixed Tier Tables & Physical Max Counts (Complete)
+User supplied the definitive scoring rules (3-deck game): every maal item scores in fixed tiers by count — not per-card multiples — and each item's count is capped at what can physically exist. Replaces Phase 27's progressive-multiplier model and Phase 13's adjustable per-card values with hard rules.
+- [x] Step 28.1: **Model** — `MaalItem` rewritten around a `tiers: List<Int>` table where `tiers[n-1]` = total points for holding n; `maxCount` = tier count. Rules: Tiplu 3/8 max 2 (3rd tiplu is the table maal card); Poplu & Jhiplu 2/5/10 max 3; Marriage 10/25 max 2; **Tunnela** (renamed from "Tunnel", Nepali) 5/15/30/45 max 4 (more possible but vanishingly rare); new **Poplu/Jhiplu Tunnela** 10/30/45 max 3 (Tiplu tunnela can't exist); new **Alter Tunnela** flat 35; new **Joker Tunnela** flat 35 (user: same as alter tunnela); Alter and Manuk keep 5/15/30 max 3 (user: keep as-is).
+- [x] Step 28.2: **Point values are fixed rules** — removed the "Adjust point values" toggle, the per-item `values` map, `defaultValues()`, and the value steppers from `MaalCalculatorDialog` (user: "it's fixed rule"). Each row now shows its tier table ("1 = 3 · 2 = 8 pts"); the + stepper visually disables at the item's max.
+- [x] Step 28.3: **Tests** — `MaalCalculatorTest` rewritten: exact tier assertions for all 10 items, per-item caps (stepper increments and stale oversized counts both clamp), 99 total clamp, zero/negative-count safety, and an every-item invariant (`maxCount == tiers.size`, `points(max) == tiers.last()`).
+- [x] Step 28.4: Verify — `testDebugUnitTest` + `assembleDebug` green; live on emulator: dialog shows all items with tier labels, 3 taps on Tiplu + stopped at 2 with the + button greyed out, total showed the tiered 8 (not linear 6), adding 2 Tunnela gave 23 (8+15), Apply wrote 23 to the player's Maal field and header chip; input then discarded to leave game data untouched.
+- **COMMIT**: "feat: fixed Maal tier tables with physical max-count validation"
 
 ---
 

@@ -30,7 +30,9 @@ import np.com.sanjeeb.marriagecalculator.ui.theme.TiharNightBlue
 
 /**
  * Advanced Maal calculator (requirement §3.2): count maal cards per type
- * and auto-sum the player's total Maal points.
+ * and auto-sum the player's total Maal points. Point values are fixed
+ * game rules (tiered by count) and each item's stepper stops at the
+ * number of cards that can physically exist in a 3-deck game.
  */
 @Composable
 fun MaalCalculatorDialog(
@@ -40,9 +42,7 @@ fun MaalCalculatorDialog(
     onDismiss: () -> Unit
 ) {
     var counts by remember { mutableStateOf(initialCounts) }
-    var values by remember { mutableStateOf(MaalItem.defaultValues()) }
-    var editValues by remember { mutableStateOf(false) }
-    val total = MaalCalculator.total(counts, values)
+    val total = MaalCalculator.total(counts)
 
     Dialog(onDismissRequest = onDismiss) {
         Card(
@@ -84,32 +84,9 @@ fun MaalCalculatorDialog(
 
                 Spacer(modifier = Modifier.height(8.dp))
 
-                // Point-value edit toggle
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text(
-                        text = "Adjust point values",
-                        color = Color.White.copy(alpha = 0.6f),
-                        fontSize = 12.sp
-                    )
-                    Switch(
-                        checked = editValues,
-                        onCheckedChange = { editValues = it },
-                        colors = SwitchDefaults.colors(
-                            checkedThumbColor = GoldAccent,
-                            checkedTrackColor = GoldAccent.copy(alpha = 0.3f)
-                        )
-                    )
-                }
-
-                Spacer(modifier = Modifier.height(8.dp))
-
                 Column(
                     modifier = Modifier
-                        .heightIn(max = 360.dp)
+                        .heightIn(max = 400.dp)
                         .verticalScroll(rememberScrollState()),
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
@@ -117,18 +94,12 @@ fun MaalCalculatorDialog(
                         MaalItemRow(
                             item = item,
                             count = counts[item] ?: 0,
-                            value = values[item] ?: item.defaultValue,
-                            editValues = editValues,
                             onCountChange = { delta ->
                                 counts = if (delta > 0) {
                                     MaalCalculator.increment(counts, item)
                                 } else {
                                     MaalCalculator.decrement(counts, item)
                                 }
-                            },
-                            onValueChange = { delta ->
-                                val current = values[item] ?: item.defaultValue
-                                values = values + (item to (current + delta).coerceIn(0, 20))
                             }
                         )
                     }
@@ -191,15 +162,18 @@ fun MaalCalculatorDialog(
     }
 }
 
+/** e.g. "1 = 3 · 2 = 8 pts", or just "35 pts" for single-tier items. */
+private fun tierLabel(item: MaalItem): String =
+    if (item.maxCount == 1) "${item.tiers[0]} pts"
+    else item.tiers.mapIndexed { i, pts -> "${i + 1} = $pts" }.joinToString(" · ") + " pts"
+
 @Composable
 private fun MaalItemRow(
     item: MaalItem,
     count: Int,
-    value: Int,
-    editValues: Boolean,
-    onCountChange: (Int) -> Unit,
-    onValueChange: (Int) -> Unit
+    onCountChange: (Int) -> Unit
 ) {
+    val atMax = count >= item.maxCount
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -214,24 +188,11 @@ private fun MaalItemRow(
                 fontSize = 13.sp,
                 fontWeight = FontWeight.SemiBold
             )
-            if (editValues) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    StepperButton("−") { onValueChange(-1) }
-                    Text(
-                        text = "$value pt${if (value == 1) "" else "s"}",
-                        color = GoldAccent.copy(alpha = 0.9f),
-                        fontSize = 11.sp,
-                        modifier = Modifier.padding(horizontal = 6.dp)
-                    )
-                    StepperButton("+") { onValueChange(1) }
-                }
-            } else {
-                Text(
-                    text = "$value pt${if (value == 1) "" else "s"} each",
-                    color = Color.White.copy(alpha = 0.4f),
-                    fontSize = 11.sp
-                )
-            }
+            Text(
+                text = tierLabel(item),
+                color = Color.White.copy(alpha = 0.4f),
+                fontSize = 11.sp
+            )
         }
 
         // Count stepper
@@ -260,31 +221,21 @@ private fun MaalItemRow(
             )
             IconButton(
                 onClick = { onCountChange(1) },
+                enabled = !atMax,
                 modifier = Modifier
                     .size(32.dp)
-                    .background(GoldAccent.copy(alpha = 0.15f), CircleShape)
+                    .background(
+                        if (atMax) Color.White.copy(alpha = 0.08f) else GoldAccent.copy(alpha = 0.15f),
+                        CircleShape
+                    )
             ) {
                 Icon(
                     Icons.Default.Add,
                     contentDescription = "Increase ${item.displayName}",
-                    tint = GoldAccent,
+                    tint = if (atMax) Color.White.copy(alpha = 0.2f) else GoldAccent,
                     modifier = Modifier.size(16.dp)
                 )
             }
-        }
-    }
-}
-
-@Composable
-private fun StepperButton(label: String, onClick: () -> Unit) {
-    Surface(
-        onClick = onClick,
-        shape = CircleShape,
-        color = Color.White.copy(alpha = 0.1f),
-        modifier = Modifier.size(20.dp)
-    ) {
-        Box(contentAlignment = Alignment.Center) {
-            Text(label, color = GoldAccent, fontSize = 12.sp, fontWeight = FontWeight.Bold)
         }
     }
 }
