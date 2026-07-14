@@ -36,6 +36,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import np.com.sanjeeb.marriagecalculator.data.model.Currency
+import np.com.sanjeeb.marriagecalculator.ui.components.AppBackground
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import java.io.File
@@ -79,18 +80,14 @@ fun RoundInputScreen(
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent)
             )
         },
-        containerColor = AppTheme.palette.backgroundBottom
+        containerColor = Color.Transparent
     ) { padding ->
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(Brush.verticalGradient(listOf(AppTheme.palette.backgroundTop, AppTheme.palette.backgroundBottom)))
-                .padding(padding)
-        ) {
+        AppBackground {
             Column(
                 modifier = Modifier
                     .fillMaxSize()
                     .verticalScroll(rememberScrollState())
+                    .padding(padding)
                     .padding(horizontal = 12.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
@@ -149,7 +146,7 @@ fun RoundInputScreen(
                     modifier = Modifier
                         .fillMaxWidth()
                         .clip(RoundedCornerShape(12.dp))
-                        .background(Color(0xFF1E1E1E))
+                        .background(AppTheme.palette.tint.copy(alpha = 0.05f))
                         .border(1.dp, AppTheme.palette.tint.copy(alpha = 0.08f), RoundedCornerShape(12.dp))
                 ) {
                     ScoreGridHeader()
@@ -401,7 +398,7 @@ private fun PlayerScoreRow(
                             modifier = Modifier
                                 .size(width = 44.dp, height = 32.dp)
                                 .clip(RoundedCornerShape(6.dp))
-                                .background(Color(0xFF2A2A2A))
+                                .background(AppTheme.palette.tint.copy(alpha = 0.08f))
                                 .border(1.dp, AppTheme.palette.accent.copy(alpha = 0.35f), RoundedCornerShape(6.dp))
                         ) {
                             if (state.seenPoints == 0) {
