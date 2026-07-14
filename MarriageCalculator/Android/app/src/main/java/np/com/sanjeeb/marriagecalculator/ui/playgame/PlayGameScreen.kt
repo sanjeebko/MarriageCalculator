@@ -799,7 +799,14 @@ private fun RoundBlock(
 
             HorizontalDivider(color = AppTheme.palette.tint.copy(alpha = 0.08f))
 
-            // Header: player initials, tappable for a tooltip with the full name
+            // Header: player initials, tappable for a tooltip with the full name.
+            // The dealer badge marks the topmost row's dealer: the current/pending
+            // game's dealer while the round is open, the last game's once completed.
+            val headerDealerId = if (!group.isCompleted) {
+                nextDealerId
+            } else {
+                group.games.maxByOrNull { it.gameSequenceInRound }?.dealerId
+            }
             Row(
                 modifier = Modifier.padding(vertical = 6.dp),
                 verticalAlignment = Alignment.CenterVertically
@@ -809,7 +816,7 @@ private fun RoundBlock(
                     players.forEach { p ->
                         var headerPosition by remember { mutableStateOf(Offset.Zero) }
                         var headerSize by remember { mutableStateOf(IntSize.Zero) }
-                        Box(
+                        Row(
                             modifier = Modifier
                                 .width(ROUND_PLAYER_COL_WIDTH_DP.dp)
                                 .onGloballyPositioned { coords ->
@@ -817,7 +824,8 @@ private fun RoundBlock(
                                     headerSize = coords.size
                                 }
                                 .clickable { onPlayerHeaderClick(p, headerPosition, headerSize) },
-                            contentAlignment = Alignment.Center
+                            horizontalArrangement = Arrangement.Center,
+                            verticalAlignment = Alignment.CenterVertically
                         ) {
                             Text(
                                 text = p.name.take(3).uppercase(),
@@ -825,6 +833,10 @@ private fun RoundBlock(
                                 fontSize = 10.sp,
                                 fontWeight = FontWeight.Bold
                             )
+                            if (p.id == headerDealerId) {
+                                Spacer(modifier = Modifier.width(3.dp))
+                                DealerBadge(size = 12.dp)
+                            }
                         }
                     }
                 }
