@@ -58,6 +58,7 @@ import kotlinx.coroutines.delay
 import np.com.sanjeeb.marriagecalculator.data.model.Currency
 import np.com.sanjeeb.marriagecalculator.data.model.Player
 import np.com.sanjeeb.marriagecalculator.data.model.User
+import np.com.sanjeeb.marriagecalculator.ui.components.DealerBadge
 import np.com.sanjeeb.marriagecalculator.ui.gamesetup.PlayerMappingDialog
 import np.com.sanjeeb.marriagecalculator.ui.gamesetup.RearrangeSeatsDialog
 import np.com.sanjeeb.marriagecalculator.ui.scoreboard.RoundPlayerEntry
@@ -1024,15 +1025,7 @@ private fun CompactRoundCell(
             )
             if (isDealer) {
                 Spacer(modifier = Modifier.width(3.dp))
-                Box(
-                    modifier = Modifier
-                        .size(12.dp)
-                        .clip(CircleShape)
-                        .background(AppTheme.palette.frostAccent.copy(alpha = 0.22f)),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text("D", color = AppTheme.palette.frostAccent, fontSize = 8.sp, fontWeight = FontWeight.Bold)
-                }
+                DealerBadge(size = 12.dp)
             }
         }
         Text(
@@ -1112,15 +1105,7 @@ private fun RoundDetailsDialog(game: GameEntry, currency: Currency, onDismiss: (
                                     }
                                     if (entry.playerId == game.dealerId) {
                                         Spacer(modifier = Modifier.width(4.dp))
-                                        Box(
-                                            modifier = Modifier
-                                                .size(14.dp)
-                                                .clip(CircleShape)
-                                                .background(AppTheme.palette.frostAccent.copy(alpha = 0.22f)),
-                                            contentAlignment = Alignment.Center
-                                        ) {
-                                            Text("D", color = AppTheme.palette.frostAccent, fontSize = 8.sp, fontWeight = FontWeight.Bold)
-                                        }
+                                        DealerBadge(size = 14.dp)
                                     }
                                 }
                                 Row(verticalAlignment = Alignment.CenterVertically) {

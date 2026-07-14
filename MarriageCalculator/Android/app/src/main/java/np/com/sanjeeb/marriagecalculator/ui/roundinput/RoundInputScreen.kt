@@ -1,5 +1,6 @@
 package np.com.sanjeeb.marriagecalculator.ui.roundinput
 
+import np.com.sanjeeb.marriagecalculator.ui.components.DealerBadge
 import np.com.sanjeeb.marriagecalculator.ui.theme.AppTheme
 
 import androidx.compose.foundation.background
@@ -7,8 +8,8 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -21,11 +22,15 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -33,6 +38,11 @@ import np.com.sanjeeb.marriagecalculator.data.model.Currency
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import java.io.File
+
+// Column widths for the compact score grid — header and rows must stay in sync.
+private val WinnerColWidth = 36.dp
+private val CheckColWidth = 40.dp
+private val MaalColWidth = 88.dp
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -80,85 +90,88 @@ fun RoundInputScreen(
                 modifier = Modifier
                     .fillMaxSize()
                     .verticalScroll(rememberScrollState())
-                    .padding(horizontal = 16.dp),
+                    .padding(horizontal = 12.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                // Header
-                Text(
-                    text = if (uiState.editGameId != null) "EDITING PREVIOUS GAME" else "CURRENT MATCH",
-                    color = AppTheme.palette.accent.copy(alpha = 0.8f),
-                    fontSize = 11.sp,
-                    fontWeight = FontWeight.Bold,
-                    letterSpacing = 2.sp
-                )
-                Spacer(modifier = Modifier.height(4.dp))
-                Text(
-                    text = if (uiState.editGameId != null) "Edit Game" else "Round $roundNumber",
-                    color = AppTheme.palette.textPrimary,
-                    fontSize = 32.sp,
-                    fontFamily = FontFamily.Serif,
-                    fontWeight = FontWeight.Bold
-                )
-                Spacer(modifier = Modifier.height(8.dp))
-                
-                // Total Maal Collected Display
-                val totalMaal = uiState.playerStates.sumOf { if (it.seen) it.seenPoints else 0 }
-                Card(
-                    shape = RoundedCornerShape(8.dp),
-                    colors = CardDefaults.cardColors(containerColor = AppTheme.palette.accent.copy(alpha = 0.15f)),
-                    border = androidx.compose.foundation.BorderStroke(1.dp, AppTheme.palette.accent.copy(alpha = 0.4f)),
-                    modifier = Modifier.padding(vertical = 4.dp)
+                // Compact header: title + total maal on one line
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp)
                 ) {
-                    Row(
-                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Icon(Icons.Default.Casino, null, tint = AppTheme.palette.accent, modifier = Modifier.size(18.dp))
-                        Spacer(modifier = Modifier.width(8.dp))
+                    Column {
                         Text(
-                            text = "Total Maal Collected: ",
-                            color = AppTheme.palette.tint.copy(alpha = 0.8f),
-                            fontSize = 14.sp
+                            text = if (uiState.editGameId != null) "EDITING PREVIOUS GAME" else "CURRENT MATCH",
+                            color = AppTheme.palette.accent.copy(alpha = 0.8f),
+                            fontSize = 10.sp,
+                            fontWeight = FontWeight.Bold,
+                            letterSpacing = 2.sp
                         )
                         Text(
-                            text = "$totalMaal",
-                            color = AppTheme.palette.accent,
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 16.sp
+                            text = if (uiState.editGameId != null) "Edit Game" else "Round $roundNumber",
+                            color = AppTheme.palette.textPrimary,
+                            fontSize = 24.sp,
+                            fontFamily = FontFamily.Serif,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+
+                    // Total Maal chip
+                    val totalMaal = uiState.playerStates.sumOf { if (it.seen) it.seenPoints else 0 }
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(8.dp))
+                            .background(AppTheme.palette.accent.copy(alpha = 0.15f))
+                            .border(1.dp, AppTheme.palette.accent.copy(alpha = 0.4f), RoundedCornerShape(8.dp))
+                            .padding(horizontal = 10.dp, vertical = 6.dp)
+                    ) {
+                        Icon(Icons.Default.Casino, null, tint = AppTheme.palette.accent, modifier = Modifier.size(14.dp))
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text("Maal", color = AppTheme.palette.tint.copy(alpha = 0.8f), fontSize = 12.sp)
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text("$totalMaal", color = AppTheme.palette.accent, fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+                // ---- Compact score grid ----
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(12.dp))
+                        .background(Color(0xFF1E1E1E))
+                        .border(1.dp, AppTheme.palette.tint.copy(alpha = 0.08f), RoundedCornerShape(12.dp))
+                ) {
+                    ScoreGridHeader()
+
+                    uiState.playerStates.forEachIndexed { index, playerState ->
+                        PlayerScoreRow(
+                            state = playerState,
+                            striped = index % 2 == 1,
+                            showPreview = uiState.showPreview,
+                            currency = uiState.settings.currency,
+                            onSelectWinner = { viewModel.setWinner(playerState.player.id) },
+                            onToggleSeen = { viewModel.toggleSeen(playerState.player.id) },
+                            onToggleDuply = { viewModel.toggleDuply(playerState.player.id) },
+                            onMaalPointsChange = { viewModel.setSeenPoints(playerState.player.id, it) },
+                            onOpenMaalCalculator = { maalDialogPlayerId = playerState.player.id }
                         )
                     }
                 }
 
                 Spacer(modifier = Modifier.height(16.dp))
-                Box(modifier = Modifier.width(40.dp).height(3.dp).background(AppTheme.palette.accent))
-                Spacer(modifier = Modifier.height(24.dp))
-
-                // Player cards
-                uiState.playerStates.forEach { playerState ->
-                    PlayerScoreCard(
-                        state = playerState,
-                        showPreview = uiState.showPreview,
-                        currency = uiState.settings.currency,
-                        onSelectWinner = { viewModel.setWinner(playerState.player.id) },
-                        onToggleSeen = { viewModel.toggleSeen(playerState.player.id) },
-                        onToggleDuply = { viewModel.toggleDuply(playerState.player.id) },
-                        onMaalPointsChange = { viewModel.setSeenPoints(playerState.player.id, it) },
-                        onOpenMaalCalculator = { maalDialogPlayerId = playerState.player.id }
-                    )
-                    Spacer(modifier = Modifier.height(16.dp))
-                }
-
-                Spacer(modifier = Modifier.height(8.dp))
 
                 // Error
                 uiState.error?.let {
-                    Text(it, color = Color.Red, fontSize = 14.sp, modifier = Modifier.padding(bottom = 16.dp))
+                    Text(it, color = Color.Red, fontSize = 14.sp, modifier = Modifier.padding(bottom = 12.dp))
                 }
 
                 // Buttons
                 Button(
                     onClick = { viewModel.submitRound() },
-                    modifier = Modifier.fillMaxWidth().height(56.dp),
+                    modifier = Modifier.fillMaxWidth().height(52.dp),
                     colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFDCD451)),
                     shape = RoundedCornerShape(8.dp)
                 ) {
@@ -167,19 +180,19 @@ fun RoundInputScreen(
                     Text("Save Round Results", color = Color(0xFF3E2723), fontWeight = FontWeight.Bold, fontSize = 16.sp)
                 }
 
-                Spacer(modifier = Modifier.height(12.dp))
+                Spacer(modifier = Modifier.height(10.dp))
 
                 OutlinedButton(
                     onClick = { onBack() },
                     border = androidx.compose.foundation.BorderStroke(1.dp, AppTheme.palette.tint.copy(alpha = 0.1f)),
-                    modifier = Modifier.fillMaxWidth().height(56.dp),
+                    modifier = Modifier.fillMaxWidth().height(48.dp),
                     shape = RoundedCornerShape(8.dp),
                     colors = ButtonDefaults.outlinedButtonColors(contentColor = AppTheme.palette.textPrimary)
                 ) {
                     Text("Discard & Return")
                 }
 
-                Spacer(modifier = Modifier.height(32.dp))
+                Spacer(modifier = Modifier.height(24.dp))
             }
 
             // Maal calculator dialog (requirement §3.2 optional advanced calculator)
@@ -201,8 +214,54 @@ fun RoundInputScreen(
 }
 
 @Composable
-private fun PlayerScoreCard(
+private fun ScoreGridHeader() {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(AppTheme.palette.tint.copy(alpha = 0.06f))
+            .padding(horizontal = 10.dp, vertical = 8.dp)
+    ) {
+        Text(
+            text = "PLAYER",
+            color = AppTheme.palette.frostAccent,
+            fontSize = 10.sp,
+            fontWeight = FontWeight.Bold,
+            letterSpacing = 1.sp,
+            modifier = Modifier.weight(1f)
+        )
+        HeaderCell(Icons.Default.EmojiEvents, "Winner", WinnerColWidth)
+        HeaderText("SEEN", CheckColWidth)
+        HeaderText("DUB", CheckColWidth)
+        HeaderText("MAAL", MaalColWidth)
+    }
+}
+
+@Composable
+private fun HeaderCell(icon: androidx.compose.ui.graphics.vector.ImageVector, description: String, width: androidx.compose.ui.unit.Dp) {
+    Box(modifier = Modifier.width(width), contentAlignment = Alignment.Center) {
+        Icon(icon, description, tint = AppTheme.palette.frostAccent, modifier = Modifier.size(14.dp))
+    }
+}
+
+@Composable
+private fun HeaderText(text: String, width: androidx.compose.ui.unit.Dp) {
+    Text(
+        text = text,
+        color = AppTheme.palette.frostAccent,
+        fontSize = 10.sp,
+        fontWeight = FontWeight.Bold,
+        letterSpacing = 1.sp,
+        textAlign = TextAlign.Center,
+        modifier = Modifier.width(width)
+    )
+}
+
+/// One compact grid row per player: name (+D badge, preview line) | 🏆 | seen | dublee | maal.
+@Composable
+private fun PlayerScoreRow(
     state: PlayerRoundState,
+    striped: Boolean,
     showPreview: Boolean,
     currency: Currency,
     onSelectWinner: () -> Unit,
@@ -211,235 +270,209 @@ private fun PlayerScoreCard(
     onMaalPointsChange: (Int) -> Unit,
     onOpenMaalCalculator: () -> Unit
 ) {
-    val isDealer = state.isDealer
     val isWinner = state.isWinner
-    val highlightBorder = isWinner || isDealer
+    val rowBackground = when {
+        isWinner -> AppTheme.palette.accent.copy(alpha = 0.08f)
+        striped -> AppTheme.palette.tint.copy(alpha = 0.03f)
+        else -> Color.Transparent
+    }
 
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(12.dp),
-        colors = CardDefaults.cardColors(containerColor = Color(0xFF1E1E1E)),
-        border = androidx.compose.foundation.BorderStroke(1.dp, if (isWinner) AppTheme.palette.accent else if (isDealer) AppTheme.palette.tint.copy(alpha = 0.2f) else AppTheme.palette.tint.copy(alpha = 0.05f))
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(rowBackground)
+            .padding(horizontal = 10.dp, vertical = 6.dp)
     ) {
-        Row(modifier = Modifier.fillMaxWidth().height(IntrinsicSize.Min)) {
-            // Left border indicator
-            if (isWinner) {
-                Box(modifier = Modifier.fillMaxHeight().width(4.dp).background(AppTheme.palette.accent))
-            } else if (isDealer) {
-                Box(modifier = Modifier.fillMaxHeight().width(4.dp).background(AppTheme.palette.tint.copy(alpha = 0.4f)))
-            }
-            
-            Column(modifier = Modifier.padding(16.dp).fillMaxWidth()) {
-                // Header row
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        // Avatar
-                        val uri = state.player.photoUri
-                        val model = if (uri != null && (uri.startsWith("android.resource") || uri.startsWith("http"))) {
-                            uri
-                        } else if (uri != null) {
-                            File(uri)
-                        } else null
-
-                        if (model != null) {
-                            AsyncImage(
-                                model = ImageRequest.Builder(LocalContext.current)
-                                    .data(model)
-                                    .crossfade(true)
-                                    .build(),
-                                contentDescription = null,
-                                contentScale = ContentScale.Crop,
-                                modifier = Modifier.size(48.dp).clip(RoundedCornerShape(8.dp))
-                            )
-                        } else {
-                            Box(
-                                modifier = Modifier.size(48.dp).clip(RoundedCornerShape(8.dp)).background(AppTheme.palette.tint.copy(alpha = 0.25f)),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Text(state.player.name.take(1).uppercase(), color = AppTheme.palette.textPrimary, fontWeight = FontWeight.Bold, fontSize = 20.sp)
-                            }
-                        }
-
-                        Spacer(modifier = Modifier.width(16.dp))
-
-                        Column {
-                            Text(
-                                text = state.player.name,
-                                color = AppTheme.palette.textPrimary,
-                                fontSize = 18.sp,
-                                fontFamily = FontFamily.Serif,
-                                fontWeight = FontWeight.Bold
-                            )
-                            Text(
-                                text = if (isDealer) "DEALER" else "PLAYER",
-                                color = AppTheme.palette.tint.copy(alpha = 0.5f),
-                                fontSize = 10.sp,
-                                letterSpacing = 1.sp
-                            )
-                        }
-                    }
-
-                    // Winner Trophy/Crown Trigger
-                    IconButton(onClick = onSelectWinner) {
-                        Icon(
-                            imageVector = Icons.Default.EmojiEvents,
-                            contentDescription = "Select Winner",
-                            tint = if (isWinner) AppTheme.palette.accent else AppTheme.palette.tint.copy(alpha = 0.15f),
-                            modifier = Modifier.size(28.dp)
-                        )
+        // Player: small avatar + name + dealer badge (+ preview line underneath)
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier.weight(1f)
+        ) {
+            PlayerAvatar(state)
+            Spacer(modifier = Modifier.width(8.dp))
+            Column {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        text = state.player.name,
+                        color = AppTheme.palette.textPrimary,
+                        fontSize = 13.sp,
+                        fontWeight = if (isWinner) FontWeight.Bold else FontWeight.Medium,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.weight(1f, fill = false)
+                    )
+                    if (state.isDealer) {
+                        Spacer(modifier = Modifier.width(4.dp))
+                        DealerBadge(size = 14.dp)
                     }
                 }
-
-                Spacer(modifier = Modifier.height(16.dp))
-
-                // Toggles Row
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    // Seen Toggle
-                    Row(
-                        modifier = Modifier
-                            .weight(1f)
-                            .clip(RoundedCornerShape(8.dp))
-                            .background(if (state.seen) AppTheme.palette.accent.copy(alpha = 0.1f) else Color(0xFF252525))
-                            .border(0.5.dp, if (state.seen) AppTheme.palette.accent.copy(alpha = 0.3f) else Color.Transparent, RoundedCornerShape(8.dp))
-                            .clickable(enabled = !isWinner) { onToggleSeen() } // Winner is always seen
-                            .padding(horizontal = 12.dp, vertical = 10.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.SpaceBetween
-                    ) {
-                        Text(
-                            text = "Seen Joker?",
-                            color = if (state.seen) AppTheme.palette.accent else AppTheme.palette.tint.copy(alpha = 0.7f),
-                            fontSize = 12.sp,
-                            fontWeight = if (state.seen) FontWeight.Bold else FontWeight.Normal
-                        )
-                        Icon(
-                            imageVector = if (state.seen) Icons.Default.CheckBox else Icons.Default.CheckBoxOutlineBlank,
-                            contentDescription = "Seen status",
-                            tint = if (state.seen) AppTheme.palette.accent else AppTheme.palette.tint.copy(alpha = 0.2f),
-                            modifier = Modifier.size(16.dp)
-                        )
-                    }
-
-                    // Dublee (Doublee Hand) Toggle
-                    Row(
-                        modifier = Modifier
-                            .weight(1f)
-                            .clip(RoundedCornerShape(8.dp))
-                            .background(if (state.duply) AppTheme.palette.cta.copy(alpha = 0.1f) else Color(0xFF252525))
-                            .border(0.5.dp, if (state.duply) AppTheme.palette.cta.copy(alpha = 0.3f) else Color.Transparent, RoundedCornerShape(8.dp))
-                            .clickable { onToggleDuply() }
-                            .padding(horizontal = 12.dp, vertical = 10.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.SpaceBetween
-                    ) {
-                        Text(
-                            text = "Dublee?",
-                            color = if (state.duply) AppTheme.palette.cta else AppTheme.palette.tint.copy(alpha = 0.7f),
-                            fontSize = 12.sp,
-                            fontWeight = if (state.duply) FontWeight.Bold else FontWeight.Normal
-                        )
-                        Icon(
-                            imageVector = if (state.duply) Icons.Default.CheckBox else Icons.Default.CheckBoxOutlineBlank,
-                            contentDescription = "Dublee status",
-                            tint = if (state.duply) AppTheme.palette.cta else AppTheme.palette.tint.copy(alpha = 0.2f),
-                            modifier = Modifier.size(16.dp)
-                        )
-                    }
-                }
-
-                // Maal points input (only shown when Seen is true)
-                if (state.seen) {
-                    Spacer(modifier = Modifier.height(16.dp))
-                    Column(modifier = Modifier.fillMaxWidth()) {
-                        Text(
-                            text = "MAAL (0 - 99)",
-                            color = AppTheme.palette.accent.copy(alpha = 0.8f),
-                            fontSize = 10.sp,
-                            fontWeight = FontWeight.Bold,
-                            letterSpacing = 0.5.sp
-                        )
-                        Spacer(modifier = Modifier.height(6.dp))
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            OutlinedTextField(
-                                value = if (state.seenPoints == 0) "" else state.seenPoints.toString(),
-                                onValueChange = {
-                                    val typed = it.toIntOrNull() ?: 0
-                                    onMaalPointsChange(typed)
-                                },
-                                modifier = Modifier.weight(1f).height(50.dp),
-                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                                colors = OutlinedTextFieldDefaults.colors(
-                                    focusedContainerColor = Color(0xFF2A2A2A),
-                                    unfocusedContainerColor = Color(0xFF2A2A2A),
-                                    focusedBorderColor = AppTheme.palette.accent.copy(alpha = 0.5f),
-                                    unfocusedBorderColor = Color.Transparent,
-                                    focusedTextColor = AppTheme.palette.textPrimary,
-                                    unfocusedTextColor = AppTheme.palette.textPrimary
-                                ),
-                                placeholder = { Text("Enter Maal points", color = AppTheme.palette.tint.copy(alpha = 0.2f), fontSize = 13.sp) },
-                                singleLine = true,
-                                shape = RoundedCornerShape(8.dp)
-                            )
-                            Spacer(modifier = Modifier.width(8.dp))
-                            // Open the advanced Maal calculator
-                            IconButton(
-                                onClick = onOpenMaalCalculator,
-                                modifier = Modifier
-                                    .size(50.dp)
-                                    .clip(RoundedCornerShape(8.dp))
-                                    .background(AppTheme.palette.accent.copy(alpha = 0.12f))
-                                    .border(1.dp, AppTheme.palette.accent.copy(alpha = 0.4f), RoundedCornerShape(8.dp))
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Default.Calculate,
-                                    contentDescription = "Open Maal calculator",
-                                    tint = AppTheme.palette.accent,
-                                    modifier = Modifier.size(24.dp)
-                                )
-                            }
-                        }
-                    }
-                }
-
-                // Live preview of this round's computed points/money, once a winner is picked
+                // Live preview of this game's points/money, once a winner is picked
                 if (showPreview) {
-                    Spacer(modifier = Modifier.height(12.dp))
                     val scoreColor = when {
                         state.previewScore > 0 -> Color(0xFF4CAF50)
                         state.previewScore < 0 -> Color(0xFFFF5252)
                         else -> AppTheme.palette.tint.copy(alpha = 0.6f)
                     }
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clip(RoundedCornerShape(8.dp))
-                            .background(scoreColor.copy(alpha = 0.08f))
-                            .padding(horizontal = 12.dp, vertical = 8.dp),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text(
-                            text = "Points: ${if (state.previewScore > 0) "+" else ""}${state.previewScore}",
-                            color = scoreColor,
-                            fontSize = 13.sp,
-                            fontWeight = FontWeight.Bold
-                        )
-                        Text(
-                            text = "Money: ${if (state.previewMoney > 0) "+" else ""}${currency.formatMoney(state.previewMoney)}",
-                            color = scoreColor,
-                            fontSize = 13.sp,
-                            fontWeight = FontWeight.Bold
-                        )
-                    }
+                    Text(
+                        text = "${state.previewScore} · ${currency.formatMoney(state.previewMoney)}",
+                        color = scoreColor,
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.Bold,
+                        maxLines = 1
+                    )
                 }
             }
+        }
+
+        // Winner trophy toggle
+        Box(modifier = Modifier.width(WinnerColWidth), contentAlignment = Alignment.Center) {
+            Icon(
+                imageVector = Icons.Default.EmojiEvents,
+                contentDescription = "Select winner",
+                tint = if (isWinner) AppTheme.palette.accent else AppTheme.palette.tint.copy(alpha = 0.15f),
+                modifier = Modifier
+                    .size(30.dp)
+                    .clip(RoundedCornerShape(6.dp))
+                    .clickable { onSelectWinner() }
+                    .padding(4.dp)
+            )
+        }
+
+        // Seen checkbox (winner is always seen — locked)
+        GridCheckbox(
+            checked = state.seen,
+            enabled = !isWinner,
+            activeColor = AppTheme.palette.accent,
+            description = "Seen joker",
+            width = CheckColWidth,
+            onToggle = onToggleSeen
+        )
+
+        // Dublee checkbox
+        GridCheckbox(
+            checked = state.duply,
+            enabled = true,
+            activeColor = AppTheme.palette.cta,
+            description = "Dublee",
+            width = CheckColWidth,
+            onToggle = onToggleDuply
+        )
+
+        // Maal input + calculator (active only when seen)
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.Center,
+            modifier = Modifier.width(MaalColWidth)
+        ) {
+            if (state.seen) {
+                BasicTextField(
+                    value = if (state.seenPoints == 0) "" else state.seenPoints.toString(),
+                    onValueChange = { onMaalPointsChange(it.toIntOrNull() ?: 0) },
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                    singleLine = true,
+                    textStyle = TextStyle(
+                        color = AppTheme.palette.textPrimary,
+                        fontSize = 13.sp,
+                        fontWeight = FontWeight.Bold,
+                        textAlign = TextAlign.Center
+                    ),
+                    cursorBrush = SolidColor(AppTheme.palette.accent),
+                    decorationBox = { inner ->
+                        Box(
+                            contentAlignment = Alignment.Center,
+                            modifier = Modifier
+                                .size(width = 44.dp, height = 32.dp)
+                                .clip(RoundedCornerShape(6.dp))
+                                .background(Color(0xFF2A2A2A))
+                                .border(1.dp, AppTheme.palette.accent.copy(alpha = 0.35f), RoundedCornerShape(6.dp))
+                        ) {
+                            if (state.seenPoints == 0) {
+                                Text("0", color = AppTheme.palette.tint.copy(alpha = 0.25f), fontSize = 13.sp)
+                            }
+                            inner()
+                        }
+                    }
+                )
+                Spacer(modifier = Modifier.width(4.dp))
+                Icon(
+                    imageVector = Icons.Default.Calculate,
+                    contentDescription = "Open Maal calculator",
+                    tint = AppTheme.palette.accent,
+                    modifier = Modifier
+                        .size(28.dp)
+                        .clip(RoundedCornerShape(6.dp))
+                        .background(AppTheme.palette.accent.copy(alpha = 0.12f))
+                        .clickable { onOpenMaalCalculator() }
+                        .padding(5.dp)
+                )
+            } else {
+                Text("—", color = AppTheme.palette.tint.copy(alpha = 0.2f), fontSize = 13.sp)
+            }
+        }
+    }
+}
+
+@Composable
+private fun GridCheckbox(
+    checked: Boolean,
+    enabled: Boolean,
+    activeColor: Color,
+    description: String,
+    width: androidx.compose.ui.unit.Dp,
+    onToggle: () -> Unit
+) {
+    Box(modifier = Modifier.width(width), contentAlignment = Alignment.Center) {
+        Icon(
+            imageVector = if (checked) Icons.Default.CheckBox else Icons.Default.CheckBoxOutlineBlank,
+            contentDescription = description,
+            tint = when {
+                checked -> activeColor
+                enabled -> AppTheme.palette.tint.copy(alpha = 0.25f)
+                else -> AppTheme.palette.tint.copy(alpha = 0.1f)
+            },
+            modifier = Modifier
+                .size(30.dp)
+                .clip(RoundedCornerShape(6.dp))
+                .clickable(enabled = enabled) { onToggle() }
+                .padding(5.dp)
+        )
+    }
+}
+
+@Composable
+private fun PlayerAvatar(state: PlayerRoundState) {
+    val uri = state.player.photoUri
+    val model = if (uri != null && (uri.startsWith("android.resource") || uri.startsWith("http"))) {
+        uri
+    } else if (uri != null) {
+        File(uri)
+    } else null
+
+    if (model != null) {
+        AsyncImage(
+            model = ImageRequest.Builder(LocalContext.current)
+                .data(model)
+                .crossfade(true)
+                .build(),
+            contentDescription = null,
+            contentScale = ContentScale.Crop,
+            modifier = Modifier.size(26.dp).clip(RoundedCornerShape(6.dp))
+        )
+    } else {
+        Box(
+            modifier = Modifier
+                .size(26.dp)
+                .clip(RoundedCornerShape(6.dp))
+                .background(AppTheme.palette.tint.copy(alpha = 0.25f)),
+            contentAlignment = Alignment.Center
+        ) {
+            Text(
+                state.player.name.take(1).uppercase(),
+                color = AppTheme.palette.textPrimary,
+                fontWeight = FontWeight.Bold,
+                fontSize = 12.sp
+            )
         }
     }
 }
