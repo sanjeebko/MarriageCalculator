@@ -355,3 +355,8 @@ MigrationBackup/
 # Firebase private keys
 firebase-adminsdk.json
 **/firebase-adminsdk.json
+
+# AI and Agent-related directories
+.agent/temp/
+.claude/
+.gemini/
