@@ -63,9 +63,12 @@ builder.Services.AddScoped<IDatabaseRepository, DatabaseRepository>();
 builder.Services.AddScoped<IFriendshipRepository, FriendshipRepository>();
 builder.Services.AddScoped<IFriendInviteCodeRepository, FriendInviteCodeRepository>();
 builder.Services.AddScoped<IPendingEmailInviteRepository, PendingEmailInviteRepository>();
+builder.Services.AddScoped<IEmailVerificationCodeRepository, EmailVerificationCodeRepository>();
 
 // Register services
 builder.Services.AddSingleton<IFcmService, FcmService>();
+builder.Services.AddSingleton<IJwtTokenService, JwtTokenService>();
+builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IPlayerService, PlayerService>();
 builder.Services.AddScoped<IGameSettingsService, GameSettingsService>();

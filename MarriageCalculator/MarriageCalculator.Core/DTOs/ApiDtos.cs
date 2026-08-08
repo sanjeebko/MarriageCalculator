@@ -345,3 +345,39 @@ public class RoundPlayerInputDto
     public bool Duply { get; set; }
     public int Maal { get; set; }
 }
+
+public class SendVerificationCodeRequestDto
+{
+    public string Email { get; set; } = string.Empty;
+}
+
+public class SendVerificationCodeResultDto
+{
+    public bool Success { get; set; }
+    public string Message { get; set; } = string.Empty;
+}
+
+public class RegisterUserDto
+{
+    public string Email { get; set; } = string.Empty;
+    public string VerificationCode { get; set; } = string.Empty;
+    public string Username { get; set; } = string.Empty;
+    public string Password { get; set; } = string.Empty;
+    public string DisplayName { get; set; } = string.Empty;
+}
+
+public class LoginDto
+{
+    public string UsernameOrEmail { get; set; } = string.Empty;
+    public string Password { get; set; } = string.Empty;
+}
+
+public class AuthTokenResultDto
+{
+    public string Token { get; set; } = string.Empty;
+    public string UserId { get; set; } = string.Empty;
+    public string Username { get; set; } = string.Empty;
+    public string Email { get; set; } = string.Empty;
+    public string DisplayName { get; set; } = string.Empty;
+    public DateTime ExpiresAt { get; set; }
+}

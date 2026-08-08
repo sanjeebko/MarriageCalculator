@@ -12,9 +12,13 @@ public class User
 
     public string UserId { get; set; } = string.Empty; // Firebase / Provider unique user ID
 
+    public string Username { get; set; } = string.Empty;
+
     public string DisplayName { get; set; } = string.Empty;
 
     public string Email { get; set; } = string.Empty;
+
+    public string? PasswordHash { get; set; }
 
     public string? FcmToken { get; set; }
 

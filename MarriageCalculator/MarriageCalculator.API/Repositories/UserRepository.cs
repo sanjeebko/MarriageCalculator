@@ -35,6 +35,12 @@ public class UserRepository : IUserRepository
         return await _collection.Find(u => u.Email.ToLower() == email.ToLower()).FirstOrDefaultAsync();
     }
 
+    public async Task<User?> GetByUsernameAsync(string username)
+    {
+        var lowerUsername = username.Trim().ToLower();
+        return await _collection.Find(u => u.Username != null && u.Username.ToLower() == lowerUsername).FirstOrDefaultAsync();
+    }
+
     public async Task<IEnumerable<User>> SearchUsersAsync(string query)
     {
         var lowerQuery = query.ToLower();
@@ -50,8 +56,10 @@ public class UserRepository : IUserRepository
     public async Task<User?> UpdateAsync(string id, User user)
     {
         var update = Builders<User>.Update
+            .Set(u => u.Username, user.Username)
             .Set(u => u.DisplayName, user.DisplayName)
             .Set(u => u.Email, user.Email)
+            .Set(u => u.PasswordHash, user.PasswordHash)
             .Set(u => u.PhotoUrl, user.PhotoUrl);
 
         var result = await _collection.FindOneAndUpdateAsync(

@@ -1,3 +1,4 @@
+using MarriageCalculator.API.Services;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -28,12 +29,16 @@ public class FirebaseOrMockAuthenticationOptions : AuthenticationSchemeOptions
 
 public class FirebaseOrMockAuthenticationHandler : AuthenticationHandler<FirebaseOrMockAuthenticationOptions>
 {
+    private readonly IJwtTokenService _jwtTokenService;
+
     public FirebaseOrMockAuthenticationHandler(
         IOptionsMonitor<FirebaseOrMockAuthenticationOptions> options,
         ILoggerFactory logger,
-        UrlEncoder encoder)
+        UrlEncoder encoder,
+        IJwtTokenService jwtTokenService)
         : base(options, logger, encoder)
     {
+        _jwtTokenService = jwtTokenService;
     }
 
     protected override async Task<AuthenticateResult> HandleAuthenticateAsync()
@@ -57,6 +62,13 @@ public class FirebaseOrMockAuthenticationHandler : AuthenticationHandler<Firebas
 
         try
         {
+            // 1. Try validating as API-issued JWT token first
+            var apiPrincipal = _jwtTokenService.ValidateToken(token);
+            if (apiPrincipal != null)
+            {
+                var apiTicket = new AuthenticationTicket(apiPrincipal, Scheme.Name);
+                return AuthenticateResult.Success(apiTicket);
+            }
             Claim[] claims;
 
             // Check if it's a mock/test token

@@ -1,5 +1,6 @@
 using MarriageCalculator.Core.DTOs;
 using MarriageCalculator.API.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace MarriageCalculator.API.Controllers;
@@ -7,6 +8,7 @@ namespace MarriageCalculator.API.Controllers;
 /// <summary>
 /// Manages database operations, connectivity testing, and data seeding
 /// </summary>
+[Authorize]
 [ApiController]
 [Route("api/[controller]")]
 [Produces("application/json")]
