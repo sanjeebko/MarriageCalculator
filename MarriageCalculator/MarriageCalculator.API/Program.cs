@@ -4,8 +4,7 @@ using MarriageCalculator.API.Hubs;
 using MarriageCalculator.API.Repositories;
 using MarriageCalculator.API.Services;
 using MongoDB.Driver;
-using Microsoft.OpenApi.Models;
-using Swashbuckle.AspNetCore.SwaggerUI;
+using Scalar.AspNetCore;
 using System.Reflection;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -14,50 +13,8 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 
-// Configure Swagger/OpenAPI with enhanced documentation
-builder.Services.AddSwaggerGen(c =>
-{
-    c.SwaggerDoc("v1", new OpenApiInfo
-    {
-        Title = "Marriage Calculator API",
-        Version = "v1",
-        Description = "A comprehensive API for managing marriage card game calculations, player management, and game statistics.",
-        Contact = new OpenApiContact
-        {
-            Name = "Marriage Calculator Team",
-            Email = "support@marriagecalculator.com"
-        },
-        License = new OpenApiLicense
-        {
-            Name = "MIT License",
-            Url = new Uri("https://opensource.org/licenses/MIT")
-        }
-    });
-
-    // Include XML documentation for better API docs
-    var xmlFile = $"{Assembly.GetExecutingAssembly().GetName().Name}.xml";
-    var xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFile);
-    if (File.Exists(xmlPath))
-    {
-        c.IncludeXmlComments(xmlPath);
-    }
-
-    // Add authorization definitions if needed in the future
-    c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
-    {
-        Description = "JWT Authorization header using the Bearer scheme",
-        Name = "Authorization",
-        In = ParameterLocation.Header,
-        Type = SecuritySchemeType.ApiKey,
-        Scheme = "Bearer"
-    });
-
-    // Enable annotations for better documentation
-    c.EnableAnnotations();
-
-    // Custom schema IDs to avoid conflicts
-    c.CustomSchemaIds(type => type.FullName);
-});
+// Configure OpenAPI and Scalar API Reference UI
+builder.Services.AddOpenApi();
 
 // Configure MongoDB
 builder.Services.Configure<MongoDbSettings>(options =>
@@ -161,39 +118,11 @@ var app = builder.Build();
 // Configure the HTTP request pipeline
 if (app.Environment.IsDevelopment())
 {
-    app.UseSwagger();
-
-    // Enhanced Swagger UI Configuration
-    app.UseSwaggerUI(c =>
+    app.MapOpenApi();
+    app.MapScalarApiReference(options =>
     {
-        c.SwaggerEndpoint("/swagger/v1/swagger.json", "Marriage Calculator API v1");
-        c.RoutePrefix = string.Empty; // Makes Swagger UI available at the app's root URL
-        c.DocumentTitle = "Marriage Calculator API Documentation";
-        c.DisplayRequestDuration();
-        c.EnableTryItOutByDefault();
-        c.EnableDeepLinking();
-        c.EnableFilter();
-        c.MaxDisplayedTags(10);
-        c.ShowExtensions();
-        c.ShowCommonExtensions();
-        c.EnableValidator();
-
-        // Configure supported HTTP methods
-        c.SupportedSubmitMethods(SubmitMethod.Get, SubmitMethod.Post, SubmitMethod.Put, SubmitMethod.Delete, SubmitMethod.Patch);
-
-        // Custom CSS for better appearance
-        c.InjectStylesheet("/swagger-ui/custom.css");
-
-        // Custom JavaScript for enhanced functionality
-        c.InjectJavascript("/swagger-ui/custom.js");
-
-        // Default model expansion
-        c.DefaultModelExpandDepth(2);
-        c.DefaultModelsExpandDepth(1);
-
-        // Configure API explorer settings
-        c.DocExpansion(DocExpansion.List);
-        c.DefaultModelRendering(ModelRendering.Example);
+        options.WithTitle("Marriage Calculator API Documentation");
+        options.WithTheme(ScalarTheme.Purple);
     });
 }
 

@@ -17,7 +17,7 @@ MarriageCalculator/
 
 ### 1.1 MarriageCalculator.Core (Shared Domain Library)
 * **Role**: Central repository of domain models, rules, and calculation engines.
-* **Tech Stack**: Pure .NET 8 Class Library.
+* **Tech Stack**: Pure .NET 10 Class Library.
 * **Constraints**: Strictly **zero dependencies**. No databases, no UI frameworks, and no web components are imported. This keeps the scoring engine completely portable.
 * **Contents**:
   * Domain models (`User`, `Player`, `GameSettings`, `MarriageGameSet`, etc.).
@@ -25,7 +25,7 @@ MarriageCalculator/
 
 ### 1.2 MarriageCalculator.API (Web API Backend)
 * **Role**: Handles persistence, session sync, real-time broadcasts, and notification dispatch.
-* **Tech Stack**: ASP.NET Core 8 with Controller-based REST routing.
+* **Tech Stack**: ASP.NET Core 10 with Controller-based REST routing.
 * **Database**: **MongoDB** (Default server hosted on local network at `192.168.0.229`).
 * **Real-time Sync**: **SignalR Hubs** to broadcast score updates concurrently to connected players.
 * **Push Notifications**: **Firebase Cloud Messaging (FCM)** for offline invites and host nudges.
