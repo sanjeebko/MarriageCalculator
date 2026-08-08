@@ -98,4 +98,10 @@ object NetworkModule {
     fun provideFriendApiService(retrofit: Retrofit): FriendApiService {
         return retrofit.create(FriendApiService::class.java)
     }
+
+    @Provides
+    @Singleton
+    fun provideAuthApiService(retrofit: Retrofit): AuthApiService {
+        return retrofit.create(AuthApiService::class.java)
+    }
 }

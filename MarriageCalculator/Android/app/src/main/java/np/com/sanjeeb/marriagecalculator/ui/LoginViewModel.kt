@@ -13,9 +13,12 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
+import np.com.sanjeeb.marriagecalculator.data.repository.AuthRepository
+
 sealed class LoginUiState {
     object Idle : LoginUiState()
     object Loading : LoginUiState()
+    data class CodeSent(val message: String) : LoginUiState()
     data class Success(val user: User) : LoginUiState()
     data class Error(val message: String) : LoginUiState()
 }
@@ -23,11 +26,85 @@ sealed class LoginUiState {
 @HiltViewModel
 class LoginViewModel @Inject constructor(
     private val userRepository: UserRepository,
+    private val authRepository: AuthRepository,
     private val sessionManager: SessionManager
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow<LoginUiState>(LoginUiState.Idle)
     val uiState: StateFlow<LoginUiState> = _uiState.asStateFlow()
+
+    fun sendVerificationCode(email: String) {
+        val trimmedEmail = email.trim()
+        if (trimmedEmail.isEmpty() || !trimmedEmail.contains("@")) {
+            _uiState.value = LoginUiState.Error("Please enter a valid email address.")
+            return
+        }
+
+        _uiState.value = LoginUiState.Loading
+        viewModelScope.launch {
+            authRepository.sendVerificationCode(trimmedEmail)
+                .onSuccess { result ->
+                    _uiState.value = LoginUiState.CodeSent(result.message)
+                }
+                .onFailure { error ->
+                    _uiState.value = LoginUiState.Error(error.message ?: "Failed to send code.")
+                }
+        }
+    }
+
+    fun register(email: String, code: String, username: String, password: String, displayName: String) {
+        if (email.isBlank() || code.isBlank() || username.isBlank() || password.isBlank()) {
+            _uiState.value = LoginUiState.Error("Please fill in all required registration fields.")
+            return
+        }
+
+        _uiState.value = LoginUiState.Loading
+        viewModelScope.launch {
+            authRepository.register(email, code, username, password, displayName)
+                .onSuccess { result ->
+                    val user = User(
+                        id = result.userId,
+                        userId = result.userId,
+                        displayName = result.displayName,
+                        email = result.email
+                    )
+                    sessionManager.getFcmToken()?.let { fcmToken ->
+                        userRepository.registerFcmToken(fcmToken)
+                    }
+                    _uiState.value = LoginUiState.Success(user)
+                }
+                .onFailure { error ->
+                    _uiState.value = LoginUiState.Error(error.message ?: "Registration failed.")
+                }
+        }
+    }
+
+    fun loginWithEmailOrUsername(usernameOrEmail: String, password: String) {
+        if (usernameOrEmail.isBlank() || password.isBlank()) {
+            _uiState.value = LoginUiState.Error("Please enter your username/email and password.")
+            return
+        }
+
+        _uiState.value = LoginUiState.Loading
+        viewModelScope.launch {
+            authRepository.login(usernameOrEmail, password)
+                .onSuccess { result ->
+                    val user = User(
+                        id = result.userId,
+                        userId = result.userId,
+                        displayName = result.displayName,
+                        email = result.email
+                    )
+                    sessionManager.getFcmToken()?.let { fcmToken ->
+                        userRepository.registerFcmToken(fcmToken)
+                    }
+                    _uiState.value = LoginUiState.Success(user)
+                }
+                .onFailure { error ->
+                    _uiState.value = LoginUiState.Error(error.message ?: "Invalid credentials.")
+                }
+        }
+    }
 
     fun loginWithMockToken(username: String) {
         val trimmed = username.trim()
