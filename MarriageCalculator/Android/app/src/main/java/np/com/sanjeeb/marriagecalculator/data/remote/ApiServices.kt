@@ -114,3 +114,14 @@ interface MarriageGameApiService {
     @DELETE("MarriageGames/{id}")
     suspend fun deleteGame(@Path("id") id: String): Response<Unit>
 }
+
+interface AuthApiService {
+    @POST("auth/send-verification-code")
+    suspend fun sendVerificationCode(@Body request: SendVerificationCodeRequest): Response<SendVerificationCodeResult>
+
+    @POST("auth/register")
+    suspend fun register(@Body request: RegisterUserRequest): Response<AuthTokenResult>
+
+    @POST("auth/login")
+    suspend fun login(@Body request: LoginRequest): Response<AuthTokenResult>
+}

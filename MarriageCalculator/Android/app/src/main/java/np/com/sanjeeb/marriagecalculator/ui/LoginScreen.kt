@@ -56,14 +56,25 @@ fun LoginScreen(
     viewModel: LoginViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
-    var username by remember { mutableStateOf("sanjeeb") }
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
     val credentialManager = CredentialManager.create(context)
 
+    var isRegisterMode by remember { mutableStateOf(false) }
+    var loginInput by remember { mutableStateOf("") }
+    var passwordInput by remember { mutableStateOf("") }
+    var emailInput by remember { mutableStateOf("") }
+    var otpCodeInput by remember { mutableStateOf("") }
+    var regUsernameInput by remember { mutableStateOf("") }
+    var regPasswordInput by remember { mutableStateOf("") }
+    var regDisplayNameInput by remember { mutableStateOf("") }
+    var codeSentMsg by remember { mutableStateOf<String?>(null) }
+
     LaunchedEffect(uiState) {
         if (uiState is LoginUiState.Success) {
             onLoginSuccess()
+        } else if (uiState is LoginUiState.CodeSent) {
+            codeSentMsg = (uiState as LoginUiState.CodeSent).message
         }
     }
 
@@ -99,37 +110,189 @@ fun LoginScreen(
                 contentScale = ContentScale.FillWidth,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .scale(1.5f)
-                    .padding(bottom = 40.dp) // adjusted to make room for input
+                    .scale(1.3f)
+                    .padding(bottom = 20.dp)
             )
 
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 32.dp),
-                verticalArrangement = Arrangement.spacedBy(14.dp),
+                    .padding(horizontal = 24.dp),
+                verticalArrangement = Arrangement.spacedBy(10.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                // Username Input Field (Glossy dark container, Gold highlight)
-                OutlinedTextField(
-                    value = username,
-                    onValueChange = { username = it },
-                    label = { Text("Test Username", color = MetalGold) },
-                    placeholder = { Text("Enter mock username", color = Color.White.copy(alpha = 0.3f)) },
+                // Auth Mode Toggle Tabs (Sign In vs Register)
+                Row(
                     modifier = Modifier.fillMaxWidth(),
-                    singleLine = true,
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedContainerColor = Color(0xFF1C1C1C),
-                        unfocusedContainerColor = Color(0xFF121212),
-                        focusedBorderColor = MetalGold,
-                        unfocusedBorderColor = Color.White.copy(alpha = 0.1f),
-                        focusedLabelColor = MetalGold,
-                        unfocusedLabelColor = Color.White.copy(alpha = 0.5f),
-                        focusedTextColor = Color.White,
-                        unfocusedTextColor = Color.White
-                    ),
-                    shape = RoundedCornerShape(12.dp)
-                )
+                    horizontalArrangement = Arrangement.Center
+                ) {
+                    GlassButton(
+                        onClick = { isRegisterMode = false },
+                        text = "Sign In",
+                        containerColor = if (!isRegisterMode) MetalGold else Color.White.copy(alpha = 0.1f),
+                        textColor = if (!isRegisterMode) Color.Black else Color.White,
+                        height = 40,
+                        modifier = Modifier.weight(1f)
+                    )
+                    Spacer(Modifier.width(8.dp))
+                    GlassButton(
+                        onClick = { isRegisterMode = true },
+                        text = "Register",
+                        containerColor = if (isRegisterMode) MetalGold else Color.White.copy(alpha = 0.1f),
+                        textColor = if (isRegisterMode) Color.Black else Color.White,
+                        height = 40,
+                        modifier = Modifier.weight(1f)
+                    )
+                }
+
+                if (!isRegisterMode) {
+                    // --- SIGN IN FORM ---
+                    OutlinedTextField(
+                        value = loginInput,
+                        onValueChange = { loginInput = it },
+                        label = { Text("Username or Email", color = MetalGold) },
+                        placeholder = { Text("Enter username or email", color = Color.White.copy(alpha = 0.3f)) },
+                        modifier = Modifier.fillMaxWidth(),
+                        singleLine = true,
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedContainerColor = Color(0xFF1C1C1C),
+                            unfocusedContainerColor = Color(0xFF121212),
+                            focusedBorderColor = MetalGold,
+                            unfocusedBorderColor = Color.White.copy(alpha = 0.1f),
+                            focusedLabelColor = MetalGold,
+                            unfocusedTextColor = Color.White,
+                            focusedTextColor = Color.White
+                        ),
+                        shape = RoundedCornerShape(12.dp)
+                    )
+
+                    OutlinedTextField(
+                        value = passwordInput,
+                        onValueChange = { passwordInput = it },
+                        label = { Text("Password", color = MetalGold) },
+                        placeholder = { Text("Enter password", color = Color.White.copy(alpha = 0.3f)) },
+                        modifier = Modifier.fillMaxWidth(),
+                        singleLine = true,
+                        visualTransformation = androidx.compose.ui.text.input.PasswordVisualTransformation(),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedContainerColor = Color(0xFF1C1C1C),
+                            unfocusedContainerColor = Color(0xFF121212),
+                            focusedBorderColor = MetalGold,
+                            unfocusedBorderColor = Color.White.copy(alpha = 0.1f),
+                            focusedLabelColor = MetalGold,
+                            unfocusedTextColor = Color.White,
+                            focusedTextColor = Color.White
+                        ),
+                        shape = RoundedCornerShape(12.dp)
+                    )
+
+                    GlassButton(
+                        onClick = { viewModel.loginWithEmailOrUsername(loginInput, passwordInput) },
+                        text = "Sign In with Password",
+                        containerColor = MetalGold,
+                        textColor = Color.Black,
+                        height = 48,
+                        isLoading = uiState is LoginUiState.Loading
+                    )
+                } else {
+                    // --- REGISTER FORM (OTP + User Creation) ---
+                    OutlinedTextField(
+                        value = emailInput,
+                        onValueChange = { emailInput = it },
+                        label = { Text("Email Address", color = MetalGold) },
+                        placeholder = { Text("Enter your email", color = Color.White.copy(alpha = 0.3f)) },
+                        modifier = Modifier.fillMaxWidth(),
+                        singleLine = true,
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedContainerColor = Color(0xFF1C1C1C),
+                            unfocusedContainerColor = Color(0xFF121212),
+                            focusedBorderColor = MetalGold,
+                            unfocusedBorderColor = Color.White.copy(alpha = 0.1f),
+                            focusedLabelColor = MetalGold,
+                            unfocusedTextColor = Color.White,
+                            focusedTextColor = Color.White
+                        ),
+                        shape = RoundedCornerShape(12.dp)
+                    )
+
+                    GlassButton(
+                        onClick = { viewModel.sendVerificationCode(emailInput) },
+                        text = "Send 6-Digit OTP Code",
+                        containerColor = Color.White.copy(alpha = 0.2f),
+                        textColor = Color.White,
+                        height = 40,
+                        isLoading = uiState is LoginUiState.Loading
+                    )
+
+                    if (codeSentMsg != null) {
+                        Text(codeSentMsg!!, color = Color(0xFF4CAF50), fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                    }
+
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        OutlinedTextField(
+                            value = otpCodeInput,
+                            onValueChange = { otpCodeInput = it },
+                            label = { Text("6-Digit Code", color = MetalGold) },
+                            modifier = Modifier.weight(1f),
+                            singleLine = true,
+                            colors = OutlinedTextFieldDefaults.colors(
+                                focusedContainerColor = Color(0xFF1C1C1C),
+                                unfocusedContainerColor = Color(0xFF121212),
+                                focusedBorderColor = MetalGold,
+                                unfocusedBorderColor = Color.White.copy(alpha = 0.1f),
+                                focusedTextColor = Color.White,
+                                unfocusedTextColor = Color.White
+                            ),
+                            shape = RoundedCornerShape(12.dp)
+                        )
+
+                        OutlinedTextField(
+                            value = regUsernameInput,
+                            onValueChange = { regUsernameInput = it },
+                            label = { Text("Username", color = MetalGold) },
+                            modifier = Modifier.weight(1f),
+                            singleLine = true,
+                            colors = OutlinedTextFieldDefaults.colors(
+                                focusedContainerColor = Color(0xFF1C1C1C),
+                                unfocusedContainerColor = Color(0xFF121212),
+                                focusedBorderColor = MetalGold,
+                                unfocusedBorderColor = Color.White.copy(alpha = 0.1f),
+                                focusedTextColor = Color.White,
+                                unfocusedTextColor = Color.White
+                            ),
+                            shape = RoundedCornerShape(12.dp)
+                        )
+                    }
+
+                    OutlinedTextField(
+                        value = regPasswordInput,
+                        onValueChange = { regPasswordInput = it },
+                        label = { Text("Password", color = MetalGold) },
+                        modifier = Modifier.fillMaxWidth(),
+                        singleLine = true,
+                        visualTransformation = androidx.compose.ui.text.input.PasswordVisualTransformation(),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedContainerColor = Color(0xFF1C1C1C),
+                            unfocusedContainerColor = Color(0xFF121212),
+                            focusedBorderColor = MetalGold,
+                            unfocusedBorderColor = Color.White.copy(alpha = 0.1f),
+                            focusedTextColor = Color.White,
+                            unfocusedTextColor = Color.White
+                        ),
+                        shape = RoundedCornerShape(12.dp)
+                    )
+
+                    GlassButton(
+                        onClick = { viewModel.register(emailInput, otpCodeInput, regUsernameInput, regPasswordInput, regDisplayNameInput) },
+                        text = "Complete Registration",
+                        containerColor = MetalGold,
+                        textColor = Color.Black,
+                        height = 48,
+                        isLoading = uiState is LoginUiState.Loading
+                    )
+                }
+
+                Spacer(Modifier.height(4.dp))
 
                 // Google Button
                 GlassButton(
@@ -145,24 +308,14 @@ fun LoginScreen(
                             "721245084920-mockserverid.apps.googleusercontent.com"
                         }
 
-                        Toast.makeText(context, "Sign-in start. Client: $serverClientId", Toast.LENGTH_SHORT).show()
-
-                        val signInWithGoogleOption = GetSignInWithGoogleOption.Builder(serverClientId)
-                            .build()
-
-                        val request = GetCredentialRequest.Builder()
-                            .addCredentialOption(signInWithGoogleOption)
-                            .build()
-
+                        val signInWithGoogleOption = GetSignInWithGoogleOption.Builder(serverClientId).build()
+                        val request = GetCredentialRequest.Builder().addCredentialOption(signInWithGoogleOption).build()
 
                         val activity = context.findActivity()
                         if (activity != null) {
                             coroutineScope.launch {
                                 try {
-                                    val result = credentialManager.getCredential(
-                                        context = activity,
-                                        request = request
-                                    )
+                                    val result = credentialManager.getCredential(context = activity, request = request)
                                     val credential = result.credential
                                     if (credential is CustomCredential && credential.type == GoogleIdTokenCredential.TYPE_GOOGLE_ID_TOKEN_CREDENTIAL) {
                                         val googleIdTokenCredential = GoogleIdTokenCredential.createFrom(credential.data)
@@ -171,47 +324,27 @@ fun LoginScreen(
                                             displayName = googleIdTokenCredential.displayName,
                                             photoUrl = googleIdTokenCredential.profilePictureUri?.toString()
                                         )
-                                    } else {
-                                        Toast.makeText(context, "Unsupported auth credential", Toast.LENGTH_SHORT).show()
                                     }
                                 } catch (e: Exception) {
-                                    val errorMsg = e.message ?: ""
-                                    val friendlyMsg = if (errorMsg.contains("28444")) {
-                                        "Developer Console Setup Issue (28444). Please check if your SHA-1 fingerprint and Web Client ID are registered correctly."
-                                    } else {
-                                        "Sign-in error: $errorMsg"
-                                    }
-                                    Toast.makeText(context, friendlyMsg, Toast.LENGTH_LONG).show()
+                                    Toast.makeText(context, "Google Sign-in error: ${e.message}", Toast.LENGTH_LONG).show()
                                 }
                             }
-                        } else {
-                            Toast.makeText(context, "Activity context not found", Toast.LENGTH_SHORT).show()
                         }
                     },
                     text = "Continue with Google",
                     containerColor = Color.White.copy(alpha = 0.85f),
                     textColor = Color(0xFF333333),
-                    height = 64,
+                    height = 48,
                     isLoading = uiState is LoginUiState.Loading,
                     leadingIcon = {
                         Image(
                             painter = painterResource(id = R.drawable.ic_google_logo),
                             contentDescription = null,
                             modifier = Modifier
-                                .size(24.dp)
+                                .size(20.dp)
                                 .shadow(2.dp, shape = RoundedCornerShape(4.dp))
                         )
                     }
-                )
-
-                // Developer Mock Sign-In
-                GlassButton(
-                    onClick = { viewModel.loginWithMockToken(username) },
-                    text = "Developer Mock Sign-In",
-                    containerColor = MetalGold.copy(alpha = 0.35f),
-                    textColor = MetalGold,
-                    height = 52,
-                    isLoading = uiState is LoginUiState.Loading
                 )
 
                 // Continue as Guest (Offline)
@@ -220,7 +353,7 @@ fun LoginScreen(
                     text = "Continue as Guest (Offline)",
                     containerColor = Color.White.copy(alpha = 0.12f),
                     textColor = Color.White,
-                    height = 52,
+                    height = 44,
                     isLoading = uiState is LoginUiState.Loading
                 )
 
@@ -228,10 +361,10 @@ fun LoginScreen(
                     Text(
                         text = (uiState as LoginUiState.Error).message,
                         color = Color(0xFFFF5252),
-                        fontSize = 14.sp,
+                        fontSize = 13.sp,
                         fontWeight = FontWeight.Bold,
                         textAlign = TextAlign.Center,
-                        modifier = Modifier.padding(top = 4.dp)
+                        modifier = Modifier.padding(top = 2.dp)
                     )
                 }
 
