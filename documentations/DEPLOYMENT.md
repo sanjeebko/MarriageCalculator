@@ -12,7 +12,7 @@ Use the following commands from the root directory of the repository to compile 
 # Navigate to the workspace root directory (where MarriageCalculator.sln is located)
 cd /path/to/MarriageCalculator/
 
-# 1. Build the Docker image (clean .NET 8 build stage)
+# 1. Build the Docker image (clean .NET 10 build stage)
 docker build -f MarriageCalculator.API/Dockerfile -t sanjeebojha/marriagecalculatorapi:latest .
 
 # 2. Tag image versions (e.g. latest, stable, specific release version)

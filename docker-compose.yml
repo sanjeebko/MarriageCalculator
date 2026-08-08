@@ -9,12 +9,12 @@ services:
     ports:
       - "5000:8080"
     environment:
-      - ASPNETCORE_ENVIRONMENT=${ASPNETCORE_ENVIRONMENT}
+      - ASPNETCORE_ENVIRONMENT=${ASPNETCORE_ENVIRONMENT:-Development}
       - ASPNETCORE_URLS=http://+:8080
-      - MCDATABASE=${DOCKER_MCDATABASE}
-      - MCUSER=${DOCKER_MCUSER}
-      - MCPASSWORD=${DOCKER_MCPASSWORD}
-      - MCDATABASENAME=${DOCKER_MCDATABASENAME}
+      - MCDATABASE=${DOCKER_MCDATABASE:-192.168.0.229:27017}
+      - MCUSER=${DOCKER_MCUSER:-mcuserdev}
+      - MCPASSWORD=${DOCKER_MCPASSWORD:-Scorpions18}
+      - MCDATABASENAME=${DOCKER_MCDATABASENAME:-marriagecalculator_dev}
     volumes:
       - ./MarriageCalculator/MarriageCalculator.API/firebase-adminsdk.json:/app/firebase-adminsdk.json:ro
     restart: unless-stopped

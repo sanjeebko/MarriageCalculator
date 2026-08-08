@@ -21,7 +21,7 @@ services:
       - mc-network
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8080/health/live"]
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health/ready"]
       interval: 15s
       timeout: 5s
       retries: 3

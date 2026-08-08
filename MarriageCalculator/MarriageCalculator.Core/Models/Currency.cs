@@ -1,4 +1,4 @@
-﻿using System.ComponentModel;
+using System.ComponentModel;
 
 namespace MarriageCalculator.Core.Models;
 
@@ -23,7 +23,8 @@ public static class CurrencyExtensions
     public static string ToDescriptionString(this Currency val)
     {
         var field = val.GetType().GetField(val.ToString());
-        var attribute = (DescriptionAttribute)Attribute.GetCustomAttribute(field, typeof(DescriptionAttribute));
-        return attribute == null ? val.ToString() : attribute.Description;
+        if (field is null) return val.ToString();
+        var attribute = (DescriptionAttribute?)Attribute.GetCustomAttribute(field, typeof(DescriptionAttribute));
+        return attribute?.Description ?? val.ToString();
     }
 }

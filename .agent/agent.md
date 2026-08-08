@@ -9,7 +9,7 @@ This document serves as the long-term memory and instruction manual for AI agent
 ### Projects:
 1.  **MarriageCalculator.API (`MarriageCalculator/MarriageCalculator.API`)**:
     *   **Role**: Backend API.
-    *   **Tech Stack**: ASP.NET Core 8.
+    *   **Tech Stack**: ASP.NET Core 10.
     *   **Database**: MongoDB (Target). Currently migrating from SQL Server.
     *   **Config**: MongoDB Connection to `192.168.0.229`.
     *   **Docs**: Swagger available at root `/` in Development.
@@ -22,7 +22,7 @@ This document serves as the long-term memory and instruction manual for AI agent
 
 3.  **MarriageCalculator.Core (`MarriageCalculator/MarriageCalculator.Core`)**:
     *   **Role**: Shared Library.
-    *   **Tech Stack**: Pure .NET 8 Class Library.
+    *   **Tech Stack**: Pure .NET 10 Class Library.
     *   **Function**: Shared Models (POCOs), Enums, and Business Logic Extensions.
     *   **Constraint**: NO dependencies. Pure C#.
 
@@ -77,7 +77,7 @@ This document serves as the long-term memory and instruction manual for AI agent
 ## 4. Coding Standards
 
 ### C# (Backend/Core)
-*   **Clean Core**: `Core` MUST remain pure .NET 8.
+*   **Clean Core**: `Core` MUST remain pure .NET 10.
 *   **Async/Await**: Use for all I/O.
 
 ### Android (Kotlin)
@@ -114,3 +114,12 @@ This document serves as the long-term memory and instruction manual for AI agent
 ## 7. Memory Management
 *   **Read**: `.agent/memory.md` at session start.
 *   **Write**: Update if business rules change.
+
+---
+
+## 8. Git & Branching Workflow Rules
+
+*   **Ticket-Driven Requirement**: Every feature, bug fix, refactor, documentation, or infrastructure update MUST correspond to a GitHub issue/ticket. Create a ticket via `gh issue create` if one does not exist.
+*   **Feature Branch Isolation**: Always work in a dedicated feature branch named after the ticket (e.g., `feature/issue-14-dotnet10-upgrade`). **Never commit directly to the `main` branch under any condition.**
+*   **Pull Request Merging**: Feature branches MUST be merged into `main` strictly via GitHub Pull Request (`gh pr create`).
+
