@@ -1,6 +1,7 @@
 using MarriageCalculator.Core.DTOs;
 using MarriageCalculator.Core.Models;
 using MarriageCalculator.Core.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace MarriageCalculator.API.Controllers;
@@ -8,6 +9,7 @@ namespace MarriageCalculator.API.Controllers;
 /// <summary>
 /// Handles score calculation for Marriage card games.
 /// </summary>
+[Authorize]
 [ApiController]
 [Route("api/[controller]")]
 public class ScoringController : ControllerBase

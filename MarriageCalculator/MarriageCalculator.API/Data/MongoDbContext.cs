@@ -45,13 +45,25 @@ public class MongoDbContext
     public IMongoCollection<PendingEmailInvite> PendingEmailInvites =>
         _database.GetCollection<PendingEmailInvite>("pendingEmailInvites");
 
+    public IMongoCollection<EmailVerificationCode> EmailVerificationCodes =>
+        _database.GetCollection<EmailVerificationCode>("emailVerificationCodes");
+
     /// <summary>
     /// Idempotent index setup (called at startup). Unique invite codes, TTL cleanup of
-    /// expired codes/invites, and lookup indexes for the friend-discovery flows.
+    /// expired codes/invites, unique username index, and lookup indexes.
     /// </summary>
     public async Task EnsureIndexesAsync()
     {
         var ttl = new CreateIndexOptions { ExpireAfter = TimeSpan.Zero };
+
+        await Users.Indexes.CreateManyAsync(new[]
+        {
+            new CreateIndexModel<User>(
+                Builders<User>.IndexKeys.Ascending(u => u.Username),
+                new CreateIndexOptions { Unique = true, Sparse = true }),
+            new CreateIndexModel<User>(
+                Builders<User>.IndexKeys.Ascending(u => u.Email))
+        });
 
         await FriendInviteCodes.Indexes.CreateManyAsync(new[]
         {
@@ -71,6 +83,14 @@ public class MongoDbContext
                     .Ascending(i => i.InviteeEmail).Ascending(i => i.Status)),
             new CreateIndexModel<PendingEmailInvite>(
                 Builders<PendingEmailInvite>.IndexKeys.Ascending(i => i.ExpiresAt), ttl),
+        });
+
+        await EmailVerificationCodes.Indexes.CreateManyAsync(new[]
+        {
+            new CreateIndexModel<EmailVerificationCode>(
+                Builders<EmailVerificationCode>.IndexKeys.Ascending(c => c.Email)),
+            new CreateIndexModel<EmailVerificationCode>(
+                Builders<EmailVerificationCode>.IndexKeys.Ascending(c => c.ExpiresAt), ttl),
         });
     }
 

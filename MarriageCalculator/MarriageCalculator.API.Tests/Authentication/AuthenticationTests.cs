@@ -10,6 +10,8 @@ using System.Threading.Tasks;
 using Xunit;
 using MarriageCalculator.API.Authentication;
 
+using MarriageCalculator.API.Services;
+
 namespace MarriageCalculator.API.Tests.Authentication;
 
 public class AuthenticationTests
@@ -24,10 +26,14 @@ public class AuthenticationTests
         var loggerFactoryMock = new Mock<ILoggerFactory>();
         loggerFactoryMock.Setup(l => l.CreateLogger(It.IsAny<string>())).Returns(new Mock<ILogger>().Object);
 
+        var jwtTokenServiceMock = new Mock<IJwtTokenService>();
+        jwtTokenServiceMock.Setup(j => j.ValidateToken(It.IsAny<string>())).Returns((ClaimsPrincipal?)null);
+
         var handler = new FirebaseOrMockAuthenticationHandler(
             optionsMonitorMock.Object,
             loggerFactoryMock.Object,
-            UrlEncoder.Default
+            UrlEncoder.Default,
+            jwtTokenServiceMock.Object
         );
 
         handler.InitializeAsync(new AuthenticationScheme("FirebaseOrMock", null, typeof(FirebaseOrMockAuthenticationHandler)), context).Wait();
