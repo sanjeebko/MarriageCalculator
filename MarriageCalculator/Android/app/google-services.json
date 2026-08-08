@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "242905202997",
+    "firebase_url": "https://marriagecalculator-197bd.firebaseio.com",
+    "project_id": "marriagecalculator-197bd",
+    "storage_bucket": "marriagecalculator-197bd.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:242905202997:android:8d2bbab9ea8c84b2bccc7c",
+        "android_client_info": {
+          "package_name": "np.com.sanjeeb.marriagecalculator"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "242905202997-uuio278e9j807focp2hgdd4o8hdc6gjk.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "np.com.sanjeeb.marriagecalculator",
+            "certificate_hash": "e054d50e4dd341c21ea4a9a05049be702a87df04"
+          }
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAajtgt3GX4mnshyucE0IFratxIaDgg2y0"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

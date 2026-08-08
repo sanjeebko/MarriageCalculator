@@ -1,0 +1,152 @@
+package np.com.sanjeeb.marriagecalculator.navigation
+
+import androidx.compose.runtime.Composable
+import androidx.navigation.NavHostController
+import androidx.navigation.NavType
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.navArgument
+import np.com.sanjeeb.marriagecalculator.data.repository.SessionManager
+import np.com.sanjeeb.marriagecalculator.ui.LoginScreen
+import np.com.sanjeeb.marriagecalculator.ui.dashboard.DashboardScreen
+import np.com.sanjeeb.marriagecalculator.ui.gamesetup.GameSetupScreen
+import np.com.sanjeeb.marriagecalculator.ui.playgame.PlayGameScreen
+import np.com.sanjeeb.marriagecalculator.ui.roundinput.RoundInputScreen
+import np.com.sanjeeb.marriagecalculator.ui.scoreboard.ScoreboardScreen
+import np.com.sanjeeb.marriagecalculator.ui.splash.SplashScreen
+import np.com.sanjeeb.marriagecalculator.ui.friend.FriendScreen
+
+@Composable
+fun MarriageNavGraph(
+    navController: NavHostController,
+    sessionManager: SessionManager
+) {
+    NavHost(
+        navController = navController,
+        startDestination = Screen.Splash.route
+    ) {
+        composable(Screen.Splash.route) {
+            SplashScreen(
+                onSplashComplete = {
+                    val nextRoute = if (sessionManager.isLoggedIn() || sessionManager.isGuestMode()) {
+                        Screen.Dashboard.route
+                    } else {
+                        Screen.Login.route
+                    }
+                    navController.navigate(nextRoute) {
+                        popUpTo(Screen.Splash.route) { inclusive = true }
+                    }
+                }
+            )
+        }
+
+        composable(Screen.Login.route) {
+            LoginScreen(
+                onLoginSuccess = {
+                    navController.navigate(Screen.Dashboard.route) {
+                        popUpTo(Screen.Login.route) { inclusive = true }
+                    }
+                }
+            )
+        }
+
+        composable(Screen.Dashboard.route) {
+            DashboardScreen(
+                onNewGame = { navController.navigate(Screen.GameSetup.route) },
+                onResumeGame = { gameSetId ->
+                    navController.navigate(Screen.PlayGame.createRoute(gameSetId))
+                },
+                onFriends = { navController.navigate(Screen.Friend.route) },
+                onLogout = {
+                    sessionManager.clearSession()
+                    navController.navigate(Screen.Login.route) {
+                        popUpTo(Screen.Dashboard.route) { inclusive = true }
+                    }
+                }
+            )
+        }
+
+        composable(Screen.GameSetup.route) {
+            GameSetupScreen(
+                onGameCreated = { gameSetId ->
+                    navController.navigate(Screen.PlayGame.createRoute(gameSetId)) {
+                        popUpTo(Screen.Dashboard.route)
+                    }
+                },
+                onBack = { navController.popBackStack() }
+            )
+        }
+
+        composable(
+            route = Screen.PlayGame.route,
+            arguments = listOf(navArgument("gameSetId") { type = NavType.StringType }),
+            deepLinks = listOf(
+                androidx.navigation.navDeepLink {
+                    uriPattern = "marriagecalculator://playgame/{gameSetId}"
+                }
+            )
+        ) { backStackEntry ->
+            val gameSetId = backStackEntry.arguments?.getString("gameSetId") ?: return@composable
+            PlayGameScreen(
+                gameSetId = gameSetId,
+                onAddRound = { roundId ->
+                    navController.navigate(Screen.RoundInput.createRoute(gameSetId, roundId))
+                },
+                onEditGame = { gameId ->
+                    navController.navigate(Screen.RoundInput.createEditRoute(gameSetId, gameId))
+                },
+                onViewScoreboard = {
+                    navController.navigate(Screen.Scoreboard.createRoute(gameSetId))
+                },
+                onBack = { navController.popBackStack() }
+            )
+        }
+
+        composable(
+            route = Screen.RoundInput.route,
+            arguments = listOf(
+                navArgument("gameSetId") { type = NavType.StringType },
+                navArgument("roundId") { type = NavType.StringType },
+                navArgument("editGameId") {
+                    type = NavType.StringType
+                    nullable = true
+                    defaultValue = null
+                }
+            )
+        ) { backStackEntry ->
+            val gameSetId = backStackEntry.arguments?.getString("gameSetId") ?: return@composable
+            val roundId = backStackEntry.arguments?.getString("roundId") ?: return@composable
+            RoundInputScreen(
+                gameSetId = gameSetId,
+                roundId = roundId,
+                editGameId = backStackEntry.arguments?.getString("editGameId"),
+                onScoreSubmitted = { navController.popBackStack() },
+                onBack = { navController.popBackStack() }
+            )
+        }
+
+        composable(
+            route = Screen.Scoreboard.route,
+            arguments = listOf(navArgument("gameSetId") { type = NavType.StringType })
+        ) { backStackEntry ->
+            val gameSetId = backStackEntry.arguments?.getString("gameSetId") ?: return@composable
+            ScoreboardScreen(
+                gameSetId = gameSetId,
+                onBack = { navController.popBackStack() }
+            )
+        }
+
+        composable(
+            route = Screen.Friend.route,
+            deepLinks = listOf(
+                androidx.navigation.navDeepLink {
+                    uriPattern = "marriagecalculator://friends"
+                }
+            )
+        ) {
+            FriendScreen(
+                onBack = { navController.popBackStack() }
+            )
+        }
+    }
+}

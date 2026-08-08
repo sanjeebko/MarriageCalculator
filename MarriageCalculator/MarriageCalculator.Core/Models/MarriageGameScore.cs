@@ -1,17 +1,19 @@
-﻿using System.ComponentModel.DataAnnotations;
-using System.ComponentModel.DataAnnotations.Schema;
+﻿using MongoDB.Bson;
+using MongoDB.Bson.Serialization.Attributes;
 
 namespace MarriageCalculator.Core.Models;
 
-[Table("MarriageGameScore")]
 public class MarriageGameScore
 {
-    [Key]
-    [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
-    public int Id { get; set; }
+    [BsonId]
+    [BsonRepresentation(BsonType.ObjectId)]
+    public string Id { get; set; } = ObjectId.GenerateNewId().ToString();
 
-    public int MarriageGameId { get; set; }
-    public int PlayerId { get; set; }
+    [BsonRepresentation(BsonType.ObjectId)]
+    public string MarriageGameId { get; set; } = string.Empty;
+
+    [BsonRepresentation(BsonType.ObjectId)]
+    public string PlayerId { get; set; } = string.Empty;
 
     public bool Seen { get; set; } = false;
 
@@ -33,6 +35,6 @@ public class MarriageGameScore
 
     public int Position { get; set; } = 0;
 
-    [NotMapped]
+    [BsonIgnore]
     public MarriageGame? MarriageGame { get; set; }
 }

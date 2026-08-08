@@ -1,32 +1,35 @@
-﻿using System.ComponentModel.DataAnnotations;
-using System.ComponentModel.DataAnnotations.Schema;
+using MongoDB.Bson;
+using MongoDB.Bson.Serialization.Attributes;
 
 namespace MarriageCalculator.Core.Models;
 
-[Table("MarriageGameSet")]
 public class MarriageGameSet
 {
-    [Key]
-    [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
-    public int Id { get; set; }            
-    
-    [Required]
-    [MinLength(2)]
-    [MaxLength(20)]
+    [BsonId]
+    [BsonRepresentation(BsonType.ObjectId)]
+    public string Id { get; set; } = ObjectId.GenerateNewId().ToString();
+
+    public string HostUserId { get; set; } = string.Empty; // Creator/Host of this game set
+
     public string Name { get; set; }
-    
+
     public DateTime LastPlayed { get; set; }
-    public DateTime Created { get; set; }     
+    public DateTime Created { get; set; }
     public bool IsActive { get; set; } = true;
-    public int GameSettingsId { get; set; }
-    
-    [NotMapped]
+
+    [BsonRepresentation(BsonType.ObjectId)]
+    public string GameSettingsId { get; set; } = string.Empty;
+
+    [BsonRepresentation(BsonType.ObjectId)]
+    public List<string> PlayerIds { get; set; } = [];
+
+    [BsonIgnore]
     public GameSettings GameSettings { get; set; } = GameSettings.Default();
-    
-    [NotMapped]
-    public Dictionary<int,MarriageGameSetPlayer> GameSetPlayers { get; set; } = [];
-    
-    [NotMapped]
+
+    [BsonIgnore]
+    public Dictionary<string, MarriageGameSetPlayer> GameSetPlayers { get; set; } = [];
+
+    [BsonIgnore]
     public List<MarriageGameRound> Rounds { get; set; } = [];
 
     public MarriageGameSet()

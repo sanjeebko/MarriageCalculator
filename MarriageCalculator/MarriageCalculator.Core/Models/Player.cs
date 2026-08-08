@@ -1,29 +1,33 @@
-﻿using System.ComponentModel.DataAnnotations;
-using System.ComponentModel.DataAnnotations.Schema;
+using MongoDB.Bson;
+using MongoDB.Bson.Serialization.Attributes;
 
 namespace MarriageCalculator.Core.Models;
 
-[Table("Player")]
 public class Player
 {
-    [Key]
-    [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
-    public int Id { get; set; }
-    
+    [BsonId]
+    [BsonRepresentation(BsonType.ObjectId)]
+    public string Id { get; set; } = ObjectId.GenerateNewId().ToString();
+
     public string Name { get; set; } = string.Empty;
-    
+
     public string Email { get; set; } = string.Empty;
-    
+
+    public string? PhotoUri { get; set; }
+
+    public string? CreatedByUserId { get; set; }
+
     public bool Deleted { get; set; } = false;
-     
+
+    [BsonIgnore]
     public bool Selected { get; set; } = false;
-    
+
     public override bool Equals(object? obj)
     {
         if (obj is not Player player)
             throw new ArgumentException($" {nameof(obj)} must be of type {nameof(Player)}.", nameof(obj));
 
-        return string.Equals(player.Name, this.Name, StringComparison.CurrentCultureIgnoreCase) 
+        return string.Equals(player.Name, this.Name, StringComparison.CurrentCultureIgnoreCase)
             && string.Equals(player.Email, this.Email, StringComparison.CurrentCultureIgnoreCase);
     }
 

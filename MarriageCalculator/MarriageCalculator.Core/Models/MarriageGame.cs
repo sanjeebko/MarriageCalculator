@@ -1,24 +1,29 @@
-﻿using System.ComponentModel.DataAnnotations;
-using System.ComponentModel.DataAnnotations.Schema;
- 
+﻿using MongoDB.Bson;
+using MongoDB.Bson.Serialization.Attributes;
 
 namespace MarriageCalculator.Core.Models;
 
-[Table("MarriageGame")]
 public class MarriageGame
 {
-    [Key]
-    [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
-    public int Id { get; set; } 
-    
+    [BsonId]
+    [BsonRepresentation(BsonType.ObjectId)]
+    public string Id { get; set; } = ObjectId.GenerateNewId().ToString();
+
     public int Sequence { get; set; }
-    public int MarriageGameRoundId { get; set; }
-    public int WinnerId { get; set; }
-    public int DealerId { get; set; } 
-    public int TotalMaal { get; set; }      
+
+    [BsonRepresentation(BsonType.ObjectId)]
+    public string MarriageGameRoundId { get; set; } = string.Empty;
+
+    [BsonRepresentation(BsonType.ObjectId)]
+    public string WinnerId { get; set; } = string.Empty;
+
+    [BsonRepresentation(BsonType.ObjectId)]
+    public string DealerId { get; set; } = string.Empty;
+
+    public int TotalMaal { get; set; }
     public bool ClosedRound { get; set; }
     public DateTime CreatedTime { get; set; }
-    
-    [NotMapped]
-    public Dictionary<int, MarriageGameScore> MarriageGameScores { get; set; } = []; //playerId, MarriageGameScore
+
+    [BsonIgnore]
+    public Dictionary<string, MarriageGameScore> MarriageGameScores { get; set; } = []; //playerId, MarriageGameScore
 }

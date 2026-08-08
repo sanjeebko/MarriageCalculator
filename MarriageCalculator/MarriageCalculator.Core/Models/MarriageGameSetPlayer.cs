@@ -1,18 +1,20 @@
-﻿using System.ComponentModel.DataAnnotations;
-using System.ComponentModel.DataAnnotations.Schema;
+﻿using MongoDB.Bson;
+using MongoDB.Bson.Serialization.Attributes;
 
 namespace MarriageCalculator.Core.Models;
 
-[Table("MarriageGameSetPlayer")]
 public class MarriageGameSetPlayer
 {
-    [Key]
-    [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
-    public int Id { get; set; }
-    
-    public int MarriageGameSetId { get; set; }
-    public int PlayerId { get; set; }
-    
-    [NotMapped]
-    public Player Player { get; set; }
+    [BsonId]
+    [BsonRepresentation(BsonType.ObjectId)]
+    public string Id { get; set; } = ObjectId.GenerateNewId().ToString();
+
+    [BsonRepresentation(BsonType.ObjectId)]
+    public string MarriageGameSetId { get; set; } = string.Empty;
+
+    [BsonRepresentation(BsonType.ObjectId)]
+    public string PlayerId { get; set; } = string.Empty;
+
+    [BsonIgnore]
+    public Player Player { get; set; } = null!;
 }

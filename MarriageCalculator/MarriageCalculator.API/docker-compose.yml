@@ -1,4 +1,4 @@
-version: '3.8'
+version: "3.8"
 
 services:
   marriagecalculator-api:
@@ -8,22 +8,18 @@ services:
     container_name: marriagecalculator-api
     ports:
       - "5000:8080"
-      - "5001:8081"
     environment:
       - ASPNETCORE_ENVIRONMENT=Production
-      - ASPNETCORE_URLS=http://+:8080;https://+:8081
+      - ASPNETCORE_URLS=http://+:8080
       - MCDATABASE=${MCDATABASE}
       - MCUSER=${MCUSER}
       - MCPASSWORD=${MCPASSWORD}
-      - ASPNETCORE_Kestrel__Certificates__Default__Password=${CERT_PASSWORD:-your_cert_password}
-      - ASPNETCORE_Kestrel__Certificates__Default__Path=/https/aspnetapp.pfx
-    volumes:
-      - ~/.aspnet/https:/https:ro
+      - MCDATABASENAME=${MCDATABASENAME}
     networks:
       - marriagecalculator-network
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8080/api/database/info"]
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health/ready"]
       interval: 30s
       timeout: 10s
       retries: 3

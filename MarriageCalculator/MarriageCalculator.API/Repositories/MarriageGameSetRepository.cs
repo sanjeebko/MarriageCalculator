@@ -1,69 +1,79 @@
 using MarriageCalculator.API.Data;
 using MarriageCalculator.Core.Models;
-using Microsoft.EntityFrameworkCore;
+using MongoDB.Driver;
 
 namespace MarriageCalculator.API.Repositories;
 
 public class MarriageGameSetRepository : IMarriageGameSetRepository
 {
-    private readonly MarriageCalculatorDbContext _context;
+    private readonly IMongoCollection<MarriageGameSet> _collection;
 
-    public MarriageGameSetRepository(MarriageCalculatorDbContext context)
+    public MarriageGameSetRepository(MongoDbContext context)
     {
-        _context = context;
+        _collection = context.MarriageGameSets;
     }
 
-    public async Task<IEnumerable<MarriageGameSet>> GetAllAsync()
+    public async Task<IEnumerable<MarriageGameSet>> GetAllByHostUserIdAsync(string hostUserId)
     {
-        return await _context.MarriageGameSets.OrderByDescending(gs => gs.Created).ToListAsync();
+        return await _collection.Find(gs => gs.HostUserId == hostUserId)
+            .SortByDescending(gs => gs.Created)
+            .ToListAsync();
     }
 
-    public async Task<MarriageGameSet?> GetByIdAsync(int id)
+    public async Task<IEnumerable<MarriageGameSet>> GetAllForUserAsync(string userId, List<string> playerIds)
     {
-        return await _context.MarriageGameSets.FindAsync(id);
+        return await _collection.Find(gs => gs.HostUserId == userId || gs.PlayerIds.Any(id => playerIds.Contains(id)))
+            .SortByDescending(gs => gs.Created)
+            .ToListAsync();
+    }
+
+    public async Task<MarriageGameSet?> GetByIdAsync(string id, string hostUserId)
+    {
+        return await _collection.Find(gs => gs.Id == id && gs.HostUserId == hostUserId).FirstOrDefaultAsync();
+    }
+
+    public async Task<MarriageGameSet?> GetByIdRawAsync(string id)
+    {
+        return await _collection.Find(gs => gs.Id == id).FirstOrDefaultAsync();
     }
 
     public async Task<MarriageGameSet> CreateAsync(MarriageGameSet gameSet)
     {
-        _context.MarriageGameSets.Add(gameSet);
-        await _context.SaveChangesAsync();
+        await _collection.InsertOneAsync(gameSet);
         return gameSet;
     }
 
-    public async Task<MarriageGameSet?> UpdateAsync(int id, MarriageGameSet gameSet)
+    public async Task<MarriageGameSet?> UpdateAsync(string id, MarriageGameSet gameSet, string hostUserId)
     {
-        var existing = await GetByIdAsync(id);
-        if (existing == null) return null;
+        var update = Builders<MarriageGameSet>.Update
+            .Set(gs => gs.Name, gameSet.Name)
+            .Set(gs => gs.LastPlayed, gameSet.LastPlayed)
+            .Set(gs => gs.IsActive, gameSet.IsActive)
+            .Set(gs => gs.GameSettingsId, gameSet.GameSettingsId)
+            .Set(gs => gs.PlayerIds, gameSet.PlayerIds)
+            .Set(gs => gs.HostUserId, gameSet.HostUserId);
 
-        existing.Name = gameSet.Name;
-        existing.LastPlayed = gameSet.LastPlayed;
-        existing.IsActive = gameSet.IsActive;
-        existing.GameSettingsId = gameSet.GameSettingsId;
-
-        await _context.SaveChangesAsync();
-        return existing;
+        return await _collection.FindOneAndUpdateAsync(
+            gs => gs.Id == id && gs.HostUserId == hostUserId,
+            update,
+            new FindOneAndUpdateOptions<MarriageGameSet> { ReturnDocument = ReturnDocument.After });
     }
 
-    public async Task<bool> DeleteAsync(int id)
+    public async Task<bool> DeleteAsync(string id, string hostUserId)
     {
-        var gameSet = await GetByIdAsync(id);
-        if (gameSet == null) return false;
-
-        _context.MarriageGameSets.Remove(gameSet);
-        await _context.SaveChangesAsync();
-        return true;
+        var result = await _collection.DeleteOneAsync(gs => gs.Id == id && gs.HostUserId == hostUserId);
+        return result.DeletedCount > 0;
     }
 
-    public async Task<bool> ExistsAsync(int id)
+    public async Task<bool> ExistsAsync(string id, string hostUserId)
     {
-        return await _context.MarriageGameSets.AnyAsync(gs => gs.Id == id);
+        return await _collection.CountDocumentsAsync(gs => gs.Id == id && gs.HostUserId == hostUserId) > 0;
     }
 
-    public async Task<MarriageGameSet?> GetLatestActiveAsync()
+    public async Task<MarriageGameSet?> GetLatestActiveAsync(string hostUserId)
     {
-        return await _context.MarriageGameSets
-            .Where(gs => gs.IsActive)
-            .OrderByDescending(gs => gs.LastPlayed)
+        return await _collection.Find(gs => gs.IsActive && gs.HostUserId == hostUserId)
+            .SortByDescending(gs => gs.LastPlayed)
             .FirstOrDefaultAsync();
     }
 }

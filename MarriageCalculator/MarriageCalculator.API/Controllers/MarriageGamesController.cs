@@ -39,7 +39,7 @@ public class MarriageGamesController : ControllerBase
     /// Get marriage game by ID
     /// </summary>
     [HttpGet("{id}")]
-    public async Task<ActionResult<MarriageGameDto>> GetMarriageGame(int id)
+    public async Task<ActionResult<MarriageGameDto>> GetMarriageGame(string id)
     {
         try
         {
@@ -62,7 +62,7 @@ public class MarriageGamesController : ControllerBase
     /// Get marriage games by round ID
     /// </summary>
     [HttpGet("round/{roundId}")]
-    public async Task<ActionResult<IEnumerable<MarriageGameDto>>> GetMarriageGamesByRound(int roundId)
+    public async Task<ActionResult<IEnumerable<MarriageGameDto>>> GetMarriageGamesByRound(string roundId)
     {
         try
         {
@@ -103,7 +103,7 @@ public class MarriageGamesController : ControllerBase
     /// Update an existing marriage game
     /// </summary>
     [HttpPut("{id}")]
-    public async Task<ActionResult<MarriageGameDto>> UpdateMarriageGame(int id, [FromBody] CreateMarriageGameDto updateDto)
+    public async Task<ActionResult<MarriageGameDto>> UpdateMarriageGame(string id, [FromBody] CreateMarriageGameDto updateDto)
     {
         try
         {
@@ -131,7 +131,7 @@ public class MarriageGamesController : ControllerBase
     /// Delete a marriage game
     /// </summary>
     [HttpDelete("{id}")]
-    public async Task<ActionResult> DeleteMarriageGame(int id)
+    public async Task<ActionResult> DeleteMarriageGame(string id)
     {
         try
         {

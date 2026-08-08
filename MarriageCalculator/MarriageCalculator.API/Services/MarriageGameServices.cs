@@ -1,14 +1,14 @@
 ﻿using MarriageCalculator.API.Data;
 using MarriageCalculator.Core.Models;
-using Microsoft.EntityFrameworkCore;
+using MongoDB.Driver;
 
 namespace MarriageCalculator.API.Services;
 
 public class MarriageGameServices : IMarriageGameServices
 {
-    private readonly MarriageCalculatorDbContext _context;
+    private readonly MongoDbContext _context;
 
-    public MarriageGameServices(MarriageCalculatorDbContext context)
+    public MarriageGameServices(MongoDbContext context)
     {
         _context = context;
     }
@@ -17,13 +17,10 @@ public class MarriageGameServices : IMarriageGameServices
     {
         try
         {
-            // Only seed default data, don't try to create database
-            // Database creation should be handled by migrations
             await SeedDefaultData();
         }
         catch (Exception ex)
         {
-            // Log the exception or handle it appropriately
             Console.WriteLine($"Error setting up database: {ex.Message}");
             throw;
         }
@@ -33,26 +30,11 @@ public class MarriageGameServices : IMarriageGameServices
     {
         try
         {
-            // Check if we need to seed default game settings
-            if (!await _context.GameSettings.AnyAsync())
+            var count = await _context.GameSettings.CountDocumentsAsync(_ => true);
+            if (count == 0)
             {
-                var defaultSettings = new GameSettings
-                {
-                    Murder = true,
-                    Kidnap = false,
-                    SeenPoint = 3,
-                    UnseenPoint = 10,
-                    PointRate = 10,
-                    Currency = Currency.NPR_Rupee,
-                    Dublee = true,
-                    DubleePointLess = true,
-                    FoulPoint = 15,
-                    FoulPointBonus = FoulPointBonusType.NEXT_GAME,
-                    Audio = true
-                };
-
-                _context.GameSettings.Add(defaultSettings);
-                await _context.SaveChangesAsync();
+                var defaultSettings = GameSettings.Default();
+                await _context.GameSettings.InsertOneAsync(defaultSettings);
                 Console.WriteLine("Default game settings seeded successfully.");
             }
             else
@@ -71,19 +53,17 @@ public class MarriageGameServices : IMarriageGameServices
     {
         try
         {
-            var info = new DatabaseInfo
+            return new DatabaseInfo
             {
-                PlayerCount = await _context.Players.CountAsync(),
-                GameSettingsCount = await _context.GameSettings.CountAsync(),
-                MarriageGameSetCount = await _context.MarriageGameSets.CountAsync(),
-                MarriageGameSetPlayerCount = await _context.MarriageGameSetPlayers.CountAsync(),
-                MarriageGameRoundCount = await _context.MarriageGameRounds.CountAsync(),
-                MarriageGameCount = await _context.MarriageGames.CountAsync(),
-                MarriageGameScoreCount = await _context.MarriageGameScores.CountAsync(),
-                DatabaseCreated = await _context.Database.CanConnectAsync()
+                PlayerCount = (int)await _context.Players.CountDocumentsAsync(_ => true),
+                GameSettingsCount = (int)await _context.GameSettings.CountDocumentsAsync(_ => true),
+                MarriageGameSetCount = (int)await _context.MarriageGameSets.CountDocumentsAsync(_ => true),
+                MarriageGameSetPlayerCount = (int)await _context.MarriageGameSetPlayers.CountDocumentsAsync(_ => true),
+                MarriageGameRoundCount = (int)await _context.MarriageGameRounds.CountDocumentsAsync(_ => true),
+                MarriageGameCount = (int)await _context.MarriageGames.CountDocumentsAsync(_ => true),
+                MarriageGameScoreCount = (int)await _context.MarriageGameScores.CountDocumentsAsync(_ => true),
+                DatabaseCreated = await _context.CanConnectAsync()
             };
-
-            return info;
         }
         catch (Exception ex)
         {
@@ -96,20 +76,18 @@ public class MarriageGameServices : IMarriageGameServices
     {
         try
         {
-            // Delete all data in proper order to respect foreign key constraints
-            _context.MarriageGameScores.RemoveRange(_context.MarriageGameScores);
-            _context.MarriageGames.RemoveRange(_context.MarriageGames);
-            _context.MarriageGameRounds.RemoveRange(_context.MarriageGameRounds);
-            _context.MarriageGameSetPlayers.RemoveRange(_context.MarriageGameSetPlayers);
-            _context.MarriageGameSets.RemoveRange(_context.MarriageGameSets);
-            _context.GameSettings.RemoveRange(_context.GameSettings);
-            _context.Players.RemoveRange(_context.Players);
-
-            await _context.SaveChangesAsync();
+            // Delete all documents from all collections
+            await _context.MarriageGameScores.DeleteManyAsync(_ => true);
+            await _context.MarriageGames.DeleteManyAsync(_ => true);
+            await _context.MarriageGameRounds.DeleteManyAsync(_ => true);
+            await _context.MarriageGameSetPlayers.DeleteManyAsync(_ => true);
+            await _context.MarriageGameSets.DeleteManyAsync(_ => true);
+            await _context.GameSettings.DeleteManyAsync(_ => true);
+            await _context.Players.DeleteManyAsync(_ => true);
 
             // Re-seed default data
             await SeedDefaultData();
-            
+
             Console.WriteLine("Database cleanup completed successfully.");
         }
         catch (Exception ex)
@@ -119,3 +97,4 @@ public class MarriageGameServices : IMarriageGameServices
         }
     }
 }
+
