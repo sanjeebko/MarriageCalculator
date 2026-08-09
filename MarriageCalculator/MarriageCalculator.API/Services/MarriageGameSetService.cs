@@ -382,6 +382,35 @@ public class MarriageGameSetService : IMarriageGameSetService
     }
 
     /// <summary>
+    /// Toggles or updates the payment cleared status of a round. Host-only.
+    /// </summary>
+    public async Task<MarriageGameRoundDto?> TogglePaymentClearedAsync(string gameSetId, string roundId, string hostUserId, bool paymentCleared)
+    {
+        var gameSet = await _gameSetRepository.GetByIdRawAsync(gameSetId);
+        if (gameSet == null)
+        {
+            throw new KeyNotFoundException($"Marriage game set with ID {gameSetId} not found");
+        }
+
+        if (gameSet.HostUserId != hostUserId)
+        {
+            throw new UnauthorizedAccessException("Only the game host can update payment status.");
+        }
+
+        var round = await _context.MarriageGameRounds
+            .Find(r => r.Id == roundId && r.MarriageGameSetId == gameSetId)
+            .FirstOrDefaultAsync();
+        if (round == null) return null;
+
+        await _context.MarriageGameRounds.UpdateOneAsync(
+            r => r.Id == roundId,
+            Builders<MarriageGameRound>.Update.Set(r => r.PaymentCleared, paymentCleared));
+        round.PaymentCleared = paymentCleared;
+
+        return await BuildRoundDtoAsync(round);
+    }
+
+    /// <summary>
     /// Re-scores an already-played game (any game, not just the latest) with corrected inputs.
     /// The dealer and position in the round stay fixed; winner, seen/dublee flags, and maal are
     /// replaced and scores recomputed server-side. Host-only, blocked once settled.
@@ -709,6 +738,7 @@ public class MarriageGameSetService : IMarriageGameSetService
             Sequence = r.Sequence,
             MarriageGameSetId = r.MarriageGameSetId,
             Completed = r.Completed,
+            PaymentCleared = r.PaymentCleared,
             PlayerIds = r.PlayerIds,
             MarriageGames = new List<MarriageGameDto>(),
             TotalScore = new Dictionary<string, double>()

@@ -277,6 +277,37 @@ public class MarriageGameSetsController : ControllerBase
     }
 
     /// <summary>
+    /// Toggle or update the payment cleared status of a round. Host-only.
+    /// </summary>
+    [HttpPost("{id}/rounds/{roundId}/toggle-payment-cleared")]
+    public async Task<ActionResult<MarriageGameRoundDto>> TogglePaymentCleared(string id, string roundId, [FromBody] TogglePaymentClearedDto dto)
+    {
+        try
+        {
+            var hostUserId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? string.Empty;
+            var round = await _gameSetService.TogglePaymentClearedAsync(id, roundId, hostUserId, dto.PaymentCleared);
+            if (round == null)
+            {
+                return NotFound($"Round with ID {roundId} not found in game set {id}");
+            }
+            return Ok(round);
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(ex.Message);
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            return Forbid(ex.Message);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error toggling payment cleared for round {RoundId} in game set {GameSetId}", roundId, id);
+            return StatusCode(500, "An error occurred while updating round payment status.");
+        }
+    }
+
+    /// <summary>
     /// Re-score an already-played game with corrected inputs (winner, seen/dublee, maal).
     /// Dealer and round position stay fixed. Host-only, blocked once settled.
     /// </summary>

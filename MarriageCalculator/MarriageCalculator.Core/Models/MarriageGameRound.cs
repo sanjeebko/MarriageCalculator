@@ -1,4 +1,4 @@
-﻿using MongoDB.Bson;
+using MongoDB.Bson;
 using MongoDB.Bson.Serialization.Attributes;
 
 namespace MarriageCalculator.Core.Models;
@@ -14,6 +14,7 @@ public class MarriageGameRound
     [BsonRepresentation(BsonType.ObjectId)]
     public string MarriageGameSetId { get; set; } = string.Empty;
     public bool Completed { get; set; }
+    public bool PaymentCleared { get; set; } = false;
 
     /// <summary>
     /// Seat order snapshotted from the game set when this round started. Reshuffling between

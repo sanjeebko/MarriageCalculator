@@ -9,6 +9,7 @@ import np.com.sanjeeb.marriagecalculator.data.repository.PlayerRepository
 import np.com.sanjeeb.marriagecalculator.data.repository.FriendRepository
 import np.com.sanjeeb.marriagecalculator.data.repository.SessionManager
 import np.com.sanjeeb.marriagecalculator.data.repository.ApiResult
+import np.com.sanjeeb.marriagecalculator.data.local.RoundEntity
 import np.com.sanjeeb.marriagecalculator.ui.scoreboard.RoundPlayerEntry
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -44,7 +45,8 @@ data class RoundGroup(
     val games: List<GameEntry> = emptyList(),
     val totalScoreByPlayer: Map<String, Int> = emptyMap(),
     /** Seat order this round was (or is being) played with - a reshuffle between rounds must not rewrite history. */
-    val seatOrder: List<Player> = emptyList()
+    val seatOrder: List<Player> = emptyList(),
+    val isPaymentCleared: Boolean = false
 )
 
 /**
@@ -141,7 +143,8 @@ class PlayGameViewModel @Inject constructor(
                                 isCompleted = r.completed,
                                 games = games,
                                 totalScoreByPlayer = r.totalScore?.mapValues { it.value.toInt() } ?: emptyMap(),
-                                seatOrder = seatOrder
+                                seatOrder = seatOrder,
+                                isPaymentCleared = r.paymentCleared
                             )
                         } ?: emptyList()
 
@@ -219,6 +222,7 @@ class PlayGameViewModel @Inject constructor(
                     val orderedGames = roundEntities.sortedBy { it.roundNumber }
                     val roundGroups = mutableListOf<RoundGroup>()
                     var bucket = mutableListOf<GameEntry>()
+                    var bucketRounds = mutableListOf<RoundEntity>()
                     var bucketSeatCsv: String? = null
                     var roundSeq = 1
 
@@ -239,10 +243,12 @@ class PlayGameViewModel @Inject constructor(
                                 totalScoreByPlayer = bucket.flatMap { it.playerEntries }
                                     .groupBy { it.playerId }
                                     .mapValues { entry -> entry.value.sumOf { e -> e.score } },
-                                seatOrder = seatsFrom(bucketSeatCsv)
+                                seatOrder = seatsFrom(bucketSeatCsv),
+                                isPaymentCleared = bucketRounds.any { it.isPaymentCleared }
                             )
                         )
                         bucket = mutableListOf()
+                        bucketRounds = mutableListOf()
                         bucketSeatCsv = null
                         roundSeq++
                     }
@@ -265,6 +271,7 @@ class PlayGameViewModel @Inject constructor(
                             )
                         }
                         if (bucket.isEmpty()) bucketSeatCsv = r.seatOrder.takeIf { it.isNotBlank() }
+                        bucketRounds.add(r)
                         bucket.add(
                             GameEntry(
                                 gameId = r.id.toString(),
@@ -424,6 +431,25 @@ class PlayGameViewModel @Inject constructor(
             } else {
                 val gameSetId = gameSetIdStr.toIntOrNull() ?: return@launch
                 offlineGameRepository.closeCurrentRound(gameSetId)
+            }
+            loadGame(gameSetIdStr)
+        }
+    }
+
+    /** Toggles or sets paymentCleared on a completed round. */
+    fun toggleRoundPaymentCleared(gameSetIdStr: String, round: RoundGroup, isCleared: Boolean) {
+        viewModelScope.launch {
+            val isLocalId = gameSetIdStr.toIntOrNull() != null
+            val isOnline = sessionManager.isOnlineMode() && !isLocalId
+
+            if (isOnline) {
+                when (val result = gameSetRepository.togglePaymentCleared(gameSetIdStr, round.roundId, isCleared)) {
+                    is ApiResult.Error -> _uiState.value = _uiState.value.copy(error = result.message)
+                    else -> {}
+                }
+            } else {
+                val gameIds = round.games.mapNotNull { it.gameId.toIntOrNull() }
+                offlineGameRepository.toggleRoundPaymentCleared(gameIds, isCleared)
             }
             loadGame(gameSetIdStr)
         }

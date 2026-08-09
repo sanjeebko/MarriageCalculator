@@ -142,6 +142,7 @@ public class MarriageGameRoundDto
     public int Sequence { get; set; }
     public string MarriageGameSetId { get; set; } = string.Empty;
     public bool Completed { get; set; }
+    public bool PaymentCleared { get; set; }
     public List<string> PlayerIds { get; set; } = [];
     public List<MarriageGameDto>? MarriageGames { get; set; }
     public Dictionary<string, double>? TotalScore { get; set; }
@@ -152,6 +153,11 @@ public class CreateMarriageGameRoundDto
     public int Sequence { get; set; }
     public string MarriageGameSetId { get; set; } = string.Empty;
     public bool Completed { get; set; }
+}
+
+public class TogglePaymentClearedDto
+{
+    public bool PaymentCleared { get; set; }
 }
 
 public class MarriageGameScoreDto
