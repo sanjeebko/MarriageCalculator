@@ -780,7 +780,7 @@ private fun RoundBlock(
                         Box(
                             modifier = Modifier
                                 .heightIn(min = 30.dp)
-                                .then(if (isHost) Modifier.clickable { onTogglePaymentCleared(!isCleared) } else Modifier)
+                                .clickable { onTogglePaymentCleared(!isCleared) }
                                 .clip(RoundedCornerShape(6.dp))
                                 .background(
                                     if (isCleared) Color(0xFF4CAF50).copy(alpha = 0.18f)
