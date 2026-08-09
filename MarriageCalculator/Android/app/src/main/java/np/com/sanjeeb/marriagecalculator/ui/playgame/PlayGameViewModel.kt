@@ -88,13 +88,16 @@ class PlayGameViewModel @Inject constructor(
     private val _uiState = MutableStateFlow(PlayGameUiState())
     val uiState: StateFlow<PlayGameUiState> = _uiState.asStateFlow()
 
+    private var loadGameJob: kotlinx.coroutines.Job? = null
+
     fun loadGame(gameSetIdStr: String) {
         val isLocalId = gameSetIdStr.toIntOrNull() != null
         val isOnline = sessionManager.isOnlineMode() && !isLocalId
         _uiState.value = _uiState.value.copy(isLoading = true, isOnlineMode = isOnline, error = null)
 
-        if (isOnline) {
-            viewModelScope.launch {
+        loadGameJob?.cancel()
+        loadGameJob = viewModelScope.launch {
+            if (isOnline) {
                 when (val result = gameSetRepository.getGameSet(gameSetIdStr)) {
                     is ApiResult.Success -> {
                         val gameSet = result.data
@@ -202,10 +205,8 @@ class PlayGameViewModel @Inject constructor(
                     }
                     is ApiResult.Loading -> {}
                 }
-            }
-        } else {
-            val gameSetId = gameSetIdStr.toIntOrNull() ?: return
-            viewModelScope.launch {
+            } else {
+                val gameSetId = gameSetIdStr.toIntOrNull() ?: return@launch
                 val gameSet = offlineGameRepository.getGameSet(gameSetId) ?: return@launch
                 val players = offlineGameRepository.getGameSetPlayers(gameSetId)
                 val settings = offlineGameRepository.getGameSettings(gameSet.settingsId) ?: GameSettings.default()
@@ -234,11 +235,12 @@ class PlayGameViewModel @Inject constructor(
 
                     fun flushBucket(isCompleted: Boolean) {
                         if (bucket.isEmpty()) return
+                        val completedFlag = isCompleted || bucket.size >= playerCount || bucketRounds.any { it.closesRound }
                         roundGroups.add(
                             RoundGroup(
                                 roundId = "local-$roundSeq",
                                 roundSequence = roundSeq,
-                                isCompleted = isCompleted,
+                                isCompleted = completedFlag,
                                 games = bucket.toList(),
                                 totalScoreByPlayer = bucket.flatMap { it.playerEntries }
                                     .groupBy { it.playerId }

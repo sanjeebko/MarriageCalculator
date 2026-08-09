@@ -678,9 +678,9 @@ private fun CompactRoundsTable(
         }
 
         displayGroups.forEachIndexed { index, group ->
-            // Cumulative carryover money from all prior completed rounds where isPaymentCleared is false
+            // Cumulative carryover money from all prior rounds with games where isPaymentCleared is false
             val priorUnclearedRounds = roundGroups.filter {
-                it.isCompleted && it.roundSequence < group.roundSequence && !it.isPaymentCleared
+                it.roundSequence < group.roundSequence && it.games.isNotEmpty() && !it.isPaymentCleared
             }
             val groupPlayers = group.seatOrder.ifEmpty { currentSeatOrder }
             val carryoverMoneyByPlayer = groupPlayers.associate { p ->
@@ -775,11 +775,12 @@ private fun RoundBlock(
                     }
                 }
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    if (group.isCompleted) {
+                    if (group.isCompleted || group.games.isNotEmpty()) {
                         val isCleared = group.isPaymentCleared
                         Box(
                             modifier = Modifier
                                 .heightIn(min = 30.dp)
+                                .then(if (isHost) Modifier.clickable { onTogglePaymentCleared(!isCleared) } else Modifier)
                                 .clip(RoundedCornerShape(6.dp))
                                 .background(
                                     if (isCleared) Color(0xFF4CAF50).copy(alpha = 0.18f)
@@ -790,7 +791,6 @@ private fun RoundBlock(
                                     color = if (isCleared) Color(0xFF4CAF50) else AppTheme.palette.cta.copy(alpha = 0.6f),
                                     shape = RoundedCornerShape(6.dp)
                                 )
-                                .then(if (isHost) Modifier.clickable { onTogglePaymentCleared(!isCleared) } else Modifier)
                                 .padding(horizontal = 8.dp, vertical = 4.dp),
                             contentAlignment = Alignment.Center
                         ) {
