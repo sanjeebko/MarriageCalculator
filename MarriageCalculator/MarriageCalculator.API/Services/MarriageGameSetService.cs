@@ -401,6 +401,16 @@ public class MarriageGameSetService : IMarriageGameSetService
         var round = await _context.MarriageGameRounds
             .Find(r => r.MarriageGameSetId == gameSetId && (r.Id == roundId || (parsedSeq > 0 && r.Sequence == parsedSeq)))
             .FirstOrDefaultAsync();
+
+        if (round == null)
+        {
+            var rounds = await _context.MarriageGameRounds
+                .Find(r => r.MarriageGameSetId == gameSetId)
+                .SortBy(r => r.Sequence)
+                .ToListAsync();
+            round = rounds.FirstOrDefault(r => r.Id == roundId || (parsedSeq > 0 && r.Sequence == parsedSeq));
+        }
+
         if (round == null) return null;
 
         await _context.MarriageGameRounds.UpdateOneAsync(

@@ -460,9 +460,9 @@ class PlayGameViewModel @Inject constructor(
                 } else {
                     round.roundId
                 }
-                when (val result = gameSetRepository.togglePaymentCleared(gameSetIdStr, targetRoundId, isCleared)) {
-                    is ApiResult.Error -> _uiState.value = _uiState.value.copy(error = result.message)
-                    else -> loadGame(gameSetIdStr)
+                val result = gameSetRepository.togglePaymentCleared(gameSetIdStr, targetRoundId, isCleared)
+                if (result is ApiResult.Success) {
+                    loadGame(gameSetIdStr)
                 }
             } else {
                 val gameIds = round.games.mapNotNull { it.gameId.toIntOrNull() }
