@@ -777,38 +777,55 @@ private fun RoundBlock(
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     if (group.isCompleted) {
                         val isCleared = group.isPaymentCleared
-                        Text(
-                            text = if (isCleared) "Payment Cleared ✓" else "Clear Payment",
-                            color = if (isCleared) Color(0xFF4CAF50) else AppTheme.palette.cta,
-                            fontSize = 10.sp,
-                            fontWeight = FontWeight.Bold,
+                        Box(
                             modifier = Modifier
-                                .clip(RoundedCornerShape(4.dp))
+                                .heightIn(min = 30.dp)
+                                .clip(RoundedCornerShape(6.dp))
                                 .background(
-                                    if (isCleared) Color(0xFF4CAF50).copy(alpha = 0.15f)
-                                    else AppTheme.palette.tint.copy(alpha = 0.08f)
+                                    if (isCleared) Color(0xFF4CAF50).copy(alpha = 0.18f)
+                                    else AppTheme.palette.tint.copy(alpha = 0.10f)
                                 )
                                 .border(
-                                    width = 0.5.dp,
-                                    color = if (isCleared) Color(0xFF4CAF50) else AppTheme.palette.cta.copy(alpha = 0.5f),
-                                    shape = RoundedCornerShape(4.dp)
+                                    width = 1.dp,
+                                    color = if (isCleared) Color(0xFF4CAF50) else AppTheme.palette.cta.copy(alpha = 0.6f),
+                                    shape = RoundedCornerShape(6.dp)
                                 )
                                 .then(if (isHost) Modifier.clickable { onTogglePaymentCleared(!isCleared) } else Modifier)
-                                .padding(horizontal = 6.dp, vertical = 2.dp)
-                        )
-                        Spacer(modifier = Modifier.width(4.dp))
+                                .padding(horizontal = 8.dp, vertical = 4.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                text = if (isCleared) "Payment Cleared ✓" else "Clear Payment",
+                                color = if (isCleared) Color(0xFF4CAF50) else AppTheme.palette.cta,
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+                        Spacer(modifier = Modifier.width(6.dp))
                     }
                     if (isHost && !group.isCompleted && group.games.isNotEmpty()) {
-                        Text(
-                            text = "Close Round",
-                            color = AppTheme.palette.cta,
-                            fontSize = 10.sp,
-                            fontWeight = FontWeight.Bold,
+                        Box(
                             modifier = Modifier
-                                .clip(RoundedCornerShape(4.dp))
+                                .heightIn(min = 30.dp)
+                                .clip(RoundedCornerShape(6.dp))
+                                .background(AppTheme.palette.cta.copy(alpha = 0.12f))
+                                .border(
+                                    width = 1.dp,
+                                    color = AppTheme.palette.cta.copy(alpha = 0.6f),
+                                    shape = RoundedCornerShape(6.dp)
+                                )
                                 .clickable(onClick = onCloseRound)
-                                .padding(horizontal = 6.dp, vertical = 2.dp)
-                        )
+                                .padding(horizontal = 8.dp, vertical = 4.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                text = "Close Round",
+                                color = AppTheme.palette.cta,
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+                        Spacer(modifier = Modifier.width(6.dp))
                     }
                     if (isHost && isLatestRound && group.games.isNotEmpty()) {
                         IconButton(onClick = onDeleteLastGame, modifier = Modifier.size(24.dp)) {
