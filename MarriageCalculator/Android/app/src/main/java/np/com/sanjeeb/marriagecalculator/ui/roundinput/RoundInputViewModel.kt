@@ -281,7 +281,13 @@ class RoundInputViewModel @Inject constructor(
     fun toggleDuply(playerId: String) {
         val current = _uiState.value
         val newStates = current.playerStates.map {
-            if (it.player.id == playerId) it.copy(duply = !it.duply) else it
+            if (it.player.id == playerId) {
+                val newDuply = !it.duply
+                it.copy(
+                    duply = newDuply,
+                    seen = if (newDuply) true else it.seen
+                )
+            } else it
         }
         _uiState.value = current.copy(playerStates = newStates)
         calculatePreview()
