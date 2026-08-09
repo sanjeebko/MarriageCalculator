@@ -441,6 +441,16 @@ class PlayGameViewModel @Inject constructor(
     /** Toggles or sets paymentCleared on a completed round. */
     fun toggleRoundPaymentCleared(gameSetIdStr: String, round: RoundGroup, isCleared: Boolean) {
         viewModelScope.launch {
+            val currentGroups = _uiState.value.roundGroups
+            val updatedGroups = currentGroups.map { r ->
+                if (r.roundSequence == round.roundSequence) {
+                    r.copy(isPaymentCleared = isCleared)
+                } else {
+                    r
+                }
+            }
+            _uiState.value = _uiState.value.copy(roundGroups = updatedGroups)
+
             val isLocalId = gameSetIdStr.toIntOrNull() != null
             val isOnline = sessionManager.isOnlineMode() && !isLocalId
 
@@ -449,11 +459,13 @@ class PlayGameViewModel @Inject constructor(
                     is ApiResult.Error -> _uiState.value = _uiState.value.copy(error = result.message)
                     else -> {}
                 }
+                loadGame(gameSetIdStr)
             } else {
                 val gameIds = round.games.mapNotNull { it.gameId.toIntOrNull() }
-                offlineGameRepository.toggleRoundPaymentCleared(gameIds, isCleared)
+                if (gameIds.isNotEmpty()) {
+                    offlineGameRepository.toggleRoundPaymentCleared(gameIds, isCleared)
+                }
             }
-            loadGame(gameSetIdStr)
         }
     }
 
