@@ -455,11 +455,15 @@ class PlayGameViewModel @Inject constructor(
             val isOnline = sessionManager.isOnlineMode() && !isLocalId
 
             if (isOnline) {
-                when (val result = gameSetRepository.togglePaymentCleared(gameSetIdStr, round.roundId, isCleared)) {
-                    is ApiResult.Error -> _uiState.value = _uiState.value.copy(error = result.message)
-                    else -> {}
+                val targetRoundId = if (round.roundId.isBlank() || round.roundId.startsWith("local-")) {
+                    round.roundSequence.toString()
+                } else {
+                    round.roundId
                 }
-                loadGame(gameSetIdStr)
+                when (val result = gameSetRepository.togglePaymentCleared(gameSetIdStr, targetRoundId, isCleared)) {
+                    is ApiResult.Error -> _uiState.value = _uiState.value.copy(error = result.message)
+                    else -> loadGame(gameSetIdStr)
+                }
             } else {
                 val gameIds = round.games.mapNotNull { it.gameId.toIntOrNull() }
                 if (gameIds.isNotEmpty()) {

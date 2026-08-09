@@ -382,7 +382,7 @@ public class MarriageGameSetService : IMarriageGameSetService
     }
 
     /// <summary>
-    /// Toggles or updates the payment cleared status of a round. Host-only.
+    /// Toggles or updates the payment cleared status of a round.
     /// </summary>
     public async Task<MarriageGameRoundDto?> TogglePaymentClearedAsync(string gameSetId, string roundId, string hostUserId, bool paymentCleared)
     {
@@ -392,18 +392,19 @@ public class MarriageGameSetService : IMarriageGameSetService
             throw new KeyNotFoundException($"Marriage game set with ID {gameSetId} not found");
         }
 
-        if (gameSet.HostUserId != hostUserId)
+        if (gameSet.HostUserId != hostUserId && (gameSet.PlayerIds == null || !gameSet.PlayerIds.Contains(hostUserId)))
         {
-            throw new UnauthorizedAccessException("Only the game host can update payment status.");
+            throw new UnauthorizedAccessException("Only game set participants or host can update payment status.");
         }
 
+        int.TryParse(roundId.Replace("local-", ""), out var parsedSeq);
         var round = await _context.MarriageGameRounds
-            .Find(r => r.Id == roundId && r.MarriageGameSetId == gameSetId)
+            .Find(r => r.MarriageGameSetId == gameSetId && (r.Id == roundId || (parsedSeq > 0 && r.Sequence == parsedSeq)))
             .FirstOrDefaultAsync();
         if (round == null) return null;
 
         await _context.MarriageGameRounds.UpdateOneAsync(
-            r => r.Id == roundId,
+            r => r.Id == round.Id,
             Builders<MarriageGameRound>.Update.Set(r => r.PaymentCleared, paymentCleared));
         round.PaymentCleared = paymentCleared;
 
