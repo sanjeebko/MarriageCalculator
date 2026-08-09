@@ -443,10 +443,18 @@ class PlayGameViewModel @Inject constructor(
         viewModelScope.launch {
             val currentGroups = _uiState.value.roundGroups
             val updatedGroups = currentGroups.map { r ->
-                if (r.roundSequence == round.roundSequence) {
-                    r.copy(isPaymentCleared = isCleared)
+                if (isCleared) {
+                    if (r.roundSequence <= round.roundSequence) {
+                        r.copy(isPaymentCleared = true)
+                    } else {
+                        r
+                    }
                 } else {
-                    r
+                    if (r.roundSequence == round.roundSequence) {
+                        r.copy(isPaymentCleared = false)
+                    } else {
+                        r
+                    }
                 }
             }
             _uiState.value = _uiState.value.copy(roundGroups = updatedGroups)
@@ -465,7 +473,13 @@ class PlayGameViewModel @Inject constructor(
                     loadGame(gameSetIdStr)
                 }
             } else {
-                val gameIds = round.games.mapNotNull { it.gameId.toIntOrNull() }
+                val targetRounds = if (isCleared) {
+                    val filtered = currentGroups.filter { it.roundSequence <= round.roundSequence }
+                    if (filtered.isNotEmpty()) filtered else listOf(round)
+                } else {
+                    listOf(round)
+                }
+                val gameIds = targetRounds.flatMap { it.games }.mapNotNull { it.gameId.toIntOrNull() }
                 if (gameIds.isNotEmpty()) {
                     offlineGameRepository.toggleRoundPaymentCleared(gameIds, isCleared)
                 }

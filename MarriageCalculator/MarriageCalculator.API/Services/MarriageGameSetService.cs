@@ -413,9 +413,19 @@ public class MarriageGameSetService : IMarriageGameSetService
 
         if (round == null) return null;
 
-        await _context.MarriageGameRounds.UpdateOneAsync(
-            r => r.Id == round.Id,
-            Builders<MarriageGameRound>.Update.Set(r => r.PaymentCleared, paymentCleared));
+        if (paymentCleared)
+        {
+            // Cascading clear: clearing payment on round S clears round S and all prior rounds (Sequence <= S)
+            await _context.MarriageGameRounds.UpdateManyAsync(
+                r => r.MarriageGameSetId == gameSetId && r.Sequence <= round.Sequence,
+                Builders<MarriageGameRound>.Update.Set(r => r.PaymentCleared, true));
+        }
+        else
+        {
+            await _context.MarriageGameRounds.UpdateOneAsync(
+                r => r.Id == round.Id,
+                Builders<MarriageGameRound>.Update.Set(r => r.PaymentCleared, false));
+        }
         round.PaymentCleared = paymentCleared;
 
         return await BuildRoundDtoAsync(round);
