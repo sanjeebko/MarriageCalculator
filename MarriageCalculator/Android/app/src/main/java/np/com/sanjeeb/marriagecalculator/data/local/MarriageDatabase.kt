@@ -14,7 +14,7 @@ import androidx.room.RoomDatabase
         RoundEntity::class,
         RoundScoreEntity::class
     ],
-    version = 4,
+    version = 5,
     exportSchema = false
 )
 abstract class MarriageDatabase : RoomDatabase() {

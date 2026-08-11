@@ -30,3 +30,7 @@ data class AuthTokenResult(
     val displayName: String,
     val expiresAt: String
 )
+
+data class TogglePaymentClearedRequest(
+    val paymentCleared: Boolean
+)

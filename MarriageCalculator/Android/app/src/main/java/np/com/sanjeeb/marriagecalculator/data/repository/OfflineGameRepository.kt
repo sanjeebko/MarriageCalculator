@@ -246,6 +246,12 @@ class OfflineGameRepository @Inject constructor(
         roundDao.closeRoundAt(latest.id)
     }
 
+    /** Updates paymentCleared flag on all games belonging to a logical round. */
+    suspend fun toggleRoundPaymentCleared(gameIds: List<Int>, isCleared: Boolean) {
+        if (gameIds.isEmpty()) return
+        roundDao.setPaymentClearedForGames(gameIds, isCleared)
+    }
+
     /**
      * One-time backfill so round history is stored data, never derived: games saved before seat
      * snapshots existed get the current seating persisted as theirs, and games saved before

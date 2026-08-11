@@ -9,6 +9,7 @@ import np.com.sanjeeb.marriagecalculator.data.repository.PlayerRepository
 import np.com.sanjeeb.marriagecalculator.data.repository.FriendRepository
 import np.com.sanjeeb.marriagecalculator.data.repository.SessionManager
 import np.com.sanjeeb.marriagecalculator.data.repository.ApiResult
+import np.com.sanjeeb.marriagecalculator.data.local.RoundEntity
 import np.com.sanjeeb.marriagecalculator.ui.scoreboard.RoundPlayerEntry
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -44,7 +45,8 @@ data class RoundGroup(
     val games: List<GameEntry> = emptyList(),
     val totalScoreByPlayer: Map<String, Int> = emptyMap(),
     /** Seat order this round was (or is being) played with - a reshuffle between rounds must not rewrite history. */
-    val seatOrder: List<Player> = emptyList()
+    val seatOrder: List<Player> = emptyList(),
+    val isPaymentCleared: Boolean = false
 )
 
 /**
@@ -86,13 +88,16 @@ class PlayGameViewModel @Inject constructor(
     private val _uiState = MutableStateFlow(PlayGameUiState())
     val uiState: StateFlow<PlayGameUiState> = _uiState.asStateFlow()
 
+    private var loadGameJob: kotlinx.coroutines.Job? = null
+
     fun loadGame(gameSetIdStr: String) {
         val isLocalId = gameSetIdStr.toIntOrNull() != null
         val isOnline = sessionManager.isOnlineMode() && !isLocalId
         _uiState.value = _uiState.value.copy(isLoading = true, isOnlineMode = isOnline, error = null)
 
-        if (isOnline) {
-            viewModelScope.launch {
+        loadGameJob?.cancel()
+        loadGameJob = viewModelScope.launch {
+            if (isOnline) {
                 when (val result = gameSetRepository.getGameSet(gameSetIdStr)) {
                     is ApiResult.Success -> {
                         val gameSet = result.data
@@ -141,7 +146,8 @@ class PlayGameViewModel @Inject constructor(
                                 isCompleted = r.completed,
                                 games = games,
                                 totalScoreByPlayer = r.totalScore?.mapValues { it.value.toInt() } ?: emptyMap(),
-                                seatOrder = seatOrder
+                                seatOrder = seatOrder,
+                                isPaymentCleared = r.paymentCleared
                             )
                         } ?: emptyList()
 
@@ -199,10 +205,8 @@ class PlayGameViewModel @Inject constructor(
                     }
                     is ApiResult.Loading -> {}
                 }
-            }
-        } else {
-            val gameSetId = gameSetIdStr.toIntOrNull() ?: return
-            viewModelScope.launch {
+            } else {
+                val gameSetId = gameSetIdStr.toIntOrNull() ?: return@launch
                 val gameSet = offlineGameRepository.getGameSet(gameSetId) ?: return@launch
                 val players = offlineGameRepository.getGameSetPlayers(gameSetId)
                 val settings = offlineGameRepository.getGameSettings(gameSet.settingsId) ?: GameSettings.default()
@@ -219,6 +223,7 @@ class PlayGameViewModel @Inject constructor(
                     val orderedGames = roundEntities.sortedBy { it.roundNumber }
                     val roundGroups = mutableListOf<RoundGroup>()
                     var bucket = mutableListOf<GameEntry>()
+                    var bucketRounds = mutableListOf<RoundEntity>()
                     var bucketSeatCsv: String? = null
                     var roundSeq = 1
 
@@ -230,19 +235,22 @@ class PlayGameViewModel @Inject constructor(
 
                     fun flushBucket(isCompleted: Boolean) {
                         if (bucket.isEmpty()) return
+                        val completedFlag = isCompleted || bucket.size >= playerCount || bucketRounds.any { it.closesRound }
                         roundGroups.add(
                             RoundGroup(
                                 roundId = "local-$roundSeq",
                                 roundSequence = roundSeq,
-                                isCompleted = isCompleted,
+                                isCompleted = completedFlag,
                                 games = bucket.toList(),
                                 totalScoreByPlayer = bucket.flatMap { it.playerEntries }
                                     .groupBy { it.playerId }
                                     .mapValues { entry -> entry.value.sumOf { e -> e.score } },
-                                seatOrder = seatsFrom(bucketSeatCsv)
+                                seatOrder = seatsFrom(bucketSeatCsv),
+                                isPaymentCleared = bucketRounds.any { it.isPaymentCleared }
                             )
                         )
                         bucket = mutableListOf()
+                        bucketRounds = mutableListOf()
                         bucketSeatCsv = null
                         roundSeq++
                     }
@@ -265,6 +273,7 @@ class PlayGameViewModel @Inject constructor(
                             )
                         }
                         if (bucket.isEmpty()) bucketSeatCsv = r.seatOrder.takeIf { it.isNotBlank() }
+                        bucketRounds.add(r)
                         bucket.add(
                             GameEntry(
                                 gameId = r.id.toString(),
@@ -426,6 +435,55 @@ class PlayGameViewModel @Inject constructor(
                 offlineGameRepository.closeCurrentRound(gameSetId)
             }
             loadGame(gameSetIdStr)
+        }
+    }
+
+    /** Toggles or sets paymentCleared on a completed round. */
+    fun toggleRoundPaymentCleared(gameSetIdStr: String, round: RoundGroup, isCleared: Boolean) {
+        viewModelScope.launch {
+            val currentGroups = _uiState.value.roundGroups
+            val updatedGroups = currentGroups.map { r ->
+                if (isCleared) {
+                    if (r.roundSequence <= round.roundSequence) {
+                        r.copy(isPaymentCleared = true)
+                    } else {
+                        r
+                    }
+                } else {
+                    if (r.roundSequence == round.roundSequence) {
+                        r.copy(isPaymentCleared = false)
+                    } else {
+                        r
+                    }
+                }
+            }
+            _uiState.value = _uiState.value.copy(roundGroups = updatedGroups)
+
+            val isLocalId = gameSetIdStr.toIntOrNull() != null
+            val isOnline = sessionManager.isOnlineMode() && !isLocalId
+
+            if (isOnline) {
+                val targetRoundId = if (round.roundId.isBlank() || round.roundId.startsWith("local-")) {
+                    round.roundSequence.toString()
+                } else {
+                    round.roundId
+                }
+                val result = gameSetRepository.togglePaymentCleared(gameSetIdStr, targetRoundId, isCleared)
+                if (result is ApiResult.Success) {
+                    loadGame(gameSetIdStr)
+                }
+            } else {
+                val targetRounds = if (isCleared) {
+                    val filtered = currentGroups.filter { it.roundSequence <= round.roundSequence }
+                    if (filtered.isNotEmpty()) filtered else listOf(round)
+                } else {
+                    listOf(round)
+                }
+                val gameIds = targetRounds.flatMap { it.games }.mapNotNull { it.gameId.toIntOrNull() }
+                if (gameIds.isNotEmpty()) {
+                    offlineGameRepository.toggleRoundPaymentCleared(gameIds, isCleared)
+                }
+            }
         }
     }
 

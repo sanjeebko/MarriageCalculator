@@ -81,6 +81,7 @@ data class RoundEntity(
     val closesRound: Boolean = false,
     /** Comma-separated player ids in seat order at the time this game was played - a later reshuffle must not rewrite history. */
     val seatOrder: String = "",
+    val isPaymentCleared: Boolean = false,
     val createdAt: Long = System.currentTimeMillis(),
     val remoteId: String? = null,
     val synced: Boolean = false
@@ -227,6 +228,9 @@ interface RoundDao {
 
     @Query("UPDATE rounds SET dealerId = :dealerId WHERE id = :id")
     suspend fun setDealer(id: Int, dealerId: Int)
+
+    @Query("UPDATE rounds SET isPaymentCleared = :cleared WHERE id IN (:gameIds)")
+    suspend fun setPaymentClearedForGames(gameIds: List<Int>, cleared: Boolean)
 }
 
 @Dao
