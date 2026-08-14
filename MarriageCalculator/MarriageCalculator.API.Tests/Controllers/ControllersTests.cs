@@ -406,4 +406,65 @@ public class ControllersTests
         // Assert
         Assert.IsType<ForbidResult>(result);
     }
+
+    [Fact]
+    public async Task MarriageGameSetsController_TogglePaymentCleared_Success_ReturnsOkWithRoundDto()
+    {
+        // Arrange
+        var serviceMock = new Mock<IMarriageGameSetService>();
+        var loggerMock = new Mock<ILogger<MarriageGameSetsController>>();
+        var controller = new MarriageGameSetsController(serviceMock.Object, loggerMock.Object);
+        SetControllerUser(controller, "mock-host-456");
+
+        var roundDto = new MarriageGameRoundDto { Id = "round-1", Sequence = 1, Completed = true, PaymentCleared = true };
+        serviceMock.Setup(s => s.TogglePaymentClearedAsync("set-1", "round-1", "mock-host-456", true))
+            .ReturnsAsync(roundDto);
+
+        // Act
+        var result = await controller.TogglePaymentCleared("set-1", "round-1", new TogglePaymentClearedDto { PaymentCleared = true });
+
+        // Assert
+        var okResult = Assert.IsType<OkObjectResult>(result.Result);
+        var returnedRound = Assert.IsType<MarriageGameRoundDto>(okResult.Value);
+        Assert.True(returnedRound.PaymentCleared);
+        serviceMock.Verify(s => s.TogglePaymentClearedAsync("set-1", "round-1", "mock-host-456", true), Times.Once);
+    }
+
+    [Fact]
+    public async Task MarriageGameSetsController_TogglePaymentCleared_NotFound_ReturnsNotFound()
+    {
+        // Arrange
+        var serviceMock = new Mock<IMarriageGameSetService>();
+        var loggerMock = new Mock<ILogger<MarriageGameSetsController>>();
+        var controller = new MarriageGameSetsController(serviceMock.Object, loggerMock.Object);
+        SetControllerUser(controller, "mock-host-456");
+
+        serviceMock.Setup(s => s.TogglePaymentClearedAsync("set-1", "missing-round", "mock-host-456", true))
+            .ReturnsAsync((MarriageGameRoundDto?)null);
+
+        // Act
+        var result = await controller.TogglePaymentCleared("set-1", "missing-round", new TogglePaymentClearedDto { PaymentCleared = true });
+
+        // Assert
+        Assert.IsType<NotFoundObjectResult>(result.Result);
+    }
+
+    [Fact]
+    public async Task MarriageGameSetsController_TogglePaymentCleared_NonHost_ReturnsForbid()
+    {
+        // Arrange
+        var serviceMock = new Mock<IMarriageGameSetService>();
+        var loggerMock = new Mock<ILogger<MarriageGameSetsController>>();
+        var controller = new MarriageGameSetsController(serviceMock.Object, loggerMock.Object);
+        SetControllerUser(controller, "not-the-host");
+
+        serviceMock.Setup(s => s.TogglePaymentClearedAsync("set-1", "round-1", "not-the-host", true))
+            .ThrowsAsync(new UnauthorizedAccessException("Only game set participants or host can update payment status."));
+
+        // Act
+        var result = await controller.TogglePaymentCleared("set-1", "round-1", new TogglePaymentClearedDto { PaymentCleared = true });
+
+        // Assert
+        Assert.IsType<ForbidResult>(result.Result);
+    }
 }
