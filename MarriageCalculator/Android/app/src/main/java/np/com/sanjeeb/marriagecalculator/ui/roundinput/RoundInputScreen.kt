@@ -41,6 +41,15 @@ import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import java.io.File
 
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
+import androidx.compose.foundation.BorderStroke
+
 // Column widths for the compact score grid — header and rows must stay in sync.
 private val WinnerColWidth = 36.dp
 private val CheckColWidth = 40.dp
@@ -58,7 +67,9 @@ fun RoundInputScreen(
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val roundNumber = roundId.toIntOrNull() ?: 1
+    val haptic = LocalHapticFeedback.current
     var maalDialogPlayerId by remember { mutableStateOf<String?>(null) }
+    var activeQuickMaalPlayerId by remember { mutableStateOf<String?>(null) }
 
     LaunchedEffect(gameSetId) {
         viewModel.loadGameData(gameSetId, roundNumber, editGameId)
@@ -155,13 +166,34 @@ fun RoundInputScreen(
                         PlayerScoreRow(
                             state = playerState,
                             striped = index % 2 == 1,
+                            isSelectedForQuickMaal = activeQuickMaalPlayerId == playerState.player.id,
                             showPreview = uiState.showPreview,
                             currency = uiState.settings.currency,
-                            onSelectWinner = { viewModel.setWinner(playerState.player.id) },
-                            onToggleSeen = { viewModel.toggleSeen(playerState.player.id) },
-                            onToggleDuply = { viewModel.toggleDuply(playerState.player.id) },
+                            onSelectWinner = {
+                                haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                                viewModel.setWinner(playerState.player.id)
+                            },
+                            onToggleSeen = {
+                                haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                                viewModel.toggleSeen(playerState.player.id)
+                            },
+                            onToggleDuply = {
+                                haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                                viewModel.toggleDuply(playerState.player.id)
+                            },
                             onMaalPointsChange = { viewModel.setSeenPoints(playerState.player.id, it) },
-                            onOpenMaalCalculator = { maalDialogPlayerId = playerState.player.id }
+                            onOpenMaalCalculator = { maalDialogPlayerId = playerState.player.id },
+                            onRowClick = {
+                                activeQuickMaalPlayerId = if (activeQuickMaalPlayerId == playerState.player.id) null else playerState.player.id
+                            },
+                            onAddMaal = { delta ->
+                                haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                                viewModel.addMaalPoints(playerState.player.id, delta)
+                            },
+                            onClearMaal = {
+                                haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                                viewModel.setSeenPoints(playerState.player.id, 0)
+                            }
                         )
                     }
                 }
@@ -276,154 +308,274 @@ private fun HeaderText(text: String, width: androidx.compose.ui.unit.Dp) {
 private fun PlayerScoreRow(
     state: PlayerRoundState,
     striped: Boolean,
+    isSelectedForQuickMaal: Boolean,
     showPreview: Boolean,
     currency: Currency,
     onSelectWinner: () -> Unit,
     onToggleSeen: () -> Unit,
     onToggleDuply: () -> Unit,
     onMaalPointsChange: (Int) -> Unit,
-    onOpenMaalCalculator: () -> Unit
+    onOpenMaalCalculator: () -> Unit,
+    onRowClick: () -> Unit,
+    onAddMaal: (Int) -> Unit,
+    onClearMaal: () -> Unit
 ) {
     val isWinner = state.isWinner
+
+    // Winner celebration pulse animation
+    val infiniteTransition = rememberInfiniteTransition(label = "winnerCelebration")
+    val winnerGlowAlpha by infiniteTransition.animateFloat(
+        initialValue = 0.12f,
+        targetValue = 0.32f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(durationMillis = 900),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "winnerGlowAlpha"
+    )
+
     val rowBackground = when {
-        isWinner -> AppTheme.palette.accent.copy(alpha = 0.08f)
+        isWinner -> AppTheme.palette.accent.copy(alpha = winnerGlowAlpha)
+        isSelectedForQuickMaal -> AppTheme.palette.tint.copy(alpha = 0.09f)
         striped -> AppTheme.palette.tint.copy(alpha = 0.03f)
         else -> Color.Transparent
     }
 
-    Row(
-        verticalAlignment = Alignment.CenterVertically,
+    Column(
         modifier = Modifier
             .fillMaxWidth()
             .background(rowBackground)
-            .padding(horizontal = 10.dp, vertical = 6.dp)
-    ) {
-        // Player: small avatar + name + dealer badge (+ preview line underneath)
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier.weight(1f)
-        ) {
-            PlayerAvatar(state)
-            Spacer(modifier = Modifier.width(8.dp))
-            Column {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text(
-                        text = state.player.name,
-                        color = AppTheme.palette.textPrimary,
-                        fontSize = 13.sp,
-                        fontWeight = if (isWinner) FontWeight.Bold else FontWeight.Medium,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                        modifier = Modifier.weight(1f, fill = false)
+            .then(
+                if (isWinner) {
+                    Modifier.border(
+                        BorderStroke(
+                            1.dp,
+                            Brush.horizontalGradient(
+                                listOf(
+                                    AppTheme.palette.accent.copy(alpha = 0.8f),
+                                    AppTheme.palette.accentAlt.copy(alpha = 0.6f),
+                                    AppTheme.palette.accent.copy(alpha = 0.8f)
+                                )
+                            )
+                        )
                     )
-                    if (state.isDealer) {
-                        Spacer(modifier = Modifier.width(4.dp))
-                        DealerBadge(size = 14.dp)
-                    }
-                }
-                // Live preview of this game's points/money, once a winner is picked
-                if (showPreview) {
-                    val scoreColor = when {
-                        state.previewScore > 0 -> AppTheme.palette.numberPositive
-                        state.previewScore < 0 -> AppTheme.palette.numberNegative
-                        else -> AppTheme.palette.numberZero
-                    }
-                    Text(
-                        text = "${state.previewScore} · ${currency.formatMoney(state.previewMoney)}",
-                        color = scoreColor,
-                        fontSize = 11.sp,
-                        fontWeight = FontWeight.Bold,
-                        maxLines = 1
-                    )
-                }
-            }
-        }
-
-        // Winner trophy toggle
-        Box(modifier = Modifier.width(WinnerColWidth), contentAlignment = Alignment.Center) {
-            Icon(
-                imageVector = Icons.Default.EmojiEvents,
-                contentDescription = "Select winner",
-                tint = if (isWinner) AppTheme.palette.accent else AppTheme.palette.tint.copy(alpha = 0.15f),
-                modifier = Modifier
-                    .size(30.dp)
-                    .clip(RoundedCornerShape(6.dp))
-                    .clickable { onSelectWinner() }
-                    .padding(4.dp)
+                } else Modifier
             )
-        }
-
-        // Seen checkbox (winner is always seen — locked)
-        GridCheckbox(
-            checked = state.seen,
-            enabled = !isWinner,
-            activeColor = AppTheme.palette.accent,
-            description = "Seen joker",
-            width = CheckColWidth,
-            onToggle = onToggleSeen
-        )
-
-        // Dublee checkbox
-        GridCheckbox(
-            checked = state.duply,
-            enabled = true,
-            activeColor = AppTheme.palette.cta,
-            description = "Dublee",
-            width = CheckColWidth,
-            onToggle = onToggleDuply
-        )
-
-        // Maal input + calculator (active only when seen)
+    ) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.Center,
-            modifier = Modifier.width(MaalColWidth)
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 10.dp, vertical = 6.dp)
         ) {
-            if (state.seen) {
-                BasicTextField(
-                    value = if (state.seenPoints == 0) "" else state.seenPoints.toString(),
-                    onValueChange = { onMaalPointsChange(it.toIntOrNull() ?: 0) },
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                    singleLine = true,
-                    textStyle = TextStyle(
-                        color = AppTheme.palette.textPrimary,
-                        fontSize = 13.sp,
-                        fontWeight = FontWeight.Bold,
-                        textAlign = TextAlign.Center
-                    ),
-                    cursorBrush = SolidColor(AppTheme.palette.accent),
-                    decorationBox = { inner ->
-                        Box(
-                            contentAlignment = Alignment.Center,
-                            modifier = Modifier
-                                .size(width = 44.dp, height = 32.dp)
-                                .clip(RoundedCornerShape(6.dp))
-                                .background(AppTheme.palette.tint.copy(alpha = 0.08f))
-                                .border(1.dp, AppTheme.palette.accent.copy(alpha = 0.35f), RoundedCornerShape(6.dp))
-                        ) {
-                            if (state.seenPoints == 0) {
-                                Text("0", color = AppTheme.palette.tint.copy(alpha = 0.25f), fontSize = 13.sp)
-                            }
-                            inner()
+            // Player: small avatar + name + dealer badge (+ preview line underneath)
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier
+                    .weight(1f)
+                    .clip(RoundedCornerShape(6.dp))
+                    .clickable { onRowClick() }
+                    .padding(vertical = 2.dp)
+            ) {
+                PlayerAvatar(state)
+                Spacer(modifier = Modifier.width(8.dp))
+                Column {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text(
+                            text = state.player.name,
+                            color = if (isWinner) AppTheme.palette.accent else AppTheme.palette.textPrimary,
+                            fontSize = 13.sp,
+                            fontWeight = if (isWinner) FontWeight.Bold else FontWeight.Medium,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                            modifier = Modifier.weight(1f, fill = false)
+                        )
+                        if (isWinner) {
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text("👑", fontSize = 10.sp)
+                        }
+                        if (state.isDealer) {
+                            Spacer(modifier = Modifier.width(4.dp))
+                            DealerBadge(size = 14.dp)
                         }
                     }
-                )
-                Spacer(modifier = Modifier.width(4.dp))
+                    // Live preview of this game's points/money, once a winner is picked
+                    if (showPreview) {
+                        val scoreColor = when {
+                            state.previewScore > 0 -> AppTheme.palette.numberPositive
+                            state.previewScore < 0 -> AppTheme.palette.numberNegative
+                            else -> AppTheme.palette.numberZero
+                        }
+                        Text(
+                            text = "${state.previewScore} · ${currency.formatMoney(state.previewMoney)}",
+                            color = scoreColor,
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.Bold,
+                            maxLines = 1
+                        )
+                    }
+                }
+            }
+
+            // Winner trophy toggle
+            Box(modifier = Modifier.width(WinnerColWidth), contentAlignment = Alignment.Center) {
                 Icon(
-                    imageVector = Icons.Default.Calculate,
-                    contentDescription = "Open Maal calculator",
-                    tint = AppTheme.palette.accent,
+                    imageVector = Icons.Default.EmojiEvents,
+                    contentDescription = "Select winner",
+                    tint = if (isWinner) AppTheme.palette.accent else AppTheme.palette.tint.copy(alpha = 0.15f),
                     modifier = Modifier
-                        .size(28.dp)
+                        .size(30.dp)
                         .clip(RoundedCornerShape(6.dp))
-                        .background(AppTheme.palette.accent.copy(alpha = 0.12f))
-                        .clickable { onOpenMaalCalculator() }
-                        .padding(5.dp)
+                        .clickable { onSelectWinner() }
+                        .padding(4.dp)
                 )
-            } else {
-                Text("—", color = AppTheme.palette.tint.copy(alpha = 0.2f), fontSize = 13.sp)
+            }
+
+            // Seen checkbox (winner is always seen — locked)
+            GridCheckbox(
+                checked = state.seen,
+                enabled = !isWinner,
+                activeColor = AppTheme.palette.accent,
+                description = "Seen joker",
+                width = CheckColWidth,
+                onToggle = onToggleSeen
+            )
+
+            // Dublee checkbox
+            GridCheckbox(
+                checked = state.duply,
+                enabled = true,
+                activeColor = AppTheme.palette.cta,
+                description = "Dublee",
+                width = CheckColWidth,
+                onToggle = onToggleDuply
+            )
+
+            // Maal input + calculator (active only when seen)
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.Center,
+                modifier = Modifier.width(MaalColWidth)
+            ) {
+                if (state.seen) {
+                    BasicTextField(
+                        value = if (state.seenPoints == 0) "" else state.seenPoints.toString(),
+                        onValueChange = { onMaalPointsChange(it.toIntOrNull() ?: 0) },
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                        singleLine = true,
+                        textStyle = TextStyle(
+                            color = AppTheme.palette.textPrimary,
+                            fontSize = 13.sp,
+                            fontWeight = FontWeight.Bold,
+                            textAlign = TextAlign.Center
+                        ),
+                        cursorBrush = SolidColor(AppTheme.palette.accent),
+                        decorationBox = { inner ->
+                            Box(
+                                contentAlignment = Alignment.Center,
+                                modifier = Modifier
+                                    .size(width = 44.dp, height = 32.dp)
+                                    .clip(RoundedCornerShape(6.dp))
+                                    .background(AppTheme.palette.tint.copy(alpha = 0.08f))
+                                    .border(1.dp, AppTheme.palette.accent.copy(alpha = 0.35f), RoundedCornerShape(6.dp))
+                            ) {
+                                if (state.seenPoints == 0) {
+                                    Text("0", color = AppTheme.palette.tint.copy(alpha = 0.25f), fontSize = 13.sp)
+                                }
+                                inner()
+                            }
+                        }
+                    )
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Icon(
+                        imageVector = Icons.Default.Calculate,
+                        contentDescription = "Open Maal calculator",
+                        tint = AppTheme.palette.accent,
+                        modifier = Modifier
+                            .size(28.dp)
+                            .clip(RoundedCornerShape(6.dp))
+                            .background(AppTheme.palette.accent.copy(alpha = 0.12f))
+                            .clickable { onOpenMaalCalculator() }
+                            .padding(5.dp)
+                    )
+                } else {
+                    Text("—", color = AppTheme.palette.tint.copy(alpha = 0.2f), fontSize = 13.sp)
+                }
             }
         }
+
+        // Quick Maal Presets toolbar: appears when player row is active/expanded
+        if (isSelectedForQuickMaal) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(AppTheme.palette.tint.copy(alpha = 0.05f))
+                    .padding(horizontal = 12.dp, vertical = 5.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.End
+            ) {
+                Text(
+                    text = "Quick Maal:",
+                    color = AppTheme.palette.frostAccent,
+                    fontSize = 11.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    modifier = Modifier.padding(end = 8.dp)
+                )
+
+                QuickMaalChip("+3") { onAddMaal(3) }
+                Spacer(modifier = Modifier.width(6.dp))
+                QuickMaalChip("+5") { onAddMaal(5) }
+                Spacer(modifier = Modifier.width(6.dp))
+                QuickMaalChip("+8") { onAddMaal(8) }
+                Spacer(modifier = Modifier.width(6.dp))
+                QuickMaalChip("+10") { onAddMaal(10) }
+
+                if (state.seenPoints > 0) {
+                    Spacer(modifier = Modifier.width(8.dp))
+                    QuickMaalClearChip { onClearMaal() }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun QuickMaalChip(text: String, onClick: () -> Unit) {
+    Box(
+        modifier = Modifier
+            .clip(RoundedCornerShape(6.dp))
+            .background(AppTheme.palette.accent.copy(alpha = 0.15f))
+            .border(1.dp, AppTheme.palette.accent.copy(alpha = 0.4f), RoundedCornerShape(6.dp))
+            .clickable(onClick = onClick)
+            .padding(horizontal = 8.dp, vertical = 4.dp),
+        contentAlignment = Alignment.Center
+    ) {
+        Text(
+            text = text,
+            color = AppTheme.palette.accent,
+            fontSize = 12.sp,
+            fontWeight = FontWeight.Bold
+        )
+    }
+}
+
+@Composable
+private fun QuickMaalClearChip(onClick: () -> Unit) {
+    Box(
+        modifier = Modifier
+            .clip(RoundedCornerShape(6.dp))
+            .background(AppTheme.palette.danger.copy(alpha = 0.12f))
+            .border(1.dp, AppTheme.palette.danger.copy(alpha = 0.35f), RoundedCornerShape(6.dp))
+            .clickable(onClick = onClick)
+            .padding(horizontal = 7.dp, vertical = 4.dp),
+        contentAlignment = Alignment.Center
+    ) {
+        Text(
+            text = "Clear",
+            color = AppTheme.palette.danger,
+            fontSize = 11.sp,
+            fontWeight = FontWeight.SemiBold
+        )
     }
 }
 

@@ -3,6 +3,10 @@ package np.com.sanjeeb.marriagecalculator.ui.playgame
 import np.com.sanjeeb.marriagecalculator.ui.theme.AppTheme
 
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
@@ -12,6 +16,7 @@ import androidx.compose.animation.scaleOut
 import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.ScrollState
 import androidx.compose.animation.animateContentSize
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -114,6 +119,26 @@ fun PlayGameScreen(
         )
     }
 
+    val infiniteTransition = rememberInfiniteTransition(label = "fabPulse")
+    val fabPulseScale by infiniteTransition.animateFloat(
+        initialValue = 1f,
+        targetValue = 1.06f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(durationMillis = 1000),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "fabPulseScale"
+    )
+    val fabGlowAlpha by infiniteTransition.animateFloat(
+        initialValue = 0.25f,
+        targetValue = 0.65f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(durationMillis = 1000),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "fabGlowAlpha"
+    )
+
     Scaffold(
         topBar = {
             TopAppBar(
@@ -183,6 +208,47 @@ fun PlayGameScreen(
                 },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent)
             )
+        },
+        floatingActionButton = {
+            if (uiState.isHost && !uiState.isSettled) {
+                Box(
+                    modifier = Modifier
+                        .graphicsLayer(scaleX = fabPulseScale, scaleY = fabPulseScale)
+                        .border(
+                            width = 2.dp,
+                            brush = Brush.radialGradient(
+                                listOf(
+                                    AppTheme.palette.accent.copy(alpha = fabGlowAlpha),
+                                    AppTheme.palette.accentAlt.copy(alpha = fabGlowAlpha * 0.5f),
+                                    Color.Transparent
+                                )
+                            ),
+                            shape = RoundedCornerShape(16.dp)
+                        )
+                ) {
+                    ExtendedFloatingActionButton(
+                        onClick = { onAddRound((uiState.totalGamesPlayed + 1).toString()) },
+                        containerColor = AppTheme.palette.accent,
+                        contentColor = AppTheme.palette.surface,
+                        shape = RoundedCornerShape(16.dp),
+                        icon = {
+                            Icon(
+                                imageVector = Icons.Default.Add,
+                                contentDescription = "Record Game",
+                                modifier = Modifier.size(22.dp)
+                            )
+                        },
+                        text = {
+                            Text(
+                                text = "Record Game",
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 14.sp,
+                                letterSpacing = 0.5.sp
+                            )
+                        }
+                    )
+                }
+            }
         },
         containerColor = Color.Transparent
     ) { padding ->

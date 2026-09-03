@@ -304,6 +304,26 @@ class RoundInputViewModel @Inject constructor(
         calculatePreview()
     }
 
+    /**
+     * Increments/decrements seen Maal points by a preset delta (e.g., +3, +5, +8, +10).
+     * If player hasn't seen joker yet and delta > 0, seen is automatically marked true.
+     */
+    fun addMaalPoints(playerId: String, delta: Int) {
+        val current = _uiState.value
+        val newStates = current.playerStates.map {
+            if (it.player.id == playerId) {
+                val newSeen = if (delta > 0) true else it.seen
+                val newPoints = (it.seenPoints + delta).coerceIn(0, 99)
+                it.copy(
+                    seen = newSeen,
+                    seenPoints = if (newSeen) newPoints else 0
+                )
+            } else it
+        }
+        _uiState.value = current.copy(playerStates = newStates)
+        calculatePreview()
+    }
+
     fun setUnseenPoints(playerId: String, points: Int) {
         // No longer used, but kept for compatibility or set to 0
         val current = _uiState.value

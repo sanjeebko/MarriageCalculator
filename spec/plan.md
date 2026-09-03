@@ -390,6 +390,15 @@ Transformed the utilitarian Dashboard into a vibrant Player Hub with user career
 
 ---
 
+## Phase 33: Input Speed & Ergonomics — Quick Maal Presets, Haptic Ticks & Floating Action Button (Issue #29, Complete)
+Optimized score entry speed, tactile feedback, and one-thumb ergonomics across RoundInputScreen and PlayGameScreen.
+- [x] Step 33.1: **Quick Maal Presets (+3, +5, +8, +10)** — Added `RoundInputViewModel.addMaalPoints` to rapidly increment a player's seen maal with bounds clamping (0..99) and automatic `seen = true` activation. Tapping a player row reveals quick preset chips (+3, +5, +8, +10, Clear).
+- [x] Step 33.2: **Tactile Haptic Feedback** — Injected `LocalHapticFeedback` in `RoundInputScreen` for `LongPress` haptic tick on winner selection, and `TextHandleMove` ticks on seen toggle, dublee toggle, and quick maal chip clicks.
+- [x] Step 33.3: **Winner Celebration Glow & Shimmer** — Integrated animated golden pulse/border highlight with royal crown indicator (`👑`) on the selected winner's row in `RoundInputScreen`.
+- [x] Step 33.4: **Pulsing Glowing Floating Action Button (FAB)** — Added breathing gold glow FAB in `PlayGameScreen`'s Scaffold (`ExtendedFloatingActionButton` labeled "+ Record Game") that floats above scroll content and ensures 1-thumb entry into round scoring regardless of table height.
+- [x] Step 33.5: **Unit Tests** — Added tests in `RoundInputViewModelTest.kt` verifying `addMaalPoints` increments, bounds clamping, and automatic seen marking.
+- **COMMIT**: "feat: Input speed & ergonomics - quick maal presets, haptics, pulsing FAB (Issue #29)"
+
 ## Backlog / Future Candidates (not started)
 - **True offline reconnect sync**: requirement §3.4 calls out cloud sync as "(Future)". Today, online mode writes straight to the API and offline/guest mode is local-only Room storage (Phase 6.4) — there's no queued-write/merge engine that reconciles a game played offline once connectivity returns. Would need an outbox table + WorkManager sync job + conflict resolution rule (e.g. last-write-wins vs. host-wins) if pursued.
 
