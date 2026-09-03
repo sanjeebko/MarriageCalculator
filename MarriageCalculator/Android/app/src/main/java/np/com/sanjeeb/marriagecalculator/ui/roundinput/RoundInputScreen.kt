@@ -324,9 +324,9 @@ private fun PlayerScoreRow(
                 // Live preview of this game's points/money, once a winner is picked
                 if (showPreview) {
                     val scoreColor = when {
-                        state.previewScore > 0 -> Color(0xFF4CAF50)
-                        state.previewScore < 0 -> Color(0xFFFF5252)
-                        else -> AppTheme.palette.tint.copy(alpha = 0.6f)
+                        state.previewScore > 0 -> AppTheme.palette.numberPositive
+                        state.previewScore < 0 -> AppTheme.palette.numberNegative
+                        else -> AppTheme.palette.numberZero
                     }
                     Text(
                         text = "${state.previewScore} · ${currency.formatMoney(state.previewMoney)}",

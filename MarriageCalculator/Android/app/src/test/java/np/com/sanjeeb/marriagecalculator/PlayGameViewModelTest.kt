@@ -22,6 +22,7 @@ class PlayGameViewModelTest {
     private val playerRepository: PlayerRepository = mockk(relaxed = true)
     private val friendRepository: FriendRepository = mockk(relaxed = true)
     private val sessionManager: SessionManager = mockk(relaxed = true)
+    private val themePreference: ThemePreference = mockk(relaxed = true)
 
     private lateinit var viewModel: PlayGameViewModel
 
@@ -33,7 +34,8 @@ class PlayGameViewModelTest {
             gameSetRepository,
             playerRepository,
             friendRepository,
-            sessionManager
+            sessionManager,
+            themePreference
         )
     }
 

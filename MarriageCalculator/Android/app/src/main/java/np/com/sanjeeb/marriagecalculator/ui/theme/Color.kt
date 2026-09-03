@@ -33,7 +33,13 @@ data class AppPalette(
     val textPrimary: Color,
     val tint: Color,
     val success: Color,       // positive feedback text, readable on this theme's background
-    val danger: Color         // error feedback text, readable on this theme's background
+    val danger: Color,        // error feedback text, readable on this theme's background
+    val numberPositive: Color,// high-contrast positive points/money
+    val numberNegative: Color,// high-contrast negative points/money
+    val numberZero: Color,    // clear readable neutral for zero values
+    val cardSurface: Color,   // backdrop for table and round cards
+    val chipUncleared: Color, // readable accent for uncleared payment button
+    val chipCleared: Color    // readable success color for payment cleared button
 )
 
 enum class AppThemeOption(val displayName: String, val palette: AppPalette) {
@@ -52,7 +58,37 @@ enum class AppThemeOption(val displayName: String, val palette: AppPalette) {
             textPrimary = Color.White,
             tint = Color.White,
             success = Color(0xFF81C784),
-            danger = Color(0xFFFF8888)
+            danger = Color(0xFFFF8888),
+            numberPositive = Color(0xFF4ADE80),
+            numberNegative = Color(0xFFFF6B6B),
+            numberZero = Color(0xFFB0BEC5),
+            cardSurface = Color(0xFF1E1E34),
+            chipUncleared = Color(0xFFFFA726),
+            chipCleared = Color(0xFF4ADE80)
+        )
+    ),
+    HIGH_CONTRAST_DARK(
+        "High Contrast Dark",
+        AppPalette(
+            isDark = true,
+            backgroundTop = Color(0xFF0F141C),
+            backgroundBottom = Color(0xFF080B10),
+            surface = Color(0xFF161E2E),
+            accent = Color(0xFFFBBF24),
+            accentAlt = Color(0xFF38BDF8),
+            cta = Color(0xFFEF4444),
+            frostText = Color(0xFFFFFFFF),
+            frostAccent = Color(0xFF93C5FD),
+            textPrimary = Color(0xFFF8FAFC),
+            tint = Color.White,
+            success = Color(0xFF22C55E),
+            danger = Color(0xFFEF4444),
+            numberPositive = Color(0xFF22C55E),
+            numberNegative = Color(0xFFF87171),
+            numberZero = Color(0xFF94A3B8),
+            cardSurface = Color(0xFF1B2433),
+            chipUncleared = Color(0xFFFBBF24),
+            chipCleared = Color(0xFF22C55E)
         )
     ),
     MIDNIGHT_FROST(
@@ -70,7 +106,13 @@ enum class AppThemeOption(val displayName: String, val palette: AppPalette) {
             textPrimary = Color(0xFFE8EDF5),
             tint = Color.White,
             success = Color(0xFF81C784),
-            danger = Color(0xFFFF8888)
+            danger = Color(0xFFFF8888),
+            numberPositive = Color(0xFF4ADE80),
+            numberNegative = Color(0xFFFF6B6B),
+            numberZero = Color(0xFF94A3B8),
+            cardSurface = Color(0xFF1A263C),
+            chipUncleared = Color(0xFF5FD0C0),
+            chipCleared = Color(0xFF4ADE80)
         )
     ),
     MARIGOLD_DAY(
@@ -88,7 +130,13 @@ enum class AppThemeOption(val displayName: String, val palette: AppPalette) {
             textPrimary = Color(0xFF2B2118),
             tint = Color(0xFF3A2E1E),
             success = Color(0xFF1B5E20),
-            danger = Color(0xFFB71C1C)
+            danger = Color(0xFFB71C1C),
+            numberPositive = Color(0xFF15803D),
+            numberNegative = Color(0xFFB91C1C),
+            numberZero = Color(0xFF6B7280),
+            cardSurface = Color(0xFFFFF7EA),
+            chipUncleared = Color(0xFFC85E12),
+            chipCleared = Color(0xFF15803D)
         )
     ),
     HIMALAYAN_MIST(
@@ -106,7 +154,13 @@ enum class AppThemeOption(val displayName: String, val palette: AppPalette) {
             textPrimary = Color(0xFF1E2733),
             tint = Color(0xFF22344A),
             success = Color(0xFF1B5E20),
-            danger = Color(0xFFB71C1C)
+            danger = Color(0xFFB71C1C),
+            numberPositive = Color(0xFF15803D),
+            numberNegative = Color(0xFFB91C1C),
+            numberZero = Color(0xFF64748B),
+            cardSurface = Color(0xFFF1F6FB),
+            chipUncleared = Color(0xFF3D5A80),
+            chipCleared = Color(0xFF15803D)
         )
     );
 

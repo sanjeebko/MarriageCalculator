@@ -47,6 +47,7 @@ import androidx.compose.ui.unit.IntRect
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Popup
 import androidx.compose.ui.window.PopupPositionProvider
@@ -60,9 +61,14 @@ import np.com.sanjeeb.marriagecalculator.data.model.Player
 import np.com.sanjeeb.marriagecalculator.data.model.User
 import np.com.sanjeeb.marriagecalculator.ui.components.AppBackground
 import np.com.sanjeeb.marriagecalculator.ui.components.DealerBadge
+import np.com.sanjeeb.marriagecalculator.ui.components.ThemePickerDialog
 import np.com.sanjeeb.marriagecalculator.ui.gamesetup.PlayerMappingDialog
 import np.com.sanjeeb.marriagecalculator.ui.gamesetup.RearrangeSeatsDialog
 import np.com.sanjeeb.marriagecalculator.ui.scoreboard.RoundPlayerEntry
+import np.com.sanjeeb.marriagecalculator.ui.theme.TableNumberPrimaryStyle
+import np.com.sanjeeb.marriagecalculator.ui.theme.TableNumberSecondaryStyle
+import np.com.sanjeeb.marriagecalculator.ui.theme.TableSummaryStyle
+import np.com.sanjeeb.marriagecalculator.ui.theme.TableTotalStyle
 import java.io.File
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -76,6 +82,8 @@ fun PlayGameScreen(
     viewModel: PlayGameViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
+    val currentTheme by viewModel.theme.collectAsState()
+    var showThemeDialog by remember { mutableStateOf(false) }
     var selectedPlayerToMap by remember { mutableStateOf<Player?>(null) }
     var showTransferDialog by remember { mutableStateOf(false) }
     var showReorderDialog by remember { mutableStateOf(false) }
@@ -90,6 +98,14 @@ fun PlayGameScreen(
 
     LaunchedEffect(gameSetId) {
         viewModel.loadGame(gameSetId)
+    }
+
+    if (showThemeDialog) {
+        ThemePickerDialog(
+            current = currentTheme,
+            onSelect = { viewModel.setTheme(it) },
+            onDismiss = { showThemeDialog = false }
+        )
     }
 
     Scaffold(
@@ -116,15 +132,26 @@ fun PlayGameScreen(
                             Icon(Icons.Default.SwapHoriz, "Transfer Host (coming soon)", tint = AppTheme.palette.accent.copy(alpha = 0.3f))
                         }
                     }
+                    IconButton(onClick = { showThemeDialog = true }) {
+                        Icon(Icons.Default.Palette, "App Theme", tint = AppTheme.palette.accent)
+                    }
                     IconButton(onClick = onViewScoreboard) {
                         Icon(Icons.Default.Leaderboard, "Scoreboard", tint = AppTheme.palette.accent)
                     }
-                    if (uiState.isHost) {
-                        Box {
-                            IconButton(onClick = { showOverflowMenu = true }) {
-                                Icon(Icons.Default.MoreVert, "More options", tint = AppTheme.palette.accent)
-                            }
-                            DropdownMenu(expanded = showOverflowMenu, onDismissRequest = { showOverflowMenu = false }) {
+                    Box {
+                        IconButton(onClick = { showOverflowMenu = true }) {
+                            Icon(Icons.Default.MoreVert, "More options", tint = AppTheme.palette.accent)
+                        }
+                        DropdownMenu(expanded = showOverflowMenu, onDismissRequest = { showOverflowMenu = false }) {
+                            DropdownMenuItem(
+                                text = { Text("App Theme", color = AppTheme.palette.textPrimary) },
+                                leadingIcon = { Icon(Icons.Default.Palette, null, tint = AppTheme.palette.accent) },
+                                onClick = {
+                                    showOverflowMenu = false
+                                    showThemeDialog = true
+                                }
+                            )
+                            if (uiState.isHost) {
                                 DropdownMenuItem(
                                     text = { Text("Delete Game", color = Color(0xFFFF5252)) },
                                     leadingIcon = { Icon(Icons.Default.DeleteForever, null, tint = Color(0xFFFF5252)) },
@@ -465,9 +492,9 @@ private fun PlayerStandingsRow(
     onNudgeClick: () -> Unit
 ) {
     val scoreColor = when {
-        standings.netPoints > 0 -> Color(0xFF4CAF50)
-        standings.netPoints < 0 -> Color(0xFFFF5252)
-        else -> AppTheme.palette.textPrimary
+        standings.netPoints > 0 -> AppTheme.palette.numberPositive
+        standings.netPoints < 0 -> AppTheme.palette.numberNegative
+        else -> AppTheme.palette.numberZero
     }
     val isGuest = standings.player.email.isBlank()
 
@@ -599,8 +626,8 @@ private fun PlayerStandingsRow(
 
 private enum class RoundDisplayMode { MAAL, POINTS }
 
-private const val ROUND_SEQ_COL_WIDTH_DP = 26
-private const val ROUND_PLAYER_COL_WIDTH_DP = 52
+private const val ROUND_SEQ_COL_WIDTH_DP = 28
+private const val ROUND_PLAYER_COL_WIDTH_DP = 58
 
 private fun blankGameEntry(players: List<Player>, dealerId: String, sequenceInRound: Int): GameEntry {
     return GameEntry(
@@ -739,8 +766,9 @@ private fun RoundBlock(
 
     Card(
         modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(8.dp),
-        colors = CardDefaults.cardColors(containerColor = AppTheme.palette.tint.copy(alpha = 0.03f))
+        shape = RoundedCornerShape(10.dp),
+        colors = CardDefaults.cardColors(containerColor = AppTheme.palette.cardSurface.copy(alpha = 0.85f)),
+        border = BorderStroke(1.dp, AppTheme.palette.tint.copy(alpha = 0.12f))
     ) {
         Column {
             Row(
@@ -783,12 +811,12 @@ private fun RoundBlock(
                                 .clickable { onTogglePaymentCleared(!isCleared) }
                                 .clip(RoundedCornerShape(6.dp))
                                 .background(
-                                    if (isCleared) Color(0xFF4CAF50).copy(alpha = 0.18f)
-                                    else AppTheme.palette.tint.copy(alpha = 0.10f)
+                                    if (isCleared) AppTheme.palette.chipCleared.copy(alpha = 0.20f)
+                                    else AppTheme.palette.chipUncleared.copy(alpha = 0.14f)
                                 )
                                 .border(
                                     width = 1.dp,
-                                    color = if (isCleared) Color(0xFF4CAF50) else AppTheme.palette.cta.copy(alpha = 0.6f),
+                                    color = if (isCleared) AppTheme.palette.chipCleared else AppTheme.palette.chipUncleared.copy(alpha = 0.8f),
                                     shape = RoundedCornerShape(6.dp)
                                 )
                                 .padding(horizontal = 8.dp, vertical = 4.dp),
@@ -796,7 +824,7 @@ private fun RoundBlock(
                         ) {
                             Text(
                                 text = if (isCleared) "Payment Cleared ✓" else "Clear Payment",
-                                color = if (isCleared) Color(0xFF4CAF50) else AppTheme.palette.cta,
+                                color = if (isCleared) AppTheme.palette.chipCleared else AppTheme.palette.chipUncleared,
                                 fontSize = 11.sp,
                                 fontWeight = FontWeight.Bold
                             )
@@ -808,10 +836,10 @@ private fun RoundBlock(
                             modifier = Modifier
                                 .heightIn(min = 30.dp)
                                 .clip(RoundedCornerShape(6.dp))
-                                .background(AppTheme.palette.cta.copy(alpha = 0.12f))
+                                .background(AppTheme.palette.accent.copy(alpha = 0.15f))
                                 .border(
                                     width = 1.dp,
-                                    color = AppTheme.palette.cta.copy(alpha = 0.6f),
+                                    color = AppTheme.palette.accent.copy(alpha = 0.8f),
                                     shape = RoundedCornerShape(6.dp)
                                 )
                                 .clickable(onClick = onCloseRound)
@@ -820,7 +848,7 @@ private fun RoundBlock(
                         ) {
                             Text(
                                 text = "Close Round",
-                                color = AppTheme.palette.cta,
+                                color = AppTheme.palette.accent,
                                 fontSize = 11.sp,
                                 fontWeight = FontWeight.Bold
                             )
@@ -950,8 +978,8 @@ private fun RoundBlock(
                     ) {
                         Text(
                             text = "${game.gameSequenceInRound}",
-                            color = if (isPending) AppTheme.palette.tint.copy(alpha = 0.35f) else AppTheme.palette.frostAccent,
-                            fontSize = 12.sp,
+                            color = if (isPending) AppTheme.palette.tint.copy(alpha = 0.65f) else AppTheme.palette.frostAccent,
+                            fontSize = 13.sp,
                             fontWeight = FontWeight.Bold
                         )
                     }
@@ -985,8 +1013,8 @@ private fun RoundBlock(
                         Box(modifier = Modifier.width(ROUND_SEQ_COL_WIDTH_DP.dp), contentAlignment = Alignment.Center) {
                             Text(
                                 text = "Prev.",
-                                color = AppTheme.palette.frostAccent.copy(alpha = 0.75f),
-                                fontSize = 10.sp,
+                                color = AppTheme.palette.frostAccent,
+                                fontSize = 11.sp,
                                 fontWeight = FontWeight.Bold
                             )
                         }
@@ -997,12 +1025,11 @@ private fun RoundBlock(
                                     Text(
                                         text = currency.formatMoney(carryoverMoney),
                                         color = when {
-                                            carryoverMoney > 0 -> Color(0xFF4CAF50)
-                                            carryoverMoney < 0 -> Color(0xFFFF5252)
-                                            else -> AppTheme.palette.tint.copy(alpha = 0.5f)
+                                            carryoverMoney > 0 -> AppTheme.palette.numberPositive
+                                            carryoverMoney < 0 -> AppTheme.palette.numberNegative
+                                            else -> AppTheme.palette.numberZero
                                         },
-                                        fontSize = 10.sp,
-                                        fontWeight = FontWeight.Bold
+                                        style = TableSummaryStyle
                                     )
                                 }
                             }
@@ -1018,7 +1045,7 @@ private fun RoundBlock(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Box(modifier = Modifier.width(ROUND_SEQ_COL_WIDTH_DP.dp), contentAlignment = Alignment.Center) {
-                        Text("Σ", color = AppTheme.palette.frostAccent.copy(alpha = 0.75f), fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                        Text("Σ", color = AppTheme.palette.frostAccent, fontSize = 13.sp, fontWeight = FontWeight.Bold)
                     }
                     Row(modifier = Modifier.horizontalScroll(scrollState)) {
                         players.forEach { p ->
@@ -1030,12 +1057,11 @@ private fun RoundBlock(
                                 Text(
                                     text = currency.formatMoney(totalMoney),
                                     color = when {
-                                        totalMoney > 0 -> Color(0xFF4CAF50)
-                                        totalMoney < 0 -> Color(0xFFFF5252)
-                                        else -> AppTheme.palette.tint.copy(alpha = 0.6f)
+                                        totalMoney > 0 -> AppTheme.palette.numberPositive
+                                        totalMoney < 0 -> AppTheme.palette.numberNegative
+                                        else -> AppTheme.palette.numberZero
                                     },
-                                    fontSize = 11.sp,
-                                    fontWeight = FontWeight.Bold
+                                    style = TableTotalStyle
                                 )
                             }
                         }
@@ -1075,17 +1101,17 @@ private fun CompactRoundCell(
         RoundDisplayMode.POINTS -> entry?.score ?: 0
     }
     val topColor = when {
-        mode == RoundDisplayMode.POINTS && topValue > 0 -> Color(0xFF4CAF50)
-        mode == RoundDisplayMode.POINTS && topValue < 0 -> Color(0xFFFF5252)
-        else -> AppTheme.palette.tint.copy(alpha = 0.85f)
+        mode == RoundDisplayMode.POINTS && topValue > 0 -> AppTheme.palette.numberPositive
+        mode == RoundDisplayMode.POINTS && topValue < 0 -> AppTheme.palette.numberNegative
+        else -> AppTheme.palette.tint.copy(alpha = 0.95f)
     }
     val money = entry?.money ?: 0.0
     val moneyColor = when {
-        money > 0 -> Color(0xFF4CAF50)
-        money < 0 -> Color(0xFFFF5252)
-        else -> AppTheme.palette.tint.copy(alpha = 0.5f)
+        money > 0 -> AppTheme.palette.numberPositive
+        money < 0 -> AppTheme.palette.numberNegative
+        else -> AppTheme.palette.numberZero
     }
-    val cellAlpha = if (entry?.isSeen == true) 1f else 0.5f
+    val cellAlpha = if (entry?.isSeen == true) 1f else 0.72f
 
     // The winner is fixed once a game is submitted - mark their cell with a frosted-glass pill:
     // rounded rectangle, translucent gradient fill, and a light-catching gradient border.
@@ -1097,7 +1123,7 @@ private fun CompactRoundCell(
                 Brush.verticalGradient(
                     listOf(
                         AppTheme.palette.tint.copy(alpha = 0.22f),
-                        Color(0xFF4CAF50).copy(alpha = 0.10f),
+                        AppTheme.palette.numberPositive.copy(alpha = 0.14f),
                         AppTheme.palette.tint.copy(alpha = 0.04f)
                     )
                 )
@@ -1107,7 +1133,7 @@ private fun CompactRoundCell(
                 brush = Brush.verticalGradient(
                     listOf(
                         AppTheme.palette.tint.copy(alpha = 0.50f),
-                        Color(0xFF4CAF50).copy(alpha = 0.25f),
+                        AppTheme.palette.numberPositive.copy(alpha = 0.35f),
                         AppTheme.palette.tint.copy(alpha = 0.06f)
                     )
                 ),
@@ -1124,8 +1150,7 @@ private fun CompactRoundCell(
             Text(
                 text = "$topValue",
                 color = topColor.copy(alpha = cellAlpha),
-                fontSize = 13.sp,
-                fontWeight = FontWeight.Bold
+                style = TableNumberPrimaryStyle
             )
             if (isDealer) {
                 Spacer(modifier = Modifier.width(3.dp))
@@ -1135,7 +1160,7 @@ private fun CompactRoundCell(
         Text(
             text = currency.formatMoney(money),
             color = moneyColor.copy(alpha = cellAlpha),
-            fontSize = 10.sp
+            style = TableNumberSecondaryStyle
         )
     }
 }
@@ -1171,7 +1196,7 @@ private fun RoundDetailsDialog(game: GameEntry, currency: Currency, onDismiss: (
                 }
                 LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     items(game.playerEntries) { entry ->
-                        val winnerGlow = Color(0xFF4CAF50)
+                        val winnerGlow = AppTheme.palette.numberPositive
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -1215,28 +1240,28 @@ private fun RoundDetailsDialog(game: GameEntry, currency: Currency, onDismiss: (
                                 Row(verticalAlignment = Alignment.CenterVertically) {
                                     Text(
                                         if (entry.isSeen) "Seen" else "Unseen",
-                                        color = if (entry.isSeen) Color(0xFF4CAF50) else AppTheme.palette.tint.copy(alpha = 0.4f),
-                                        fontSize = 11.sp
+                                        color = if (entry.isSeen) AppTheme.palette.numberPositive else AppTheme.palette.tint.copy(alpha = 0.6f),
+                                        fontSize = 11.sp,
+                                        fontWeight = FontWeight.Medium
                                     )
                                     if (entry.isDublee) {
                                         Spacer(modifier = Modifier.width(6.dp))
-                                        Icon(Icons.Default.Diversity3, "Dublee", tint = AppTheme.palette.cta, modifier = Modifier.size(12.dp))
+                                        Icon(Icons.Default.Diversity3, "Dublee", tint = AppTheme.palette.accentAlt, modifier = Modifier.size(12.dp))
                                     }
                                     Spacer(modifier = Modifier.width(6.dp))
-                                    Text("Maal: ${entry.maal}", color = AppTheme.palette.tint.copy(alpha = 0.5f), fontSize = 11.sp)
+                                    Text("Maal: ${entry.maal}", color = AppTheme.palette.tint.copy(alpha = 0.7f), fontSize = 11.sp)
                                 }
                             }
                             Column(horizontalAlignment = Alignment.End) {
                                 Text(
                                     text = "${entry.score} pts",
-                                    color = if (entry.score > 0) Color(0xFF4CAF50) else if (entry.score < 0) Color(0xFFFF5252) else AppTheme.palette.textPrimary,
-                                    fontWeight = FontWeight.Bold,
-                                    fontSize = 14.sp
+                                    color = if (entry.score > 0) AppTheme.palette.numberPositive else if (entry.score < 0) AppTheme.palette.numberNegative else AppTheme.palette.textPrimary,
+                                    style = TableNumberPrimaryStyle
                                 )
                                 Text(
                                     text = currency.formatMoney(entry.money),
-                                    color = AppTheme.palette.tint.copy(alpha = 0.6f),
-                                    fontSize = 11.sp
+                                    color = AppTheme.palette.tint.copy(alpha = 0.7f),
+                                    style = TableNumberSecondaryStyle
                                 )
                             }
                         }
