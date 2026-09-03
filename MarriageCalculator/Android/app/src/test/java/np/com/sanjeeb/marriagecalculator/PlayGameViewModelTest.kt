@@ -120,4 +120,102 @@ class PlayGameViewModelTest {
             offlineGameRepository.updateGameSetPlayerPositions(123, listOf(3, 1, 2))
         }
     }
+
+    @Test
+    fun `toggleRoundPaymentCleared calls repository method and reloads game`() = runTest {
+        val gameSetId = "123"
+        val roundGroup = np.com.sanjeeb.marriagecalculator.ui.playgame.RoundGroup(
+            roundId = "local-1",
+            roundSequence = 1,
+            isCompleted = true,
+            games = listOf(
+                np.com.sanjeeb.marriagecalculator.ui.playgame.GameEntry(
+                    gameId = "10",
+                    gameSequenceInRound = 1,
+                    dealerId = "1",
+                    winnerId = "2",
+                    winnerName = "Winner",
+                    totalMaal = 10
+                )
+            )
+        )
+
+        every { sessionManager.isOnlineMode() } returns false
+        coEvery { offlineGameRepository.getGameSet(123) } returns mockk(relaxed = true)
+
+        viewModel.toggleRoundPaymentCleared(gameSetId, roundGroup, true)
+
+        coVerify {
+            offlineGameRepository.toggleRoundPaymentCleared(listOf(10), true)
+        }
+    }
+
+    @Test
+    fun `toggleRoundPaymentCleared toggles from cleared back to uncleared`() = runTest {
+        val gameSetId = "123"
+        val roundGroup = np.com.sanjeeb.marriagecalculator.ui.playgame.RoundGroup(
+            roundId = "local-1",
+            roundSequence = 1,
+            isCompleted = true,
+            isPaymentCleared = true,
+            games = listOf(
+                np.com.sanjeeb.marriagecalculator.ui.playgame.GameEntry(
+                    gameId = "10",
+                    gameSequenceInRound = 1,
+                    dealerId = "1",
+                    winnerId = "2",
+                    winnerName = "Winner",
+                    totalMaal = 10
+                )
+            )
+        )
+
+        every { sessionManager.isOnlineMode() } returns false
+        coEvery { offlineGameRepository.getGameSet(123) } returns mockk(relaxed = true)
+
+        viewModel.toggleRoundPaymentCleared(gameSetId, roundGroup, false)
+
+        coVerify {
+            offlineGameRepository.toggleRoundPaymentCleared(listOf(10), false)
+        }
+    }
+
+    @Test
+    fun `toggleRoundPaymentCleared online mode calls gameSetRepository togglePaymentCleared`() = runTest {
+        val gameSetId = "online-set-123"
+        val roundGroup = np.com.sanjeeb.marriagecalculator.ui.playgame.RoundGroup(
+            roundId = "round-1",
+            roundSequence = 1,
+            isCompleted = true,
+            games = listOf(
+                np.com.sanjeeb.marriagecalculator.ui.playgame.GameEntry(
+                    gameId = "10",
+                    gameSequenceInRound = 1,
+                    dealerId = "1",
+                    winnerId = "2",
+                    winnerName = "Winner",
+                    totalMaal = 10
+                )
+            )
+        )
+
+        val loggedInUser = User(id = "user-1", userId = "user-1", displayName = "User 1")
+        val gameSet = MarriageGameSet(
+            id = gameSetId,
+            hostUserId = "user-1",
+            name = "Test Online Game"
+        )
+
+        every { sessionManager.isOnlineMode() } returns true
+        every { sessionManager.getUserProfile() } returns loggedInUser
+        coEvery { gameSetRepository.getGameSet(gameSetId) } returns ApiResult.Success(gameSet)
+        coEvery { friendRepository.getFriends() } returns ApiResult.Success(emptyList())
+        coEvery { gameSetRepository.togglePaymentCleared(gameSetId, "round-1", true) } returns ApiResult.Success(mockk())
+
+        viewModel.toggleRoundPaymentCleared(gameSetId, roundGroup, true)
+
+        coVerify {
+            gameSetRepository.togglePaymentCleared(gameSetId, "round-1", true)
+        }
+    }
 }

@@ -270,7 +270,8 @@ class RoundInputViewModel @Inject constructor(
                 val newSeen = !it.seen
                 it.copy(
                     seen = newSeen,
-                    seenPoints = if (newSeen) it.seenPoints else 0
+                    seenPoints = if (newSeen) it.seenPoints else 0,
+                    duply = if (!newSeen) false else it.duply
                 )
             } else it
         }

@@ -182,6 +182,7 @@ fun PlayGameScreen(
                     onGameClick = { gameForDetails = it },
                     onPlayerHeaderClick = { player, position, size -> tooltipAnchor = PlayerTooltipAnchor(player, position, size) },
                     onCloseRound = { viewModel.closeCurrentRound(gameSetId) },
+                    onTogglePaymentCleared = { round, cleared -> viewModel.toggleRoundPaymentCleared(gameSetId, round, cleared) },
                     onDeleteLastGame = { showDeleteLastGameConfirm = true },
                     onDeleteRound = { round -> roundPendingDeletion = round },
                     onReshuffle = { showReorderDialog = true },
@@ -642,6 +643,7 @@ private fun CompactRoundsTable(
     onGameClick: (GameEntry) -> Unit,
     onPlayerHeaderClick: (Player, Offset, IntSize) -> Unit,
     onCloseRound: () -> Unit,
+    onTogglePaymentCleared: (RoundGroup, Boolean) -> Unit,
     onDeleteLastGame: () -> Unit,
     onDeleteRound: (RoundGroup) -> Unit,
     onReshuffle: () -> Unit,
@@ -676,18 +678,30 @@ private fun CompactRoundsTable(
         }
 
         displayGroups.forEachIndexed { index, group ->
+            // Cumulative carryover money from all prior rounds with games where isPaymentCleared is false
+            val priorUnclearedRounds = roundGroups.filter {
+                it.roundSequence < group.roundSequence && it.games.isNotEmpty() && !it.isPaymentCleared
+            }
+            val groupPlayers = group.seatOrder.ifEmpty { currentSeatOrder }
+            val carryoverMoneyByPlayer = groupPlayers.associate { p ->
+                val carryoverPoints = priorUnclearedRounds.sumOf { r -> r.totalScoreByPlayer[p.id] ?: 0 }
+                p.id to (carryoverPoints * pointRate)
+            }
+
             RoundBlock(
                 group = group,
-                players = group.seatOrder.ifEmpty { currentSeatOrder },
+                players = groupPlayers,
                 nextDealerId = nextDealerId,
                 mode = mode,
                 currency = currency,
                 pointRate = pointRate,
+                carryoverMoneyByPlayer = carryoverMoneyByPlayer,
                 isHost = isHost,
                 isLatestRound = index == 0,
                 onGameClick = onGameClick,
                 onPlayerHeaderClick = onPlayerHeaderClick,
                 onCloseRound = onCloseRound,
+                onTogglePaymentCleared = { cleared -> onTogglePaymentCleared(group, cleared) },
                 onDeleteLastGame = onDeleteLastGame,
                 onDeleteRound = { onDeleteRound(group) },
                 onReshuffle = onReshuffle,
@@ -708,11 +722,13 @@ private fun RoundBlock(
     mode: RoundDisplayMode,
     currency: Currency,
     pointRate: Double,
+    carryoverMoneyByPlayer: Map<String, Double>,
     isHost: Boolean,
     isLatestRound: Boolean,
     onGameClick: (GameEntry) -> Unit,
     onPlayerHeaderClick: (Player, Offset, IntSize) -> Unit,
     onCloseRound: () -> Unit,
+    onTogglePaymentCleared: (Boolean) -> Unit,
     onDeleteLastGame: () -> Unit,
     onDeleteRound: () -> Unit,
     onReshuffle: () -> Unit,
@@ -759,17 +775,57 @@ private fun RoundBlock(
                     }
                 }
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    if (isHost && !group.isCompleted && group.games.isNotEmpty()) {
-                        Text(
-                            text = "Close Round",
-                            color = AppTheme.palette.cta,
-                            fontSize = 10.sp,
-                            fontWeight = FontWeight.Bold,
+                    if (group.isCompleted || group.games.isNotEmpty()) {
+                        val isCleared = group.isPaymentCleared
+                        Box(
                             modifier = Modifier
-                                .clip(RoundedCornerShape(4.dp))
+                                .heightIn(min = 30.dp)
+                                .clickable { onTogglePaymentCleared(!isCleared) }
+                                .clip(RoundedCornerShape(6.dp))
+                                .background(
+                                    if (isCleared) Color(0xFF4CAF50).copy(alpha = 0.18f)
+                                    else AppTheme.palette.tint.copy(alpha = 0.10f)
+                                )
+                                .border(
+                                    width = 1.dp,
+                                    color = if (isCleared) Color(0xFF4CAF50) else AppTheme.palette.cta.copy(alpha = 0.6f),
+                                    shape = RoundedCornerShape(6.dp)
+                                )
+                                .padding(horizontal = 8.dp, vertical = 4.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                text = if (isCleared) "Payment Cleared ✓" else "Clear Payment",
+                                color = if (isCleared) Color(0xFF4CAF50) else AppTheme.palette.cta,
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+                        Spacer(modifier = Modifier.width(6.dp))
+                    }
+                    if (isHost && !group.isCompleted && group.games.isNotEmpty()) {
+                        Box(
+                            modifier = Modifier
+                                .heightIn(min = 30.dp)
+                                .clip(RoundedCornerShape(6.dp))
+                                .background(AppTheme.palette.cta.copy(alpha = 0.12f))
+                                .border(
+                                    width = 1.dp,
+                                    color = AppTheme.palette.cta.copy(alpha = 0.6f),
+                                    shape = RoundedCornerShape(6.dp)
+                                )
                                 .clickable(onClick = onCloseRound)
-                                .padding(horizontal = 6.dp, vertical = 2.dp)
-                        )
+                                .padding(horizontal = 8.dp, vertical = 4.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                text = "Close Round",
+                                color = AppTheme.palette.cta,
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+                        Spacer(modifier = Modifier.width(6.dp))
                     }
                     if (isHost && isLatestRound && group.games.isNotEmpty()) {
                         IconButton(onClick = onDeleteLastGame, modifier = Modifier.size(24.dp)) {
@@ -917,6 +973,43 @@ private fun RoundBlock(
             }
 
             if (group.games.isNotEmpty()) {
+                val hasCarryover = carryoverMoneyByPlayer.values.any { it != 0.0 }
+                if (hasCarryover) {
+                    HorizontalDivider(color = AppTheme.palette.tint.copy(alpha = 0.08f), modifier = Modifier.padding(horizontal = 8.dp))
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 3.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Box(modifier = Modifier.width(ROUND_SEQ_COL_WIDTH_DP.dp), contentAlignment = Alignment.Center) {
+                            Text(
+                                text = "Prev.",
+                                color = AppTheme.palette.frostAccent.copy(alpha = 0.75f),
+                                fontSize = 10.sp,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+                        Row(modifier = Modifier.horizontalScroll(scrollState)) {
+                            players.forEach { p ->
+                                val carryoverMoney = carryoverMoneyByPlayer[p.id] ?: 0.0
+                                Box(modifier = Modifier.width(ROUND_PLAYER_COL_WIDTH_DP.dp), contentAlignment = Alignment.Center) {
+                                    Text(
+                                        text = currency.formatMoney(carryoverMoney),
+                                        color = when {
+                                            carryoverMoney > 0 -> Color(0xFF4CAF50)
+                                            carryoverMoney < 0 -> Color(0xFFFF5252)
+                                            else -> AppTheme.palette.tint.copy(alpha = 0.5f)
+                                        },
+                                        fontSize = 10.sp,
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+
                 HorizontalDivider(color = AppTheme.palette.tint.copy(alpha = 0.1f), modifier = Modifier.padding(horizontal = 8.dp))
                 Row(
                     modifier = Modifier
@@ -929,14 +1022,16 @@ private fun RoundBlock(
                     }
                     Row(modifier = Modifier.horizontalScroll(scrollState)) {
                         players.forEach { p ->
-                            val points = group.totalScoreByPlayer[p.id] ?: 0
-                            val money = points * pointRate
+                            val currentPoints = group.totalScoreByPlayer[p.id] ?: 0
+                            val currentMoney = currentPoints * pointRate
+                            val carryoverMoney = carryoverMoneyByPlayer[p.id] ?: 0.0
+                            val totalMoney = currentMoney + carryoverMoney
                             Box(modifier = Modifier.width(ROUND_PLAYER_COL_WIDTH_DP.dp), contentAlignment = Alignment.Center) {
                                 Text(
-                                    text = currency.formatMoney(money),
+                                    text = currency.formatMoney(totalMoney),
                                     color = when {
-                                        money > 0 -> Color(0xFF4CAF50)
-                                        money < 0 -> Color(0xFFFF5252)
+                                        totalMoney > 0 -> Color(0xFF4CAF50)
+                                        totalMoney < 0 -> Color(0xFFFF5252)
                                         else -> AppTheme.palette.tint.copy(alpha = 0.6f)
                                     },
                                     fontSize = 11.sp,
