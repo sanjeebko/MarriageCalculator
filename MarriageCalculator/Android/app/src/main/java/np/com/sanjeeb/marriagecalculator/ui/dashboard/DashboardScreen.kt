@@ -53,6 +53,7 @@ import np.com.sanjeeb.marriagecalculator.R
 import np.com.sanjeeb.marriagecalculator.data.model.MarriageGameSet
 import np.com.sanjeeb.marriagecalculator.ui.components.AppBackground
 import np.com.sanjeeb.marriagecalculator.ui.components.GlassButton
+import np.com.sanjeeb.marriagecalculator.ui.components.ThemePickerDialog
 import np.com.sanjeeb.marriagecalculator.ui.theme.*
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -394,92 +395,6 @@ fun DashboardScreen(
     }
 }
 
-/**
- * Picker for the 4 built-in color themes (2 dark, 2 light). Selection applies instantly and is
- * stored on the device only.
- */
-@Composable
-private fun ThemePickerDialog(
-    current: AppThemeOption,
-    onSelect: (AppThemeOption) -> Unit,
-    onDismiss: () -> Unit
-) {
-    val pal = AppTheme.palette
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text("App Theme", color = pal.accent, fontFamily = FontFamily.Serif, fontWeight = FontWeight.Bold) },
-        text = {
-            Column {
-                listOf("Dark" to AppThemeOption.entries.filter { it.palette.isDark },
-                       "Light" to AppThemeOption.entries.filter { !it.palette.isDark }).forEach { (label, options) ->
-                    Text(
-                        text = label.uppercase(),
-                        color = pal.textPrimary.copy(alpha = 0.5f),
-                        fontSize = 11.sp,
-                        fontWeight = FontWeight.Bold,
-                        letterSpacing = 1.5.sp,
-                        modifier = Modifier.padding(top = 8.dp, bottom = 4.dp)
-                    )
-                    options.forEach { option ->
-                        val selected = option == current
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clip(RoundedCornerShape(10.dp))
-                                .background(if (selected) pal.tint.copy(alpha = 0.12f) else Color.Transparent)
-                                .border(
-                                    1.dp,
-                                    if (selected) pal.accent.copy(alpha = 0.6f) else pal.tint.copy(alpha = 0.12f),
-                                    RoundedCornerShape(10.dp)
-                                )
-                                .clickable { onSelect(option) }
-                                .padding(horizontal = 10.dp, vertical = 8.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            // Mini palette preview: background, accent, cta swatches
-                            Row {
-                                listOf(
-                                    option.palette.backgroundTop,
-                                    option.palette.accent,
-                                    option.palette.cta
-                                ).forEach { swatch ->
-                                    Box(
-                                        modifier = Modifier
-                                            .padding(end = 3.dp)
-                                            .size(16.dp)
-                                            .clip(CircleShape)
-                                            .background(swatch)
-                                            .border(0.5.dp, pal.tint.copy(alpha = 0.3f), CircleShape)
-                                    )
-                                }
-                            }
-                            Spacer(Modifier.width(10.dp))
-                            Text(
-                                text = option.displayName,
-                                color = pal.textPrimary,
-                                fontSize = 14.sp,
-                                fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium,
-                                modifier = Modifier.weight(1f)
-                            )
-                            if (selected) {
-                                Icon(Icons.Default.Check, null, tint = pal.accent, modifier = Modifier.size(18.dp))
-                            }
-                        }
-                        Spacer(Modifier.height(6.dp))
-                    }
-                }
-            }
-        },
-        confirmButton = {
-            TextButton(onClick = onDismiss) {
-                Text("Done", color = pal.accent, fontWeight = FontWeight.Bold)
-            }
-        },
-        containerColor = pal.surface,
-        shape = RoundedCornerShape(16.dp),
-        modifier = Modifier.border(1.dp, pal.accent.copy(alpha = 0.5f), RoundedCornerShape(16.dp))
-    )
-}
 
 @Composable
 private fun ActiveGameCardCompact(game: MarriageGameSet, onResume: () -> Unit) {

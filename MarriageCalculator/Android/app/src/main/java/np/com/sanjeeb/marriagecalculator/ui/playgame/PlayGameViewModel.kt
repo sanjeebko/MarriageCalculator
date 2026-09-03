@@ -11,6 +11,8 @@ import np.com.sanjeeb.marriagecalculator.data.repository.SessionManager
 import np.com.sanjeeb.marriagecalculator.data.repository.ApiResult
 import np.com.sanjeeb.marriagecalculator.data.local.RoundEntity
 import np.com.sanjeeb.marriagecalculator.ui.scoreboard.RoundPlayerEntry
+import np.com.sanjeeb.marriagecalculator.data.repository.ThemePreference
+import np.com.sanjeeb.marriagecalculator.ui.theme.AppThemeOption
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -82,8 +84,12 @@ class PlayGameViewModel @Inject constructor(
     private val gameSetRepository: GameSetRepository,
     private val playerRepository: PlayerRepository,
     private val friendRepository: FriendRepository,
-    private val sessionManager: SessionManager
+    private val sessionManager: SessionManager,
+    private val themePreference: ThemePreference
 ) : ViewModel() {
+
+    val theme: StateFlow<AppThemeOption> = themePreference.theme
+    fun setTheme(option: AppThemeOption) = themePreference.setTheme(option)
 
     private val _uiState = MutableStateFlow(PlayGameUiState())
     val uiState: StateFlow<PlayGameUiState> = _uiState.asStateFlow()

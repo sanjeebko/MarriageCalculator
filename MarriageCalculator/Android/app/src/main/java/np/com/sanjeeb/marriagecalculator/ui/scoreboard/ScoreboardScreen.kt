@@ -172,9 +172,9 @@ private fun ScoreboardView(uiState: ScoreboardUiState, onSettle: () -> Unit) {
 @Composable
 private fun PlayerScoreRow(playerScore: PlayerTotalScore, rank: Int, currency: Currency) {
     val scoreColor = when {
-        playerScore.totalPoints > 0 -> Color(0xFF4CAF50)
-        playerScore.totalPoints < 0 -> Color(0xFFFF5252)
-        else -> AppTheme.palette.tint.copy(alpha = 0.5f)
+        playerScore.totalPoints > 0 -> AppTheme.palette.numberPositive
+        playerScore.totalPoints < 0 -> AppTheme.palette.numberNegative
+        else -> AppTheme.palette.numberZero
     }
     val medalEmoji = when (rank) {
         1 -> "🥇"
@@ -472,7 +472,7 @@ private fun RoundBlock(
                     TableCell(
                         if (entry?.isSeen == true) "Yes" else "No",
                         PLAYER_COL_WIDTH_DP,
-                        if (entry?.isSeen == true) Color(0xFF4CAF50) else AppTheme.palette.tint.copy(alpha = 0.4f)
+                        if (entry?.isSeen == true) AppTheme.palette.numberPositive else AppTheme.palette.tint.copy(alpha = 0.5f)
                     )
                     TableCell(
                         if (entry?.isDublee == true) "Yes" else "-",
@@ -484,7 +484,7 @@ private fun RoundBlock(
                     TableCell(
                         "${if (score > 0) "+" else ""}$score",
                         PLAYER_COL_WIDTH_DP,
-                        if (score > 0) Color(0xFF4CAF50) else if (score < 0) Color(0xFFFF5252) else AppTheme.palette.textPrimary,
+                        if (score > 0) AppTheme.palette.numberPositive else if (score < 0) AppTheme.palette.numberNegative else AppTheme.palette.textPrimary,
                         bold = true
                     )
                     TableCell(
@@ -523,7 +523,7 @@ private fun TotalRow(
             TableCell(
                 currency.formatMoney(total),
                 PLAYER_COL_WIDTH_DP,
-                if (total > 0) Color(0xFF4CAF50) else if (total < 0) Color(0xFFFF5252) else AppTheme.palette.textPrimary,
+                if (total > 0) AppTheme.palette.numberPositive else if (total < 0) AppTheme.palette.numberNegative else AppTheme.palette.textPrimary,
                 bold = true
             )
         }
