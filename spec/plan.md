@@ -3,7 +3,7 @@
 ## Problem Statement
 Build a full-featured Android (Kotlin/Compose) app for the Marriage card game calculator, backed by the existing .NET API. The app must handle 2-6 players with efficient screen space usage, support offline/online modes, real-time score display, and integrate with the C# API hosted on Kubernetes. The Maui version is archived and replaced by this native Android app.
 
-## Status: Phases 1-31 COMPLETE ✅ (except 25.9: Android invite-code UI, pending)
+## Status: Phases 1-32 COMPLETE ✅ (except 25.9: Android invite-code UI, pending)
 - 44 C# tests (12 Core + 32 API) + 74 Android unit tests all passing
 - Android APK builds successfully (`assembleDebug`)
 - .NET API builds successfully
@@ -376,6 +376,17 @@ Export and share a polished, festive-branded match result graphic directly to Wh
 - [x] Step 31.3: **UI integration** — Integrated share action in `PlayGameScreen` (top bar icon, overflow menu, and summary card button) and `ScoreboardScreen` (top bar icon) with preview modal `MatchShareDialog`.
 - [x] Step 31.4: **Unit Tests** — Added `MatchShareHelperTest` testing multi-player settlement edge cases (balanced, single debtor/creditor, multi-party debts).
 - **COMMIT**: "feat: Add WhatsApp/social share results graphic card (Issue #27)"
+
+---
+
+## Phase 32: Dashboard Makeover — Career Stats Hero Card, Enriched Game Cards & Card Motifs (Issue #28, Complete)
+Transformed the utilitarian Dashboard into a vibrant Player Hub with user career totals, enriched active game cards, a 1-tap quick-start launcher, and card game aesthetics.
+- [x] Step 32.1: **Career Stats & Repository Aggregations** — Added `UserCareerStats` model and `OfflineGameRepository.getUserCareerStats` to aggregate total games, win rate %, net profit/loss (denominated with game point rates and currencies), and highest maal from local Room scores. Added `getRecentPlayers` and `quickCreateGame`.
+- [x] Step 32.2: **Enriched Active Game Cards** — Added `EnrichedActiveGame` and `getEnrichedActiveGameSets` displaying player avatar bubbles, current leader badge (e.g. `👑 San (+₨240)`), active round status (`Round 2 · Game 3`), deterministic card suit emblem, and quick resume action.
+- [x] Step 32.3: **Quick-Start Launcher** — Added 1-tap shortcut displaying recent players and immediately launching a standard game into PlayGameScreen without the setup wizard.
+- [x] Step 32.4: **Card Game Aesthetics & UI** — Refined card suit accents (♠ ♥ ♦ ♣), gold/festive borders, glassmorphism hero banner, and polished typography in `DashboardScreen.kt`.
+- [x] Step 32.5: **Unit Tests** — Added `DashboardStatsTest.kt` verifying career stats calculations, leader detection, suit cycling, and formatting.
+- **COMMIT**: "feat: Dashboard makeover - career stats hero card, enriched game cards, and quick start (Issue #28)"
 
 ---
 

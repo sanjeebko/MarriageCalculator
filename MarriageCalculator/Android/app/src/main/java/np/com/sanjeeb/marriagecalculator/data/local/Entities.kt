@@ -138,6 +138,9 @@ interface GameSettingsDao {
 
     @Query("SELECT * FROM game_settings WHERE id = :id")
     suspend fun getById(id: Int): GameSettingsEntity?
+
+    @Query("SELECT * FROM game_settings")
+    suspend fun getAllSettings(): List<GameSettingsEntity>
 }
 
 @Dao
@@ -168,6 +171,9 @@ interface GameSetDao {
 
     @Query("DELETE FROM game_sets WHERE id = :id")
     suspend fun deleteById(id: Int)
+
+    @Query("SELECT * FROM game_sets ORDER BY createdAt DESC LIMIT 1")
+    suspend fun getLatestGameSet(): GameSetEntity?
 }
 
 @Dao
@@ -231,6 +237,9 @@ interface RoundDao {
 
     @Query("UPDATE rounds SET isPaymentCleared = :cleared WHERE id IN (:gameIds)")
     suspend fun setPaymentClearedForGames(gameIds: List<Int>, cleared: Boolean)
+
+    @Query("SELECT * FROM rounds")
+    suspend fun getAllRounds(): List<RoundEntity>
 }
 
 @Dao
@@ -255,4 +264,7 @@ interface RoundScoreDao {
 
     @Query("DELETE FROM round_scores WHERE roundId IN (SELECT id FROM rounds WHERE gameSetId = :gameSetId)")
     suspend fun deleteForGameSet(gameSetId: Int)
+
+    @Query("SELECT * FROM round_scores WHERE playerId = :playerId")
+    suspend fun getScoresForPlayer(playerId: Int): List<RoundScoreEntity>
 }

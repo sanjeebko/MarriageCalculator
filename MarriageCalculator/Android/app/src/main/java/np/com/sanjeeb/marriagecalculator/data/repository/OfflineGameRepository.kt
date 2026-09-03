@@ -4,6 +4,7 @@ import np.com.sanjeeb.marriagecalculator.data.local.*
 import np.com.sanjeeb.marriagecalculator.data.model.*
 import np.com.sanjeeb.marriagecalculator.data.remote.MarriageGameSetApiService
 import np.com.sanjeeb.marriagecalculator.data.remote.PlayerApiService
+import np.com.sanjeeb.marriagecalculator.ui.dashboard.EnrichedActiveGame
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.first
@@ -355,6 +356,174 @@ class OfflineGameRepository @Inject constructor(
 
     suspend fun getAllScoresForGameSet(gameSetId: Int): List<RoundScoreEntity> =
         roundScoreDao.getAllScoresForGameSet(gameSetId)
+
+    // ── Dashboard Career Stats & Enriched Games ──
+
+    suspend fun getUserCareerStats(user: User?): UserCareerStats {
+        val allPlayers = try {
+            playerDao.getAllPlayers().first()
+        } catch (e: Exception) {
+            emptyList()
+        }
+        if (allPlayers.isEmpty()) return UserCareerStats()
+
+        val matchedPlayer = when {
+            user != null && user.email.isNotBlank() ->
+                allPlayers.find { it.email.equals(user.email, ignoreCase = true) }
+            user != null && user.displayName.isNotBlank() ->
+                allPlayers.find { it.name.equals(user.displayName, ignoreCase = true) }
+            else ->
+                allPlayers.firstOrNull()
+        } ?: return UserCareerStats()
+
+        val playerScores = try {
+            roundScoreDao.getScoresForPlayer(matchedPlayer.id)
+        } catch (e: Exception) {
+            emptyList()
+        }
+        if (playerScores.isEmpty()) return UserCareerStats()
+
+        val totalGames = playerScores.size
+        val wins = playerScores.count { it.isWinner }
+        val winRate = if (totalGames > 0) (wins * 100) / totalGames else 0
+        val highestMaal = playerScores.maxOfOrNull { it.maal } ?: 0
+
+        val allRounds = try {
+            roundDao.getAllRounds()
+        } catch (e: Exception) {
+            emptyList()
+        }
+        val roundMap = allRounds.associateBy { it.id }
+
+        val allGameSets = try {
+            gameSetDao.getAllGameSets().first()
+        } catch (e: Exception) {
+            emptyList()
+        }
+        val gameSetMap = allGameSets.associateBy { it.id }
+
+        val allSettings = try {
+            gameSettingsDao.getAllSettings()
+        } catch (e: Exception) {
+            emptyList()
+        }
+        val settingsMap = allSettings.associateBy { it.id }
+
+        var netMoney = 0.0
+        var preferredCurrency = Currency.NPR_Rupee
+
+        for (score in playerScores) {
+            val round = roundMap[score.roundId]
+            val gameSet = round?.let { gameSetMap[it.gameSetId] }
+            val settings = gameSet?.let { settingsMap[it.settingsId] }
+            val rate = settings?.pointRate ?: 10.0
+            if (settings != null) {
+                preferredCurrency = Currency.entries.getOrElse(settings.currency) { Currency.NPR_Rupee }
+            }
+            netMoney += score.score * rate
+        }
+
+        val formattedMoney = preferredCurrency.formatMoney(netMoney)
+        val formattedWithSign = if (netMoney > 0) "+$formattedMoney" else formattedMoney
+
+        return UserCareerStats(
+            totalGames = totalGames,
+            winRatePercent = winRate,
+            netProfitLoss = netMoney,
+            netProfitLossFormatted = formattedWithSign,
+            isPositive = netMoney > 0,
+            isZero = kotlin.math.abs(netMoney) < 0.001,
+            highestMaal = highestMaal
+        )
+    }
+
+    suspend fun getRecentPlayers(limit: Int = 4): List<Player> {
+        val latestGameSet = try {
+            gameSetDao.getLatestGameSet()
+        } catch (e: Exception) {
+            null
+        }
+        if (latestGameSet != null) {
+            val players = getGameSetPlayers(latestGameSet.id)
+            if (players.size >= 2) {
+                return players.take(limit)
+            }
+        }
+        return try {
+            playerDao.getAllPlayers().first().take(limit).map { it.toDomainModel() }
+        } catch (e: Exception) {
+            emptyList()
+        }
+    }
+
+    suspend fun quickCreateGame(name: String, playerIds: List<Int>): Int {
+        val defaultSettings = GameSettings()
+        return createGameSet(
+            name = name.ifBlank { "Quick Game" },
+            settings = defaultSettings,
+            playerIds = playerIds
+        )
+    }
+
+    suspend fun getEnrichedActiveGameSets(): List<EnrichedActiveGame> {
+        val dateFormat = java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.getDefault())
+        val entities = try {
+            gameSetDao.getActiveGameSets().first()
+        } catch (e: Exception) {
+            emptyList()
+        }
+
+        return entities.map { entity ->
+            val settings = getGameSettings(entity.settingsId) ?: GameSettings()
+            val players = getGameSetPlayers(entity.id)
+            val rounds = try {
+                roundDao.getRoundsForGameSet(entity.id).first()
+            } catch (e: Exception) {
+                emptyList()
+            }
+            val allScores = try {
+                roundScoreDao.getAllScoresForGameSet(entity.id)
+            } catch (e: Exception) {
+                emptyList()
+            }
+
+            val standings = players.map { p ->
+                val pScores = allScores.filter { it.playerId == p.id.toIntOrNull() }
+                val netPoints = pScores.sumOf { it.score }
+                val money = netPoints * settings.pointRate
+                p to money
+            }
+            val highest = standings.maxByOrNull { it.second }
+            val leaderBadge = if (highest != null && highest.second > 0.0) {
+                "👑 ${highest.first.name} (+${settings.currency.formatMoney(highest.second)})"
+            } else null
+
+            val playerCount = if (players.isNotEmpty()) players.size else 4
+            val openRound = getOpenRoundState(entity.id, playerCount)
+            val completedRoundsCount = if (playerCount > 0) (rounds.size - openRound.gamesInOpenRound) / playerCount else 0
+            val roundStatus = when {
+                rounds.isEmpty() -> "Not started"
+                openRound.gamesInOpenRound == 0 && completedRoundsCount > 0 -> "Round $completedRoundsCount completed"
+                else -> "Round ${completedRoundsCount + 1} · Game ${openRound.gamesInOpenRound + 1}"
+            }
+
+            val suits = listOf("♠", "♥", "♦", "♣")
+            val cardSuit = suits[kotlin.math.abs(entity.id) % suits.size]
+
+            EnrichedActiveGame(
+                id = entity.id.toString(),
+                name = entity.name.ifEmpty { "Game #${entity.id}" },
+                lastPlayed = dateFormat.format(java.util.Date(entity.createdAt)),
+                players = players,
+                leaderName = highest?.first?.name?.takeIf { (highest.second) > 0.0 },
+                leaderScoreText = highest?.second?.let { if (it > 0.0) "+${settings.currency.formatMoney(it)}" else null },
+                roundStatusText = roundStatus,
+                totalGamesPlayed = rounds.size,
+                isSettled = entity.isSettled,
+                cardSuit = cardSuit
+            )
+        }
+    }
 }
 
 data class RoundScoreData(
