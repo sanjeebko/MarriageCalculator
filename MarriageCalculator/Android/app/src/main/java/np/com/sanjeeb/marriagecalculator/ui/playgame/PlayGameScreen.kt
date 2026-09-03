@@ -63,6 +63,10 @@ import np.com.sanjeeb.marriagecalculator.data.model.User
 import np.com.sanjeeb.marriagecalculator.ui.components.AppBackground
 import np.com.sanjeeb.marriagecalculator.ui.components.DealerBadge
 import np.com.sanjeeb.marriagecalculator.ui.components.ThemePickerDialog
+import np.com.sanjeeb.marriagecalculator.ui.share.MatchShareData
+import np.com.sanjeeb.marriagecalculator.ui.share.MatchShareDialog
+import np.com.sanjeeb.marriagecalculator.ui.share.MatchShareHelper
+import np.com.sanjeeb.marriagecalculator.ui.share.PlayerShareEntry
 import np.com.sanjeeb.marriagecalculator.ui.gamesetup.PlayerMappingDialog
 import np.com.sanjeeb.marriagecalculator.ui.gamesetup.RearrangeSeatsDialog
 import np.com.sanjeeb.marriagecalculator.ui.scoreboard.RoundPlayerEntry
@@ -91,6 +95,7 @@ fun PlayGameScreen(
     var gameForDetails by remember { mutableStateOf<GameEntry?>(null) }
     var tooltipAnchor by remember { mutableStateOf<PlayerTooltipAnchor?>(null) }
     var standingsExpanded by remember { mutableStateOf(false) }
+    var showShareDialog by remember { mutableStateOf(false) }
     var showOverflowMenu by remember { mutableStateOf(false) }
     var showDeleteGameSetConfirm by remember { mutableStateOf(false) }
     var showDeleteLastGameConfirm by remember { mutableStateOf(false) }
@@ -133,6 +138,9 @@ fun PlayGameScreen(
                             Icon(Icons.Default.SwapHoriz, "Transfer Host (coming soon)", tint = AppTheme.palette.accent.copy(alpha = 0.3f))
                         }
                     }
+                    IconButton(onClick = { showShareDialog = true }) {
+                        Icon(Icons.Default.Share, "Share match summary", tint = AppTheme.palette.accent)
+                    }
                     IconButton(onClick = { showThemeDialog = true }) {
                         Icon(Icons.Default.Palette, "App Theme", tint = AppTheme.palette.accent)
                     }
@@ -144,6 +152,14 @@ fun PlayGameScreen(
                             Icon(Icons.Default.MoreVert, "More options", tint = AppTheme.palette.accent)
                         }
                         DropdownMenu(expanded = showOverflowMenu, onDismissRequest = { showOverflowMenu = false }) {
+                            DropdownMenuItem(
+                                text = { Text("Share Results", color = AppTheme.palette.textPrimary) },
+                                leadingIcon = { Icon(Icons.Default.Share, null, tint = AppTheme.palette.accent) },
+                                onClick = {
+                                    showOverflowMenu = false
+                                    showShareDialog = true
+                                }
+                            )
                             DropdownMenuItem(
                                 text = { Text("App Theme", color = AppTheme.palette.textPrimary) },
                                 leadingIcon = { Icon(Icons.Default.Palette, null, tint = AppTheme.palette.accent) },
@@ -290,12 +306,72 @@ fun PlayGameScreen(
                             )
                             Spacer(modifier = Modifier.height(4.dp))
                         }
+
+                        Button(
+                            onClick = { showShareDialog = true },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(top = 8.dp),
+                            colors = ButtonDefaults.buttonColors(containerColor = AppTheme.palette.cardSurface),
+                            border = BorderStroke(1.dp, AppTheme.palette.accent.copy(alpha = 0.5f)),
+                            shape = RoundedCornerShape(8.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Share,
+                                contentDescription = null,
+                                tint = AppTheme.palette.accent,
+                                modifier = Modifier.size(16.dp)
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                text = "Share Match Card",
+                                color = AppTheme.palette.accent,
+                                fontSize = 13.sp,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
                     }
                 }
 
                 Spacer(modifier = Modifier.height(90.dp)) // clearance for the FAB
             }
         }
+    }
+
+    if (showShareDialog) {
+        val sortedPlayers = uiState.players.sortedByDescending { it.totalMoney }
+        val standingsEntries = sortedPlayers.mapIndexed { index, p ->
+            val totalMaal = uiState.roundGroups.sumOf { r ->
+                r.games.sumOf { g ->
+                    g.playerEntries.find { it.playerId == p.player.id }?.maal ?: 0
+                }
+            }
+            PlayerShareEntry(
+                name = p.player.name,
+                totalMaal = totalMaal,
+                totalScore = p.netPoints,
+                totalMoney = p.totalMoney,
+                rank = index + 1
+            )
+        }
+        val balances = sortedPlayers.map { it.player.name to it.totalMoney }
+        val settlements = MatchShareHelper.computeSettlements(balances)
+        val roundsWithGames = uiState.roundGroups.count { it.games.isNotEmpty() }
+
+        val shareData = MatchShareData(
+            matchName = uiState.gameName.ifBlank { "Marriage Match" },
+            dateFormatted = "",
+            roundsCount = maxOf(1, roundsWithGames),
+            gamesCount = uiState.totalGamesPlayed,
+            currency = uiState.settings.currency,
+            standings = standingsEntries,
+            settlements = settlements
+        )
+
+        MatchShareDialog(
+            data = shareData,
+            onDismiss = { showShareDialog = false }
+        )
     }
 
     // Player Mapping Dialog
