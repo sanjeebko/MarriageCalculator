@@ -67,7 +67,9 @@ import np.com.sanjeeb.marriagecalculator.data.model.Player
 import np.com.sanjeeb.marriagecalculator.data.model.User
 import np.com.sanjeeb.marriagecalculator.ui.components.AppBackground
 import np.com.sanjeeb.marriagecalculator.ui.components.DealerBadge
+import np.com.sanjeeb.marriagecalculator.ui.components.SettleUpDialog
 import np.com.sanjeeb.marriagecalculator.ui.components.ThemePickerDialog
+import np.com.sanjeeb.marriagecalculator.ui.components.VisualSeatingRing
 import np.com.sanjeeb.marriagecalculator.ui.share.MatchShareData
 import np.com.sanjeeb.marriagecalculator.ui.share.MatchShareDialog
 import np.com.sanjeeb.marriagecalculator.ui.share.MatchShareHelper
@@ -100,7 +102,9 @@ fun PlayGameScreen(
     var gameForDetails by remember { mutableStateOf<GameEntry?>(null) }
     var tooltipAnchor by remember { mutableStateOf<PlayerTooltipAnchor?>(null) }
     var standingsExpanded by remember { mutableStateOf(false) }
+    var seatingRingExpanded by remember { mutableStateOf(false) }
     var showShareDialog by remember { mutableStateOf(false) }
+    var showSettleUpDialog by remember { mutableStateOf(false) }
     var showOverflowMenu by remember { mutableStateOf(false) }
     var showDeleteGameSetConfirm by remember { mutableStateOf(false) }
     var showDeleteLastGameConfirm by remember { mutableStateOf(false) }
@@ -163,6 +167,9 @@ fun PlayGameScreen(
                             Icon(Icons.Default.SwapHoriz, "Transfer Host (coming soon)", tint = AppTheme.palette.accent.copy(alpha = 0.3f))
                         }
                     }
+                    IconButton(onClick = { showSettleUpDialog = true }) {
+                        Icon(Icons.Default.Payments, "Settle Up", tint = AppTheme.palette.accent)
+                    }
                     IconButton(onClick = { showShareDialog = true }) {
                         Icon(Icons.Default.Share, "Share match summary", tint = AppTheme.palette.accent)
                     }
@@ -177,6 +184,14 @@ fun PlayGameScreen(
                             Icon(Icons.Default.MoreVert, "More options", tint = AppTheme.palette.accent)
                         }
                         DropdownMenu(expanded = showOverflowMenu, onDismissRequest = { showOverflowMenu = false }) {
+                            DropdownMenuItem(
+                                text = { Text("Settle Up Matrix", color = AppTheme.palette.textPrimary) },
+                                leadingIcon = { Icon(Icons.Default.Payments, null, tint = AppTheme.palette.accent) },
+                                onClick = {
+                                    showOverflowMenu = false
+                                    showSettleUpDialog = true
+                                }
+                            )
                             DropdownMenuItem(
                                 text = { Text("Share Results", color = AppTheme.palette.textPrimary) },
                                 leadingIcon = { Icon(Icons.Default.Share, null, tint = AppTheme.palette.accent) },
@@ -277,6 +292,90 @@ fun PlayGameScreen(
                             Text(text = err, color = AppTheme.palette.danger, fontSize = 14.sp, modifier = Modifier.weight(1f))
                             IconButton(onClick = { viewModel.clearError() }) {
                                 Icon(Icons.Default.Close, contentDescription = "Clear error", tint = AppTheme.palette.textPrimary)
+                            }
+                        }
+                    }
+                }
+
+                // Seating Ring Card (Issue #30)
+                val activeRound = uiState.roundGroups.firstOrNull { !it.isCompleted }
+                val seatingPlayers = (activeRound?.seatOrder?.takeIf { it.isNotEmpty() }
+                    ?: uiState.players.map { it.player })
+
+                if (seatingPlayers.isNotEmpty()) {
+                    Card(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(bottom = 12.dp),
+                        shape = RoundedCornerShape(14.dp),
+                        colors = CardDefaults.cardColors(containerColor = AppTheme.palette.cardSurface),
+                        border = BorderStroke(1.dp, AppTheme.palette.tint.copy(alpha = 0.15f))
+                    ) {
+                        Column(modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 8.dp)) {
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clip(RoundedCornerShape(6.dp))
+                                    .clickable { seatingRingExpanded = !seatingRingExpanded }
+                                    .padding(vertical = 4.dp),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Icon(
+                                        imageVector = Icons.Default.Casino,
+                                        contentDescription = null,
+                                        tint = AppTheme.palette.accent,
+                                        modifier = Modifier.size(16.dp)
+                                    )
+                                    Spacer(modifier = Modifier.width(6.dp))
+                                    Text(
+                                        text = "TABLE SEATING & DEALER",
+                                        color = AppTheme.palette.frostAccent,
+                                        fontSize = 11.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        letterSpacing = 1.2.sp
+                                    )
+                                    Spacer(modifier = Modifier.width(4.dp))
+                                    Icon(
+                                        imageVector = if (seatingRingExpanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
+                                        contentDescription = null,
+                                        tint = AppTheme.palette.frostAccent.copy(alpha = 0.7f),
+                                        modifier = Modifier.size(16.dp)
+                                    )
+                                }
+                                if (uiState.isHost && !uiState.isSettled) {
+                                    val roundInProgress = uiState.roundGroups.any { !it.isCompleted && it.games.isNotEmpty() }
+                                    if (!roundInProgress) {
+                                        Text(
+                                            text = "Arrange Seats",
+                                            color = AppTheme.palette.accent,
+                                            fontSize = 11.sp,
+                                            fontWeight = FontWeight.SemiBold,
+                                            modifier = Modifier
+                                                .clip(RoundedCornerShape(4.dp))
+                                                .clickable { showReorderDialog = true }
+                                                .padding(horizontal = 4.dp, vertical = 2.dp)
+                                        )
+                                    }
+                                }
+                            }
+
+                            AnimatedVisibility(
+                                visible = seatingRingExpanded,
+                                enter = expandVertically() + fadeIn(),
+                                exit = shrinkVertically() + fadeOut()
+                            ) {
+                                Column(modifier = Modifier.padding(top = 4.dp)) {
+                                    VisualSeatingRing(
+                                        players = seatingPlayers,
+                                        currentDealerId = uiState.nextDealerId,
+                                        nextDealerId = null,
+                                        onArrangeSeatsClick = if (uiState.isHost && !uiState.isSettled) {
+                                            { showReorderDialog = true }
+                                        } else null
+                                    )
+                                }
                             }
                         }
                     }
@@ -437,6 +536,19 @@ fun PlayGameScreen(
         MatchShareDialog(
             data = shareData,
             onDismiss = { showShareDialog = false }
+        )
+    }
+
+    if (showSettleUpDialog) {
+        val sortedPlayers = uiState.players.sortedByDescending { it.totalMoney }
+        val balances = sortedPlayers.map { it.player.name to it.totalMoney }
+        SettleUpDialog(
+            matchName = uiState.gameName.ifBlank { "Marriage Match" },
+            balances = balances,
+            currency = uiState.settings.currency,
+            isSettled = uiState.isSettled,
+            canSettleAndFreeze = false,
+            onDismiss = { showSettleUpDialog = false }
         )
     }
 
