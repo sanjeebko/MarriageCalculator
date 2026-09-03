@@ -51,6 +51,8 @@ import coil.request.ImageRequest
 import kotlinx.coroutines.launch
 import np.com.sanjeeb.marriagecalculator.R
 import np.com.sanjeeb.marriagecalculator.data.model.MarriageGameSet
+import np.com.sanjeeb.marriagecalculator.data.model.Player
+import np.com.sanjeeb.marriagecalculator.data.model.UserCareerStats
 import np.com.sanjeeb.marriagecalculator.ui.components.AppBackground
 import np.com.sanjeeb.marriagecalculator.ui.components.GlassButton
 import np.com.sanjeeb.marriagecalculator.ui.components.ThemePickerDialog
@@ -301,92 +303,124 @@ fun DashboardScreen(
             containerColor = Color.Transparent
         ) { padding ->
             AppBackground {
-                Column(
+                LazyColumn(
                     modifier = Modifier
                         .fillMaxSize()
                         .padding(padding)
                         .padding(horizontal = 16.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally
+                    verticalArrangement = Arrangement.spacedBy(14.dp),
+                    contentPadding = PaddingValues(top = 10.dp, bottom = 28.dp)
                 ) {
-                    // Small Spacer
-                    Spacer(modifier = Modifier.height(16.dp))
+                    // 1. Hero Career Stats Banner
+                    item {
+                        HeroStatsBanner(stats = uiState.careerStats)
+                    }
 
-                    // Medium Compact Buttons
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(12.dp)
-                    ) {
-                        GlassButton(
-                            onClick = onNewGame,
-                            text = "New Game",
-                            containerColor = AppTheme.palette.cta.copy(alpha = 0.35f),
-                            textColor = AppTheme.palette.accent,
-                            height = 44,
-                            modifier = Modifier.weight(1f),
-                            leadingIcon = {
-                                Icon(Icons.Default.Add, null, tint = AppTheme.palette.accent, modifier = Modifier.size(18.dp))
-                            }
-                        )
-
-                        if (!uiState.isOfflineMode) {
-                            GlassButton(
-                                onClick = onFriends,
-                                text = "Friends",
-                                containerColor = AppTheme.palette.tint.copy(alpha = 0.12f),
-                                textColor = AppTheme.palette.textPrimary,
-                                height = 44,
-                                modifier = Modifier.weight(1f),
-                                leadingIcon = {
-                                    Icon(Icons.Default.People, null, tint = AppTheme.palette.accent, modifier = Modifier.size(18.dp))
+                    // 2. Quick-Start Table Launcher (if 2+ recent players)
+                    if (uiState.recentPlayers.size >= 2) {
+                        item {
+                            QuickStartLauncherCard(
+                                players = uiState.recentPlayers,
+                                isStarting = uiState.isQuickStarting,
+                                onQuickStart = {
+                                    viewModel.quickStartGame { newGameId ->
+                                        onResumeGame(newGameId)
+                                    }
                                 }
                             )
                         }
                     }
 
-                    // Offline indicator (compact)
-                    if (uiState.isOfflineMode) {
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Icon(Icons.Default.WifiOff, null, tint = AppTheme.palette.accentAlt, modifier = Modifier.size(12.dp))
-                            Spacer(modifier = Modifier.width(4.dp))
-                            Text("Offline Mode", color = AppTheme.palette.accentAlt, fontSize = 10.sp)
+                    // 3. Primary Actions (New Game / Friends) & Offline Mode
+                    item {
+                        Column {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(12.dp)
+                            ) {
+                                GlassButton(
+                                    onClick = onNewGame,
+                                    text = "New Game",
+                                    containerColor = AppTheme.palette.cta.copy(alpha = 0.35f),
+                                    textColor = AppTheme.palette.accent,
+                                    height = 44,
+                                    modifier = Modifier.weight(1f),
+                                    leadingIcon = {
+                                        Icon(Icons.Default.Add, null, tint = AppTheme.palette.accent, modifier = Modifier.size(18.dp))
+                                    }
+                                )
+
+                                if (!uiState.isOfflineMode) {
+                                    GlassButton(
+                                        onClick = onFriends,
+                                        text = "Friends",
+                                        containerColor = AppTheme.palette.tint.copy(alpha = 0.12f),
+                                        textColor = AppTheme.palette.textPrimary,
+                                        height = 44,
+                                        modifier = Modifier.weight(1f),
+                                        leadingIcon = {
+                                            Icon(Icons.Default.People, null, tint = AppTheme.palette.accent, modifier = Modifier.size(18.dp))
+                                        }
+                                    )
+                                }
+                            }
+
+                            if (uiState.isOfflineMode) {
+                                Spacer(modifier = Modifier.height(6.dp))
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.Center,
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Icon(Icons.Default.WifiOff, null, tint = AppTheme.palette.accentAlt, modifier = Modifier.size(12.dp))
+                                    Spacer(modifier = Modifier.width(4.dp))
+                                    Text("Offline Mode", color = AppTheme.palette.accentAlt, fontSize = 10.sp)
+                                }
+                            }
                         }
                     }
 
-                    Spacer(modifier = Modifier.height(20.dp))
-
-                    // Active Games Section
-                    if (uiState.activeGames.isNotEmpty() || uiState.isLoading) {
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Text(
-                                text = "Active Games",
-                                color = AppTheme.palette.accent,
-                                fontSize = 16.sp,
-                                fontWeight = FontWeight.Bold,
-                                fontFamily = FontFamily.Serif
-                            )
-                            if (uiState.isLoading) {
-                                CircularProgressIndicator(
-                                    modifier = Modifier.size(16.dp),
-                                    strokeWidth = 2.dp,
-                                    color = AppTheme.palette.accent
-                                )
+                    // 4. Active Games Section
+                    if (uiState.enrichedGames.isNotEmpty() || uiState.isLoading) {
+                        item {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Text(
+                                        text = "Active Games",
+                                        color = AppTheme.palette.accent,
+                                        fontSize = 16.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        fontFamily = FontFamily.Serif
+                                    )
+                                    if (uiState.enrichedGames.isNotEmpty()) {
+                                        Spacer(Modifier.width(6.dp))
+                                        Text(
+                                            text = "(${uiState.enrichedGames.size})",
+                                            color = AppTheme.palette.tint.copy(alpha = 0.6f),
+                                            fontSize = 13.sp,
+                                            fontWeight = FontWeight.SemiBold
+                                        )
+                                    }
+                                }
+                                if (uiState.isLoading) {
+                                    CircularProgressIndicator(
+                                        modifier = Modifier.size(16.dp),
+                                        strokeWidth = 2.dp,
+                                        color = AppTheme.palette.accent
+                                    )
+                                }
                             }
                         }
-                        
-                        Spacer(modifier = Modifier.height(8.dp))
 
-                        LazyColumn(
-                            verticalArrangement = Arrangement.spacedBy(8.dp),
-                            contentPadding = PaddingValues(bottom = 16.dp)
-                        ) {
-                            items(uiState.activeGames) { game ->
-                                ActiveGameCardCompact(game = game, onResume = { onResumeGame(game.id) })
-                            }
+                        items(uiState.enrichedGames, key = { it.id }) { game ->
+                            EnrichedActiveGameCard(
+                                game = game,
+                                onResume = { onResumeGame(game.id) }
+                            )
                         }
                     }
                 }
@@ -395,59 +429,425 @@ fun DashboardScreen(
     }
 }
 
-
 @Composable
-private fun ActiveGameCardCompact(game: MarriageGameSet, onResume: () -> Unit) {
+private fun HeroStatsBanner(stats: UserCareerStats) {
     Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable { onResume() },
-        shape = RoundedCornerShape(12.dp),
-        colors = CardDefaults.cardColors(containerColor = AppTheme.palette.tint.copy(alpha = 0.05f)),
-        border = BorderStroke(1.dp, AppTheme.palette.tint.copy(alpha = 0.1f))
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(containerColor = AppTheme.palette.tint.copy(alpha = 0.08f)),
+        border = BorderStroke(1.dp, AppTheme.palette.accent.copy(alpha = 0.25f))
     ) {
-        Row(
+        Box(
             modifier = Modifier
                 .fillMaxWidth()
                 .background(
                     Brush.verticalGradient(
-                        colors = listOf(AppTheme.palette.tint.copy(alpha = 0.05f), Color.Transparent)
+                        colors = listOf(
+                            AppTheme.palette.tint.copy(alpha = 0.12f),
+                            Color.Transparent,
+                            AppTheme.palette.accent.copy(alpha = 0.05f)
+                        )
                     )
                 )
-                .padding(16.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween
+                .padding(horizontal = 14.dp, vertical = 12.dp)
         ) {
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = game.name,
-                    color = AppTheme.palette.textPrimary,
-                    fontSize = 15.sp,
-                    fontWeight = FontWeight.ExtraBold,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
-                Spacer(Modifier.height(2.dp))
-                Text(
-                    text = "Last played: ${game.lastPlayed.take(10)}",
-                    color = AppTheme.palette.tint.copy(alpha = 0.5f),
-                    fontSize = 11.sp,
-                    fontWeight = FontWeight.Medium
-                )
-            }
-            Surface(
-                modifier = Modifier.size(32.dp),
-                shape = RoundedCornerShape(16.dp),
-                color = AppTheme.palette.accent.copy(alpha = 0.15f),
-                border = BorderStroke(1.dp, AppTheme.palette.accent.copy(alpha = 0.3f))
-            ) {
-                Icon(
-                    Icons.Default.PlayArrow,
-                    contentDescription = "Resume",
-                    tint = AppTheme.palette.accent,
-                    modifier = Modifier.padding(4.dp)
-                )
+            Column {
+                // Header with card suits
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "CAREER STATS",
+                        color = AppTheme.palette.accent,
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.ExtraBold,
+                        letterSpacing = 1.sp
+                    )
+                    Text(
+                        text = "♠ ♥ ♦ ♣",
+                        color = AppTheme.palette.accent.copy(alpha = 0.5f),
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.Bold,
+                        letterSpacing = 2.sp
+                    )
+                }
+
+                Spacer(Modifier.height(10.dp))
+
+                // 4-column metrics
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    StatMetricColumn(
+                        label = "GAMES",
+                        value = "${stats.totalGames}",
+                        valueColor = AppTheme.palette.textPrimary,
+                        modifier = Modifier.weight(1f)
+                    )
+                    StatMetricColumn(
+                        label = "WIN RATE",
+                        value = "${stats.winRatePercent}%",
+                        valueColor = AppTheme.palette.accent,
+                        modifier = Modifier.weight(1f)
+                    )
+                    val pnlColor = when {
+                        stats.isZero -> AppTheme.palette.numberZero
+                        stats.isPositive -> AppTheme.palette.numberPositive
+                        else -> AppTheme.palette.numberNegative
+                    }
+                    StatMetricColumn(
+                        label = "NET P&L",
+                        value = stats.netProfitLossFormatted,
+                        valueColor = pnlColor,
+                        modifier = Modifier.weight(1.2f)
+                    )
+                    StatMetricColumn(
+                        label = "TOP MAAL",
+                        value = if (stats.highestMaal > 0) "${stats.highestMaal} pts" else "—",
+                        valueColor = AppTheme.palette.accentAlt,
+                        modifier = Modifier.weight(1f)
+                    )
+                }
             }
         }
     }
+}
+
+@Composable
+private fun StatMetricColumn(
+    label: String,
+    value: String,
+    valueColor: Color,
+    modifier: Modifier = Modifier
+) {
+    Column(
+        modifier = modifier,
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Text(
+            text = label,
+            fontSize = 9.sp,
+            fontWeight = FontWeight.Bold,
+            color = AppTheme.palette.tint.copy(alpha = 0.6f),
+            letterSpacing = 0.5.sp
+        )
+        Spacer(Modifier.height(3.dp))
+        Text(
+            text = value,
+            fontSize = 14.sp,
+            fontWeight = FontWeight.ExtraBold,
+            color = valueColor,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis
+        )
+    }
+}
+
+@Composable
+private fun QuickStartLauncherCard(
+    players: List<Player>,
+    isStarting: Boolean,
+    onQuickStart: () -> Unit
+) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(14.dp),
+        colors = CardDefaults.cardColors(containerColor = AppTheme.palette.cardSurface),
+        border = BorderStroke(1.dp, AppTheme.palette.accent.copy(alpha = 0.25f))
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .background(
+                    Brush.verticalGradient(
+                        colors = listOf(
+                            AppTheme.palette.tint.copy(alpha = 0.08f),
+                            Color.Transparent
+                        )
+                    )
+                )
+                .padding(12.dp)
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(
+                        imageVector = Icons.Default.Bolt,
+                        contentDescription = null,
+                        tint = AppTheme.palette.accent,
+                        modifier = Modifier.size(16.dp)
+                    )
+                    Spacer(Modifier.width(4.dp))
+                    Text(
+                        text = "Quick Start Table",
+                        color = AppTheme.palette.accent,
+                        fontSize = 13.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+                Text(
+                    text = "${players.size} players ready",
+                    color = AppTheme.palette.tint.copy(alpha = 0.6f),
+                    fontSize = 11.sp
+                )
+            }
+
+            Spacer(Modifier.height(8.dp))
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy((-6).dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.weight(1f)
+                ) {
+                    players.take(5).forEachIndexed { idx, player ->
+                        val avatarColor = getAvatarColor(idx)
+                        Surface(
+                            shape = CircleShape,
+                            color = avatarColor.copy(alpha = 0.9f),
+                            border = BorderStroke(1.5.dp, AppTheme.palette.surface),
+                            modifier = Modifier.size(28.dp)
+                        ) {
+                            Box(contentAlignment = Alignment.Center) {
+                                Text(
+                                    text = player.name.take(1).uppercase(),
+                                    color = Color.White,
+                                    fontSize = 12.sp,
+                                    fontWeight = FontWeight.Bold
+                                )
+                            }
+                        }
+                    }
+                    Spacer(Modifier.width(10.dp))
+                    Text(
+                        text = players.take(3).joinToString(", ") { it.name.substringBefore(" ") },
+                        color = AppTheme.palette.textPrimary,
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Medium,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                }
+
+                Button(
+                    onClick = onQuickStart,
+                    enabled = !isStarting,
+                    colors = ButtonDefaults.buttonColors(containerColor = AppTheme.palette.accent),
+                    shape = RoundedCornerShape(8.dp),
+                    contentPadding = PaddingValues(horizontal = 14.dp, vertical = 6.dp),
+                    modifier = Modifier.height(34.dp)
+                ) {
+                    if (isStarting) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(14.dp),
+                            strokeWidth = 2.dp,
+                            color = AppTheme.palette.surface
+                        )
+                    } else {
+                        Icon(
+                            Icons.Default.PlayArrow,
+                            contentDescription = null,
+                            tint = AppTheme.palette.surface,
+                            modifier = Modifier.size(16.dp)
+                        )
+                        Spacer(Modifier.width(4.dp))
+                        Text(
+                            text = "Play",
+                            color = AppTheme.palette.surface,
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun EnrichedActiveGameCard(
+    game: EnrichedActiveGame,
+    onResume: () -> Unit
+) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable { onResume() },
+        shape = RoundedCornerShape(14.dp),
+        colors = CardDefaults.cardColors(containerColor = AppTheme.palette.tint.copy(alpha = 0.07f)),
+        border = BorderStroke(1.dp, AppTheme.palette.tint.copy(alpha = 0.15f))
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .background(
+                    Brush.verticalGradient(
+                        colors = listOf(
+                            AppTheme.palette.tint.copy(alpha = 0.08f),
+                            Color.Transparent
+                        )
+                    )
+                )
+                .padding(14.dp)
+        ) {
+            // Header: Suit Emblem + Game Name + Date + Resume Button
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.weight(1f)
+                ) {
+                    // Card suit emblem
+                    Surface(
+                        shape = RoundedCornerShape(6.dp),
+                        color = AppTheme.palette.accent.copy(alpha = 0.15f),
+                        border = BorderStroke(1.dp, AppTheme.palette.accent.copy(alpha = 0.3f)),
+                        modifier = Modifier.size(24.dp)
+                    ) {
+                        Box(contentAlignment = Alignment.Center) {
+                            Text(
+                                text = game.cardSuit,
+                                color = if (game.cardSuit in listOf("♥", "♦")) Color(0xFFFF5252) else AppTheme.palette.accent,
+                                fontSize = 13.sp,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+                    }
+
+                    Spacer(Modifier.width(8.dp))
+
+                    Column {
+                        Text(
+                            text = game.name,
+                            color = AppTheme.palette.textPrimary,
+                            fontSize = 15.sp,
+                            fontWeight = FontWeight.ExtraBold,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                        Text(
+                            text = "Last played: ${game.lastPlayed}",
+                            color = AppTheme.palette.tint.copy(alpha = 0.6f),
+                            fontSize = 10.sp
+                        )
+                    }
+                }
+
+                // Resume action
+                Surface(
+                    modifier = Modifier.size(32.dp),
+                    shape = RoundedCornerShape(16.dp),
+                    color = AppTheme.palette.accent.copy(alpha = 0.18f),
+                    border = BorderStroke(1.dp, AppTheme.palette.accent.copy(alpha = 0.4f))
+                ) {
+                    Icon(
+                        Icons.Default.PlayArrow,
+                        contentDescription = "Resume",
+                        tint = AppTheme.palette.accent,
+                        modifier = Modifier.padding(6.dp)
+                    )
+                }
+            }
+
+            Spacer(Modifier.height(10.dp))
+
+            // Round status & Leader badge row
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Surface(
+                    shape = RoundedCornerShape(6.dp),
+                    color = AppTheme.palette.tint.copy(alpha = 0.12f),
+                    border = BorderStroke(0.5.dp, AppTheme.palette.tint.copy(alpha = 0.25f))
+                ) {
+                    Text(
+                        text = game.roundStatusText,
+                        color = AppTheme.palette.accentAlt,
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
+                    )
+                }
+
+                if (!game.leaderName.isNullOrEmpty() && !game.leaderScoreText.isNullOrEmpty()) {
+                    Surface(
+                        shape = RoundedCornerShape(6.dp),
+                        color = Color(0xFFFFD700).copy(alpha = 0.15f),
+                        border = BorderStroke(0.5.dp, Color(0xFFFFD700).copy(alpha = 0.35f))
+                    ) {
+                        Text(
+                            text = "👑 ${game.leaderName} (${game.leaderScoreText})",
+                            color = Color(0xFFFFD700),
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.Bold,
+                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
+                        )
+                    }
+                }
+            }
+
+            // Player Avatar Bubbles
+            if (game.players.isNotEmpty()) {
+                Spacer(Modifier.height(10.dp))
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy((-4).dp)
+                ) {
+                    game.players.take(6).forEachIndexed { idx, p ->
+                        val color = getAvatarColor(idx)
+                        Surface(
+                            shape = CircleShape,
+                            color = color.copy(alpha = 0.85f),
+                            border = BorderStroke(1.5.dp, AppTheme.palette.surface),
+                            modifier = Modifier.size(24.dp)
+                        ) {
+                            Box(contentAlignment = Alignment.Center) {
+                                Text(
+                                    text = p.name.take(1).uppercase(),
+                                    color = Color.White,
+                                    fontSize = 11.sp,
+                                    fontWeight = FontWeight.Bold
+                                )
+                            }
+                        }
+                    }
+                    Spacer(Modifier.width(8.dp))
+                    Text(
+                        text = game.players.joinToString(" · ") { it.name.substringBefore(" ") },
+                        color = AppTheme.palette.tint.copy(alpha = 0.6f),
+                        fontSize = 11.sp,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                }
+            }
+        }
+    }
+}
+
+private fun getAvatarColor(index: Int): Color {
+    val colors = listOf(
+        Color(0xFFE53935), // Crimson
+        Color(0xFF1E88E5), // Blue
+        Color(0xFF43A047), // Green
+        Color(0xFFFB8C00), // Orange
+        Color(0xFF8E24AA), // Purple
+        Color(0xFF00ACC1)  // Teal
+    )
+    return colors[index % colors.size]
 }
