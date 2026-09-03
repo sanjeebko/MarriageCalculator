@@ -11,6 +11,7 @@ import androidx.compose.animation.scaleIn
 import androidx.compose.animation.scaleOut
 import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.ScrollState
+import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -692,16 +693,44 @@ private fun CompactRoundsTable(
         groups.sortedByDescending { it.roundSequence }
     }
 
+    val latestSeq = displayGroups.firstOrNull()?.roundSequence
+    var expandedSequences by remember(displayGroups.map { it.roundSequence }) {
+        mutableStateOf(setOfNotNull(latestSeq))
+    }
+
     Column {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(vertical = 6.dp),
-            horizontalArrangement = Arrangement.Center
+            horizontalArrangement = if (displayGroups.size > 1) Arrangement.SpaceBetween else Arrangement.Center,
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            ModeTab("Maal", mode == RoundDisplayMode.MAAL) { mode = RoundDisplayMode.MAAL }
-            Spacer(modifier = Modifier.width(8.dp))
-            ModeTab("Points", mode == RoundDisplayMode.POINTS) { mode = RoundDisplayMode.POINTS }
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                ModeTab("Maal", mode == RoundDisplayMode.MAAL) { mode = RoundDisplayMode.MAAL }
+                Spacer(modifier = Modifier.width(8.dp))
+                ModeTab("Points", mode == RoundDisplayMode.POINTS) { mode = RoundDisplayMode.POINTS }
+            }
+
+            if (displayGroups.size > 1) {
+                val allExpanded = displayGroups.all { expandedSequences.contains(it.roundSequence) }
+                Text(
+                    text = if (allExpanded) "Collapse all" else "Expand all",
+                    color = AppTheme.palette.accent,
+                    fontSize = 11.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(6.dp))
+                        .clickable {
+                            expandedSequences = if (allExpanded) {
+                                emptySet()
+                            } else {
+                                displayGroups.map { it.roundSequence }.toSet()
+                            }
+                        }
+                        .padding(horizontal = 8.dp, vertical = 4.dp)
+                )
+            }
         }
 
         displayGroups.forEachIndexed { index, group ->
@@ -715,6 +744,7 @@ private fun CompactRoundsTable(
                 p.id to (carryoverPoints * pointRate)
             }
 
+            val isExpanded = expandedSequences.contains(group.roundSequence)
             RoundBlock(
                 group = group,
                 players = groupPlayers,
@@ -725,6 +755,14 @@ private fun CompactRoundsTable(
                 carryoverMoneyByPlayer = carryoverMoneyByPlayer,
                 isHost = isHost,
                 isLatestRound = index == 0,
+                isExpanded = isExpanded,
+                onToggleExpand = {
+                    expandedSequences = if (isExpanded) {
+                        expandedSequences - group.roundSequence
+                    } else {
+                        expandedSequences + group.roundSequence
+                    }
+                },
                 onGameClick = onGameClick,
                 onPlayerHeaderClick = onPlayerHeaderClick,
                 onCloseRound = onCloseRound,
@@ -752,6 +790,8 @@ private fun RoundBlock(
     carryoverMoneyByPlayer: Map<String, Double>,
     isHost: Boolean,
     isLatestRound: Boolean,
+    isExpanded: Boolean,
+    onToggleExpand: () -> Unit,
     onGameClick: (GameEntry) -> Unit,
     onPlayerHeaderClick: (Player, Offset, IntSize) -> Unit,
     onCloseRound: () -> Unit,
@@ -765,7 +805,9 @@ private fun RoundBlock(
     val scrollState = rememberScrollState()
 
     Card(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth()
+            .animateContentSize(),
         shape = RoundedCornerShape(10.dp),
         colors = CardDefaults.cardColors(containerColor = AppTheme.palette.cardSurface.copy(alpha = 0.85f)),
         border = BorderStroke(1.dp, AppTheme.palette.tint.copy(alpha = 0.12f))
@@ -774,11 +816,19 @@ private fun RoundBlock(
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
+                    .clickable(onClick = onToggleExpand)
                     .padding(horizontal = 8.dp, vertical = 6.dp),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(
+                        imageVector = if (isExpanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
+                        contentDescription = if (isExpanded) "Collapse round" else "Expand round",
+                        tint = AppTheme.palette.accent,
+                        modifier = Modifier.size(20.dp)
+                    )
+                    Spacer(modifier = Modifier.width(4.dp))
                     Text(
                         text = "Round ${group.roundSequence}" + when {
                             group.isCompleted -> ""
@@ -789,6 +839,14 @@ private fun RoundBlock(
                         fontSize = 12.sp,
                         fontWeight = FontWeight.Bold
                     )
+                    if (!isExpanded && group.games.isNotEmpty()) {
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text(
+                            text = "(${group.games.size} ${if (group.games.size == 1) "game" else "games"})",
+                            color = AppTheme.palette.tint.copy(alpha = 0.6f),
+                            fontSize = 11.sp
+                        )
+                    }
                     // Reshuffling only happens between rounds, so the icon lives on the round
                     // that hasn't started yet - it configures that round's seating.
                     if (isHost && !group.isCompleted && group.games.isEmpty()) {
@@ -880,7 +938,19 @@ private fun RoundBlock(
 
             HorizontalDivider(color = AppTheme.palette.tint.copy(alpha = 0.08f))
 
-            // Header: player initials, tappable for a tooltip with the full name.
+            if (!isExpanded) {
+                CollapsedRoundSummaryRow(
+                    group = group,
+                    players = players,
+                    mode = mode,
+                    currency = currency,
+                    pointRate = pointRate,
+                    carryoverMoneyByPlayer = carryoverMoneyByPlayer,
+                    scrollState = scrollState,
+                    onClick = onToggleExpand
+                )
+            } else {
+                // Header: player initials, tappable for a tooltip with the full name.
             // The dealer badge marks the topmost row's dealer: the current/pending
             // game's dealer while the round is open, the last game's once completed.
             val headerDealerId = if (!group.isCompleted) {
@@ -1065,6 +1135,95 @@ private fun RoundBlock(
                                 )
                             }
                         }
+                    }
+                }
+            }
+        }
+    }
+}
+}
+
+@Composable
+private fun CollapsedRoundSummaryRow(
+    group: RoundGroup,
+    players: List<Player>,
+    mode: RoundDisplayMode,
+    currency: Currency,
+    pointRate: Double,
+    carryoverMoneyByPlayer: Map<String, Double>,
+    scrollState: ScrollState,
+    onClick: () -> Unit
+) {
+    if (group.games.isEmpty()) {
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clickable(onClick = onClick)
+                .padding(vertical = 10.dp),
+            contentAlignment = Alignment.Center
+        ) {
+            Text(
+                text = "No games recorded yet · Tap to expand",
+                color = AppTheme.palette.tint.copy(alpha = 0.5f),
+                fontSize = 11.sp
+            )
+        }
+    } else {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clickable(onClick = onClick)
+                .padding(vertical = 6.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Box(
+                modifier = Modifier.width(ROUND_SEQ_COL_WIDTH_DP.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = "Σ",
+                    color = AppTheme.palette.frostAccent,
+                    fontSize = 13.sp,
+                    fontWeight = FontWeight.Bold
+                )
+            }
+            Row(modifier = Modifier.horizontalScroll(scrollState)) {
+                players.forEach { p ->
+                    val currentPoints = group.totalScoreByPlayer[p.id] ?: 0
+                    val currentMoney = currentPoints * pointRate
+                    val carryoverMoney = carryoverMoneyByPlayer[p.id] ?: 0.0
+                    val totalMoney = currentMoney + carryoverMoney
+
+                    val totalMaal = group.games.sumOf { g -> g.playerEntries.find { it.playerId == p.id }?.maal ?: 0 }
+                    val displayValue = when (mode) {
+                        RoundDisplayMode.MAAL -> "$totalMaal maal"
+                        RoundDisplayMode.POINTS -> currency.formatMoney(totalMoney)
+                    }
+                    val displayColor = when (mode) {
+                        RoundDisplayMode.MAAL -> AppTheme.palette.textPrimary
+                        RoundDisplayMode.POINTS -> when {
+                            totalMoney > 0 -> AppTheme.palette.numberPositive
+                            totalMoney < 0 -> AppTheme.palette.numberNegative
+                            else -> AppTheme.palette.numberZero
+                        }
+                    }
+
+                    Column(
+                        modifier = Modifier.width(ROUND_PLAYER_COL_WIDTH_DP.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Text(
+                            text = p.name.take(3).uppercase(),
+                            color = AppTheme.palette.frostAccent.copy(alpha = 0.85f),
+                            fontSize = 10.sp,
+                            fontWeight = FontWeight.Bold,
+                            maxLines = 1
+                        )
+                        Text(
+                            text = displayValue,
+                            color = displayColor,
+                            style = TableTotalStyle
+                        )
                     }
                 }
             }
