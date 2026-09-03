@@ -35,6 +35,10 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import np.com.sanjeeb.marriagecalculator.data.model.Currency
 import np.com.sanjeeb.marriagecalculator.data.model.Player
 import np.com.sanjeeb.marriagecalculator.ui.components.AppBackground
+import np.com.sanjeeb.marriagecalculator.ui.share.MatchShareData
+import np.com.sanjeeb.marriagecalculator.ui.share.MatchShareDialog
+import np.com.sanjeeb.marriagecalculator.ui.share.MatchShareHelper
+import np.com.sanjeeb.marriagecalculator.ui.share.PlayerShareEntry
 
 private fun Context.findActivity(): Activity? {
     var context = this
@@ -70,6 +74,7 @@ fun ScoreboardScreen(
     viewModel: ScoreboardViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
+    var showShareDialog by remember { mutableStateOf(false) }
 
     LaunchedEffect(gameSetId) {
         viewModel.loadScoreboardData(gameSetId)
@@ -93,6 +98,9 @@ fun ScoreboardScreen(
                     }
                 },
                 actions = {
+                    IconButton(onClick = { showShareDialog = true }) {
+                        Icon(Icons.Default.Share, "Share match summary", tint = AppTheme.palette.accent)
+                    }
                     IconButton(onClick = { viewModel.toggleHistory() }) {
                         Icon(
                             if (uiState.showHistory) Icons.Default.TableChart else Icons.Default.History,
@@ -119,6 +127,39 @@ fun ScoreboardScreen(
                 }
             }
         }
+    }
+
+    if (showShareDialog) {
+        val sortedPlayers = uiState.players.sortedByDescending { it.totalMoney }
+        val standingsEntries = sortedPlayers.mapIndexed { index, p ->
+            val totalMaal = uiState.rounds.sumOf { r ->
+                r.playerEntries.find { it.playerId == p.player.id }?.maal ?: 0
+            }
+            PlayerShareEntry(
+                name = p.player.name,
+                totalMaal = totalMaal,
+                totalScore = p.totalPoints,
+                totalMoney = p.totalMoney,
+                rank = index + 1
+            )
+        }
+        val balances = sortedPlayers.map { it.player.name to it.totalMoney }
+        val settlements = MatchShareHelper.computeSettlements(balances)
+
+        val shareData = MatchShareData(
+            matchName = uiState.gameSetId ?: "Marriage Match",
+            dateFormatted = "",
+            roundsCount = maxOf(1, uiState.rounds.size),
+            gamesCount = uiState.rounds.size,
+            currency = uiState.settings.currency,
+            standings = standingsEntries,
+            settlements = settlements
+        )
+
+        MatchShareDialog(
+            data = shareData,
+            onDismiss = { showShareDialog = false }
+        )
     }
 }
 

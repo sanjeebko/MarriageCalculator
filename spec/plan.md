@@ -3,7 +3,7 @@
 ## Problem Statement
 Build a full-featured Android (Kotlin/Compose) app for the Marriage card game calculator, backed by the existing .NET API. The app must handle 2-6 players with efficient screen space usage, support offline/online modes, real-time score display, and integrate with the C# API hosted on Kubernetes. The Maui version is archived and replaced by this native Android app.
 
-## Status: Phases 1-30 COMPLETE ✅ (except 25.9: Android invite-code UI, pending)
+## Status: Phases 1-31 COMPLETE ✅ (except 25.9: Android invite-code UI, pending)
 - 44 C# tests (12 Core + 32 API) + 74 Android unit tests all passing
 - Android APK builds successfully (`assembleDebug`)
 - .NET API builds successfully
@@ -366,6 +366,16 @@ Three user-reported issues on the Round Input screen:
 - **COMMIT**: "fix: round input error clearing, game number in title, shared glass buttons"
 - [x] Step 30.5: **Full MetallicButton → GlassButton migration** (user follow-up) — Login's three buttons (Google: bright white glass + dark text; Mock Sign-In: gold glass; Guest: neutral glass) and Game Setup's Start Game (cta glass, keeps enabled/isLoading/icon) now use `GlassButton`; `MetallicButton.kt` and its rim/face color presets deleted; stale imports removed from Dashboard/Friend screens. Fixed a crash found live: GlassButton's top-gradient `alpha × 1.5` overflowed past 1.0 for high-alpha containers (Google button, 0.85) — now clamped in the component. Verified live: login renders and signs in, Game Setup shows the glass Start button (correct disabled state), Dashboard unchanged.
 - **COMMIT**: "refactor: migrate all metallic buttons to shared GlassButton"
+
+---
+
+## Phase 31: Social Virality — WhatsApp & Social Share Results Graphic Card (Issue #27, Complete)
+Export and share a polished, festive-branded match result graphic directly to WhatsApp, Messenger, or social channels after game sessions.
+- [x] Step 31.1: **Settlement calculation & data model** — `MatchShareData` & `MatchShareHelper.computeSettlements` to compute optimal debtor-to-creditor transfer transfers from end balances.
+- [x] Step 31.2: **Bitmap rendering & Native Share** — `MatchShareHelper.createMatchCardBitmap` draws a 1080px wide high-resolution card (dark gradient background, golden accents, match meta, podium standings, settlement transfers, and app watermark). Saves image to application cache via Android `FileProvider` (`file_paths.xml`), and launches Android share sheet (`Intent.ACTION_SEND` with image + summary text).
+- [x] Step 31.3: **UI integration** — Integrated share action in `PlayGameScreen` (top bar icon, overflow menu, and summary card button) and `ScoreboardScreen` (top bar icon) with preview modal `MatchShareDialog`.
+- [x] Step 31.4: **Unit Tests** — Added `MatchShareHelperTest` testing multi-player settlement edge cases (balanced, single debtor/creditor, multi-party debts).
+- **COMMIT**: "feat: Add WhatsApp/social share results graphic card (Issue #27)"
 
 ---
 
