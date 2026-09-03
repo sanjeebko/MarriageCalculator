@@ -87,4 +87,40 @@ class RoundInputViewModelTest {
         assertFalse(viewModel.uiState.value.playerStates[0].seen)
         assertFalse(viewModel.uiState.value.playerStates[0].duply) // duply also unticked
     }
+
+    @Test
+    fun `addMaalPoints increments points and marks seen`() {
+        val players = listOf(
+            Player(id = "1", name = "San"),
+            Player(id = "2", name = "Aar")
+        )
+        viewModel.initPlayers(players, GameSettings.default())
+
+        assertFalse(viewModel.uiState.value.playerStates[0].seen)
+        org.junit.Assert.assertEquals(0, viewModel.uiState.value.playerStates[0].seenPoints)
+
+        // Adding preset +5 should mark seen = true and seenPoints = 5
+        viewModel.addMaalPoints("1", 5)
+        assertTrue(viewModel.uiState.value.playerStates[0].seen)
+        org.junit.Assert.assertEquals(5, viewModel.uiState.value.playerStates[0].seenPoints)
+
+        // Adding preset +8 should accumulate to 13
+        viewModel.addMaalPoints("1", 8)
+        org.junit.Assert.assertEquals(13, viewModel.uiState.value.playerStates[0].seenPoints)
+    }
+
+    @Test
+    fun `addMaalPoints respects bounds between 0 and 99`() {
+        val players = listOf(
+            Player(id = "1", name = "San")
+        )
+        viewModel.initPlayers(players, GameSettings.default())
+
+        viewModel.setSeenPoints("1", 95)
+        viewModel.addMaalPoints("1", 10) // 95 + 10 -> capped at 99
+        org.junit.Assert.assertEquals(99, viewModel.uiState.value.playerStates[0].seenPoints)
+
+        viewModel.addMaalPoints("1", -150) // capped at 0
+        org.junit.Assert.assertEquals(0, viewModel.uiState.value.playerStates[0].seenPoints)
+    }
 }
