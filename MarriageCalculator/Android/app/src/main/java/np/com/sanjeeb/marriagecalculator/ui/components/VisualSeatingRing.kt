@@ -7,6 +7,7 @@ import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -35,18 +36,17 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
-import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
-import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.Shadow
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
@@ -57,6 +57,7 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.zIndex
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
+import np.com.sanjeeb.marriagecalculator.R
 import np.com.sanjeeb.marriagecalculator.data.model.Player
 import np.com.sanjeeb.marriagecalculator.ui.theme.AppTheme
 import java.io.File
@@ -85,12 +86,10 @@ fun calculateSeatOffset(
 
 /**
  * Authentic Casino Poker Table & Visual Seating Ring (Issue #40):
- * - Deep mahogany and padded leather armrest bumper with 3D drop shadow.
- * - Multi-layered emerald felt with realistic overhead spotlight radial gradient.
- * - Inlaid gold betting rail with animated clockwise flow.
+ * - High-resolution photorealistic casino poker table background asset.
  * - Dynamic clockwise dealer rotation arc with traveling glowing comet beam and chevrons.
  * - Realistic 3D ceramic tournament dealer button ("DEALER / D").
- * - High-roller player pods with metallic bezels, anchored seat tokens, and rail-aligned name badges.
+ * - High-roller player pods seated on the leather rail with metallic bezels and anchored tokens.
  */
 @Composable
 fun VisualSeatingRing(
@@ -178,24 +177,24 @@ fun VisualSeatingRing(
         BoxWithConstraints(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(220.dp),
+                .height(210.dp),
             contentAlignment = Alignment.Center
         ) {
             val density = LocalDensity.current.density
             val totalWidth = constraints.maxWidth.toFloat()
             val totalHeight = constraints.maxHeight.toFloat()
 
-            // Ellipse radii for player centers
-            val maxRadiusX = (totalWidth / 2f) - (42f * density)
-            val radiusX = (totalWidth * 0.36f).coerceAtMost(maxRadiusX).coerceAtMost(145f * density)
-            val radiusY = (totalHeight * 0.32f).coerceAtMost(66f * density)
+            // Calculate table dimensions maintaining the authentic image aspect ratio (~1.975:1)
+            val maxTableWidth = totalWidth - (36f * density)
+            val targetTableHeight = 144f * density
+            val tableHeight = (maxTableWidth / 1.975f).coerceAtMost(targetTableHeight)
+            val tableWidth = tableHeight * 1.975f
 
-            // The Casino Table: extends slightly beyond player centers so players sit right on the leather armrest rail
-            val railPadX = 18f * density
-            val railPadY = 18f * density
-            val tableWidth = (2 * (radiusX + railPadX)).coerceAtMost(totalWidth - 8f * density)
-            val tableHeight = (2 * (radiusY + railPadY)).coerceAtMost(totalHeight - 16f * density)
+            // Player orbit radii: centered directly on the leather armrest bumper of the table image
+            val radiusX = (tableWidth / 2f) * 0.90f
+            val radiusY = (tableHeight / 2f) * 0.95f
 
+            // 1. Photorealistic Casino Poker Table Image Background
             Box(
                 modifier = Modifier
                     .size(
@@ -205,7 +204,15 @@ fun VisualSeatingRing(
                     .shadow(16.dp, RoundedCornerShape(100.dp), ambientColor = Color.Black, spotColor = Color.Black),
                 contentAlignment = Alignment.Center
             ) {
-                CasinoTableCanvas(
+                Image(
+                    painter = painterResource(id = R.drawable.casino_poker_table),
+                    contentDescription = "Casino Table",
+                    contentScale = ContentScale.FillBounds,
+                    modifier = Modifier.fillMaxSize()
+                )
+
+                // Dynamic Dealer Rotation Beam & Trajectory Canvas
+                DealerRotationCanvas(
                     modifier = Modifier.fillMaxSize(),
                     orbitPhase = orbitProgress,
                     currentDealerIndex = resolvedCurrentDealerIndex,
@@ -259,7 +266,7 @@ fun VisualSeatingRing(
                 }
             }
 
-            // Players Ring
+            // 2. Players Ring seated along the rail
             players.forEachIndexed { index, player ->
                 val (offsetX, offsetY) = calculateSeatOffset(
                     index = index,
@@ -294,10 +301,10 @@ fun VisualSeatingRing(
 }
 
 /**
- * Draws the casino poker table felt, wood racetrack, padded leather bumper, and animated dealer rotation path.
+ * Draws the luminous dealer rotation beam, comet particle, chevrons, and dealer spotlight onto the felt.
  */
 @Composable
-private fun CasinoTableCanvas(
+private fun DealerRotationCanvas(
     modifier: Modifier = Modifier,
     orbitPhase: Float,
     currentDealerIndex: Int,
@@ -310,256 +317,124 @@ private fun CasinoTableCanvas(
         val tableH = size.height
         val center = Offset(tableW / 2f, tableH / 2f)
 
-        // 1. Armrest (Padded Leather Rim)
-        drawRoundRect(
-            brush = Brush.verticalGradient(
-                listOf(
-                    Color(0xFF382218), // Top light highlight
-                    Color(0xFF24150E), // Rich mahogany leather
-                    Color(0xFF140B07)  // Deep shadow under rail
-                )
-            ),
-            topLeft = Offset.Zero,
-            size = Size(tableW, tableH),
-            cornerRadius = CornerRadius(tableH / 2f, tableH / 2f)
-        )
+        // Trajectory radius matching the inner racetrack / betting area on the felt image
+        val rBetX = tableW * 0.35f
+        val rBetY = tableH * 0.28f
 
-        // Armrest outer beveled rim highlight
-        drawRoundRect(
-            brush = Brush.verticalGradient(
-                listOf(Color(0xFF5E3928), Color(0x22140B07))
-            ),
-            topLeft = Offset.Zero,
-            size = Size(tableW, tableH),
-            cornerRadius = CornerRadius(tableH / 2f, tableH / 2f),
-            style = Stroke(width = 1.5.dp.toPx())
-        )
+        if (currentDealerIndex in 0 until totalPlayers && nextDealerIndex in 0 until totalPlayers && totalPlayers > 1) {
+            val currentAngleRad = (-PI / 2.0) + (currentDealerIndex * 2.0 * PI / totalPlayers)
+            val nextAngleRad = (-PI / 2.0) + (nextDealerIndex * 2.0 * PI / totalPlayers)
+            var sweepRad = nextAngleRad - currentAngleRad
+            while (sweepRad <= 0.0) sweepRad += 2.0 * PI
 
-        // 2. Concentric Brass Bead Inlay
-        val brassInset = 4.dp.toPx()
-        val brassW = (tableW - 2 * brassInset).coerceAtLeast(0f)
-        val brassH = (tableH - 2 * brassInset).coerceAtLeast(0f)
-        drawRoundRect(
-            brush = Brush.linearGradient(
-                listOf(
-                    Color(0xFFFFF176),
-                    Color(0xFFD4AF37),
-                    Color(0xFF8D6E14),
-                    Color(0xFFD4AF37)
-                )
-            ),
-            topLeft = Offset(brassInset, brassInset),
-            size = Size(brassW, brassH),
-            cornerRadius = CornerRadius(brassH / 2f, brassH / 2f),
-            style = Stroke(width = 1.dp.toPx())
-        )
-
-        // 3. Wooden Racetrack Inlay
-        val woodInset = 6.dp.toPx()
-        val woodW = (tableW - 2 * woodInset).coerceAtLeast(0f)
-        val woodH = (tableH - 2 * woodInset).coerceAtLeast(0f)
-        drawRoundRect(
-            brush = Brush.radialGradient(
-                listOf(Color(0xFF2E1911), Color(0xFF150A05)),
-                center = center,
-                radius = tableW * 0.5f
-            ),
-            topLeft = Offset(woodInset, woodInset),
-            size = Size(woodW, woodH),
-            cornerRadius = CornerRadius(woodH / 2f, woodH / 2f)
-        )
-
-        // 4. High-Roller Casino Emerald Felt
-        val feltInset = 11.dp.toPx()
-        val feltW = (tableW - 2 * feltInset).coerceAtLeast(0f)
-        val feltH = (tableH - 2 * feltInset).coerceAtLeast(0f)
-        drawRoundRect(
-            brush = Brush.radialGradient(
-                listOf(
-                    Color(0xFF157641), // Center warm spotlight
-                    Color(0xFF0C4A28), // Deep emerald felt
-                    Color(0xFF062C18), // Shadowed felt
-                    Color(0xFF02160C)  // Edge vignette
-                ),
-                center = center,
-                radius = feltW * 0.55f
-            ),
-            topLeft = Offset(feltInset, feltInset),
-            size = Size(feltW, feltH),
-            cornerRadius = CornerRadius(feltH / 2f, feltH / 2f)
-        )
-
-        // Felt inner ambient shadow
-        drawRoundRect(
-            brush = Brush.radialGradient(
-                listOf(Color.Transparent, Color(0x66000000)),
-                center = center,
-                radius = feltW * 0.52f
-            ),
-            topLeft = Offset(feltInset, feltInset),
-            size = Size(feltW, feltH),
-            cornerRadius = CornerRadius(feltH / 2f, feltH / 2f)
-        )
-
-        // 5. Golden Betting Rail & Rotation Orbit
-        val betInset = feltInset + 10.dp.toPx()
-        val betW = (tableW - 2 * betInset).coerceAtLeast(0f)
-        val betH = (tableH - 2 * betInset).coerceAtLeast(0f)
-        if (betW > 20f && betH > 20f) {
-            // Outer golden betting line
-            drawRoundRect(
-                color = Color(0xFFD4AF37).copy(alpha = 0.38f),
-                topLeft = Offset(betInset, betInset),
-                size = Size(betW, betH),
-                cornerRadius = CornerRadius(betH / 2f, betH / 2f),
-                style = Stroke(width = 1.5.dp.toPx())
-            )
-
-            // Clockwise directional dash animation
-            drawRoundRect(
-                color = Color(0xFFD4AF37).copy(alpha = 0.22f),
-                topLeft = Offset(betInset, betInset),
-                size = Size(betW, betH),
-                cornerRadius = CornerRadius(betH / 2f, betH / 2f),
-                style = Stroke(
-                    width = 1.dp.toPx(),
-                    pathEffect = PathEffect.dashPathEffect(floatArrayOf(12f, 10f), orbitPhase * 22f)
-                )
-            )
-
-            // Inner golden hairline
-            val innerBetInset = betInset + 3.dp.toPx()
-            val innerBetW = (tableW - 2 * innerBetInset).coerceAtLeast(0f)
-            val innerBetH = (tableH - 2 * innerBetInset).coerceAtLeast(0f)
-            if (innerBetW > 10f && innerBetH > 10f) {
-                drawRoundRect(
-                    color = Color(0xFFD4AF37).copy(alpha = 0.18f),
-                    topLeft = Offset(innerBetInset, innerBetInset),
-                    size = Size(innerBetW, innerBetH),
-                    cornerRadius = CornerRadius(innerBetH / 2f, innerBetH / 2f),
-                    style = Stroke(width = 0.75.dp.toPx())
-                )
+            // Draw luminous golden trajectory arc
+            val numSteps = 28
+            val beamPath = Path()
+            for (k in 0..numSteps) {
+                val t = currentAngleRad + (k.toDouble() / numSteps) * sweepRad
+                val px = center.x + (rBetX * cos(t)).toFloat()
+                val py = center.y + (rBetY * sin(t)).toFloat()
+                if (k == 0) beamPath.moveTo(px, py) else beamPath.lineTo(px, py)
             }
 
-            // 6. Dynamic Dealer Rotation Arc & Traveling Light Beam
-            if (currentDealerIndex in 0 until totalPlayers && nextDealerIndex in 0 until totalPlayers && totalPlayers > 1) {
-                val currentAngleRad = (-PI / 2.0) + (currentDealerIndex * 2.0 * PI / totalPlayers)
-                val nextAngleRad = (-PI / 2.0) + (nextDealerIndex * 2.0 * PI / totalPlayers)
-                var sweepRad = nextAngleRad - currentAngleRad
-                while (sweepRad <= 0.0) sweepRad += 2.0 * PI
-
-                val rBetX = betW / 2f
-                val rBetY = betH / 2f
-
-                // Draw luminous golden trajectory arc
-                val numSteps = 28
-                val beamPath = Path()
-                for (k in 0..numSteps) {
-                    val t = currentAngleRad + (k.toDouble() / numSteps) * sweepRad
-                    val px = center.x + (rBetX * cos(t)).toFloat()
-                    val py = center.y + (rBetY * sin(t)).toFloat()
-                    if (k == 0) beamPath.moveTo(px, py) else beamPath.lineTo(px, py)
-                }
-
-                drawPath(
-                    path = beamPath,
-                    brush = Brush.linearGradient(
-                        listOf(
-                            Color(0xFFFFD54F).copy(alpha = 0.70f),
-                            Color(0xFFFFE082).copy(alpha = 0.95f),
-                            Color(0xFFFFD54F).copy(alpha = 0.50f)
-                        )
-                    ),
-                    style = Stroke(width = 2.5.dp.toPx())
-                )
-
-                // Midpoint Directional Chevrons
-                val midSteps = listOf(0.40, 0.75)
-                for (midPct in midSteps) {
-                    val midAngle = currentAngleRad + (midPct * sweepRad)
-                    val midX = center.x + (rBetX * cos(midAngle)).toFloat()
-                    val midY = center.y + (rBetY * sin(midAngle)).toFloat()
-                    val tanX = (-rBetX * sin(midAngle)).toFloat()
-                    val tanY = (rBetY * cos(midAngle)).toFloat()
-                    val len = sqrt(tanX * tanX + tanY * tanY).coerceAtLeast(0.001f)
-                    val uX = tanX / len
-                    val uY = tanY / len
-                    val nX = -uY
-                    val nY = uX
-
-                    val chvSize = 4.5.dp.toPx()
-                    val chvPath = Path().apply {
-                        moveTo(midX - uX * chvSize + nX * chvSize, midY - uY * chvSize + nY * chvSize)
-                        lineTo(midX, midY)
-                        lineTo(midX - uX * chvSize - nX * chvSize, midY - uY * chvSize - nY * chvSize)
-                    }
-                    drawPath(
-                        path = chvPath,
-                        color = Color(0xFFFFD54F).copy(alpha = 0.85f),
-                        style = Stroke(width = 1.5.dp.toPx())
+            drawPath(
+                path = beamPath,
+                brush = Brush.linearGradient(
+                    listOf(
+                        Color(0xFFFFD54F).copy(alpha = 0.70f),
+                        Color(0xFFFFE082).copy(alpha = 0.95f),
+                        Color(0xFFFFD54F).copy(alpha = 0.50f)
                     )
-                }
+                ),
+                style = Stroke(width = 2.5.dp.toPx())
+            )
 
-                // Traveling Comet / Light Pulse
-                val cometAngle = currentAngleRad + (orbitPhase * sweepRad)
-                val cometX = center.x + (rBetX * cos(cometAngle)).toFloat()
-                val cometY = center.y + (rBetY * sin(cometAngle)).toFloat()
-
-                drawCircle(
-                    brush = Brush.radialGradient(
-                        listOf(Color(0xFFFFE082), Color(0x77FFD54F), Color.Transparent),
-                        center = Offset(cometX, cometY),
-                        radius = 13.dp.toPx()
-                    ),
-                    radius = 13.dp.toPx(),
-                    center = Offset(cometX, cometY)
-                )
-                drawCircle(
-                    color = Color.White,
-                    radius = 2.5.dp.toPx(),
-                    center = Offset(cometX, cometY)
-                )
-
-                // Tangential Arrowhead at target (next dealer)
-                val arrowHeadX = center.x + (rBetX * cos(nextAngleRad)).toFloat()
-                val arrowHeadY = center.y + (rBetY * sin(nextAngleRad)).toFloat()
-                val tanX = (-rBetX * sin(nextAngleRad)).toFloat()
-                val tanY = (rBetY * cos(nextAngleRad)).toFloat()
+            // Midpoint Directional Chevrons
+            val midSteps = listOf(0.40, 0.75)
+            for (midPct in midSteps) {
+                val midAngle = currentAngleRad + (midPct * sweepRad)
+                val midX = center.x + (rBetX * cos(midAngle)).toFloat()
+                val midY = center.y + (rBetY * sin(midAngle)).toFloat()
+                val tanX = (-rBetX * sin(midAngle)).toFloat()
+                val tanY = (rBetY * cos(midAngle)).toFloat()
                 val len = sqrt(tanX * tanX + tanY * tanY).coerceAtLeast(0.001f)
                 val uX = tanX / len
                 val uY = tanY / len
                 val nX = -uY
                 val nY = uX
 
-                val arrowSize = 6.dp.toPx()
-                val arrowPath = Path().apply {
-                    moveTo(arrowHeadX + uX * arrowSize * 0.5f, arrowHeadY + uY * arrowSize * 0.5f)
-                    lineTo(arrowHeadX - uX * arrowSize + nX * (arrowSize * 0.7f), arrowHeadY - uY * arrowSize + nY * (arrowSize * 0.7f))
-                    lineTo(arrowHeadX - uX * (arrowSize * 0.4f), arrowHeadY - uY * (arrowSize * 0.4f))
-                    lineTo(arrowHeadX - uX * arrowSize - nX * (arrowSize * 0.7f), arrowHeadY - uY * arrowSize - nY * (arrowSize * 0.7f))
-                    close()
+                val chvSize = 4.5.dp.toPx()
+                val chvPath = Path().apply {
+                    moveTo(midX - uX * chvSize + nX * chvSize, midY - uY * chvSize + nY * chvSize)
+                    lineTo(midX, midY)
+                    lineTo(midX - uX * chvSize - nX * chvSize, midY - uY * chvSize - nY * chvSize)
                 }
                 drawPath(
-                    path = arrowPath,
-                    color = Color(0xFFFFD54F)
-                )
-
-                // Spotlight on the felt beneath current dealer
-                val dealerFeltX = center.x + (rBetX * 0.95f * cos(currentAngleRad)).toFloat()
-                val dealerFeltY = center.y + (rBetY * 0.95f * sin(currentAngleRad)).toFloat()
-                drawCircle(
-                    brush = Brush.radialGradient(
-                        listOf(
-                            Color(0xFFFFD54F).copy(alpha = 0.30f * dealerGlowScale),
-                            Color.Transparent
-                        ),
-                        center = Offset(dealerFeltX, dealerFeltY),
-                        radius = 24.dp.toPx()
-                    ),
-                    radius = 24.dp.toPx(),
-                    center = Offset(dealerFeltX, dealerFeltY)
+                    path = chvPath,
+                    color = Color(0xFFFFD54F).copy(alpha = 0.85f),
+                    style = Stroke(width = 1.5.dp.toPx())
                 )
             }
+
+            // Traveling Comet / Light Pulse
+            val cometAngle = currentAngleRad + (orbitPhase * sweepRad)
+            val cometX = center.x + (rBetX * cos(cometAngle)).toFloat()
+            val cometY = center.y + (rBetY * sin(cometAngle)).toFloat()
+
+            drawCircle(
+                brush = Brush.radialGradient(
+                    listOf(Color(0xFFFFE082), Color(0x77FFD54F), Color.Transparent),
+                    center = Offset(cometX, cometY),
+                    radius = 13.dp.toPx()
+                ),
+                radius = 13.dp.toPx(),
+                center = Offset(cometX, cometY)
+            )
+            drawCircle(
+                color = Color.White,
+                radius = 2.5.dp.toPx(),
+                center = Offset(cometX, cometY)
+            )
+
+            // Tangential Arrowhead at target (next dealer)
+            val arrowHeadX = center.x + (rBetX * cos(nextAngleRad)).toFloat()
+            val arrowHeadY = center.y + (rBetY * sin(nextAngleRad)).toFloat()
+            val tanX = (-rBetX * sin(nextAngleRad)).toFloat()
+            val tanY = (rBetY * cos(nextAngleRad)).toFloat()
+            val len = sqrt(tanX * tanX + tanY * tanY).coerceAtLeast(0.001f)
+            val uX = tanX / len
+            val uY = tanY / len
+            val nX = -uY
+            val nY = uX
+
+            val arrowSize = 6.dp.toPx()
+            val arrowPath = Path().apply {
+                moveTo(arrowHeadX + uX * arrowSize * 0.5f, arrowHeadY + uY * arrowSize * 0.5f)
+                lineTo(arrowHeadX - uX * arrowSize + nX * (arrowSize * 0.7f), arrowHeadY - uY * arrowSize + nY * (arrowSize * 0.7f))
+                lineTo(arrowHeadX - uX * (arrowSize * 0.4f), arrowHeadY - uY * (arrowSize * 0.4f))
+                lineTo(arrowHeadX - uX * arrowSize - nX * (arrowSize * 0.7f), arrowHeadY - uY * arrowSize - nY * (arrowSize * 0.7f))
+                close()
+            }
+            drawPath(
+                path = arrowPath,
+                color = Color(0xFFFFD54F)
+            )
+
+            // Spotlight on the felt beneath current dealer
+            val dealerFeltX = center.x + (rBetX * 0.95f * cos(currentAngleRad)).toFloat()
+            val dealerFeltY = center.y + (rBetY * 0.95f * sin(currentAngleRad)).toFloat()
+            drawCircle(
+                brush = Brush.radialGradient(
+                    listOf(
+                        Color(0xFFFFD54F).copy(alpha = 0.30f * dealerGlowScale),
+                        Color.Transparent
+                    ),
+                    center = Offset(dealerFeltX, dealerFeltY),
+                    radius = 24.dp.toPx()
+                ),
+                radius = 24.dp.toPx(),
+                center = Offset(dealerFeltX, dealerFeltY)
+            )
         }
     }
 }
