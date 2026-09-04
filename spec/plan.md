@@ -3,7 +3,7 @@
 ## Problem Statement
 Build a full-featured Android (Kotlin/Compose) app for the Marriage card game calculator, backed by the existing .NET API. The app must handle 2-6 players with efficient screen space usage, support offline/online modes, real-time score display, and integrate with the C# API hosted on Kubernetes. The Maui version is archived and replaced by this native Android app.
 
-## Status: Phases 1-32 COMPLETE ✅ (except 25.9: Android invite-code UI, pending)
+## Status: Phases 1-35 COMPLETE ✅ (except 25.9: Android invite-code UI, pending)
 - 44 C# tests (12 Core + 32 API) + 74 Android unit tests all passing
 - Android APK builds successfully (`assembleDebug`)
 - .NET API builds successfully
@@ -409,6 +409,17 @@ Enhanced table awareness, seating dynamics, dealer tracking, and post-game payme
 - [x] Step 34.4: **Screen Integrations** — Integrated expandable Seating Ring card and Settle Up TopAppBar & overflow actions into `PlayGameScreen.kt`. Embedded Settle Up top action and "Full Matrix" trigger into `ScoreboardScreen.kt`.
 - [x] Step 34.5: **Unit Tests** — Added `VisualSeatingRingTest.kt` verifying polar coordinate seat offsets for 2, 4, and 6 players, clockwise distribution, and elliptical bounds.
 - **COMMIT**: "feat: Visual seating ring, dealer rotation and settle-up matrix (Issue #30)"
+
+---
+
+## Phase 35: Casino-Grade Table Graphics & Dynamic Dealer Rotation (Issue #40, Complete)
+Replaced the simplistic circular drawing with a photorealistic casino poker table asset, 3D ceramic tournament dealer puck, and dynamic clockwise dealer rotation beam.
+- [x] Step 35.1: **Photorealistic Casino Table Background Asset** — Generated and imported `casino_poker_table.png` featuring dark espresso padded leather bumper, brass bead trim, walnut racetrack, and illuminated emerald felt with antialiased stadium masking.
+- [x] Step 35.2: **Dynamic Dealer Rotation Trajectory Arc (`DealerRotationCanvas`)** — Rendered a sweeping golden curved trajectory connecting current dealer to next dealer along the table's perimeter, complete with a traveling glowing comet pulse and clockwise directional chevrons.
+- [x] Step 35.3: **3D Ceramic Dealer Puck & Next Dealer Chip** — Created `CasinoDealerButton` modeled after high-stakes casino tournament pucks with double-ring golden trim and beveled drop shadow, alongside a sleek platinum next dealer chip.
+- [x] Step 35.4: **Rail-Aligned Player Pods (`PlayerSeatNode`)** — Positioned player avatar pods directly over the leather bumper and racetrack rail, featuring metallic role-based bezels (gold for dealer, platinum for next dealer, gunmetal for standard players), numbered brass seat tokens, and smart position-aware name plaques (top-aligned for top rim, bottom-aligned for bottom rim) to prevent felt occlusion.
+- [x] Step 35.5: **Unit Tests & Emulator Verification** — Verified with `VisualSeatingRingTest.kt` and visual screenshot inspection on Pixel 9 Pro XL emulator (`screen13.png`).
+- **COMMIT**: "feat: casino-grade poker table background and dynamic dealer rotation (Issue #40)"
 
 ## Backlog / Future Candidates (not started)
 - **True offline reconnect sync**: requirement §3.4 calls out cloud sync as "(Future)". Today, online mode writes straight to the API and offline/guest mode is local-only Room storage (Phase 6.4) — there's no queued-write/merge engine that reconciles a game played offline once connectivity returns. Would need an outbox table + WorkManager sync job + conflict resolution rule (e.g. last-write-wins vs. host-wins) if pursued.
