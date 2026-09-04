@@ -1,5 +1,13 @@
 # Marriage Card Game Calculator - Requirements
 
+> **Spec-Driven Development (SDD) Reference**:
+> This document outlines high-level user requirements. For exhaustive technical, mathematical, API, architectural, and verification specifications, refer to the [System Specification Suite](README.md):
+> - [Domain & Scoring Rules Specification](domain-and-rules.md)
+> - [System Architecture & Technology Stack](architecture-and-tech.md)
+> - [API & Real-Time Hub Protocol](api-spec.md)
+> - [Android UI/UX & Workflows](mobile-ui-ux.md)
+> - [Testing & Quality Assurance](testing-and-verification.md)
+
 ## 1. Project Overview
 **App Name**: Marriage Game Calculator
 **Platform**: Android (Native)
