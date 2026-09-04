@@ -399,6 +399,17 @@ Optimized score entry speed, tactile feedback, and one-thumb ergonomics across R
 - [x] Step 33.5: **Unit Tests** — Added tests in `RoundInputViewModelTest.kt` verifying `addMaalPoints` increments, bounds clamping, and automatic seen marking.
 - **COMMIT**: "feat: Input speed & ergonomics - quick maal presets, haptics, pulsing FAB (Issue #29)"
 
+---
+
+## Phase 34: Visual Seating Ring, Animated Dealer Chip & Settle-Up Cash Settlement Matrix (Issue #30, Complete)
+Enhanced table awareness, seating dynamics, dealer tracking, and post-game payment settlement.
+- [x] Step 34.1: **Visual Seating Ring (`VisualSeatingRing.kt`)** — Created an interactive circular/oval poker felt table component with radial casino felt green gradient, golden rim border, dynamic polar coordinate seat positioning (`calculateSeatOffset`) for 2–6 players, avatar bubbles, seat index markers, and clockwise rotation indicator.
+- [x] Step 34.2: **Animated Dealer Button & Next Dealer Chip** — Visual dealer chip badge ("D") with an animated golden pulse glow on the active dealer, and a directional arrow indicator (`›`) highlighting the next dealer in rotation.
+- [x] Step 34.3: **1-Tap 'Settle Up' Cash Settlement Matrix (`SettleUpDialog.kt`)** — Direct cash/eSewa/bank settlement modal using greedy debtor-to-creditor pairing (`MatchShareHelper.computeSettlements`). Displays individual transfer cards with payment method suggestions (eSewa / Khalti / Cash / Bank), 1-tap clipboard copy, and host Settle & Freeze action.
+- [x] Step 34.4: **Screen Integrations** — Integrated expandable Seating Ring card and Settle Up TopAppBar & overflow actions into `PlayGameScreen.kt`. Embedded Settle Up top action and "Full Matrix" trigger into `ScoreboardScreen.kt`.
+- [x] Step 34.5: **Unit Tests** — Added `VisualSeatingRingTest.kt` verifying polar coordinate seat offsets for 2, 4, and 6 players, clockwise distribution, and elliptical bounds.
+- **COMMIT**: "feat: Visual seating ring, dealer rotation and settle-up matrix (Issue #30)"
+
 ## Backlog / Future Candidates (not started)
 - **True offline reconnect sync**: requirement §3.4 calls out cloud sync as "(Future)". Today, online mode writes straight to the API and offline/guest mode is local-only Room storage (Phase 6.4) — there's no queued-write/merge engine that reconciles a game played offline once connectivity returns. Would need an outbox table + WorkManager sync job + conflict resolution rule (e.g. last-write-wins vs. host-wins) if pursued.
 

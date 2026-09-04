@@ -35,6 +35,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import np.com.sanjeeb.marriagecalculator.data.model.Currency
 import np.com.sanjeeb.marriagecalculator.data.model.Player
 import np.com.sanjeeb.marriagecalculator.ui.components.AppBackground
+import np.com.sanjeeb.marriagecalculator.ui.components.SettleUpDialog
 import np.com.sanjeeb.marriagecalculator.ui.share.MatchShareData
 import np.com.sanjeeb.marriagecalculator.ui.share.MatchShareDialog
 import np.com.sanjeeb.marriagecalculator.ui.share.MatchShareHelper
@@ -75,6 +76,7 @@ fun ScoreboardScreen(
 ) {
     val uiState by viewModel.uiState.collectAsState()
     var showShareDialog by remember { mutableStateOf(false) }
+    var showSettleUpDialog by remember { mutableStateOf(false) }
 
     LaunchedEffect(gameSetId) {
         viewModel.loadScoreboardData(gameSetId)
@@ -98,6 +100,9 @@ fun ScoreboardScreen(
                     }
                 },
                 actions = {
+                    IconButton(onClick = { showSettleUpDialog = true }) {
+                        Icon(Icons.Default.Payments, "Settle Up", tint = AppTheme.palette.accent)
+                    }
                     IconButton(onClick = { showShareDialog = true }) {
                         Icon(Icons.Default.Share, "Share match summary", tint = AppTheme.palette.accent)
                     }
@@ -123,7 +128,11 @@ fun ScoreboardScreen(
                 if (uiState.showHistory) {
                     RoundHistoryView(uiState)
                 } else {
-                    ScoreboardView(uiState, viewModel::settleGame)
+                    ScoreboardView(
+                        uiState = uiState,
+                        onSettle = viewModel::settleGame,
+                        onOpenSettleUpDialog = { showSettleUpDialog = true }
+                    )
                 }
             }
         }
@@ -161,10 +170,31 @@ fun ScoreboardScreen(
             onDismiss = { showShareDialog = false }
         )
     }
+
+    if (showSettleUpDialog) {
+        val sortedPlayers = uiState.players.sortedByDescending { it.totalMoney }
+        val balances = sortedPlayers.map { it.player.name to it.totalMoney }
+        SettleUpDialog(
+            matchName = uiState.gameSetId ?: "Marriage Match",
+            balances = balances,
+            currency = uiState.settings.currency,
+            isSettled = uiState.isSettled,
+            canSettleAndFreeze = !uiState.isSettled,
+            onSettleAndFreeze = {
+                viewModel.settleGame()
+                showSettleUpDialog = false
+            },
+            onDismiss = { showSettleUpDialog = false }
+        )
+    }
 }
 
 @Composable
-private fun ScoreboardView(uiState: ScoreboardUiState, onSettle: () -> Unit) {
+private fun ScoreboardView(
+    uiState: ScoreboardUiState,
+    onSettle: () -> Unit,
+    onOpenSettleUpDialog: () -> Unit
+) {
     val sortedPlayers = uiState.players.sortedByDescending { it.totalPoints }
     val currency = uiState.settings.currency
 
@@ -186,7 +216,12 @@ private fun ScoreboardView(uiState: ScoreboardUiState, onSettle: () -> Unit) {
 
             // Who Owes Whom section
             if (sortedPlayers.any { it.totalPoints != 0 }) {
-                WhoOwesWhomSection(sortedPlayers, uiState.settings.pointRate, currency)
+                WhoOwesWhomSection(
+                    players = sortedPlayers,
+                    pointRate = uiState.settings.pointRate,
+                    currency = currency,
+                    onOpenSettleUp = onOpenSettleUpDialog
+                )
             }
 
             Spacer(modifier = Modifier.height(16.dp))
@@ -293,21 +328,52 @@ private fun PlayerScoreRow(playerScore: PlayerTotalScore, rank: Int, currency: C
 }
 
 @Composable
-private fun WhoOwesWhomSection(players: List<PlayerTotalScore>, pointRate: Double, currency: Currency) {
+private fun WhoOwesWhomSection(
+    players: List<PlayerTotalScore>,
+    pointRate: Double,
+    currency: Currency,
+    onOpenSettleUp: (() -> Unit)? = null
+) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(12.dp),
         colors = CardDefaults.cardColors(containerColor = AppTheme.palette.tint.copy(alpha = 0.05f))
     ) {
         Column(modifier = Modifier.padding(12.dp)) {
-            Text(
-                "💰 Settlement Summary",
-                color = AppTheme.palette.accent,
-                fontSize = 16.sp,
-                fontWeight = FontWeight.Bold,
-                fontFamily = FontFamily.Serif
-            )
-            Spacer(modifier = Modifier.height(8.dp))
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    "💰 Settlement Summary",
+                    color = AppTheme.palette.accent,
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.Bold,
+                    fontFamily = FontFamily.Serif
+                )
+                if (onOpenSettleUp != null) {
+                    TextButton(
+                        onClick = onOpenSettleUp,
+                        contentPadding = PaddingValues(horizontal = 8.dp, vertical = 2.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Payments,
+                            contentDescription = null,
+                            tint = AppTheme.palette.accent,
+                            modifier = Modifier.size(16.dp)
+                        )
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text(
+                            "Full Matrix",
+                            color = AppTheme.palette.accent,
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+                }
+            }
+            Spacer(modifier = Modifier.height(6.dp))
 
             // Greedy matching algorithm for settlement:
             val receivers = players.filter { it.totalMoney > 0 }
