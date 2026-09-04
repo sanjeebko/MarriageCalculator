@@ -1204,189 +1204,201 @@ private fun RoundBlock(
                     onClick = onToggleExpand
                 )
             } else {
-                // Header: player initials, tappable for a tooltip with the full name.
-            // The dealer badge marks the topmost row's dealer: the current/pending
-            // game's dealer while the round is open, the last game's once completed.
-            val headerDealerId = if (!group.isCompleted) {
-                nextDealerId
-            } else {
-                group.games.maxByOrNull { it.gameSequenceInRound }?.dealerId
-            }
-            Row(
-                modifier = Modifier.padding(vertical = 6.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Spacer(modifier = Modifier.width(ROUND_SEQ_COL_WIDTH_DP.dp))
-                Row(modifier = Modifier.horizontalScroll(scrollState)) {
-                    players.forEach { p ->
-                        var headerPosition by remember { mutableStateOf(Offset.Zero) }
-                        var headerSize by remember { mutableStateOf(IntSize.Zero) }
+                BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
+                    val availableWidth = maxWidth - ROUND_SEQ_COL_WIDTH_DP.dp
+                    val playerColWidth = if (players.isNotEmpty()) {
+                        maxOf(ROUND_PLAYER_COL_WIDTH_DP.dp, availableWidth / players.size)
+                    } else {
+                        ROUND_PLAYER_COL_WIDTH_DP.dp
+                    }
+
+                    Column {
+                        // Header: player initials, tappable for a tooltip with the full name.
+                        // The dealer badge marks the topmost row's dealer: the current/pending
+                        // game's dealer while the round is open, the last game's once completed.
+                        val headerDealerId = if (!group.isCompleted) {
+                            nextDealerId
+                        } else {
+                            group.games.maxByOrNull { it.gameSequenceInRound }?.dealerId
+                        }
                         Row(
-                            modifier = Modifier
-                                .width(ROUND_PLAYER_COL_WIDTH_DP.dp)
-                                .onGloballyPositioned { coords ->
-                                    headerPosition = coords.positionInRoot()
-                                    headerSize = coords.size
-                                }
-                                .clickable { onPlayerHeaderClick(p, headerPosition, headerSize) },
-                            horizontalArrangement = Arrangement.Center,
+                            modifier = Modifier.padding(vertical = 6.dp),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Text(
-                                text = p.name.take(3).uppercase(),
-                                color = AppTheme.palette.frostAccent,
-                                fontSize = 10.sp,
-                                fontWeight = FontWeight.Bold
-                            )
-                            if (p.id == headerDealerId) {
-                                Spacer(modifier = Modifier.width(3.dp))
-                                DealerBadge(size = 12.dp)
-                            }
-                        }
-                    }
-                }
-            }
-
-            HorizontalDivider(color = AppTheme.palette.tint.copy(alpha = 0.08f))
-
-            val pendingSeq = group.games.size + 1
-            val rowsAscending = if (!group.isCompleted) {
-                group.games + blankGameEntry(players, nextDealerId, pendingSeq)
-            } else group.games
-            val rowsDisplay = rowsAscending.sortedByDescending { it.gameSequenceInRound }
-
-            rowsDisplay.forEachIndexed { index, game ->
-                val isPending = game.gameId == "pending"
-                // The current (not yet played) game row is the entry point for score input:
-                // highlighted with a glass pill and tappable. Already-played rows are tappable
-                // too, but route through a "you're modifying a previous game" confirmation.
-                val rowModifier = if (isPending) {
-                    Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 4.dp, vertical = 3.dp)
-                        .clip(RoundedCornerShape(10.dp))
-                        .background(
-                            Brush.verticalGradient(
-                                listOf(
-                                    AppTheme.palette.tint.copy(alpha = 0.12f),
-                                    AppTheme.palette.frostAccent.copy(alpha = 0.07f),
-                                    AppTheme.palette.tint.copy(alpha = 0.03f)
-                                )
-                            )
-                        )
-                        .border(
-                            width = 1.dp,
-                            brush = Brush.verticalGradient(
-                                listOf(AppTheme.palette.tint.copy(alpha = 0.40f), AppTheme.palette.tint.copy(alpha = 0.06f))
-                            ),
-                            shape = RoundedCornerShape(10.dp)
-                        )
-                        .then(if (isHost) Modifier.clickable(onClick = onAddGame) else Modifier)
-                        .padding(vertical = 4.dp)
-                } else {
-                    Modifier
-                        .fillMaxWidth()
-                        .background(if (index % 2 == 0) AppTheme.palette.tint.copy(alpha = 0.06f) else Color.Transparent)
-                        .then(if (isHost) Modifier.clickable { onEditGame(game) } else Modifier)
-                        .padding(vertical = 3.dp)
-                }
-                Row(
-                    modifier = rowModifier,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .width(ROUND_SEQ_COL_WIDTH_DP.dp)
-                            .then(if (!isPending) Modifier.clickable { onGameClick(game) } else Modifier),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text(
-                            text = "${game.gameSequenceInRound}",
-                            color = if (isPending) AppTheme.palette.tint.copy(alpha = 0.65f) else AppTheme.palette.frostAccent,
-                            fontSize = 13.sp,
-                            fontWeight = FontWeight.Bold
-                        )
-                    }
-
-                    Row(modifier = Modifier.horizontalScroll(scrollState)) {
-                        players.forEach { p ->
-                            val entry = game.playerEntries.find { it.playerId == p.id }
-                            CompactRoundCell(
-                                entry = entry,
-                                mode = mode,
-                                currency = currency,
-                                isDealer = game.dealerId == p.id,
-                                isWinner = !isPending && game.winnerId == p.id,
-                                modifier = Modifier.width(ROUND_PLAYER_COL_WIDTH_DP.dp)
-                            )
-                        }
-                    }
-                }
-            }
-
-            if (group.games.isNotEmpty()) {
-                val hasCarryover = carryoverMoneyByPlayer.values.any { it != 0.0 }
-                if (hasCarryover) {
-                    HorizontalDivider(color = AppTheme.palette.tint.copy(alpha = 0.08f), modifier = Modifier.padding(horizontal = 8.dp))
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(vertical = 3.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Box(modifier = Modifier.width(ROUND_SEQ_COL_WIDTH_DP.dp), contentAlignment = Alignment.Center) {
-                            Text(
-                                text = "Prev.",
-                                color = AppTheme.palette.frostAccent,
-                                fontSize = 11.sp,
-                                fontWeight = FontWeight.Bold
-                            )
-                        }
-                        Row(modifier = Modifier.horizontalScroll(scrollState)) {
-                            players.forEach { p ->
-                                val carryoverMoney = carryoverMoneyByPlayer[p.id] ?: 0.0
-                                Box(modifier = Modifier.width(ROUND_PLAYER_COL_WIDTH_DP.dp), contentAlignment = Alignment.Center) {
-                                    Text(
-                                        text = currency.formatMoney(carryoverMoney),
-                                        color = when {
-                                            carryoverMoney > 0 -> AppTheme.palette.numberPositive
-                                            carryoverMoney < 0 -> AppTheme.palette.numberNegative
-                                            else -> AppTheme.palette.numberZero
-                                        },
-                                        style = TableSummaryStyle
-                                    )
+                            Spacer(modifier = Modifier.width(ROUND_SEQ_COL_WIDTH_DP.dp))
+                            Row(modifier = Modifier.horizontalScroll(scrollState)) {
+                                players.forEach { p ->
+                                    var headerPosition by remember { mutableStateOf(Offset.Zero) }
+                                    var headerSize by remember { mutableStateOf(IntSize.Zero) }
+                                    Row(
+                                        modifier = Modifier
+                                            .width(playerColWidth)
+                                            .onGloballyPositioned { coords ->
+                                                headerPosition = coords.positionInRoot()
+                                                headerSize = coords.size
+                                            }
+                                            .clickable { onPlayerHeaderClick(p, headerPosition, headerSize) },
+                                        horizontalArrangement = Arrangement.Center,
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Text(
+                                            text = p.name.take(3).uppercase(),
+                                            color = AppTheme.palette.frostAccent,
+                                            fontSize = 10.sp,
+                                            fontWeight = FontWeight.Bold
+                                        )
+                                        if (p.id == headerDealerId) {
+                                            Spacer(modifier = Modifier.width(3.dp))
+                                            DealerBadge(size = 12.dp)
+                                        }
+                                    }
                                 }
                             }
                         }
-                    }
-                }
 
-                HorizontalDivider(color = AppTheme.palette.tint.copy(alpha = 0.1f), modifier = Modifier.padding(horizontal = 8.dp))
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(vertical = 4.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Box(modifier = Modifier.width(ROUND_SEQ_COL_WIDTH_DP.dp), contentAlignment = Alignment.Center) {
-                        Text("Σ", color = AppTheme.palette.frostAccent, fontSize = 13.sp, fontWeight = FontWeight.Bold)
-                    }
-                    Row(modifier = Modifier.horizontalScroll(scrollState)) {
-                        players.forEach { p ->
-                            val currentPoints = group.totalScoreByPlayer[p.id] ?: 0
-                            val currentMoney = currentPoints * pointRate
-                            val carryoverMoney = carryoverMoneyByPlayer[p.id] ?: 0.0
-                            val totalMoney = currentMoney + carryoverMoney
-                            Box(modifier = Modifier.width(ROUND_PLAYER_COL_WIDTH_DP.dp), contentAlignment = Alignment.Center) {
-                                Text(
-                                    text = currency.formatMoney(totalMoney),
-                                    color = when {
-                                        totalMoney > 0 -> AppTheme.palette.numberPositive
-                                        totalMoney < 0 -> AppTheme.palette.numberNegative
-                                        else -> AppTheme.palette.numberZero
-                                    },
-                                    style = TableTotalStyle
-                                )
+                        HorizontalDivider(color = AppTheme.palette.tint.copy(alpha = 0.08f))
+
+                        val pendingSeq = group.games.size + 1
+                        val rowsAscending = if (!group.isCompleted) {
+                            group.games + blankGameEntry(players, nextDealerId, pendingSeq)
+                        } else group.games
+                        val rowsDisplay = rowsAscending.sortedByDescending { it.gameSequenceInRound }
+
+                        rowsDisplay.forEachIndexed { index, game ->
+                            val isPending = game.gameId == "pending"
+                            // The current (not yet played) game row is the entry point for score input:
+                            // highlighted with a glass pill and tappable. Already-played rows are tappable
+                            // too, but route through a "you're modifying a previous game" confirmation.
+                            val rowModifier = if (isPending) {
+                                Modifier
+                                    .fillMaxWidth()
+                                    .padding(horizontal = 4.dp, vertical = 3.dp)
+                                    .clip(RoundedCornerShape(10.dp))
+                                    .background(
+                                        Brush.verticalGradient(
+                                            listOf(
+                                                AppTheme.palette.tint.copy(alpha = 0.12f),
+                                                AppTheme.palette.frostAccent.copy(alpha = 0.07f),
+                                                AppTheme.palette.tint.copy(alpha = 0.03f)
+                                            )
+                                        )
+                                    )
+                                    .border(
+                                        width = 1.dp,
+                                        brush = Brush.verticalGradient(
+                                            listOf(AppTheme.palette.tint.copy(alpha = 0.40f), AppTheme.palette.tint.copy(alpha = 0.06f))
+                                        ),
+                                        shape = RoundedCornerShape(10.dp)
+                                    )
+                                    .then(if (isHost) Modifier.clickable(onClick = onAddGame) else Modifier)
+                                    .padding(vertical = 4.dp)
+                            } else {
+                                Modifier
+                                    .fillMaxWidth()
+                                    .background(if (index % 2 == 0) AppTheme.palette.tint.copy(alpha = 0.06f) else Color.Transparent)
+                                    .then(if (isHost) Modifier.clickable { onEditGame(game) } else Modifier)
+                                    .padding(vertical = 3.dp)
+                            }
+                            Row(
+                                modifier = rowModifier,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Box(
+                                    modifier = Modifier
+                                        .width(ROUND_SEQ_COL_WIDTH_DP.dp)
+                                        .then(if (!isPending) Modifier.clickable { onGameClick(game) } else Modifier),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Text(
+                                        text = "${game.gameSequenceInRound}",
+                                        color = if (isPending) AppTheme.palette.tint.copy(alpha = 0.65f) else AppTheme.palette.frostAccent,
+                                        fontSize = 13.sp,
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                }
+
+                                Row(modifier = Modifier.horizontalScroll(scrollState)) {
+                                    players.forEach { p ->
+                                        val entry = game.playerEntries.find { it.playerId == p.id }
+                                        CompactRoundCell(
+                                            entry = entry,
+                                            mode = mode,
+                                            currency = currency,
+                                            isDealer = game.dealerId == p.id,
+                                            isWinner = !isPending && game.winnerId == p.id,
+                                            modifier = Modifier.width(playerColWidth)
+                                        )
+                                    }
+                                }
+                            }
+                        }
+
+                        if (group.games.isNotEmpty()) {
+                            val hasCarryover = carryoverMoneyByPlayer.values.any { it != 0.0 }
+                            if (hasCarryover) {
+                                HorizontalDivider(color = AppTheme.palette.tint.copy(alpha = 0.08f), modifier = Modifier.padding(horizontal = 8.dp))
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(vertical = 3.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Box(modifier = Modifier.width(ROUND_SEQ_COL_WIDTH_DP.dp), contentAlignment = Alignment.Center) {
+                                        Text(
+                                            text = "Prev.",
+                                            color = AppTheme.palette.frostAccent,
+                                            fontSize = 11.sp,
+                                            fontWeight = FontWeight.Bold
+                                        )
+                                    }
+                                    Row(modifier = Modifier.horizontalScroll(scrollState)) {
+                                        players.forEach { p ->
+                                            val carryoverMoney = carryoverMoneyByPlayer[p.id] ?: 0.0
+                                            Box(modifier = Modifier.width(playerColWidth), contentAlignment = Alignment.Center) {
+                                                Text(
+                                                    text = currency.formatMoney(carryoverMoney),
+                                                    color = when {
+                                                        carryoverMoney > 0 -> AppTheme.palette.numberPositive
+                                                        carryoverMoney < 0 -> AppTheme.palette.numberNegative
+                                                        else -> AppTheme.palette.numberZero
+                                                    },
+                                                    style = TableSummaryStyle
+                                                )
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+
+                            HorizontalDivider(color = AppTheme.palette.tint.copy(alpha = 0.1f), modifier = Modifier.padding(horizontal = 8.dp))
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(vertical = 4.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Box(modifier = Modifier.width(ROUND_SEQ_COL_WIDTH_DP.dp), contentAlignment = Alignment.Center) {
+                                    Text("Σ", color = AppTheme.palette.frostAccent, fontSize = 13.sp, fontWeight = FontWeight.Bold)
+                                }
+                                Row(modifier = Modifier.horizontalScroll(scrollState)) {
+                                    players.forEach { p ->
+                                        val currentPoints = group.totalScoreByPlayer[p.id] ?: 0
+                                        val currentMoney = currentPoints * pointRate
+                                        val carryoverMoney = carryoverMoneyByPlayer[p.id] ?: 0.0
+                                        val totalMoney = currentMoney + carryoverMoney
+                                        Box(modifier = Modifier.width(playerColWidth), contentAlignment = Alignment.Center) {
+                                            Text(
+                                                text = currency.formatMoney(totalMoney),
+                                                color = when {
+                                                    totalMoney > 0 -> AppTheme.palette.numberPositive
+                                                    totalMoney < 0 -> AppTheme.palette.numberNegative
+                                                    else -> AppTheme.palette.numberZero
+                                                },
+                                                style = TableTotalStyle
+                                            )
+                                        }
+                                    }
+                                }
                             }
                         }
                     }
@@ -1394,7 +1406,6 @@ private fun RoundBlock(
             }
         }
     }
-}
 }
 
 @Composable
@@ -1423,61 +1434,69 @@ private fun CollapsedRoundSummaryRow(
             )
         }
     } else {
-        Row(
+        BoxWithConstraints(
             modifier = Modifier
                 .fillMaxWidth()
                 .clickable(onClick = onClick)
-                .padding(vertical = 6.dp),
-            verticalAlignment = Alignment.CenterVertically
+                .padding(vertical = 6.dp)
         ) {
-            Box(
-                modifier = Modifier.width(ROUND_SEQ_COL_WIDTH_DP.dp),
-                contentAlignment = Alignment.Center
-            ) {
-                Text(
-                    text = "Σ",
-                    color = AppTheme.palette.frostAccent,
-                    fontSize = 13.sp,
-                    fontWeight = FontWeight.Bold
-                )
+            val availableWidth = maxWidth - ROUND_SEQ_COL_WIDTH_DP.dp
+            val playerColWidth = if (players.isNotEmpty()) {
+                maxOf(ROUND_PLAYER_COL_WIDTH_DP.dp, availableWidth / players.size)
+            } else {
+                ROUND_PLAYER_COL_WIDTH_DP.dp
             }
-            Row(modifier = Modifier.horizontalScroll(scrollState)) {
-                players.forEach { p ->
-                    val currentPoints = group.totalScoreByPlayer[p.id] ?: 0
-                    val currentMoney = currentPoints * pointRate
-                    val carryoverMoney = carryoverMoneyByPlayer[p.id] ?: 0.0
-                    val totalMoney = currentMoney + carryoverMoney
 
-                    val totalMaal = group.games.sumOf { g -> g.playerEntries.find { it.playerId == p.id }?.maal ?: 0 }
-                    val displayValue = when (mode) {
-                        RoundDisplayMode.MAAL -> "$totalMaal maal"
-                        RoundDisplayMode.POINTS -> currency.formatMoney(totalMoney)
-                    }
-                    val displayColor = when (mode) {
-                        RoundDisplayMode.MAAL -> AppTheme.palette.textPrimary
-                        RoundDisplayMode.POINTS -> when {
-                            totalMoney > 0 -> AppTheme.palette.numberPositive
-                            totalMoney < 0 -> AppTheme.palette.numberNegative
-                            else -> AppTheme.palette.numberZero
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Box(
+                    modifier = Modifier.width(ROUND_SEQ_COL_WIDTH_DP.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = "Σ",
+                        color = AppTheme.palette.frostAccent,
+                        fontSize = 13.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+                Row(modifier = Modifier.horizontalScroll(scrollState)) {
+                    players.forEach { p ->
+                        val currentPoints = group.totalScoreByPlayer[p.id] ?: 0
+                        val currentMoney = currentPoints * pointRate
+                        val carryoverMoney = carryoverMoneyByPlayer[p.id] ?: 0.0
+                        val totalMoney = currentMoney + carryoverMoney
+
+                        val totalMaal = group.games.sumOf { g -> g.playerEntries.find { it.playerId == p.id }?.maal ?: 0 }
+                        val displayValue = when (mode) {
+                            RoundDisplayMode.MAAL -> "$totalMaal maal"
+                            RoundDisplayMode.POINTS -> currency.formatMoney(totalMoney)
                         }
-                    }
+                        val displayColor = when (mode) {
+                            RoundDisplayMode.MAAL -> AppTheme.palette.textPrimary
+                            RoundDisplayMode.POINTS -> when {
+                                totalMoney > 0 -> AppTheme.palette.numberPositive
+                                totalMoney < 0 -> AppTheme.palette.numberNegative
+                                else -> AppTheme.palette.numberZero
+                            }
+                        }
 
-                    Column(
-                        modifier = Modifier.width(ROUND_PLAYER_COL_WIDTH_DP.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally
-                    ) {
-                        Text(
-                            text = p.name.take(3).uppercase(),
-                            color = AppTheme.palette.frostAccent.copy(alpha = 0.85f),
-                            fontSize = 10.sp,
-                            fontWeight = FontWeight.Bold,
-                            maxLines = 1
-                        )
-                        Text(
-                            text = displayValue,
-                            color = displayColor,
-                            style = TableTotalStyle
-                        )
+                        Column(
+                            modifier = Modifier.width(playerColWidth),
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            Text(
+                                text = p.name.take(3).uppercase(),
+                                color = AppTheme.palette.frostAccent.copy(alpha = 0.85f),
+                                fontSize = 10.sp,
+                                fontWeight = FontWeight.Bold,
+                                maxLines = 1
+                            )
+                            Text(
+                                text = displayValue,
+                                color = displayColor,
+                                style = TableTotalStyle
+                            )
+                        }
                     }
                 }
             }
