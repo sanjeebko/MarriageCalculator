@@ -211,6 +211,9 @@ interface RoundDao {
     @Query("UPDATE rounds SET closesRound = 1 WHERE id = :id")
     suspend fun closeRoundAt(id: Int)
 
+    @Query("UPDATE rounds SET closesRound = 0 WHERE id = :id")
+    suspend fun reopenRoundAt(id: Int)
+
     @Query("SELECT * FROM rounds WHERE synced = 0")
     suspend fun getUnsynced(): List<RoundEntity>
 

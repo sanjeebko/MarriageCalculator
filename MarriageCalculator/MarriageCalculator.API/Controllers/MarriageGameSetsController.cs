@@ -277,6 +277,41 @@ public class MarriageGameSetsController : ControllerBase
     }
 
     /// <summary>
+    /// Reopens a previously closed round if the new round has not yet started. Host-only.
+    /// </summary>
+    [HttpPost("{id}/rounds/{roundId}/reopen")]
+    public async Task<ActionResult<MarriageGameRoundDto>> ReopenRound(string id, string roundId)
+    {
+        try
+        {
+            var hostUserId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? string.Empty;
+            var round = await _gameSetService.ReopenRoundAsync(id, roundId, hostUserId);
+            if (round == null)
+            {
+                return NotFound($"Round with ID {roundId} not found in game set {id}");
+            }
+            return Ok(round);
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(ex.Message);
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            return Forbid(ex.Message);
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(ex.Message);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error reopening round {RoundId} for game set {GameSetId}", roundId, id);
+            return StatusCode(500, "An error occurred while reopening the round.");
+        }
+    }
+
+    /// <summary>
     /// Toggle or update the payment cleared status of a round. Host-only.
     /// </summary>
     [HttpPost("{id}/rounds/{roundId}/toggle-payment-cleared")]

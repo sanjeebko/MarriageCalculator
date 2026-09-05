@@ -220,4 +220,53 @@ class PlayGameViewModelTest {
             gameSetRepository.togglePaymentCleared(gameSetId, "round-1", true)
         }
     }
+
+    @Test
+    fun `closeCurrentRound offline calls offlineGameRepository closeCurrentRound`() = runTest {
+        val gameSetId = "123"
+        every { sessionManager.isOnlineMode() } returns false
+        coEvery { offlineGameRepository.getGameSet(123) } returns mockk(relaxed = true)
+
+        viewModel.closeCurrentRound(gameSetId)
+
+        coVerify {
+            offlineGameRepository.closeCurrentRound(123)
+        }
+    }
+
+    @Test
+    fun `reopenRound offline calls offlineGameRepository reopenCurrentRound`() = runTest {
+        val gameSetId = "123"
+        every { sessionManager.isOnlineMode() } returns false
+        coEvery { offlineGameRepository.getGameSet(123) } returns mockk(relaxed = true)
+
+        viewModel.reopenRound(gameSetId)
+
+        coVerify {
+            offlineGameRepository.reopenCurrentRound(123)
+        }
+    }
+
+    @Test
+    fun `reopenRound online calls gameSetRepository reopenRound`() = runTest {
+        val gameSetId = "online-set-123"
+        val loggedInUser = User(id = "user-1", userId = "user-1", displayName = "User 1")
+        val gameSet = MarriageGameSet(
+            id = gameSetId,
+            hostUserId = "user-1",
+            name = "Test Online Game"
+        )
+
+        every { sessionManager.isOnlineMode() } returns true
+        every { sessionManager.getUserProfile() } returns loggedInUser
+        coEvery { gameSetRepository.getGameSet(gameSetId) } returns ApiResult.Success(gameSet)
+        coEvery { friendRepository.getFriends() } returns ApiResult.Success(emptyList())
+        coEvery { gameSetRepository.reopenRound(gameSetId, "round-1") } returns ApiResult.Success(mockk())
+
+        viewModel.reopenRound(gameSetId, "round-1")
+
+        coVerify {
+            gameSetRepository.reopenRound(gameSetId, "round-1")
+        }
+    }
 }

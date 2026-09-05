@@ -421,6 +421,19 @@ Replaced the simplistic circular drawing with a photorealistic casino poker tabl
 - [x] Step 35.5: **Unit Tests & Emulator Verification** — Verified with `VisualSeatingRingTest.kt` and visual screenshot inspection on Pixel 9 Pro XL emulator (`screen13.png`).
 - **COMMIT**: "feat: casino-grade poker table background and dynamic dealer rotation (Issue #40)"
 
+---
+
+## Phase 36: Continue / Reopen Previous Round When New Round Is Not Started (Issue #42, In Progress)
+Enables hosts to undo advancing to a new round and continue playing the previous round if no games have been recorded in the new round yet.
+- [ ] Step 36.1: **DAO & Offline Repository Support** — Add `RoundDao.reopenRoundAt(id)` clearing `closesRound = 0` on the round's closing game. Add `OfflineGameRepository.reopenCurrentRound(gameSetId)` to reset `closesRound` on the latest game.
+- [ ] Step 36.2: **C# API Reopen Endpoint** — Add `POST /api/MarriageGameSets/{id}/rounds/{roundId}/reopen` in `MarriageGameSetsController` and `MarriageGameSetService.ReopenRoundAsync(gameSetId, roundId, hostUserId)` that verifies host permissions and that no subsequent round with games exists, then updates `round.Completed = false`. Add controller unit tests.
+- [ ] Step 36.3: **Android API & Repository Integration** — Add `reopenRound` in `MarriageGameSetApiService` and `GameSetRepository`.
+- [ ] Step 36.4: **PlayGameViewModel Integration** — Add `reopenRound(gameSetIdStr, roundId)` handling both online and offline game modes, reloading game state upon completion.
+- [ ] Step 36.5: **PlayGameScreen UI & Controls** — In `CompactRoundsTable` and `RoundBlock`:
+  - Show "Continue Round N" action with undo icon on unstarted round header ("Round N+1 · not started") if the previous round was closed early.
+  - Show "Continue Round" action on the completed round header if it is the latest round with games and the subsequent round has not yet started.
+- [ ] Step 36.6: **Verification & Testing** — Automated unit tests in Android (`OfflineGameRepositoryTest`) and .NET API (`ControllersTests`). Emulator walkthrough verifying reopening round, restoring pending game row, and adding subsequent games.
+
 ## Backlog / Future Candidates (not started)
 - **True offline reconnect sync**: requirement §3.4 calls out cloud sync as "(Future)". Today, online mode writes straight to the API and offline/guest mode is local-only Room storage (Phase 6.4) — there's no queued-write/merge engine that reconciles a game played offline once connectivity returns. Would need an outbox table + WorkManager sync job + conflict resolution rule (e.g. last-write-wins vs. host-wins) if pursued.
 

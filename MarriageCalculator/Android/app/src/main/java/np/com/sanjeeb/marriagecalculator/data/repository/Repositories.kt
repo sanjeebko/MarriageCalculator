@@ -52,6 +52,9 @@ class GameSetRepository @Inject constructor(
     suspend fun closeRound(id: String, roundId: String): ApiResult<MarriageGameRound> = safeApiCall {
         api.closeRound(id, roundId)
     }
+    suspend fun reopenRound(id: String, roundId: String): ApiResult<MarriageGameRound> = safeApiCall {
+        api.reopenRound(id, roundId)
+    }
     suspend fun togglePaymentCleared(id: String, roundId: String, paymentCleared: Boolean): ApiResult<MarriageGameRound> = safeApiCall {
         api.togglePaymentCleared(id, roundId, TogglePaymentClearedRequest(paymentCleared))
     }
