@@ -48,6 +48,8 @@ The primary live table view during match play:
   - Antique embossed brass Nepali dealer coin (`NepaliDealerButton`, "D") with concentric engravings and sun-wheel rim pattern.
   - Antique silver/bronze next dealer token (`NepaliNextDealerButton`, "›") highlighting the upcoming dealer in rotation.
   - Exterior seated player pods (`PlayerSeatNode`) positioned cleanly outside the carved wood rim with metallic bezels, centered brass circular seat number tokens (1..N), and smart orientation-aware frosted name plaques (top-aligned for top seats, bottom-aligned for bottom seats).
+  - Rock-solid layout stability: Dealer halo animations utilize GPU-layer scaling (`graphicsLayer`) within a fixed 46dp container footprint, completely preventing layout measurement thrashing, jitter, or vibration of the player avatar and name plaque.
+  - Dual-sided golden smoke aura (`FrostedNamePlaque`): The active dealer's name plaque features an ethereal, organic golden smoke effect wafting outward on both left and right sides, rendered via `Modifier.drawBehind` with smooth elliptical radial falloff (`drawOval`) and animated harmonic breathing/drifting wisps (`smokePulse` and `smokeDrift`).
 - **Collapsible Previous Rounds**:
   - Previous rounds collapse into a single summary row showing player totals (`Σ`) to conserve screen space.
   - Expand/collapse toggles and "Expand All / Collapse All" button.

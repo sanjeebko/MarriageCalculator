@@ -432,6 +432,16 @@ Replaced the casino-themed green felt table with an authentic traditional Nepali
 - [x] Step 37.5: **Unit Tests & Emulator Verification** — Verified all 36 unit tests pass (`./gradlew testDebugUnitTest`) and visually confirmed on Android emulator (`Pixel_9_Pro_XL(AVD)`).
 - **COMMIT**: "feat: Nepali carved wood table and player seating alignment (Issue #44)"
 
+---
+
+## Phase 38: Dealer Avatar & Plaque Vibration Fix with Dual-Sided Golden Smoke Effect (Issue #46, Complete)
+Eliminated layout thrashing and jitter during dealer animations, locking player avatars and name plaques into completely static positions, and introduced an ethereal dual-sided golden smoke aura flanking the active dealer's plaque.
+- [x] Step 38.1: **Root Cause Elimination (Layout Thrashing)** — Identified that `PlayerSeatNode` was dynamically sizing the dealer halo Box via `Modifier.size((48 * dealerGlowScale).dp)`. In Jetpack Compose, driving layout dimensions with animated values triggered continuous parent `Column` re-measurement on every frame, oscillating sub-pixel rounding and causing the first player avatar and name plaque to vibrate/jump.
+- [x] Step 38.2: **Static Layout Decoupling (`PlayerSeatNode`)** — Established a fixed, invariant 46dp layout footprint for the avatar container (`Box(modifier = Modifier.size(46.dp))`). Decoupled the animated dealer halo from layout measurement by applying scale transformations purely at the GPU render layer (`Modifier.graphicsLayer { scaleX = dealerGlowScale; scaleY = dealerGlowScale }`). The avatar container, dealer button, and name plaque positions are 100% stationary and vibration-free.
+- [x] Step 38.3: **Dual-Sided Golden Smoke Aura (`FrostedNamePlaque`)** — Designed an organic, ethereal golden smoke effect flanking both left and right sides of the active dealer's name plaque using `Modifier.drawBehind`. Utilizes smooth radial elliptical falloffs (`drawOval`) and animated harmonic drifting puffs (`smokePulse` breathing between 0.45f–0.95f and `smokeDrift` rotating 0–2π) without any flat rectangular cutoffs or layout shift.
+- [x] Step 38.4: **Unit Tests & Emulator Verification** — All 36/36 unit tests passing (`./gradlew testDebugUnitTest`). Verified on Pixel 9 Pro XL emulator with frame-by-frame screenshot delta analysis confirming mean avatar pixel variance is 0.0076 (zero jitter/vibration) and smoke aura renders smoothly.
+- **COMMIT**: "fix: dealer avatar vibration and add dual-sided golden smoke effect (Issue #46)"
+
 ## Backlog / Future Candidates (not started)
 - **True offline reconnect sync**: requirement §3.4 calls out cloud sync as "(Future)". Today, online mode writes straight to the API and offline/guest mode is local-only Room storage (Phase 6.4) — there's no queued-write/merge engine that reconciles a game played offline once connectivity returns. Would need an outbox table + WorkManager sync job + conflict resolution rule (e.g. last-write-wins vs. host-wins) if pursued.
 

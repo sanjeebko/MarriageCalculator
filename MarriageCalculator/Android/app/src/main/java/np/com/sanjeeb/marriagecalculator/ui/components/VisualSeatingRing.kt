@@ -1,5 +1,6 @@
 package np.com.sanjeeb.marriagecalculator.ui.components
 
+import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
@@ -35,13 +36,16 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.Shadow
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
@@ -124,6 +128,26 @@ fun VisualSeatingRing(
             repeatMode = RepeatMode.Restart
         ),
         label = "orbitProgress"
+    )
+
+    val smokePulse by infiniteTransition.animateFloat(
+        initialValue = 0.45f,
+        targetValue = 0.95f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(1300, easing = FastOutSlowInEasing),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "smokePulse"
+    )
+
+    val smokeDrift by infiniteTransition.animateFloat(
+        initialValue = 0f,
+        targetValue = (2 * PI).toFloat(),
+        animationSpec = infiniteRepeatable(
+            animation = tween(2800, easing = LinearEasing),
+            repeatMode = RepeatMode.Restart
+        ),
+        label = "smokeDrift"
     )
 
     val resolvedCurrentDealerIndex = players.indexOfFirst { it.id == currentDealerId }
@@ -254,6 +278,8 @@ fun VisualSeatingRing(
                         isNextDealer = isNextDealer,
                         isTopSeat = isTopSeat,
                         dealerGlowScale = dealerGlowScale,
+                        smokePulse = smokePulse,
+                        smokeDrift = smokeDrift,
                         onClick = { onPlayerClick?.invoke(player) }
                     )
                 }
@@ -543,18 +569,142 @@ private fun FrostedNamePlaque(
     name: String,
     seatNumber: Int,
     isCurrentDealer: Boolean,
-    isNextDealer: Boolean
+    isNextDealer: Boolean,
+    smokePulse: Float = 1f,
+    smokeDrift: Float = 0f
 ) {
+    val plaqueShape = RoundedCornerShape(12.dp)
+
     Row(
         modifier = Modifier
-            .clip(RoundedCornerShape(12.dp))
+            .drawBehind {
+                if (isCurrentDealer) {
+                    val w = size.width
+                    val h = size.height
+                    val centerY = h / 2f
+                    val pulse = smokePulse.coerceIn(0.25f, 1f)
+                    val smokeLength = 24.dp.toPx()
+
+                    // 1. Dual-sided organic golden smoke plumes (elliptical falloff with zero flat edges)
+                    // Left smoke plume (wafting outward to the left)
+                    drawOval(
+                        brush = Brush.radialGradient(
+                            colors = listOf(
+                                Color(0xFFFFE082).copy(alpha = 0.55f * pulse),
+                                Color(0xFFFFD54F).copy(alpha = 0.30f * pulse),
+                                Color(0xFFD4AF37).copy(alpha = 0.10f * pulse),
+                                Color.Transparent
+                            ),
+                            center = Offset(2.dp.toPx(), centerY),
+                            radius = smokeLength
+                        ),
+                        topLeft = Offset(-smokeLength, centerY - (h * 0.85f)),
+                        size = Size(smokeLength + 8.dp.toPx(), h * 1.7f)
+                    )
+
+                    // Right smoke plume (wafting outward to the right)
+                    drawOval(
+                        brush = Brush.radialGradient(
+                            colors = listOf(
+                                Color(0xFFFFE082).copy(alpha = 0.55f * pulse),
+                                Color(0xFFFFD54F).copy(alpha = 0.30f * pulse),
+                                Color(0xFFD4AF37).copy(alpha = 0.10f * pulse),
+                                Color.Transparent
+                            ),
+                            center = Offset(w - 2.dp.toPx(), centerY),
+                            radius = smokeLength
+                        ),
+                        topLeft = Offset(w - 8.dp.toPx(), centerY - (h * 0.85f)),
+                        size = Size(smokeLength + 8.dp.toPx(), h * 1.7f)
+                    )
+
+                    // 2. Billowing organic smoke wisps / curls on both sides
+                    val drift1 = sin(smokeDrift) * 3.dp.toPx()
+                    val drift2 = cos(smokeDrift) * 2.5.dp.toPx()
+                    val driftScale = 1f + (sin(smokeDrift * 1.5f) * 0.12f)
+
+                    // LEFT SIDE SMOKE WISPS:
+                    // Primary plume puff
+                    drawCircle(
+                        brush = Brush.radialGradient(
+                            colors = listOf(
+                                Color(0xFFFFD54F).copy(alpha = 0.50f * pulse),
+                                Color(0xFFD4AF37).copy(alpha = 0.18f * pulse),
+                                Color.Transparent
+                            ),
+                            center = Offset(-4.dp.toPx(), centerY + drift1),
+                            radius = 13.dp.toPx() * driftScale
+                        ),
+                        radius = 13.dp.toPx() * driftScale,
+                        center = Offset(-4.dp.toPx(), centerY + drift1)
+                    )
+                    // Secondary outer wisp drifting away
+                    drawCircle(
+                        brush = Brush.radialGradient(
+                            colors = listOf(
+                                Color(0xFFFFE082).copy(alpha = 0.38f * pulse),
+                                Color.Transparent
+                            ),
+                            center = Offset(-14.dp.toPx(), centerY - drift2),
+                            radius = 10.dp.toPx() * driftScale
+                        ),
+                        radius = 10.dp.toPx() * driftScale,
+                        center = Offset(-14.dp.toPx(), centerY - drift2)
+                    )
+
+                    // RIGHT SIDE SMOKE WISPS:
+                    // Primary plume puff
+                    drawCircle(
+                        brush = Brush.radialGradient(
+                            colors = listOf(
+                                Color(0xFFFFD54F).copy(alpha = 0.50f * pulse),
+                                Color(0xFFD4AF37).copy(alpha = 0.18f * pulse),
+                                Color.Transparent
+                            ),
+                            center = Offset(w + 4.dp.toPx(), centerY - drift1),
+                            radius = 13.dp.toPx() * driftScale
+                        ),
+                        radius = 13.dp.toPx() * driftScale,
+                        center = Offset(w + 4.dp.toPx(), centerY - drift1)
+                    )
+                    // Secondary outer wisp drifting away
+                    drawCircle(
+                        brush = Brush.radialGradient(
+                            colors = listOf(
+                                Color(0xFFFFE082).copy(alpha = 0.38f * pulse),
+                                Color.Transparent
+                            ),
+                            center = Offset(w + 14.dp.toPx(), centerY + drift2),
+                            radius = 10.dp.toPx() * driftScale
+                        ),
+                        radius = 10.dp.toPx() * driftScale,
+                        center = Offset(w + 14.dp.toPx(), centerY + drift2)
+                    )
+
+                    // 3. Subtle ambient golden glow around the plaque
+                    drawRoundRect(
+                        brush = Brush.radialGradient(
+                            colors = listOf(
+                                Color(0xFFFFD54F).copy(alpha = 0.25f * pulse),
+                                Color.Transparent
+                            ),
+                            center = Offset(w / 2f, centerY),
+                            radius = (w / 1.6f)
+                        ),
+                        topLeft = Offset(-5.dp.toPx(), -2.dp.toPx()),
+                        size = Size(w + 10.dp.toPx(), h + 4.dp.toPx()),
+                        cornerRadius = CornerRadius(14.dp.toPx())
+                    )
+                }
+            }
+            .clip(plaqueShape)
             .background(Color(0xEE1E130C))
             .border(
                 width = 1.dp,
                 color = if (isCurrentDealer) Color(0xFFFFD54F).copy(alpha = 0.85f)
                 else if (isNextDealer) Color(0xFFD4AF37).copy(alpha = 0.65f)
                 else Color(0x44D4AF37),
-                shape = RoundedCornerShape(12.dp)
+                shape = plaqueShape
             )
             .padding(start = 3.dp, end = 8.dp, top = 2.dp, bottom = 2.dp),
         verticalAlignment = Alignment.CenterVertically
@@ -606,6 +756,8 @@ private fun PlayerSeatNode(
     isNextDealer: Boolean,
     isTopSeat: Boolean,
     dealerGlowScale: Float,
+    smokePulse: Float = 1f,
+    smokeDrift: Float = 0f,
     onClick: () -> Unit
 ) {
     Column(
@@ -621,17 +773,27 @@ private fun PlayerSeatNode(
                 name = player.name,
                 seatNumber = seatNumber,
                 isCurrentDealer = isCurrentDealer,
-                isNextDealer = isNextDealer
+                isNextDealer = isNextDealer,
+                smokePulse = smokePulse,
+                smokeDrift = smokeDrift
             )
             Spacer(modifier = Modifier.height(3.dp))
         }
 
-        Box(contentAlignment = Alignment.Center) {
-            // Dealer animated warm golden halo
+        // Avatar outer Box has fixed 46.dp size: zero layout shifts, completely rock-solid!
+        Box(
+            modifier = Modifier.size(46.dp),
+            contentAlignment = Alignment.Center
+        ) {
+            // Dealer animated warm golden halo scaled via graphicsLayer (GPU transform, zero layout re-measurement!)
             if (isCurrentDealer) {
                 Box(
                     modifier = Modifier
-                        .size((48 * dealerGlowScale).dp)
+                        .size(44.dp)
+                        .graphicsLayer {
+                            scaleX = dealerGlowScale
+                            scaleY = dealerGlowScale
+                        }
                         .background(
                             Brush.radialGradient(
                                 listOf(
@@ -755,7 +917,9 @@ private fun PlayerSeatNode(
                 name = player.name,
                 seatNumber = seatNumber,
                 isCurrentDealer = isCurrentDealer,
-                isNextDealer = isNextDealer
+                isNextDealer = isNextDealer,
+                smokePulse = smokePulse,
+                smokeDrift = smokeDrift
             )
         }
     }
