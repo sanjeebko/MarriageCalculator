@@ -421,6 +421,17 @@ Replaced the simplistic circular drawing with a photorealistic casino poker tabl
 - [x] Step 35.5: **Unit Tests & Emulator Verification** — Verified with `VisualSeatingRingTest.kt` and visual screenshot inspection on Pixel 9 Pro XL emulator (`screen13.png`).
 - **COMMIT**: "feat: casino-grade poker table background and dynamic dealer rotation (Issue #40)"
 
+---
+
+## Phase 37: Authentic Nepali Carved Wood Table & Outer Player Seating Alignment (Issue #44, Complete)
+Replaced the casino-themed green felt table with an authentic traditional Nepali hand-carved wooden table, repositioned player avatars and plaques cleanly outside the carved rim, centered seat number badges, and eliminated excess whitespace.
+- [x] Step 37.1: **Authentic Nepali Carved Wood Table Asset** — Created `nepali_wood_table.png` featuring dark walnut/rosewood timber, Newari relief woodcarvings (intricate florals and peacock motifs), and an inlaid brass embossed mandala centerpiece.
+- [x] Step 37.2: **Outer Seating Orbit & Center Alignment** — Repositioned player avatars and frosted name plaques completely outside the carved perimeter (`radiusX = tableWidth / 2f + 24dp`, `radiusY = tableHeight / 2f + 28dp`, `verticalCenterShift = 10dp`).
+- [x] Step 37.3: **Handcrafted Brass Dealer Coin & Seat Tokens** — Replaced casino ceramic buttons with antique embossed brass Nepali dealer coin (`NepaliDealerButton`, "D") with concentric engravings and sun-wheel rim pattern, an antique silver/bronze next-dealer token (`NepaliNextDealerButton`, "›"), and centered circular brass seat number badges (`PlatformTextStyle(includeFontPadding = false)` with matching line height).
+- [x] Step 37.4: **Whitespace Elimination & Table Expansion** — Expanded table width to fill the card (`targetTableWidthDp = coerceIn(230f, 260f)`) and reduced container height to 264dp, eliminating redundant vertical and horizontal gaps while removing the duplicate "Arrange Seats" action inside the canvas.
+- [x] Step 37.5: **Unit Tests & Emulator Verification** — Verified all 36 unit tests pass (`./gradlew testDebugUnitTest`) and visually confirmed on Android emulator (`Pixel_9_Pro_XL(AVD)`).
+- **COMMIT**: "feat: Nepali carved wood table and player seating alignment (Issue #44)"
+
 ## Backlog / Future Candidates (not started)
 - **True offline reconnect sync**: requirement §3.4 calls out cloud sync as "(Future)". Today, online mode writes straight to the API and offline/guest mode is local-only Room storage (Phase 6.4) — there's no queued-write/merge engine that reconciles a game played offline once connectivity returns. Would need an outbox table + WorkManager sync job + conflict resolution rule (e.g. last-write-wins vs. host-wins) if pursued.
 

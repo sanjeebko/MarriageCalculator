@@ -371,9 +371,7 @@ fun PlayGameScreen(
                                         players = seatingPlayers,
                                         currentDealerId = uiState.nextDealerId,
                                         nextDealerId = null,
-                                        onArrangeSeatsClick = if (uiState.isHost && !uiState.isSettled) {
-                                            { showReorderDialog = true }
-                                        } else null
+                                        onArrangeSeatsClick = null
                                     )
                                 }
                             }
