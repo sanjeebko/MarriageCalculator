@@ -47,9 +47,11 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.PlatformTextStyle
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
@@ -85,11 +87,12 @@ fun calculateSeatOffset(
 }
 
 /**
- * Authentic Casino Poker Table & Visual Seating Ring (Issue #40):
- * - High-resolution photorealistic casino poker table background asset.
- * - Dynamic clockwise dealer rotation arc with traveling glowing comet beam and chevrons.
- * - Realistic 3D ceramic tournament dealer button ("DEALER / D").
- * - High-roller player pods seated on the leather rail with metallic bezels and anchored tokens.
+ * Traditional Handcrafted Nepali Carved Wood Table & Visual Seating Ring (Issue #44):
+ * - Authentic Nepali carved wooden card table asset with Newari floral/peacock border and brass mandala.
+ * - Players seated cleanly OUTSIDE the table perimeter, keeping the table surface clear.
+ * - Dynamic clockwise dealer rotation arc with traveling warm brass comet beam and directional chevrons.
+ * - Antique embossed brass dealer coin ("D") and next dealer token.
+ * - Perfectly centered and positioned brass seat tokens (1..N).
  */
 @Composable
 fun VisualSeatingRing(
@@ -102,7 +105,7 @@ fun VisualSeatingRing(
 ) {
     if (players.isEmpty()) return
 
-    val infiniteTransition = rememberInfiniteTransition(label = "casinoTableAnimations")
+    val infiniteTransition = rememberInfiniteTransition(label = "nepaliTableAnimations")
     val dealerGlowScale by infiniteTransition.animateFloat(
         initialValue = 1f,
         targetValue = 1.20f,
@@ -173,40 +176,43 @@ fun VisualSeatingRing(
             }
         }
 
-        // Casino Table Canvas Area
+        // Traditional Nepali Carved Wooden Table Canvas Area
         BoxWithConstraints(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(210.dp),
+                .height(264.dp),
             contentAlignment = Alignment.Center
         ) {
             val density = LocalDensity.current.density
             val totalWidth = constraints.maxWidth.toFloat()
             val totalHeight = constraints.maxHeight.toFloat()
 
-            // Calculate table dimensions maintaining the authentic image aspect ratio (~1.975:1)
-            val maxTableWidth = totalWidth - (36f * density)
-            val targetTableHeight = 144f * density
-            val tableHeight = (maxTableWidth / 1.975f).coerceAtMost(targetTableHeight)
-            val tableWidth = tableHeight * 1.975f
+            // Calculate table dimensions maintaining the authentic Nepali carved table aspect ratio (~1.624:1)
+            // Table is prominently sized to fill the card nicely without extra blank space
+            val availableWidthDp = totalWidth / density
+            val targetTableWidthDp = (availableWidthDp - 80f).coerceIn(230f, 260f)
+            val tableWidth = targetTableWidthDp * density
+            val tableHeight = tableWidth / 1.6238f
 
-            // Player orbit radii: centered directly on the leather armrest bumper of the table image
-            val radiusX = (tableWidth / 2f) * 0.90f
-            val radiusY = (tableHeight / 2f) * 0.95f
+            // Player orbit radii: positioned cleanly and comfortably OUTSIDE the carved wood rim
+            val radiusX = (tableWidth / 2f) + (24f * density)
+            val radiusY = (tableHeight / 2f) + (28f * density)
+            val verticalCenterShift = 10f * density
 
-            // 1. Photorealistic Casino Poker Table Image Background
+            // 1. Traditional Nepali Carved Wooden Table Image Background
             Box(
                 modifier = Modifier
+                    .offset { IntOffset(0, verticalCenterShift.roundToInt()) }
                     .size(
                         width = (tableWidth / density).dp,
                         height = (tableHeight / density).dp
                     )
-                    .shadow(16.dp, RoundedCornerShape(100.dp), ambientColor = Color.Black, spotColor = Color.Black),
+                    .shadow(16.dp, RoundedCornerShape(80.dp), ambientColor = Color.Black, spotColor = Color.Black),
                 contentAlignment = Alignment.Center
             ) {
                 Image(
-                    painter = painterResource(id = R.drawable.casino_poker_table),
-                    contentDescription = "Casino Table",
+                    painter = painterResource(id = R.drawable.nepali_wood_table),
+                    contentDescription = "Nepali Carved Table",
                     contentScale = ContentScale.FillBounds,
                     modifier = Modifier.fillMaxSize()
                 )
@@ -220,53 +226,9 @@ fun VisualSeatingRing(
                     totalPlayers = players.size,
                     dealerGlowScale = dealerGlowScale
                 )
-
-                // Center Felt Watermark & Suits
-                Column(
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    modifier = Modifier.padding(horizontal = 8.dp)
-                ) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(5.dp)
-                    ) {
-                        Text("♠", color = Color(0xFFD4AF37).copy(alpha = 0.50f), fontSize = 10.sp, fontWeight = FontWeight.Bold)
-                        Text("♥", color = Color(0xFFE57373).copy(alpha = 0.65f), fontSize = 10.sp, fontWeight = FontWeight.Bold)
-                        Text("♦", color = Color(0xFFE57373).copy(alpha = 0.65f), fontSize = 10.sp, fontWeight = FontWeight.Bold)
-                        Text("♣", color = Color(0xFFD4AF37).copy(alpha = 0.50f), fontSize = 10.sp, fontWeight = FontWeight.Bold)
-                    }
-                    Spacer(modifier = Modifier.height(1.dp))
-                    Text(
-                        text = "MARRIAGE",
-                        style = TextStyle(
-                            color = Color(0xFFE5C158).copy(alpha = 0.65f),
-                            fontSize = 11.sp,
-                            fontFamily = FontFamily.Serif,
-                            fontWeight = FontWeight.Black,
-                            letterSpacing = 2.5.sp,
-                            shadow = Shadow(
-                                color = Color(0x99000000),
-                                offset = Offset(0f, 2f),
-                                blurRadius = 3f
-                            )
-                        )
-                    )
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        modifier = Modifier.padding(top = 1.dp)
-                    ) {
-                        Text(
-                            text = "CLOCKWISE DEAL ↻",
-                            color = Color(0xFFE5C158).copy(alpha = 0.40f),
-                            fontSize = 7.5.sp,
-                            fontWeight = FontWeight.Bold,
-                            letterSpacing = 1.sp
-                        )
-                    }
-                }
             }
 
-            // 2. Players Ring seated along the rail
+            // 2. Players Ring seated cleanly OUTSIDE around the table
             players.forEachIndexed { index, player ->
                 val (offsetX, offsetY) = calculateSeatOffset(
                     index = index,
@@ -277,11 +239,11 @@ fun VisualSeatingRing(
 
                 val isCurrentDealer = player.id == currentDealerId
                 val isNextDealer = player.id == effectiveNextDealerId && !isCurrentDealer
-                val isTopSeat = offsetY < (-15f * density)
+                val isTopSeat = offsetY < (-10f * density)
 
                 Box(
                     modifier = Modifier
-                        .offset { IntOffset(offsetX.roundToInt(), offsetY.roundToInt()) }
+                        .offset { IntOffset(offsetX.roundToInt(), (offsetY + verticalCenterShift).roundToInt()) }
                         .zIndex(if (isCurrentDealer) 3f else if (isNextDealer) 2f else 1f),
                     contentAlignment = Alignment.Center
                 ) {
@@ -301,7 +263,7 @@ fun VisualSeatingRing(
 }
 
 /**
- * Draws the luminous dealer rotation beam, comet particle, chevrons, and dealer spotlight onto the felt.
+ * Draws the luminous dealer rotation beam, comet particle, chevrons, and dealer spotlight onto the wooden table.
  */
 @Composable
 private fun DealerRotationCanvas(
@@ -317,9 +279,9 @@ private fun DealerRotationCanvas(
         val tableH = size.height
         val center = Offset(tableW / 2f, tableH / 2f)
 
-        // Trajectory radius matching the inner racetrack / betting area on the felt image
-        val rBetX = tableW * 0.35f
-        val rBetY = tableH * 0.28f
+        // Trajectory radius curving gracefully between the central brass mandala and carved timber rim
+        val rBetX = tableW * 0.38f
+        val rBetY = tableH * 0.34f
 
         if (currentDealerIndex in 0 until totalPlayers && nextDealerIndex in 0 until totalPlayers && totalPlayers > 1) {
             val currentAngleRad = (-PI / 2.0) + (currentDealerIndex * 2.0 * PI / totalPlayers)
@@ -420,33 +382,33 @@ private fun DealerRotationCanvas(
                 color = Color(0xFFFFD54F)
             )
 
-            // Spotlight on the felt beneath current dealer
-            val dealerFeltX = center.x + (rBetX * 0.95f * cos(currentAngleRad)).toFloat()
-            val dealerFeltY = center.y + (rBetY * 0.95f * sin(currentAngleRad)).toFloat()
+            // Spotlight on the wooden tabletop beneath current dealer
+            val dealerWoodX = center.x + (rBetX * 0.95f * cos(currentAngleRad)).toFloat()
+            val dealerWoodY = center.y + (rBetY * 0.95f * sin(currentAngleRad)).toFloat()
             drawCircle(
                 brush = Brush.radialGradient(
                     listOf(
                         Color(0xFFFFD54F).copy(alpha = 0.30f * dealerGlowScale),
                         Color.Transparent
                     ),
-                    center = Offset(dealerFeltX, dealerFeltY),
-                    radius = 24.dp.toPx()
+                    center = Offset(dealerWoodX, dealerWoodY),
+                    radius = 22.dp.toPx()
                 ),
-                radius = 24.dp.toPx(),
-                center = Offset(dealerFeltX, dealerFeltY)
+                radius = 22.dp.toPx(),
+                center = Offset(dealerWoodX, dealerWoodY)
             )
         }
     }
 }
 
 /**
- * Authentic 3D Casino Tournament Dealer Puck:
- * - Ceramic ivory core with alternating midnight edge notches.
- * - 24k Gold inlay bezel ring.
- * - Recessed inner disc with drop shadow and bold serif "D".
+ * Authentic Handcrafted Embossed Brass/Bronze Nepali Dealer Coin:
+ * - Handcrafted antique brass disc with concentric engravings.
+ * - Warm sun-wheel / beaded rim pattern.
+ * - Deep bronze coin patina and embossed bold "D".
  */
 @Composable
-fun CasinoDealerButton(
+fun NepaliDealerButton(
     modifier: Modifier = Modifier,
     size: androidx.compose.ui.unit.Dp = 20.dp
 ) {
@@ -461,10 +423,10 @@ fun CasinoDealerButton(
             val center = Offset(this.size.width / 2f, this.size.height / 2f)
             val radius = this.size.minDimension / 2f
 
-            // 1. Base ceramic puck (bone white / ivory)
+            // 1. Base antique brass disc
             drawCircle(
                 brush = Brush.radialGradient(
-                    listOf(Color(0xFFFFFFFF), Color(0xFFEEEEEE), Color(0xFFD5D5D5)),
+                    listOf(Color(0xFFFFDF00), Color(0xFFD4AF37), Color(0xFF8D6E63)),
                     center = center,
                     radius = radius
                 ),
@@ -472,24 +434,21 @@ fun CasinoDealerButton(
                 center = center
             )
 
-            // 2. Alternating edge notches (casino tournament puck pattern)
-            val numStripes = 12
-            val stripeWidth = radius * 0.22f
-            for (i in 0 until numStripes) {
-                if (i % 2 == 1) {
-                    drawArc(
-                        color = Color(0xFF1B2332), // Deep midnight tournament notch
-                        startAngle = i * (360f / numStripes),
-                        sweepAngle = 360f / (numStripes * 2f),
-                        useCenter = false,
-                        style = Stroke(width = stripeWidth),
-                        topLeft = Offset(center.x - radius + stripeWidth / 2f, center.y - radius + stripeWidth / 2f),
-                        size = Size((radius - stripeWidth / 2f) * 2f, (radius - stripeWidth / 2f) * 2f)
-                    )
-                }
+            // 2. Beaded sun-ray rim pattern
+            val numBeads = 12
+            val beadRadius = radius * 0.12f
+            for (i in 0 until numBeads) {
+                val angle = (i * 2.0 * PI / numBeads)
+                val bx = center.x + ((radius - beadRadius - 1.dp.toPx()) * cos(angle)).toFloat()
+                val by = center.y + ((radius - beadRadius - 1.dp.toPx()) * sin(angle)).toFloat()
+                drawCircle(
+                    color = Color(0xFF3E2723),
+                    radius = beadRadius,
+                    center = Offset(bx, by)
+                )
             }
 
-            // 3. Concentric 24k Gold Inlay Ring
+            // 3. Concentric golden bevel ring
             drawCircle(
                 brush = Brush.sweepGradient(
                     listOf(
@@ -501,40 +460,40 @@ fun CasinoDealerButton(
                     ),
                     center = center
                 ),
-                radius = radius * 0.74f,
+                radius = radius * 0.72f,
                 center = center,
                 style = Stroke(width = 1.2.dp.toPx())
             )
 
-            // 4. Recessed inner disc
+            // 4. Recessed deep bronze inner core
             drawCircle(
                 brush = Brush.radialGradient(
-                    listOf(Color(0xFFFFFFFF), Color(0xFFE8E8E8), Color(0xFFCECECE)),
+                    listOf(Color(0xFF4E342E), Color(0xFF2B1810), Color(0xFF1E100A)),
                     center = center,
-                    radius = radius * 0.70f
+                    radius = radius * 0.68f
                 ),
-                radius = radius * 0.70f,
+                radius = radius * 0.68f,
                 center = center
             )
         }
 
-        // 5. Embossed bold "D"
+        // 5. Embossed bold "D" in bright gold
         Text(
             text = "D",
             fontFamily = FontFamily.Serif,
             fontWeight = FontWeight.Black,
             fontSize = 10.sp,
-            color = Color(0xFF1A1A1A),
+            color = Color(0xFFFFD54F),
             modifier = Modifier.align(Alignment.Center)
         )
     }
 }
 
 /**
- * Platinum Next Dealer Chip ("›").
+ * Next Dealer Antique Silver/Brass Coin ("›").
  */
 @Composable
-fun CasinoNextDealerButton(
+fun NepaliNextDealerButton(
     modifier: Modifier = Modifier,
     size: androidx.compose.ui.unit.Dp = 17.dp
 ) {
@@ -549,10 +508,10 @@ fun CasinoNextDealerButton(
             val center = Offset(this.size.width / 2f, this.size.height / 2f)
             val radius = this.size.minDimension / 2f
 
-            // Platinum disc
+            // Antique silver/brass disc
             drawCircle(
                 brush = Brush.radialGradient(
-                    listOf(Color(0xFFFFFFFF), Color(0xFFCFD8DC), Color(0xFF90A4AE)),
+                    listOf(Color(0xFFE0E0E0), Color(0xFFBCAAA4), Color(0xFF5D4037)),
                     center = center,
                     radius = radius
                 ),
@@ -560,26 +519,9 @@ fun CasinoNextDealerButton(
                 center = center
             )
 
-            // Edge notches
-            val numStripes = 8
-            val stripeWidth = radius * 0.22f
-            for (i in 0 until numStripes) {
-                if (i % 2 == 1) {
-                    drawArc(
-                        color = Color(0xFF37474F),
-                        startAngle = i * (360f / numStripes),
-                        sweepAngle = 360f / (numStripes * 2f),
-                        useCenter = false,
-                        style = Stroke(width = stripeWidth),
-                        topLeft = Offset(center.x - radius + stripeWidth / 2f, center.y - radius + stripeWidth / 2f),
-                        size = Size((radius - stripeWidth / 2f) * 2f, (radius - stripeWidth / 2f) * 2f)
-                    )
-                }
-            }
-
             // Inner ring
             drawCircle(
-                color = Color(0xFF78909C),
+                color = Color(0xFF8D6E63),
                 radius = radius * 0.72f,
                 center = center,
                 style = Stroke(width = 1.dp.toPx())
@@ -590,7 +532,7 @@ fun CasinoNextDealerButton(
             text = "›",
             fontWeight = FontWeight.Black,
             fontSize = 11.sp,
-            color = Color(0xFF263238),
+            color = Color(0xFFFFE082),
             modifier = Modifier.align(Alignment.Center)
         )
     }
@@ -599,26 +541,55 @@ fun CasinoNextDealerButton(
 @Composable
 private fun FrostedNamePlaque(
     name: String,
+    seatNumber: Int,
     isCurrentDealer: Boolean,
     isNextDealer: Boolean
 ) {
-    Box(
+    Row(
         modifier = Modifier
-            .clip(RoundedCornerShape(8.dp))
-            .background(Color(0xDD0D1612))
+            .clip(RoundedCornerShape(12.dp))
+            .background(Color(0xEE1E130C))
             .border(
-                width = 0.75.dp,
-                color = if (isCurrentDealer) Color(0xFFD4AF37).copy(alpha = 0.75f)
-                else if (isNextDealer) Color(0xFF80DEEA).copy(alpha = 0.50f)
-                else Color(0x33FFFFFF),
-                shape = RoundedCornerShape(8.dp)
+                width = 1.dp,
+                color = if (isCurrentDealer) Color(0xFFFFD54F).copy(alpha = 0.85f)
+                else if (isNextDealer) Color(0xFFD4AF37).copy(alpha = 0.65f)
+                else Color(0x44D4AF37),
+                shape = RoundedCornerShape(12.dp)
             )
-            .padding(horizontal = 6.dp, vertical = 1.5.dp),
-        contentAlignment = Alignment.Center
+            .padding(start = 3.dp, end = 8.dp, top = 2.dp, bottom = 2.dp),
+        verticalAlignment = Alignment.CenterVertically
     ) {
+        // Handcrafted Brass Circular Seat Number Token
+        Box(
+            modifier = Modifier
+                .size(16.dp)
+                .background(
+                    if (isCurrentDealer) Color(0xFF5D3A1A) else Color(0xFF2B1810),
+                    CircleShape
+                )
+                .border(
+                    1.dp,
+                    if (isCurrentDealer) Color(0xFFFFD54F) else Color(0xFFD4AF37),
+                    CircleShape
+                ),
+            contentAlignment = Alignment.Center
+        ) {
+            Text(
+                text = "$seatNumber",
+                color = if (isCurrentDealer) Color(0xFFFFE082) else Color(0xFFEDE0D4),
+                fontSize = 9.sp,
+                fontWeight = FontWeight.Black,
+                style = TextStyle(
+                    platformStyle = PlatformTextStyle(includeFontPadding = false),
+                    textAlign = TextAlign.Center,
+                    lineHeight = 16.sp
+                )
+            )
+        }
+        Spacer(modifier = Modifier.width(4.dp))
         Text(
             text = name,
-            color = if (isCurrentDealer) Color(0xFFFFD54F) else Color(0xFFE9EEF6),
+            color = if (isCurrentDealer) Color(0xFFFFE082) else Color(0xFFEDE0D4),
             fontSize = 10.5.sp,
             fontWeight = if (isCurrentDealer) FontWeight.Bold else FontWeight.Medium,
             maxLines = 1,
@@ -644,10 +615,11 @@ private fun PlayerSeatNode(
             .padding(2.dp)
     ) {
         // When player is on the top half of the table, place name tag ABOVE the avatar
-        // so the entire green felt and betting rail remain unobstructed.
+        // so the player sits outside the table looking inwards.
         if (isTopSeat) {
             FrostedNamePlaque(
                 name = player.name,
+                seatNumber = seatNumber,
                 isCurrentDealer = isCurrentDealer,
                 isNextDealer = isNextDealer
             )
@@ -655,7 +627,7 @@ private fun PlayerSeatNode(
         }
 
         Box(contentAlignment = Alignment.Center) {
-            // Dealer animated halo
+            // Dealer animated warm golden halo
             if (isCurrentDealer) {
                 Box(
                     modifier = Modifier
@@ -678,7 +650,7 @@ private fun PlayerSeatNode(
                         .background(
                             Brush.radialGradient(
                                 listOf(
-                                    Color(0xFF80DEEA).copy(alpha = 0.30f),
+                                    Color(0xFFFFD54F).copy(alpha = 0.25f),
                                     Color.Transparent
                                 )
                             ),
@@ -687,9 +659,9 @@ private fun PlayerSeatNode(
                 )
             }
 
-            // Avatar Anchor Container: precisely 32dp x 32dp
+            // Avatar Anchor Container: precisely 34dp x 34dp
             Box(
-                modifier = Modifier.size(32.dp),
+                modifier = Modifier.size(34.dp),
                 contentAlignment = Alignment.Center
             ) {
                 val uri = player.photoUri
@@ -715,14 +687,14 @@ private fun PlayerSeatNode(
                         )
                     )
                     isNextDealer -> Brush.linearGradient(
-                        listOf(Color(0xFFECEFF1), Color(0xFF90A4AE), Color(0xFFFFFFFF))
+                        listOf(Color(0xFFFFE082), Color(0xFFD4AF37), Color(0xFFFFD54F))
                     )
                     else -> Brush.linearGradient(
-                        listOf(Color(0xFF546E7A), Color(0xFF37474F))
+                        listOf(Color(0xFF8D6E63), Color(0xFF4E342E))
                     )
                 }
 
-                val borderWidth = if (isCurrentDealer) 2.5.dp else if (isNextDealer) 1.5.dp else 1.dp
+                val borderWidth = if (isCurrentDealer) 2.5.dp else if (isNextDealer) 1.5.dp else 1.2.dp
 
                 if (model != null) {
                     AsyncImage(
@@ -740,8 +712,8 @@ private fun PlayerSeatNode(
                             .background(
                                 Brush.radialGradient(
                                     listOf(
-                                        if (isCurrentDealer) Color(0xFF3E2723) else Color(0xFF263238),
-                                        if (isCurrentDealer) Color(0xFF1B0000) else Color(0xFF0F171B)
+                                        if (isCurrentDealer) Color(0xFF4E342E) else Color(0xFF2B1810),
+                                        if (isCurrentDealer) Color(0xFF26180F) else Color(0xFF170D08)
                                     )
                                 )
                             )
@@ -750,53 +722,27 @@ private fun PlayerSeatNode(
                     ) {
                         Text(
                             text = player.name.take(1).uppercase(),
-                            color = if (isCurrentDealer) Color(0xFFFFD54F) else Color(0xFFECEFF1),
+                            color = if (isCurrentDealer) Color(0xFFFFD54F) else Color(0xFFEDE0D4),
                             fontWeight = FontWeight.Bold,
-                            fontSize = 13.sp
+                            fontSize = 13.5.sp
                         )
                     }
                 }
 
-                // Miniature Brass Seat Number Token (Pinned to avatar's top-left)
-                Box(
-                    modifier = Modifier
-                        .align(Alignment.TopStart)
-                        .offset(x = (-4).dp, y = (-4).dp)
-                        .size(14.dp)
-                        .shadow(2.dp, CircleShape)
-                        .background(
-                            if (isCurrentDealer) Color(0xFF2E1C0C) else Color(0xFF1E262B),
-                            shape = CircleShape
-                        )
-                        .border(
-                            1.dp,
-                            if (isCurrentDealer) Color(0xFFD4AF37) else Color(0xFF78909C),
-                            CircleShape
-                        ),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(
-                        text = "$seatNumber",
-                        color = if (isCurrentDealer) Color(0xFFFFD54F) else Color(0xFFCFD8DC),
-                        fontSize = 8.sp,
-                        fontWeight = FontWeight.Black
-                    )
-                }
-
-                // Casino Dealer Button / Next Chip (Pinned to avatar's bottom-right)
+                // Antique Brass Dealer Coin / Next Coin (Pinned to avatar's bottom-right)
                 if (isCurrentDealer) {
-                    CasinoDealerButton(
+                    NepaliDealerButton(
                         size = 20.dp,
                         modifier = Modifier
                             .align(Alignment.BottomEnd)
-                            .offset(x = 6.dp, y = 6.dp)
+                            .offset(x = 5.dp, y = 5.dp)
                     )
                 } else if (isNextDealer) {
-                    CasinoNextDealerButton(
+                    NepaliNextDealerButton(
                         size = 17.dp,
                         modifier = Modifier
                             .align(Alignment.BottomEnd)
-                            .offset(x = 5.dp, y = 5.dp)
+                            .offset(x = 4.dp, y = 4.dp)
                     )
                 }
             }
@@ -807,6 +753,7 @@ private fun PlayerSeatNode(
             Spacer(modifier = Modifier.height(3.dp))
             FrostedNamePlaque(
                 name = player.name,
+                seatNumber = seatNumber,
                 isCurrentDealer = isCurrentDealer,
                 isNextDealer = isNextDealer
             )

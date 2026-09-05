@@ -42,11 +42,12 @@ The UI embraces a rich, culturally immersive festive aesthetic celebrating South
 ### 2.4 Play Game Screen (`PlayGameScreen.kt`)
 The primary live table view during match play:
 - **Visual Seating Ring (`VisualSeatingRing.kt`)**:
-  - Photorealistic casino poker table background asset (`casino_poker_table.png`) featuring dark espresso padded leather bumper, brass bead trim, walnut racetrack, and illuminated emerald felt with antialiased stadium masking.
-  - Dynamic dealer rotation trajectory arc (`DealerRotationCanvas`) drawn along the betting rail with a traveling glowing gold comet pulse and clockwise directional chevrons pointing from the current dealer to the next dealer.
-  - 3D ceramic tournament dealer button ("DEALER / D") with beveled depth and metallic gold border on the active dealer.
-  - Platinum next dealer chip ("›") highlighting the upcoming dealer in rotation.
-  - Rail-seated player pods (`PlayerSeatNode`) with metallic bezels (gold for dealer, platinum for next dealer, gunmetal for players), anchored brass seat tokens (1..N), and smart position-aware name plaques (top-aligned for top rim, bottom-aligned for bottom rim) to prevent felt occlusion.
+  - Authentic handcrafted Nepali carved wood table background asset (`nepali_wood_table.png`) featuring dark walnut/rosewood timber, intricate Newari floral and peacock border relief carvings, and an inlaid embossed brass mandala centerpiece.
+  - Sized prominently to fill the card horizontally without excess whitespace or tiny visuals, with container height optimized to ~264dp.
+  - Dynamic dealer rotation trajectory arc (`DealerRotationCanvas`) curving gracefully between the mandala and carved timber rim with a traveling glowing gold comet pulse and clockwise directional chevrons pointing from current dealer to next dealer.
+  - Antique embossed brass Nepali dealer coin (`NepaliDealerButton`, "D") with concentric engravings and sun-wheel rim pattern.
+  - Antique silver/bronze next dealer token (`NepaliNextDealerButton`, "›") highlighting the upcoming dealer in rotation.
+  - Exterior seated player pods (`PlayerSeatNode`) positioned cleanly outside the carved wood rim with metallic bezels, centered brass circular seat number tokens (1..N), and smart orientation-aware frosted name plaques (top-aligned for top seats, bottom-aligned for bottom seats).
 - **Collapsible Previous Rounds**:
   - Previous rounds collapse into a single summary row showing player totals (`Σ`) to conserve screen space.
   - Expand/collapse toggles and "Expand All / Collapse All" button.
