@@ -44,12 +44,12 @@ The primary live table view during match play:
 - **Visual Seating Ring (`VisualSeatingRing.kt`)**:
   - Authentic handcrafted Nepali carved wood table background asset (`nepali_wood_table.png`) featuring dark walnut/rosewood timber, intricate Newari floral and peacock border relief carvings, and an inlaid embossed brass mandala centerpiece.
   - Sized prominently to fill the card horizontally without excess whitespace or tiny visuals, with container height optimized to ~264dp.
-  - Dynamic dealer rotation trajectory arc (`DealerRotationCanvas`) curving gracefully between the mandala and carved timber rim with a traveling glowing gold comet pulse and clockwise directional chevrons pointing from current dealer to next dealer.
-  - Antique embossed brass Nepali dealer coin (`NepaliDealerButton`, "D") with concentric engravings and sun-wheel rim pattern.
-  - Antique silver/bronze next dealer token (`NepaliNextDealerButton`, "›") highlighting the upcoming dealer in rotation.
-  - Exterior seated player pods (`PlayerSeatNode`) positioned cleanly outside the carved wood rim with metallic bezels, centered brass circular seat number tokens (1..N), and smart orientation-aware frosted name plaques (top-aligned for top seats, bottom-aligned for bottom seats).
-  - Rock-solid layout stability: Dealer halo animations utilize GPU-layer scaling (`graphicsLayer`) within a fixed 46dp container footprint, completely preventing layout measurement thrashing, jitter, or vibration of the player avatar and name plaque.
-  - Dual-sided golden smoke aura (`FrostedNamePlaque`): The active dealer's name plaque features an ethereal, organic golden smoke effect wafting outward on both left and right sides, rendered via `Modifier.drawBehind` with smooth elliptical radial falloff (`drawOval`) and animated harmonic breathing/drifting wisps (`smokePulse` and `smokeDrift`).
+  - Clean, unoccluded table surface: The trajectory arrow and traveling dot animation were eliminated, leaving the intricate Newari wood carving and brass mandala completely unobstructed.
+  - Unified Player Seat Badge (`PlayerSeatBadge`): Combines enlarged profile images (38–42dp), centered circular seat number tokens (1..N), and player name text inside a single continuous stadium capsule pill with zero floating gaps.
+  - Antique handcrafted embossed Nepali dealer coin (`NepaliDealerButton`, "D") and next dealer token (`NepaliNextDealerButton`, "›") pinned directly to the avatar container.
+  - Rock-solid layout stability: Dealer halo animations utilize GPU-layer scaling (`graphicsLayer`) within a fixed footprint, completely preventing layout measurement thrashing, jitter, or vibration.
+  - Dual-sided dealer smoke aura: The active dealer's unified badge features an ethereal, organic smoke effect wafting outward on both left and right sides via `Modifier.drawBehind` with smooth elliptical radial falloffs (`drawOval`) and animated harmonic breathing/drifting wisps (`smokePulse` and `smokeDrift`).
+  - Dynamic Theme Adaptability: Badges, dealer aura smoke, dealer coins, seat number badges, and player names automatically adapt to the active app theme palette (`Tihar Night`, `High Contrast Dark`, `Midnight Frost`, `Marigold Day`, `Himalayan Mist`), displaying frosted surfaces and crisp typography across both light and dark modes.
 - **Collapsible Previous Rounds**:
   - Previous rounds collapse into a single summary row showing player totals (`Σ`) to conserve screen space.
   - Expand/collapse toggles and "Expand All / Collapse All" button.

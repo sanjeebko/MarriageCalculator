@@ -25,6 +25,7 @@ import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -120,16 +121,6 @@ fun VisualSeatingRing(
         label = "dealerGlowScale"
     )
 
-    val orbitProgress by infiniteTransition.animateFloat(
-        initialValue = 0f,
-        targetValue = 1f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(1800, easing = LinearEasing),
-            repeatMode = RepeatMode.Restart
-        ),
-        label = "orbitProgress"
-    )
-
     val smokePulse by infiniteTransition.animateFloat(
         initialValue = 0.45f,
         targetValue = 0.95f,
@@ -219,7 +210,7 @@ fun VisualSeatingRing(
             val tableHeight = tableWidth / 1.6238f
 
             // Player orbit radii: positioned cleanly and comfortably OUTSIDE the carved wood rim
-            val radiusX = (tableWidth / 2f) + (24f * density)
+            val radiusX = (tableWidth / 2f) + (26f * density)
             val radiusY = (tableHeight / 2f) + (28f * density)
             val verticalCenterShift = 10f * density
 
@@ -231,7 +222,12 @@ fun VisualSeatingRing(
                         width = (tableWidth / density).dp,
                         height = (tableHeight / density).dp
                     )
-                    .shadow(16.dp, RoundedCornerShape(80.dp), ambientColor = Color.Black, spotColor = Color.Black),
+                    .shadow(
+                        16.dp,
+                        RoundedCornerShape(80.dp),
+                        ambientColor = if (AppTheme.palette.isDark) Color.Black else Color(0x33000000),
+                        spotColor = if (AppTheme.palette.isDark) Color.Black else Color(0x22000000)
+                    ),
                 contentAlignment = Alignment.Center
             ) {
                 Image(
@@ -240,19 +236,9 @@ fun VisualSeatingRing(
                     contentScale = ContentScale.FillBounds,
                     modifier = Modifier.fillMaxSize()
                 )
-
-                // Dynamic Dealer Rotation Beam & Trajectory Canvas
-                DealerRotationCanvas(
-                    modifier = Modifier.fillMaxSize(),
-                    orbitPhase = orbitProgress,
-                    currentDealerIndex = resolvedCurrentDealerIndex,
-                    nextDealerIndex = resolvedNextDealerIndex,
-                    totalPlayers = players.size,
-                    dealerGlowScale = dealerGlowScale
-                )
             }
 
-            // 2. Players Ring seated cleanly OUTSIDE around the table
+            // 2. Players Ring seated cleanly OUTSIDE around the table as unified badges
             players.forEachIndexed { index, player ->
                 val (offsetX, offsetY) = calculateSeatOffset(
                     index = index,
@@ -263,7 +249,6 @@ fun VisualSeatingRing(
 
                 val isCurrentDealer = player.id == currentDealerId
                 val isNextDealer = player.id == effectiveNextDealerId && !isCurrentDealer
-                val isTopSeat = offsetY < (-10f * density)
 
                 Box(
                     modifier = Modifier
@@ -271,12 +256,11 @@ fun VisualSeatingRing(
                         .zIndex(if (isCurrentDealer) 3f else if (isNextDealer) 2f else 1f),
                     contentAlignment = Alignment.Center
                 ) {
-                    PlayerSeatNode(
+                    PlayerSeatBadge(
                         player = player,
                         seatNumber = index + 1,
                         isCurrentDealer = isCurrentDealer,
                         isNextDealer = isNextDealer,
-                        isTopSeat = isTopSeat,
                         dealerGlowScale = dealerGlowScale,
                         smokePulse = smokePulse,
                         smokeDrift = smokeDrift,
@@ -289,159 +273,26 @@ fun VisualSeatingRing(
 }
 
 /**
- * Draws the luminous dealer rotation beam, comet particle, chevrons, and dealer spotlight onto the wooden table.
- */
-@Composable
-private fun DealerRotationCanvas(
-    modifier: Modifier = Modifier,
-    orbitPhase: Float,
-    currentDealerIndex: Int,
-    nextDealerIndex: Int,
-    totalPlayers: Int,
-    dealerGlowScale: Float
-) {
-    Canvas(modifier = modifier) {
-        val tableW = size.width
-        val tableH = size.height
-        val center = Offset(tableW / 2f, tableH / 2f)
-
-        // Trajectory radius curving gracefully between the central brass mandala and carved timber rim
-        val rBetX = tableW * 0.38f
-        val rBetY = tableH * 0.34f
-
-        if (currentDealerIndex in 0 until totalPlayers && nextDealerIndex in 0 until totalPlayers && totalPlayers > 1) {
-            val currentAngleRad = (-PI / 2.0) + (currentDealerIndex * 2.0 * PI / totalPlayers)
-            val nextAngleRad = (-PI / 2.0) + (nextDealerIndex * 2.0 * PI / totalPlayers)
-            var sweepRad = nextAngleRad - currentAngleRad
-            while (sweepRad <= 0.0) sweepRad += 2.0 * PI
-
-            // Draw luminous golden trajectory arc
-            val numSteps = 28
-            val beamPath = Path()
-            for (k in 0..numSteps) {
-                val t = currentAngleRad + (k.toDouble() / numSteps) * sweepRad
-                val px = center.x + (rBetX * cos(t)).toFloat()
-                val py = center.y + (rBetY * sin(t)).toFloat()
-                if (k == 0) beamPath.moveTo(px, py) else beamPath.lineTo(px, py)
-            }
-
-            drawPath(
-                path = beamPath,
-                brush = Brush.linearGradient(
-                    listOf(
-                        Color(0xFFFFD54F).copy(alpha = 0.70f),
-                        Color(0xFFFFE082).copy(alpha = 0.95f),
-                        Color(0xFFFFD54F).copy(alpha = 0.50f)
-                    )
-                ),
-                style = Stroke(width = 2.5.dp.toPx())
-            )
-
-            // Midpoint Directional Chevrons
-            val midSteps = listOf(0.40, 0.75)
-            for (midPct in midSteps) {
-                val midAngle = currentAngleRad + (midPct * sweepRad)
-                val midX = center.x + (rBetX * cos(midAngle)).toFloat()
-                val midY = center.y + (rBetY * sin(midAngle)).toFloat()
-                val tanX = (-rBetX * sin(midAngle)).toFloat()
-                val tanY = (rBetY * cos(midAngle)).toFloat()
-                val len = sqrt(tanX * tanX + tanY * tanY).coerceAtLeast(0.001f)
-                val uX = tanX / len
-                val uY = tanY / len
-                val nX = -uY
-                val nY = uX
-
-                val chvSize = 4.5.dp.toPx()
-                val chvPath = Path().apply {
-                    moveTo(midX - uX * chvSize + nX * chvSize, midY - uY * chvSize + nY * chvSize)
-                    lineTo(midX, midY)
-                    lineTo(midX - uX * chvSize - nX * chvSize, midY - uY * chvSize - nY * chvSize)
-                }
-                drawPath(
-                    path = chvPath,
-                    color = Color(0xFFFFD54F).copy(alpha = 0.85f),
-                    style = Stroke(width = 1.5.dp.toPx())
-                )
-            }
-
-            // Traveling Comet / Light Pulse
-            val cometAngle = currentAngleRad + (orbitPhase * sweepRad)
-            val cometX = center.x + (rBetX * cos(cometAngle)).toFloat()
-            val cometY = center.y + (rBetY * sin(cometAngle)).toFloat()
-
-            drawCircle(
-                brush = Brush.radialGradient(
-                    listOf(Color(0xFFFFE082), Color(0x77FFD54F), Color.Transparent),
-                    center = Offset(cometX, cometY),
-                    radius = 13.dp.toPx()
-                ),
-                radius = 13.dp.toPx(),
-                center = Offset(cometX, cometY)
-            )
-            drawCircle(
-                color = Color.White,
-                radius = 2.5.dp.toPx(),
-                center = Offset(cometX, cometY)
-            )
-
-            // Tangential Arrowhead at target (next dealer)
-            val arrowHeadX = center.x + (rBetX * cos(nextAngleRad)).toFloat()
-            val arrowHeadY = center.y + (rBetY * sin(nextAngleRad)).toFloat()
-            val tanX = (-rBetX * sin(nextAngleRad)).toFloat()
-            val tanY = (rBetY * cos(nextAngleRad)).toFloat()
-            val len = sqrt(tanX * tanX + tanY * tanY).coerceAtLeast(0.001f)
-            val uX = tanX / len
-            val uY = tanY / len
-            val nX = -uY
-            val nY = uX
-
-            val arrowSize = 6.dp.toPx()
-            val arrowPath = Path().apply {
-                moveTo(arrowHeadX + uX * arrowSize * 0.5f, arrowHeadY + uY * arrowSize * 0.5f)
-                lineTo(arrowHeadX - uX * arrowSize + nX * (arrowSize * 0.7f), arrowHeadY - uY * arrowSize + nY * (arrowSize * 0.7f))
-                lineTo(arrowHeadX - uX * (arrowSize * 0.4f), arrowHeadY - uY * (arrowSize * 0.4f))
-                lineTo(arrowHeadX - uX * arrowSize - nX * (arrowSize * 0.7f), arrowHeadY - uY * arrowSize - nY * (arrowSize * 0.7f))
-                close()
-            }
-            drawPath(
-                path = arrowPath,
-                color = Color(0xFFFFD54F)
-            )
-
-            // Spotlight on the wooden tabletop beneath current dealer
-            val dealerWoodX = center.x + (rBetX * 0.95f * cos(currentAngleRad)).toFloat()
-            val dealerWoodY = center.y + (rBetY * 0.95f * sin(currentAngleRad)).toFloat()
-            drawCircle(
-                brush = Brush.radialGradient(
-                    listOf(
-                        Color(0xFFFFD54F).copy(alpha = 0.30f * dealerGlowScale),
-                        Color.Transparent
-                    ),
-                    center = Offset(dealerWoodX, dealerWoodY),
-                    radius = 22.dp.toPx()
-                ),
-                radius = 22.dp.toPx(),
-                center = Offset(dealerWoodX, dealerWoodY)
-            )
-        }
-    }
-}
-
-/**
- * Authentic Handcrafted Embossed Brass/Bronze Nepali Dealer Coin:
- * - Handcrafted antique brass disc with concentric engravings.
+ * Authentic Handcrafted Embossed Nepali Dealer Coin:
+ * - Handcrafted antique medallion disc with concentric engravings styled with active theme palette.
  * - Warm sun-wheel / beaded rim pattern.
- * - Deep bronze coin patina and embossed bold "D".
+ * - Recessed core and embossed bold "D".
  */
 @Composable
 fun NepaliDealerButton(
     modifier: Modifier = Modifier,
     size: androidx.compose.ui.unit.Dp = 20.dp
 ) {
+    val pal = AppTheme.palette
     Box(
         modifier = modifier
             .size(size)
-            .shadow(4.dp, CircleShape, ambientColor = Color.Black, spotColor = Color.Black)
+            .shadow(
+                4.dp,
+                CircleShape,
+                ambientColor = if (pal.isDark) Color.Black else Color(0x33000000),
+                spotColor = if (pal.isDark) Color.Black else Color(0x22000000)
+            )
             .clip(CircleShape),
         contentAlignment = Alignment.Center
     ) {
@@ -449,10 +300,14 @@ fun NepaliDealerButton(
             val center = Offset(this.size.width / 2f, this.size.height / 2f)
             val radius = this.size.minDimension / 2f
 
-            // 1. Base antique brass disc
+            // 1. Base theme-aware medallion disc
             drawCircle(
                 brush = Brush.radialGradient(
-                    listOf(Color(0xFFFFDF00), Color(0xFFD4AF37), Color(0xFF8D6E63)),
+                    listOf(
+                        pal.accent,
+                        pal.accentAlt,
+                        if (pal.isDark) pal.surface else pal.cta
+                    ),
                     center = center,
                     radius = radius
                 ),
@@ -468,21 +323,21 @@ fun NepaliDealerButton(
                 val bx = center.x + ((radius - beadRadius - 1.dp.toPx()) * cos(angle)).toFloat()
                 val by = center.y + ((radius - beadRadius - 1.dp.toPx()) * sin(angle)).toFloat()
                 drawCircle(
-                    color = Color(0xFF3E2723),
+                    color = if (pal.isDark) pal.surface else pal.cardSurface,
                     radius = beadRadius,
                     center = Offset(bx, by)
                 )
             }
 
-            // 3. Concentric golden bevel ring
+            // 3. Concentric theme bevel ring
             drawCircle(
                 brush = Brush.sweepGradient(
                     listOf(
-                        Color(0xFFFFDF00),
-                        Color(0xFFD4AF37),
-                        Color(0xFFFFF9A6),
-                        Color(0xFF996515),
-                        Color(0xFFFFDF00)
+                        pal.accent,
+                        pal.accentAlt,
+                        pal.accent.copy(alpha = 0.8f),
+                        pal.accentAlt,
+                        pal.accent
                     ),
                     center = center
                 ),
@@ -491,10 +346,13 @@ fun NepaliDealerButton(
                 style = Stroke(width = 1.2.dp.toPx())
             )
 
-            // 4. Recessed deep bronze inner core
+            // 4. Recessed inner core
             drawCircle(
                 brush = Brush.radialGradient(
-                    listOf(Color(0xFF4E342E), Color(0xFF2B1810), Color(0xFF1E100A)),
+                    listOf(
+                        pal.surface,
+                        if (pal.isDark) pal.backgroundBottom else pal.cardSurface
+                    ),
                     center = center,
                     radius = radius * 0.68f
                 ),
@@ -503,30 +361,36 @@ fun NepaliDealerButton(
             )
         }
 
-        // 5. Embossed bold "D" in bright gold
+        // 5. Embossed bold "D" in theme accent
         Text(
             text = "D",
             fontFamily = FontFamily.Serif,
             fontWeight = FontWeight.Black,
             fontSize = 10.sp,
-            color = Color(0xFFFFD54F),
+            color = pal.accent,
             modifier = Modifier.align(Alignment.Center)
         )
     }
 }
 
 /**
- * Next Dealer Antique Silver/Brass Coin ("›").
+ * Next Dealer Medallion Coin ("›").
  */
 @Composable
 fun NepaliNextDealerButton(
     modifier: Modifier = Modifier,
     size: androidx.compose.ui.unit.Dp = 17.dp
 ) {
+    val pal = AppTheme.palette
     Box(
         modifier = modifier
             .size(size)
-            .shadow(3.dp, CircleShape, ambientColor = Color.Black, spotColor = Color.Black)
+            .shadow(
+                3.dp,
+                CircleShape,
+                ambientColor = if (pal.isDark) Color.Black else Color(0x33000000),
+                spotColor = if (pal.isDark) Color.Black else Color(0x22000000)
+            )
             .clip(CircleShape),
         contentAlignment = Alignment.Center
     ) {
@@ -534,10 +398,14 @@ fun NepaliNextDealerButton(
             val center = Offset(this.size.width / 2f, this.size.height / 2f)
             val radius = this.size.minDimension / 2f
 
-            // Antique silver/brass disc
+            // Theme-aware disc
             drawCircle(
                 brush = Brush.radialGradient(
-                    listOf(Color(0xFFE0E0E0), Color(0xFFBCAAA4), Color(0xFF5D4037)),
+                    listOf(
+                        pal.accentAlt,
+                        pal.surface,
+                        if (pal.isDark) pal.backgroundBottom else pal.cardSurface
+                    ),
                     center = center,
                     radius = radius
                 ),
@@ -547,7 +415,7 @@ fun NepaliNextDealerButton(
 
             // Inner ring
             drawCircle(
-                color = Color(0xFF8D6E63),
+                color = pal.accentAlt.copy(alpha = 0.6f),
                 radius = radius * 0.72f,
                 center = center,
                 style = Stroke(width = 1.dp.toPx())
@@ -558,368 +426,377 @@ fun NepaliNextDealerButton(
             text = "›",
             fontWeight = FontWeight.Black,
             fontSize = 11.sp,
-            color = Color(0xFFFFE082),
+            color = pal.accentAlt,
             modifier = Modifier.align(Alignment.Center)
         )
     }
 }
 
+/**
+ * Unified Player Seat Badge:
+ * Combines the enlarged profile image, seat number token, and player name into a single cohesive stadium badge.
+ * Features dual-sided dealer smoke aura, theme-responsive medallions, and zero layout thrashing.
+ */
 @Composable
-private fun FrostedNamePlaque(
-    name: String,
-    seatNumber: Int,
-    isCurrentDealer: Boolean,
-    isNextDealer: Boolean,
-    smokePulse: Float = 1f,
-    smokeDrift: Float = 0f
-) {
-    val plaqueShape = RoundedCornerShape(12.dp)
-
-    Row(
-        modifier = Modifier
-            .drawBehind {
-                if (isCurrentDealer) {
-                    val w = size.width
-                    val h = size.height
-                    val centerY = h / 2f
-                    val pulse = smokePulse.coerceIn(0.25f, 1f)
-                    val smokeLength = 24.dp.toPx()
-
-                    // 1. Dual-sided organic golden smoke plumes (elliptical falloff with zero flat edges)
-                    // Left smoke plume (wafting outward to the left)
-                    drawOval(
-                        brush = Brush.radialGradient(
-                            colors = listOf(
-                                Color(0xFFFFE082).copy(alpha = 0.55f * pulse),
-                                Color(0xFFFFD54F).copy(alpha = 0.30f * pulse),
-                                Color(0xFFD4AF37).copy(alpha = 0.10f * pulse),
-                                Color.Transparent
-                            ),
-                            center = Offset(2.dp.toPx(), centerY),
-                            radius = smokeLength
-                        ),
-                        topLeft = Offset(-smokeLength, centerY - (h * 0.85f)),
-                        size = Size(smokeLength + 8.dp.toPx(), h * 1.7f)
-                    )
-
-                    // Right smoke plume (wafting outward to the right)
-                    drawOval(
-                        brush = Brush.radialGradient(
-                            colors = listOf(
-                                Color(0xFFFFE082).copy(alpha = 0.55f * pulse),
-                                Color(0xFFFFD54F).copy(alpha = 0.30f * pulse),
-                                Color(0xFFD4AF37).copy(alpha = 0.10f * pulse),
-                                Color.Transparent
-                            ),
-                            center = Offset(w - 2.dp.toPx(), centerY),
-                            radius = smokeLength
-                        ),
-                        topLeft = Offset(w - 8.dp.toPx(), centerY - (h * 0.85f)),
-                        size = Size(smokeLength + 8.dp.toPx(), h * 1.7f)
-                    )
-
-                    // 2. Billowing organic smoke wisps / curls on both sides
-                    val drift1 = sin(smokeDrift) * 3.dp.toPx()
-                    val drift2 = cos(smokeDrift) * 2.5.dp.toPx()
-                    val driftScale = 1f + (sin(smokeDrift * 1.5f) * 0.12f)
-
-                    // LEFT SIDE SMOKE WISPS:
-                    // Primary plume puff
-                    drawCircle(
-                        brush = Brush.radialGradient(
-                            colors = listOf(
-                                Color(0xFFFFD54F).copy(alpha = 0.50f * pulse),
-                                Color(0xFFD4AF37).copy(alpha = 0.18f * pulse),
-                                Color.Transparent
-                            ),
-                            center = Offset(-4.dp.toPx(), centerY + drift1),
-                            radius = 13.dp.toPx() * driftScale
-                        ),
-                        radius = 13.dp.toPx() * driftScale,
-                        center = Offset(-4.dp.toPx(), centerY + drift1)
-                    )
-                    // Secondary outer wisp drifting away
-                    drawCircle(
-                        brush = Brush.radialGradient(
-                            colors = listOf(
-                                Color(0xFFFFE082).copy(alpha = 0.38f * pulse),
-                                Color.Transparent
-                            ),
-                            center = Offset(-14.dp.toPx(), centerY - drift2),
-                            radius = 10.dp.toPx() * driftScale
-                        ),
-                        radius = 10.dp.toPx() * driftScale,
-                        center = Offset(-14.dp.toPx(), centerY - drift2)
-                    )
-
-                    // RIGHT SIDE SMOKE WISPS:
-                    // Primary plume puff
-                    drawCircle(
-                        brush = Brush.radialGradient(
-                            colors = listOf(
-                                Color(0xFFFFD54F).copy(alpha = 0.50f * pulse),
-                                Color(0xFFD4AF37).copy(alpha = 0.18f * pulse),
-                                Color.Transparent
-                            ),
-                            center = Offset(w + 4.dp.toPx(), centerY - drift1),
-                            radius = 13.dp.toPx() * driftScale
-                        ),
-                        radius = 13.dp.toPx() * driftScale,
-                        center = Offset(w + 4.dp.toPx(), centerY - drift1)
-                    )
-                    // Secondary outer wisp drifting away
-                    drawCircle(
-                        brush = Brush.radialGradient(
-                            colors = listOf(
-                                Color(0xFFFFE082).copy(alpha = 0.38f * pulse),
-                                Color.Transparent
-                            ),
-                            center = Offset(w + 14.dp.toPx(), centerY + drift2),
-                            radius = 10.dp.toPx() * driftScale
-                        ),
-                        radius = 10.dp.toPx() * driftScale,
-                        center = Offset(w + 14.dp.toPx(), centerY + drift2)
-                    )
-
-                    // 3. Subtle ambient golden glow around the plaque
-                    drawRoundRect(
-                        brush = Brush.radialGradient(
-                            colors = listOf(
-                                Color(0xFFFFD54F).copy(alpha = 0.25f * pulse),
-                                Color.Transparent
-                            ),
-                            center = Offset(w / 2f, centerY),
-                            radius = (w / 1.6f)
-                        ),
-                        topLeft = Offset(-5.dp.toPx(), -2.dp.toPx()),
-                        size = Size(w + 10.dp.toPx(), h + 4.dp.toPx()),
-                        cornerRadius = CornerRadius(14.dp.toPx())
-                    )
-                }
-            }
-            .clip(plaqueShape)
-            .background(Color(0xEE1E130C))
-            .border(
-                width = 1.dp,
-                color = if (isCurrentDealer) Color(0xFFFFD54F).copy(alpha = 0.85f)
-                else if (isNextDealer) Color(0xFFD4AF37).copy(alpha = 0.65f)
-                else Color(0x44D4AF37),
-                shape = plaqueShape
-            )
-            .padding(start = 3.dp, end = 8.dp, top = 2.dp, bottom = 2.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        // Handcrafted Brass Circular Seat Number Token
-        Box(
-            modifier = Modifier
-                .size(16.dp)
-                .background(
-                    if (isCurrentDealer) Color(0xFF5D3A1A) else Color(0xFF2B1810),
-                    CircleShape
-                )
-                .border(
-                    1.dp,
-                    if (isCurrentDealer) Color(0xFFFFD54F) else Color(0xFFD4AF37),
-                    CircleShape
-                ),
-            contentAlignment = Alignment.Center
-        ) {
-            Text(
-                text = "$seatNumber",
-                color = if (isCurrentDealer) Color(0xFFFFE082) else Color(0xFFEDE0D4),
-                fontSize = 9.sp,
-                fontWeight = FontWeight.Black,
-                style = TextStyle(
-                    platformStyle = PlatformTextStyle(includeFontPadding = false),
-                    textAlign = TextAlign.Center,
-                    lineHeight = 16.sp
-                )
-            )
-        }
-        Spacer(modifier = Modifier.width(4.dp))
-        Text(
-            text = name,
-            color = if (isCurrentDealer) Color(0xFFFFE082) else Color(0xFFEDE0D4),
-            fontSize = 10.5.sp,
-            fontWeight = if (isCurrentDealer) FontWeight.Bold else FontWeight.Medium,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis
-        )
-    }
-}
-
-@Composable
-private fun PlayerSeatNode(
+private fun PlayerSeatBadge(
     player: Player,
     seatNumber: Int,
     isCurrentDealer: Boolean,
     isNextDealer: Boolean,
-    isTopSeat: Boolean,
     dealerGlowScale: Float,
     smokePulse: Float = 1f,
     smokeDrift: Float = 0f,
     onClick: () -> Unit
 ) {
-    Column(
-        horizontalAlignment = Alignment.CenterHorizontally,
-        modifier = Modifier
-            .clickable(onClick = onClick)
-            .padding(2.dp)
-    ) {
-        // When player is on the top half of the table, place name tag ABOVE the avatar
-        // so the player sits outside the table looking inwards.
-        if (isTopSeat) {
-            FrostedNamePlaque(
-                name = player.name,
-                seatNumber = seatNumber,
-                isCurrentDealer = isCurrentDealer,
-                isNextDealer = isNextDealer,
-                smokePulse = smokePulse,
-                smokeDrift = smokeDrift
-            )
-            Spacer(modifier = Modifier.height(3.dp))
-        }
+    val pal = AppTheme.palette
+    val badgeShape = RoundedCornerShape(22.dp)
 
-        // Avatar outer Box has fixed 46.dp size: zero layout shifts, completely rock-solid!
-        Box(
-            modifier = Modifier.size(46.dp),
-            contentAlignment = Alignment.Center
-        ) {
-            // Dealer animated warm golden halo scaled via graphicsLayer (GPU transform, zero layout re-measurement!)
-            if (isCurrentDealer) {
-                Box(
-                    modifier = Modifier
-                        .size(44.dp)
-                        .graphicsLayer {
-                            scaleX = dealerGlowScale
-                            scaleY = dealerGlowScale
-                        }
-                        .background(
-                            Brush.radialGradient(
-                                listOf(
-                                    Color(0xFFFFD54F).copy(alpha = 0.45f),
-                                    Color(0xFFD4AF37).copy(alpha = 0.15f),
+    Box(contentAlignment = Alignment.Center) {
+        Row(
+            modifier = Modifier
+                .drawBehind {
+                    if (isCurrentDealer) {
+                        val w = size.width
+                        val h = size.height
+                        val centerY = h / 2f
+                        val pulse = smokePulse.coerceIn(0.25f, 1f)
+                        val smokeLength = 26.dp.toPx()
+
+                        val auraPrimary = pal.accent
+                        val auraSecondary = pal.accentAlt
+
+                        // 1. Dual-sided organic dealer aura plumes (elliptical falloff with zero flat edges)
+                        // Left smoke plume (wafting outward to the left)
+                        drawOval(
+                            brush = Brush.radialGradient(
+                                colors = listOf(
+                                    auraPrimary.copy(alpha = 0.55f * pulse),
+                                    auraSecondary.copy(alpha = 0.30f * pulse),
+                                    auraPrimary.copy(alpha = 0.10f * pulse),
                                     Color.Transparent
-                                )
+                                ),
+                                center = Offset(4.dp.toPx(), centerY),
+                                radius = smokeLength
                             ),
-                            shape = CircleShape
+                            topLeft = Offset(-smokeLength, centerY - (h * 0.85f)),
+                            size = Size(smokeLength + 10.dp.toPx(), h * 1.7f)
                         )
-                )
-            } else if (isNextDealer) {
-                Box(
-                    modifier = Modifier
-                        .size(40.dp)
-                        .background(
-                            Brush.radialGradient(
-                                listOf(
-                                    Color(0xFFFFD54F).copy(alpha = 0.25f),
+
+                        // Right smoke plume (wafting outward to the right)
+                        drawOval(
+                            brush = Brush.radialGradient(
+                                colors = listOf(
+                                    auraPrimary.copy(alpha = 0.55f * pulse),
+                                    auraSecondary.copy(alpha = 0.30f * pulse),
+                                    auraPrimary.copy(alpha = 0.10f * pulse),
                                     Color.Transparent
-                                )
+                                ),
+                                center = Offset(w - 4.dp.toPx(), centerY),
+                                radius = smokeLength
                             ),
-                            shape = CircleShape
+                            topLeft = Offset(w - 10.dp.toPx(), centerY - (h * 0.85f)),
+                            size = Size(smokeLength + 10.dp.toPx(), h * 1.7f)
                         )
-                )
-            }
 
-            // Avatar Anchor Container: precisely 34dp x 34dp
-            Box(
-                modifier = Modifier.size(34.dp),
-                contentAlignment = Alignment.Center
-            ) {
-                val uri = player.photoUri
-                val model = if (uri != null && (uri.startsWith("android.resource") || uri.startsWith("http"))) {
-                    uri
-                } else if (uri != null) {
-                    File(uri)
-                } else null
+                        // 2. Billowing organic aura wisps / curls on both sides
+                        val drift1 = sin(smokeDrift) * 3.dp.toPx()
+                        val drift2 = cos(smokeDrift) * 2.5.dp.toPx()
+                        val driftScale = 1f + (sin(smokeDrift * 1.5f) * 0.12f)
 
-                val avatarModifier = Modifier
-                    .fillMaxSize()
-                    .shadow(4.dp, CircleShape)
-                    .clip(CircleShape)
-
-                val borderBrush = when {
-                    isCurrentDealer -> Brush.sweepGradient(
-                        listOf(
-                            Color(0xFFFFDF00),
-                            Color(0xFFD4AF37),
-                            Color(0xFFFFF9A6),
-                            Color(0xFF996515),
-                            Color(0xFFFFDF00)
+                        // LEFT SIDE AURA WISPS:
+                        drawCircle(
+                            brush = Brush.radialGradient(
+                                colors = listOf(
+                                    auraPrimary.copy(alpha = 0.50f * pulse),
+                                    auraSecondary.copy(alpha = 0.18f * pulse),
+                                    Color.Transparent
+                                ),
+                                center = Offset(-4.dp.toPx(), centerY + drift1),
+                                radius = 13.dp.toPx() * driftScale
+                            ),
+                            radius = 13.dp.toPx() * driftScale,
+                            center = Offset(-4.dp.toPx(), centerY + drift1)
                         )
-                    )
-                    isNextDealer -> Brush.linearGradient(
-                        listOf(Color(0xFFFFE082), Color(0xFFD4AF37), Color(0xFFFFD54F))
-                    )
-                    else -> Brush.linearGradient(
-                        listOf(Color(0xFF8D6E63), Color(0xFF4E342E))
-                    )
-                }
+                        drawCircle(
+                            brush = Brush.radialGradient(
+                                colors = listOf(
+                                    auraSecondary.copy(alpha = 0.38f * pulse),
+                                    Color.Transparent
+                                ),
+                                center = Offset(-14.dp.toPx(), centerY - drift2),
+                                radius = 10.dp.toPx() * driftScale
+                            ),
+                            radius = 10.dp.toPx() * driftScale,
+                            center = Offset(-14.dp.toPx(), centerY - drift2)
+                        )
 
-                val borderWidth = if (isCurrentDealer) 2.5.dp else if (isNextDealer) 1.5.dp else 1.2.dp
+                        // RIGHT SIDE AURA WISPS:
+                        drawCircle(
+                            brush = Brush.radialGradient(
+                                colors = listOf(
+                                    auraPrimary.copy(alpha = 0.50f * pulse),
+                                    auraSecondary.copy(alpha = 0.18f * pulse),
+                                    Color.Transparent
+                                ),
+                                center = Offset(w + 4.dp.toPx(), centerY - drift1),
+                                radius = 13.dp.toPx() * driftScale
+                            ),
+                            radius = 13.dp.toPx() * driftScale,
+                            center = Offset(w + 4.dp.toPx(), centerY - drift1)
+                        )
+                        drawCircle(
+                            brush = Brush.radialGradient(
+                                colors = listOf(
+                                    auraSecondary.copy(alpha = 0.38f * pulse),
+                                    Color.Transparent
+                                ),
+                                center = Offset(w + 14.dp.toPx(), centerY + drift2),
+                                radius = 10.dp.toPx() * driftScale
+                            ),
+                            radius = 10.dp.toPx() * driftScale,
+                            center = Offset(w + 14.dp.toPx(), centerY + drift2)
+                        )
 
-                if (model != null) {
-                    AsyncImage(
-                        model = ImageRequest.Builder(LocalContext.current)
-                            .data(model)
-                            .crossfade(true)
-                            .build(),
-                        contentDescription = null,
-                        contentScale = ContentScale.Crop,
-                        modifier = avatarModifier.border(borderWidth, borderBrush, CircleShape)
-                    )
-                } else {
-                    Box(
-                        modifier = avatarModifier
-                            .background(
-                                Brush.radialGradient(
-                                    listOf(
-                                        if (isCurrentDealer) Color(0xFF4E342E) else Color(0xFF2B1810),
-                                        if (isCurrentDealer) Color(0xFF26180F) else Color(0xFF170D08)
-                                    )
-                                )
-                            )
-                            .border(borderWidth, borderBrush, CircleShape),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text(
-                            text = player.name.take(1).uppercase(),
-                            color = if (isCurrentDealer) Color(0xFFFFD54F) else Color(0xFFEDE0D4),
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 13.5.sp
+                        // 3. Subtle ambient aura glow around the badge
+                        drawRoundRect(
+                            brush = Brush.radialGradient(
+                                colors = listOf(
+                                    auraPrimary.copy(alpha = 0.25f * pulse),
+                                    Color.Transparent
+                                ),
+                                center = Offset(w / 2f, centerY),
+                                radius = (w / 1.6f)
+                            ),
+                            topLeft = Offset(-6.dp.toPx(), -3.dp.toPx()),
+                            size = Size(w + 12.dp.toPx(), h + 6.dp.toPx()),
+                            cornerRadius = CornerRadius(24.dp.toPx())
                         )
                     }
                 }
-
-                // Antique Brass Dealer Coin / Next Coin (Pinned to avatar's bottom-right)
+                .shadow(
+                    6.dp,
+                    badgeShape,
+                    ambientColor = if (pal.isDark) Color.Black else Color(0x33000000),
+                    spotColor = if (pal.isDark) Color.Black else Color(0x22000000)
+                )
+                .clip(badgeShape)
+                .background(
+                    if (pal.isDark) {
+                        pal.surface.copy(alpha = 0.90f)
+                    } else {
+                        pal.surface.copy(alpha = 0.96f)
+                    }
+                )
+                .border(
+                    width = if (isCurrentDealer) 1.8.dp else if (isNextDealer) 1.4.dp else 1.dp,
+                    brush = if (isCurrentDealer) Brush.sweepGradient(
+                        listOf(
+                            pal.accent,
+                            pal.accentAlt,
+                            pal.accent.copy(alpha = 0.75f),
+                            pal.accentAlt,
+                            pal.accent
+                        )
+                    ) else if (isNextDealer) Brush.linearGradient(
+                        listOf(pal.accentAlt, pal.accent)
+                    ) else if (pal.isDark) Brush.linearGradient(
+                        listOf(pal.tint.copy(alpha = 0.22f), pal.tint.copy(alpha = 0.08f))
+                    ) else Brush.linearGradient(
+                        listOf(pal.accent.copy(alpha = 0.35f), pal.tint.copy(alpha = 0.15f))
+                    ),
+                    shape = badgeShape
+                )
+                .clickable(onClick = onClick)
+                .padding(start = 2.dp, end = 9.dp, top = 2.dp, bottom = 2.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            // Profile image container: 42dp x 42dp (enlarged from 34dp)
+            Box(
+                modifier = Modifier.size(42.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                // Dealer animated warm halo scaled via graphicsLayer (GPU transform, zero layout re-measurement)
                 if (isCurrentDealer) {
-                    NepaliDealerButton(
-                        size = 20.dp,
+                    Box(
                         modifier = Modifier
-                            .align(Alignment.BottomEnd)
-                            .offset(x = 5.dp, y = 5.dp)
+                            .size(40.dp)
+                            .graphicsLayer {
+                                scaleX = dealerGlowScale
+                                scaleY = dealerGlowScale
+                            }
+                            .background(
+                                Brush.radialGradient(
+                                    listOf(
+                                        pal.accent.copy(alpha = 0.45f),
+                                        pal.accentAlt.copy(alpha = 0.15f),
+                                        Color.Transparent
+                                    )
+                                ),
+                                shape = CircleShape
+                            )
                     )
                 } else if (isNextDealer) {
-                    NepaliNextDealerButton(
-                        size = 17.dp,
+                    Box(
                         modifier = Modifier
-                            .align(Alignment.BottomEnd)
-                            .offset(x = 4.dp, y = 4.dp)
+                            .size(38.dp)
+                            .background(
+                                Brush.radialGradient(
+                                    listOf(
+                                        pal.accentAlt.copy(alpha = 0.25f),
+                                        Color.Transparent
+                                    )
+                                ),
+                                shape = CircleShape
+                            )
                     )
                 }
-            }
-        }
 
-        // When player is on the bottom half of the table, place name tag BELOW the avatar
-        if (!isTopSeat) {
-            Spacer(modifier = Modifier.height(3.dp))
-            FrostedNamePlaque(
-                name = player.name,
-                seatNumber = seatNumber,
-                isCurrentDealer = isCurrentDealer,
-                isNextDealer = isNextDealer,
-                smokePulse = smokePulse,
-                smokeDrift = smokeDrift
+                // Avatar Photo or Initial: 38dp x 38dp
+                Box(
+                    modifier = Modifier.size(38.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    val uri = player.photoUri
+                    val model = if (uri != null && (uri.startsWith("android.resource") || uri.startsWith("http"))) {
+                        uri
+                    } else if (uri != null) {
+                        File(uri)
+                    } else null
+
+                    val avatarModifier = Modifier
+                        .fillMaxSize()
+                        .shadow(3.dp, CircleShape)
+                        .clip(CircleShape)
+
+                    val borderBrush = when {
+                        isCurrentDealer -> Brush.sweepGradient(
+                            listOf(
+                                pal.accent,
+                                pal.accentAlt,
+                                pal.accent.copy(alpha = 0.75f),
+                                pal.accentAlt,
+                                pal.accent
+                            )
+                        )
+                        isNextDealer -> Brush.linearGradient(
+                            listOf(pal.accentAlt, pal.accent)
+                        )
+                        else -> Brush.linearGradient(
+                            if (pal.isDark) {
+                                listOf(pal.tint.copy(alpha = 0.25f), pal.tint.copy(alpha = 0.10f))
+                            } else {
+                                listOf(pal.accent.copy(alpha = 0.35f), pal.tint.copy(alpha = 0.15f))
+                            }
+                        )
+                    }
+
+                    val borderWidth = if (isCurrentDealer) 2.dp else if (isNextDealer) 1.5.dp else 1.2.dp
+
+                    if (model != null) {
+                        AsyncImage(
+                            model = ImageRequest.Builder(LocalContext.current)
+                                .data(model)
+                                .crossfade(true)
+                                .build(),
+                            contentDescription = null,
+                            contentScale = ContentScale.Crop,
+                            modifier = avatarModifier.border(borderWidth, borderBrush, CircleShape)
+                        )
+                    } else {
+                        Box(
+                            modifier = avatarModifier
+                                .background(
+                                    Brush.radialGradient(
+                                        listOf(
+                                            if (isCurrentDealer) {
+                                                pal.accent.copy(alpha = if (pal.isDark) 0.40f else 0.28f)
+                                            } else {
+                                                if (pal.isDark) pal.surface else pal.cardSurface
+                                            },
+                                            if (isCurrentDealer) {
+                                                pal.surface
+                                            } else {
+                                                if (pal.isDark) pal.backgroundBottom else pal.tint.copy(alpha = 0.08f)
+                                            }
+                                        )
+                                    )
+                                )
+                                .border(borderWidth, borderBrush, CircleShape),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                text = player.name.take(1).uppercase(),
+                                color = if (isCurrentDealer) pal.accent else pal.textPrimary,
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 15.sp
+                            )
+                        }
+                    }
+
+                    // Antique Brass / Theme Dealer Coin / Next Coin pinned to avatar bottom-right
+                    if (isCurrentDealer) {
+                        NepaliDealerButton(
+                            size = 18.dp,
+                            modifier = Modifier
+                                .align(Alignment.BottomEnd)
+                                .offset(x = 3.dp, y = 3.dp)
+                        )
+                    } else if (isNextDealer) {
+                        NepaliNextDealerButton(
+                            size = 15.dp,
+                            modifier = Modifier
+                                .align(Alignment.BottomEnd)
+                                .offset(x = 2.dp, y = 2.dp)
+                        )
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.width(5.dp))
+
+            // Handcrafted Theme Circular Seat Number Token
+            Box(
+                modifier = Modifier
+                    .size(17.dp)
+                    .background(
+                        if (isCurrentDealer) {
+                            pal.accent.copy(alpha = if (pal.isDark) 0.35f else 0.25f)
+                        } else {
+                            if (pal.isDark) pal.surface else pal.tint.copy(alpha = 0.08f)
+                        },
+                        CircleShape
+                    )
+                    .border(
+                        1.dp,
+                        if (isCurrentDealer) pal.accent else pal.tint.copy(alpha = if (pal.isDark) 0.35f else 0.22f),
+                        CircleShape
+                    ),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = "$seatNumber",
+                    color = if (isCurrentDealer) pal.accent else pal.textPrimary,
+                    fontSize = 9.5.sp,
+                    fontWeight = FontWeight.Black,
+                    style = TextStyle(
+                        platformStyle = PlatformTextStyle(includeFontPadding = false),
+                        textAlign = TextAlign.Center,
+                        lineHeight = 17.sp
+                    )
+                )
+            }
+
+            Spacer(modifier = Modifier.width(4.dp))
+
+            // Player Name Text
+            Text(
+                text = player.name,
+                color = if (isCurrentDealer) pal.accent else pal.textPrimary,
+                fontSize = 11.sp,
+                fontWeight = if (isCurrentDealer) FontWeight.Bold else FontWeight.SemiBold,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.widthIn(max = 68.dp)
             )
         }
     }
