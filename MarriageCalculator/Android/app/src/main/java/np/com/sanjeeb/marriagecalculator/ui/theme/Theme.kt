@@ -13,7 +13,7 @@ import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalView
 import androidx.core.view.WindowCompat
 
-val LocalAppPalette = staticCompositionLocalOf { AppThemeOption.TIHAR_NIGHT.palette }
+val LocalAppPalette = staticCompositionLocalOf { AppThemeOption.BLACK_AND_WHITE.palette }
 
 /** Accessor for the active theme palette: `AppTheme.palette.accent` etc. */
 object AppTheme {
@@ -23,7 +23,7 @@ object AppTheme {
 
 @Composable
 fun MarriageCalculatorTheme(
-    theme: AppThemeOption = AppThemeOption.TIHAR_NIGHT,
+    theme: AppThemeOption = AppThemeOption.BLACK_AND_WHITE,
     content: @Composable () -> Unit
 ) {
     val palette = theme.palette
