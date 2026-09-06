@@ -321,7 +321,7 @@ fun PlayGameScreen(
                     isOnlineMode = uiState.isOnlineMode,
                     isSettled = uiState.isSettled,
                     onDeleteGameClick = { showDeleteGameSetConfirm = true },
-                    modifier = Modifier.padding(bottom = if (actionPanelExpanded) 12.dp else 0.dp)
+                    modifier = Modifier.padding(bottom = if (actionPanelExpanded) 8.dp else 0.dp)
                 )
 
                 // Seating Ring Card (animates open when Table icon is clicked)
