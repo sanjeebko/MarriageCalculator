@@ -434,6 +434,39 @@ Enables hosts to undo advancing to a new round and continue playing the previous
   - Show "Continue Round" action on the completed round header if it is the latest round with games and the subsequent round has not yet started.
 - [ ] Step 36.6: **Verification & Testing** — Automated unit tests in Android (`OfflineGameRepositoryTest`) and .NET API (`ControllersTests`). Emulator walkthrough verifying reopening round, restoring pending game row, and adding subsequent games.
 
+---
+
+## Phase 37: Authentic Nepali Carved Wood Table & Outer Player Seating Alignment (Issue #44, Complete)
+Replaced the casino-themed green felt table with an authentic traditional Nepali hand-carved wooden table, repositioned player avatars and plaques cleanly outside the carved rim, centered seat number badges, and eliminated excess whitespace.
+- [x] Step 37.1: **Authentic Nepali Carved Wood Table Asset** — Created `nepali_wood_table.png` featuring dark walnut/rosewood timber, Newari relief woodcarvings (intricate florals and peacock motifs), and an inlaid brass embossed mandala centerpiece.
+- [x] Step 37.2: **Outer Seating Orbit & Center Alignment** — Repositioned player avatars and frosted name plaques completely outside the carved perimeter (`radiusX = tableWidth / 2f + 24dp`, `radiusY = tableHeight / 2f + 28dp`, `verticalCenterShift = 10dp`).
+- [x] Step 37.3: **Handcrafted Brass Dealer Coin & Seat Tokens** — Replaced casino ceramic buttons with antique embossed brass Nepali dealer coin (`NepaliDealerButton`, "D") with concentric engravings and sun-wheel rim pattern, an antique silver/bronze next-dealer token (`NepaliNextDealerButton`, "›"), and centered circular brass seat number badges (`PlatformTextStyle(includeFontPadding = false)` with matching line height).
+- [x] Step 37.4: **Whitespace Elimination & Table Expansion** — Expanded table width to fill the card (`targetTableWidthDp = coerceIn(230f, 260f)`) and reduced container height to 264dp, eliminating redundant vertical and horizontal gaps while removing the duplicate "Arrange Seats" action inside the canvas.
+- [x] Step 37.5: **Unit Tests & Emulator Verification** — Verified all 36 unit tests pass (`./gradlew testDebugUnitTest`) and visually confirmed on Android emulator (`Pixel_9_Pro_XL(AVD)`).
+- **COMMIT**: "feat: Nepali carved wood table and player seating alignment (Issue #44)"
+
+---
+
+## Phase 38: Dealer Avatar & Plaque Vibration Fix with Dual-Sided Golden Smoke Effect (Issue #46, Complete)
+Eliminated layout thrashing and jitter during dealer animations, locking player avatars and name plaques into completely static positions, and introduced an ethereal dual-sided golden smoke aura flanking the active dealer's plaque.
+- [x] Step 38.1: **Root Cause Elimination (Layout Thrashing)** — Identified that `PlayerSeatNode` was dynamically sizing the dealer halo Box via `Modifier.size((48 * dealerGlowScale).dp)`. In Jetpack Compose, driving layout dimensions with animated values triggered continuous parent `Column` re-measurement on every frame, oscillating sub-pixel rounding and causing the first player avatar and name plaque to vibrate/jump.
+- [x] Step 38.2: **Static Layout Decoupling (`PlayerSeatNode`)** — Established a fixed, invariant 46dp layout footprint for the avatar container (`Box(modifier = Modifier.size(46.dp))`). Decoupled the animated dealer halo from layout measurement by applying scale transformations purely at the GPU render layer (`Modifier.graphicsLayer { scaleX = dealerGlowScale; scaleY = dealerGlowScale }`). The avatar container, dealer button, and name plaque positions are 100% stationary and vibration-free.
+- [x] Step 38.3: **Dual-Sided Golden Smoke Aura (`FrostedNamePlaque`)** — Designed an organic, ethereal golden smoke effect flanking both left and right sides of the active dealer's name plaque using `Modifier.drawBehind`. Utilizes smooth radial elliptical falloffs (`drawOval`) and animated harmonic drifting puffs (`smokePulse` breathing between 0.45f–0.95f and `smokeDrift` rotating 0–2π) without any flat rectangular cutoffs or layout shift.
+- [x] Step 38.4: **Unit Tests & Emulator Verification** — All 36/36 unit tests passing (`./gradlew testDebugUnitTest`). Verified on Pixel 9 Pro XL emulator with frame-by-frame screenshot delta analysis confirming mean avatar pixel variance is 0.0076 (zero jitter/vibration) and smoke aura renders smoothly.
+- [x] Step 38.5: **Unified Player Seat Badge & Arrow Removal** — Removed the unnecessary trajectory beam and traveling dot animation (`DealerRotationCanvas`) keeping the carved table unobstructed. Enlarged player profile images (38–42dp) and unified the avatar, circular brass seat number token, and player name into a single cohesive stadium pill badge (`PlayerSeatBadge`).
+- **COMMIT**: "fix: dealer avatar vibration and add dual-sided golden smoke effect (Issue #46)"
+
+---
+
+## Phase 39: Theme-Aware Table Seating & Dealer Content (Issue #48, Complete)
+Adapted all Table Seating and Dealer Content visual elements in `VisualSeatingRing.kt` to dynamically respond to active app theme palettes (`Tihar Night`, `High Contrast Dark`, `Midnight Frost`, `Marigold Day`, `Himalayan Mist`).
+- [x] Step 39.1: **Theme-Aware Player Seat Badges (`PlayerSeatBadge`)** — Replaced hardcoded dark brown (`0xEE1E130C`) with theme surface tokens (`pal.surface.copy(alpha = 0.90f/0.96f)`). Border brushes dynamically reflect theme accents (`pal.accent` / `pal.accentAlt` for dealers, and theme tint/accent for regular players).
+- [x] Step 39.2: **Theme-Aware Dealer Smoke Aura** — Replaced hardcoded gold colors with dynamic theme accent plumes (`pal.accent` and `pal.accentAlt`), creating icy arctic mist in `Midnight Frost`, electric amber/cyan aura in `High Contrast Dark`, warm festive smoke in `Tihar Night` and `Marigold Day`, and soft alpine blue mist in `Himalayan Mist`.
+- [x] Step 39.3: **Theme-Aware Dealer & Next-Dealer Medallions** — Updated `NepaliDealerButton` and `NepaliNextDealerButton` to style their concentric metallic bevels, core gradients, and embossed "D" / "›" glyphs with active palette tokens while preserving their antique handcrafted motif.
+- [x] Step 39.4: **Theme-Aware Seat Tokens & Player Names** — Seat number tokens and player names automatically adjust between crisp white/frost text on dark themes and high-contrast dark text on light themes (`pal.textPrimary`), with dealer highlights using `pal.accent`.
+- [x] Step 39.5: **Unit Tests & Emulator Verification** — Verified all 36 unit tests pass (`./gradlew testDebugUnitTest`) and visually inspected across all 5 app themes via Android emulator screencaps (`screen_seating_theme1.png`, `screen_seating_frost.png`, `screen_seating_marigold.png`, `screen_seating_mist.png`, `screen_seating_tihar.png`).
+- **COMMIT**: "feat: theme-aware styling for table seating badges and dealer content (Issue #48)"
+
 ## Backlog / Future Candidates (not started)
 - **True offline reconnect sync**: requirement §3.4 calls out cloud sync as "(Future)". Today, online mode writes straight to the API and offline/guest mode is local-only Room storage (Phase 6.4) — there's no queued-write/merge engine that reconciles a game played offline once connectivity returns. Would need an outbox table + WorkManager sync job + conflict resolution rule (e.g. last-write-wins vs. host-wins) if pursued.
 
