@@ -41,18 +41,15 @@ The UI embraces a rich, culturally immersive festive aesthetic celebrating South
 
 ### 2.4 Play Game Screen (`PlayGameScreen.kt`)
 The primary live table view during match play:
-- **Collapsible Game Action Panel (`GameActionPanel.kt`)**:
-  - Positioned directly above `TABLE SEATING & DEALER`, decluttering the top app bar so the game title (e.g., `2026-09-05`) is never truncated.
-  - **Minimized State (Default)**: Compact 38dp bar showing icon, `GAME ACTIONS` header, subtitle preview (`Settle Up · Scoreboard · Share · Theme`), and expand chevron.
-  - **Expanded State**: Animated dropdown revealing clean, responsive action tiles:
-    - `Settle` (wallet): 1-tap cash settlement modal pairing debtors to creditors.
-    - `Scores` (scoreboard): Live match standings and player rankings.
-    - `Share` (share): WhatsApp / social scorecard export card generator.
-    - `Theme` (palette): In-app theme selection dialog (`Tihar Night`, `Midnight Frost`, `Marigold Day`, etc.).
-    - `Host` (swap): Transfer host capabilities to another player (for online multiplayer).
-    - `Delete` (trash): Delete game set confirmation modal (host only).
-  - Tapping any action automatically executes the callback and collapses the panel back to its compact state.
-  - Fully responsive with 42dp containers and `Arrangement.SpaceEvenly`, fitting all 6 tiles without clipping across screen widths.
+- **Top-Row Icon Navigation & Collapsible Panels**:
+  - Replaces permanent rectangular collapsed cards with 3 dedicated icons in the top app bar:
+    1. **Table Seating Icon (`TableRestaurant`)**: Toggles the Table Seating & Dealer card open/closed directly below the top bar. Highlighted with an active background circular badge when open.
+    2. **Game Actions Icon (`Widgets`)**: Toggles the Game Action Panel open/closed. Highlighted with an active background circular badge when open.
+    3. **Match Settings Icon (`Settings`)**: Opens the Match Settings & Rules dialog.
+  - **Zero-Height Inactive State**: When both panels are closed, neither card takes up space in the body. The rounds table and score details immediately utilize the top screen area.
+  - **Accordion Animation**: Opening either panel automatically collapses the other with smooth vertical expansion and fade transitions. Each open card provides a dedicated close button (`✕`) in its header.
+  - **Game Action Panel (`GameActionPanel.kt`)**: Displays 6 responsive action tiles: `Settle` (wallet), `Scores` (standings), `Share` (social card export), `Theme` (palette picker), `Host` (transfer ownership), and `Delete` (game set deletion). Tapping any tile triggers the action and auto-collapses the panel.
+  - **Match Settings & Rules Dialog**: Clean modal displaying current match rules (Match Name, Game Mode, Currency, Point Rate, Seen Penalty, Unseen Penalty, Dublee Bonus, Foul Penalty) and a button to switch App Themes.
 - **Visual Seating Ring (`VisualSeatingRing.kt`)**:
   - Authentic handcrafted Nepali carved wood table background asset (`nepali_wood_table.png`) featuring dark walnut/rosewood timber, intricate Newari floral and peacock border relief carvings, and an inlaid embossed brass mandala centerpiece.
   - Sized prominently to fill the card horizontally without excess whitespace or tiny visuals, with container height optimized to ~264dp.

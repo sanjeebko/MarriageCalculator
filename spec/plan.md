@@ -483,17 +483,18 @@ Implemented real-time network connectivity monitoring, reactive Room database un
 
 ---
 
-## Phase 41: Collapsible Action Panel on PlayGameScreen (Issue #51, Complete)
-Replaced the crowded top app bar icon buttons on `PlayGameScreen` with a clean, minimized-by-default collapsible action panel placed directly above the `TABLE SEATING & DEALER` card, restoring full game title visibility and organizing secondary actions into accessible, theme-aware tiles.
-- [x] Step 41.1: **Top App Bar Decluttering & Title Restoral** — Removed overcrowded action icons (Settle Up, Scoreboard, Share, Theme, Transfer Host, Delete Game) from `PlayGameScreen.kt` TopAppBar, retaining only the Back navigation button, Game Title, `SyncStatusIndicator`, and a single Action Panel toggle button (`Tune` / `Close`). Game titles (e.g. `2026-09-05`) now render in full without being truncated into ellipses (`202...`).
-- [x] Step 41.2: **Collapsible Action Panel Component (`GameActionPanel.kt`)** — Created reusable, theme-aware collapsible card:
-  - **Minimized State**: Ultra-compact 38dp height displaying icon, `GAME ACTIONS` header, preview hint (`Settle Up · Scoreboard · Share · Theme`), and expand chevron (`ExpandMore`).
-  - **Expanded State**: Smooth vertical expansion with fade transition revealing rich action tiles: `Settle` (wallet), `Scores` (leaderboard), `Share` (social card export), `Theme` (palette picker), `Host` (transfer ownership), and `Delete` (danger set delete with confirmation dialog).
-  - **Auto-Collapse UX**: Selecting any action immediately triggers the corresponding modal/dialog and automatically collapses the panel back into minimized state.
-- [x] Step 41.3: **Responsive Tile Sizing & Spacing** — Engineered 42dp icon containers with 20dp glyphs and `Arrangement.SpaceEvenly` ensuring all 6 action tiles fit cleanly across standard mobile viewports (360dp–412dp) without clipping.
-- [x] Step 41.4: **Dynamic Theme Adaptation** — Styled surfaces, borders, icon containers, and typography using active theme palette tokens (`ThemePalette.surface`, `accent`, `accentAlt`, `textPrimary`, `textSecondary`), automatically restyling in sync across all 5 app themes.
-- [x] Step 41.5: **Unit Tests & Emulator Verification** — Verified all 36 unit tests pass (`./gradlew testDebugUnitTest`). Inspected both minimized and expanded states on Pixel 9 Pro XL emulator across dark, light, and Midnight Frost themes with screenshot verifications.
-- **COMMIT**: "feat: collapsible expandable action icon panel on PlayGameScreen (Issue #51)"
+## Phase 41: Top-Row Icon Controls for Game Actions & Table Seating (Issue #51, Complete)
+Replaced the crowded top app bar buttons and body rectangular collapsed cards with two dedicated top-row action icons positioned just left of the Settings icon. When an icon is tapped, it smoothly animates open its respective panel in the body, leaving zero vertical obstruction when inactive.
+- [x] Step 41.1: **Top App Bar Icon Navigation** — Replaced crowded buttons with 3 clean, dedicated top-row icons:
+  - **Table Seating Icon (`TableRestaurant`)**: Toggles the Table Seating & Dealer panel open/closed. Highlights with active background indicator when open.
+  - **Game Actions Icon (`Widgets`)**: Toggles the Game Action Panel open/closed. Highlights with active background indicator when open.
+  - **Match Settings Icon (`Settings`)**: Opens the Match Settings & Rules dialog.
+- [x] Step 41.2: **Zero-Height Inactive State (Whitespace Elimination)** — Removed the permanent collapsed rectangular bars from the content body. When inactive, both panels take 0dp space, allowing the rounds table and score details to sit immediately below the top app bar.
+- [x] Step 41.3: **Smooth Accordion Animations** — Clicking an icon animates open its respective card (`expandVertically` + `fadeIn` / `shrinkVertically` + `fadeOut`) and automatically closes the other panel. Each open card includes a dedicated close button (`✕`) for easy dismissal.
+- [x] Step 41.4: **Game Action Panel (`GameActionPanel.kt`)** — Displays header and 6 action tiles: `Settle` (wallet), `Scores` (leaderboard), `Share` (social card export), `Theme` (palette picker), `Host` (transfer ownership), and `Delete` (danger set delete with confirmation dialog). Tapping any action executes the command and auto-collapses the panel.
+- [x] Step 41.5: **Match Settings & Rules Dialog** — Displays match name, game mode (Normal/Kidnap/Murder), currency, point rate, seen penalty, unseen penalty, dublee bonus, foul penalty, and a 1-tap "Change App Theme" button.
+- [x] Step 41.6: **Unit Tests & Emulator Verification** — All 36 unit tests pass (`./gradlew testDebugUnitTest`). Verified default closed state, table open state, actions open state, settings dialog, and auto-collapse on tile tap via emulator screenshots (`screen_icons_closed.png`, `screen_table_open.png`, `screen_actions_open.png`, `screen_settings_dialog.png`, `screen_theme_autocollapse.png`).
+- **COMMIT**: "feat: top-row icon controls for game actions and table seating (Issue #51)"
 
 ---
 

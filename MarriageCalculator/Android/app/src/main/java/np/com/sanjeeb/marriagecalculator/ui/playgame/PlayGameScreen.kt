@@ -106,6 +106,7 @@ fun PlayGameScreen(
     var standingsExpanded by remember { mutableStateOf(false) }
     var seatingRingExpanded by remember { mutableStateOf(false) }
     var actionPanelExpanded by remember { mutableStateOf(false) }
+    var showGameSettingsDialog by remember { mutableStateOf(false) }
     var showShareDialog by remember { mutableStateOf(false) }
     var showSettleUpDialog by remember { mutableStateOf(false) }
     var showOverflowMenu by remember { mutableStateOf(false) }
@@ -171,11 +172,64 @@ fun PlayGameScreen(
                     }
                 },
                 actions = {
-                    IconButton(onClick = { actionPanelExpanded = !actionPanelExpanded }) {
+                    // 1. Table Seating & Dealer Icon
+                    IconButton(
+                        onClick = {
+                            seatingRingExpanded = !seatingRingExpanded
+                            if (seatingRingExpanded) actionPanelExpanded = false
+                        },
+                        modifier = Modifier
+                            .size(38.dp)
+                            .clip(CircleShape)
+                            .then(
+                                if (seatingRingExpanded) Modifier.background(AppTheme.palette.accent.copy(alpha = 0.20f))
+                                else Modifier
+                            )
+                    ) {
                         Icon(
-                            imageVector = if (actionPanelExpanded) Icons.Default.Close else Icons.Default.Tune,
-                            contentDescription = if (actionPanelExpanded) "Close game actions" else "Show game actions",
-                            tint = AppTheme.palette.accent
+                            imageVector = Icons.Default.TableRestaurant,
+                            contentDescription = if (seatingRingExpanded) "Hide table seating" else "Show table seating",
+                            tint = if (seatingRingExpanded) AppTheme.palette.accent else AppTheme.palette.accent.copy(alpha = 0.8f),
+                            modifier = Modifier.size(20.dp)
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.width(2.dp))
+
+                    // 2. Game Actions Icon
+                    IconButton(
+                        onClick = {
+                            actionPanelExpanded = !actionPanelExpanded
+                            if (actionPanelExpanded) seatingRingExpanded = false
+                        },
+                        modifier = Modifier
+                            .size(38.dp)
+                            .clip(CircleShape)
+                            .then(
+                                if (actionPanelExpanded) Modifier.background(AppTheme.palette.accent.copy(alpha = 0.20f))
+                                else Modifier
+                            )
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Widgets,
+                            contentDescription = if (actionPanelExpanded) "Hide game actions" else "Show game actions",
+                            tint = if (actionPanelExpanded) AppTheme.palette.accent else AppTheme.palette.accent.copy(alpha = 0.8f),
+                            modifier = Modifier.size(20.dp)
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.width(2.dp))
+
+                    // 3. Settings / Rules Icon
+                    IconButton(
+                        onClick = { showGameSettingsDialog = true },
+                        modifier = Modifier.size(38.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Settings,
+                            contentDescription = "Match settings and rules",
+                            tint = AppTheme.palette.accent.copy(alpha = 0.8f),
+                            modifier = Modifier.size(20.dp)
                         )
                     }
                 },
@@ -255,10 +309,10 @@ fun PlayGameScreen(
                     }
                 }
 
-                // Collapsible Game Action Panel (Issue #51)
+                // Game Action Panel (animates open when Actions icon is clicked)
                 GameActionPanel(
                     expanded = actionPanelExpanded,
-                    onToggleExpanded = { actionPanelExpanded = !actionPanelExpanded },
+                    onDismiss = { actionPanelExpanded = false },
                     onSettleUpClick = { showSettleUpDialog = true },
                     onScoreboardClick = onViewScoreboard,
                     onShareClick = { showShareDialog = true },
@@ -268,86 +322,89 @@ fun PlayGameScreen(
                     isSettled = uiState.isSettled,
                     onTransferHostClick = { /* Coming soon */ },
                     onDeleteGameClick = { showDeleteGameSetConfirm = true },
-                    modifier = Modifier.padding(bottom = 12.dp)
+                    modifier = Modifier.padding(bottom = if (actionPanelExpanded) 12.dp else 0.dp)
                 )
 
-                // Seating Ring Card (Issue #30)
+                // Seating Ring Card (animates open when Table icon is clicked)
                 val activeRound = uiState.roundGroups.firstOrNull { !it.isCompleted }
                 val seatingPlayers = (activeRound?.seatOrder?.takeIf { it.isNotEmpty() }
                     ?: uiState.players.map { it.player })
 
                 if (seatingPlayers.isNotEmpty()) {
-                    Card(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(bottom = 12.dp),
-                        shape = RoundedCornerShape(14.dp),
-                        colors = CardDefaults.cardColors(containerColor = AppTheme.palette.cardSurface),
-                        border = BorderStroke(1.dp, AppTheme.palette.tint.copy(alpha = 0.15f))
+                    AnimatedVisibility(
+                        visible = seatingRingExpanded,
+                        enter = expandVertically(animationSpec = tween(220)) + fadeIn(animationSpec = tween(220)),
+                        exit = shrinkVertically(animationSpec = tween(180)) + fadeOut(animationSpec = tween(180)),
+                        modifier = Modifier.padding(bottom = if (seatingRingExpanded) 12.dp else 0.dp)
                     ) {
-                        Column(modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 8.dp)) {
-                            Row(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .clip(RoundedCornerShape(6.dp))
-                                    .clickable { seatingRingExpanded = !seatingRingExpanded }
-                                    .padding(vertical = 4.dp),
-                                horizontalArrangement = Arrangement.SpaceBetween,
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Row(verticalAlignment = Alignment.CenterVertically) {
-                                    Icon(
-                                        imageVector = Icons.Default.Casino,
-                                        contentDescription = null,
-                                        tint = AppTheme.palette.accent,
-                                        modifier = Modifier.size(16.dp)
-                                    )
-                                    Spacer(modifier = Modifier.width(6.dp))
-                                    Text(
-                                        text = "TABLE SEATING & DEALER",
-                                        color = AppTheme.palette.frostAccent,
-                                        fontSize = 11.sp,
-                                        fontWeight = FontWeight.Bold,
-                                        letterSpacing = 1.2.sp
-                                    )
-                                    Spacer(modifier = Modifier.width(4.dp))
-                                    Icon(
-                                        imageVector = if (seatingRingExpanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
-                                        contentDescription = null,
-                                        tint = AppTheme.palette.frostAccent.copy(alpha = 0.7f),
-                                        modifier = Modifier.size(16.dp)
-                                    )
-                                }
-                                if (uiState.isHost && !uiState.isSettled) {
-                                    val roundInProgress = uiState.roundGroups.any { !it.isCompleted && it.games.isNotEmpty() }
-                                    if (!roundInProgress) {
+                        Card(
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(14.dp),
+                            colors = CardDefaults.cardColors(containerColor = AppTheme.palette.cardSurface),
+                            border = BorderStroke(1.dp, AppTheme.palette.tint.copy(alpha = 0.15f))
+                        ) {
+                            Column(modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 8.dp)) {
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(bottom = 6.dp),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                        Icon(
+                                            imageVector = Icons.Default.TableRestaurant,
+                                            contentDescription = null,
+                                            tint = AppTheme.palette.accent,
+                                            modifier = Modifier.size(16.dp)
+                                        )
+                                        Spacer(modifier = Modifier.width(6.dp))
                                         Text(
-                                            text = "Arrange Seats",
-                                            color = AppTheme.palette.accent,
+                                            text = "TABLE SEATING & DEALER",
+                                            color = AppTheme.palette.frostAccent,
                                             fontSize = 11.sp,
-                                            fontWeight = FontWeight.SemiBold,
-                                            modifier = Modifier
-                                                .clip(RoundedCornerShape(4.dp))
-                                                .clickable { showReorderDialog = true }
-                                                .padding(horizontal = 4.dp, vertical = 2.dp)
+                                            fontWeight = FontWeight.Bold,
+                                            letterSpacing = 1.2.sp
                                         )
                                     }
-                                }
-                            }
+                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                        if (uiState.isHost && !uiState.isSettled) {
+                                            val roundInProgress = uiState.roundGroups.any { !it.isCompleted && it.games.isNotEmpty() }
+                                            if (!roundInProgress) {
+                                                Text(
+                                                    text = "Arrange Seats",
+                                                    color = AppTheme.palette.accent,
+                                                    fontSize = 11.sp,
+                                                    fontWeight = FontWeight.SemiBold,
+                                                    modifier = Modifier
+                                                        .clip(RoundedCornerShape(4.dp))
+                                                        .clickable { showReorderDialog = true }
+                                                        .padding(horizontal = 4.dp, vertical = 2.dp)
+                                                )
+                                                Spacer(modifier = Modifier.width(6.dp))
+                                            }
+                                        }
 
-                            AnimatedVisibility(
-                                visible = seatingRingExpanded,
-                                enter = expandVertically() + fadeIn(),
-                                exit = shrinkVertically() + fadeOut()
-                            ) {
-                                Column(modifier = Modifier.padding(top = 4.dp)) {
-                                    VisualSeatingRing(
-                                        players = seatingPlayers,
-                                        currentDealerId = uiState.nextDealerId,
-                                        nextDealerId = null,
-                                        onArrangeSeatsClick = null
-                                    )
+                                        IconButton(
+                                            onClick = { seatingRingExpanded = false },
+                                            modifier = Modifier.size(24.dp)
+                                        ) {
+                                            Icon(
+                                                imageVector = Icons.Default.Close,
+                                                contentDescription = "Close seating",
+                                                tint = AppTheme.palette.frostAccent.copy(alpha = 0.7f),
+                                                modifier = Modifier.size(16.dp)
+                                            )
+                                        }
+                                    }
                                 }
+
+                                VisualSeatingRing(
+                                    players = seatingPlayers,
+                                    currentDealerId = uiState.nextDealerId,
+                                    nextDealerId = null,
+                                    onArrangeSeatsClick = null
+                                )
                             }
                         }
                     }
@@ -676,6 +733,110 @@ fun PlayGameScreen(
             },
             onDismiss = { gamePendingEdit = null }
         )
+    }
+
+    if (showGameSettingsDialog) {
+        GameSettingsDialog(
+            gameName = uiState.gameName,
+            settings = uiState.settings,
+            onChangeTheme = {
+                showGameSettingsDialog = false
+                showThemeDialog = true
+            },
+            onDismiss = { showGameSettingsDialog = false }
+        )
+    }
+}
+
+@Composable
+private fun GameSettingsDialog(
+    gameName: String,
+    settings: np.com.sanjeeb.marriagecalculator.data.model.GameSettings,
+    onChangeTheme: () -> Unit,
+    onDismiss: () -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(
+                    imageVector = Icons.Default.Settings,
+                    contentDescription = null,
+                    tint = AppTheme.palette.accent,
+                    modifier = Modifier.size(20.dp)
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(
+                    text = "Match Settings & Rules",
+                    color = AppTheme.palette.accent,
+                    fontFamily = FontFamily.Serif,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 18.sp
+                )
+            }
+        },
+        text = {
+            Column(modifier = Modifier.fillMaxWidth()) {
+                val gameMode = when {
+                    settings.kidnap -> "Kidnap"
+                    settings.murder -> "Murder"
+                    else -> "Normal"
+                }
+                SettingInfoRow("Match Name", gameName.ifBlank { "Marriage Match" })
+                SettingInfoRow("Game Mode", gameMode)
+                SettingInfoRow("Currency", settings.currency.displayName())
+                SettingInfoRow("Point Rate", settings.currency.formatMoney(settings.pointRate) + " / pt")
+                SettingInfoRow("Seen Penalty", "${settings.seenPoint} pts")
+                SettingInfoRow("Unseen Penalty", "${settings.unseenPoint} pts")
+                if (settings.dublee && settings.dubleePointBonus > 0) {
+                    SettingInfoRow("Dublee Bonus", "${settings.dubleePointBonus} pts")
+                }
+                SettingInfoRow("Foul Penalty", "${settings.foulPoint} pts")
+
+                Spacer(modifier = Modifier.height(14.dp))
+                HorizontalDivider(color = AppTheme.palette.tint.copy(alpha = 0.15f))
+                Spacer(modifier = Modifier.height(12.dp))
+
+                OutlinedButton(
+                    onClick = onChangeTheme,
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(10.dp),
+                    border = BorderStroke(1.dp, AppTheme.palette.accent.copy(alpha = 0.4f)),
+                    colors = ButtonDefaults.outlinedButtonColors(contentColor = AppTheme.palette.accent)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Palette,
+                        contentDescription = null,
+                        tint = AppTheme.palette.accent,
+                        modifier = Modifier.size(18.dp)
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("Change App Theme", color = AppTheme.palette.accent, fontWeight = FontWeight.SemiBold, fontSize = 13.sp)
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Close", color = AppTheme.palette.accent, fontWeight = FontWeight.Bold)
+            }
+        },
+        containerColor = AppTheme.palette.surface,
+        shape = RoundedCornerShape(16.dp),
+        modifier = Modifier.border(1.dp, AppTheme.palette.accent.copy(alpha = 0.3f), RoundedCornerShape(16.dp))
+    )
+}
+
+@Composable
+private fun SettingInfoRow(label: String, value: String) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 4.dp),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Text(text = label, color = AppTheme.palette.textPrimary.copy(alpha = 0.7f), fontSize = 13.sp)
+        Text(text = value, color = AppTheme.palette.textPrimary, fontWeight = FontWeight.SemiBold, fontSize = 13.sp)
     }
 }
 

@@ -38,7 +38,7 @@ import np.com.sanjeeb.marriagecalculator.ui.theme.AppTheme
 @Composable
 fun GameActionPanel(
     expanded: Boolean,
-    onToggleExpanded: () -> Unit,
+    onDismiss: () -> Unit,
     onSettleUpClick: () -> Unit,
     onScoreboardClick: () -> Unit,
     onShareClick: () -> Unit,
@@ -50,69 +50,66 @@ fun GameActionPanel(
     onDeleteGameClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    Card(
-        modifier = modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(14.dp),
-        colors = CardDefaults.cardColors(containerColor = AppTheme.palette.cardSurface),
-        border = BorderStroke(1.dp, AppTheme.palette.tint.copy(alpha = 0.15f))
+    AnimatedVisibility(
+        visible = expanded,
+        enter = expandVertically(animationSpec = tween(220)) + fadeIn(animationSpec = tween(220)),
+        exit = shrinkVertically(animationSpec = tween(180)) + fadeOut(animationSpec = tween(180)),
+        modifier = modifier
     ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 12.dp, vertical = 8.dp)
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(14.dp),
+            colors = CardDefaults.cardColors(containerColor = AppTheme.palette.cardSurface),
+            border = BorderStroke(1.dp, AppTheme.palette.tint.copy(alpha = 0.15f))
         ) {
-            // Minimized Header Bar (always visible, tap to toggle expansion)
-            Row(
+            Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .clip(RoundedCornerShape(6.dp))
-                    .clickable { onToggleExpanded() }
-                    .padding(vertical = 4.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
+                    .padding(horizontal = 12.dp, vertical = 8.dp)
             ) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(
-                        imageVector = Icons.Default.Tune,
-                        contentDescription = null,
-                        tint = AppTheme.palette.accent,
-                        modifier = Modifier.size(16.dp)
-                    )
-                    Spacer(modifier = Modifier.width(6.dp))
-                    Text(
-                        text = "GAME ACTIONS",
-                        color = AppTheme.palette.frostAccent,
-                        fontSize = 11.sp,
-                        fontWeight = FontWeight.Bold,
-                        letterSpacing = 1.2.sp
-                    )
-                    Spacer(modifier = Modifier.width(4.dp))
-                    Icon(
-                        imageVector = if (expanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
-                        contentDescription = if (expanded) "Collapse actions" else "Expand actions",
-                        tint = AppTheme.palette.frostAccent.copy(alpha = 0.7f),
-                        modifier = Modifier.size(16.dp)
-                    )
-                }
-
-                Text(
-                    text = if (expanded) "Tap to hide" else "Settle Up · Scoreboard · Share · Theme",
-                    color = AppTheme.palette.frostAccent.copy(alpha = 0.6f),
-                    fontSize = 11.sp,
-                    fontWeight = FontWeight.Normal
-                )
-            }
-
-            // Expanded Actions Area
-            AnimatedVisibility(
-                visible = expanded,
-                enter = expandVertically(animationSpec = tween(220)) + fadeIn(animationSpec = tween(220)),
-                exit = shrinkVertically(animationSpec = tween(180)) + fadeOut(animationSpec = tween(180))
-            ) {
+                // Header Row with Title and Close Button
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(top = 8.dp, bottom = 4.dp)
+                        .padding(bottom = 6.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(
+                            imageVector = Icons.Default.Widgets,
+                            contentDescription = null,
+                            tint = AppTheme.palette.accent,
+                            modifier = Modifier.size(16.dp)
+                        )
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text(
+                            text = "GAME ACTIONS",
+                            color = AppTheme.palette.frostAccent,
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.Bold,
+                            letterSpacing = 1.2.sp
+                        )
+                    }
+
+                    IconButton(
+                        onClick = onDismiss,
+                        modifier = Modifier.size(24.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Close,
+                            contentDescription = "Close actions",
+                            tint = AppTheme.palette.frostAccent.copy(alpha = 0.7f),
+                            modifier = Modifier.size(16.dp)
+                        )
+                    }
+                }
+
+                // Action Tiles Row
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 4.dp)
                         .horizontalScroll(rememberScrollState()),
                     horizontalArrangement = Arrangement.SpaceEvenly,
                     verticalAlignment = Alignment.CenterVertically
@@ -123,7 +120,7 @@ fun GameActionPanel(
                         label = "Settle",
                         tint = AppTheme.palette.accent,
                         onClick = {
-                            onToggleExpanded()
+                            onDismiss()
                             onSettleUpClick()
                         }
                     )
@@ -134,7 +131,7 @@ fun GameActionPanel(
                         label = "Scores",
                         tint = AppTheme.palette.accent,
                         onClick = {
-                            onToggleExpanded()
+                            onDismiss()
                             onScoreboardClick()
                         }
                     )
@@ -145,7 +142,7 @@ fun GameActionPanel(
                         label = "Share",
                         tint = AppTheme.palette.accent,
                         onClick = {
-                            onToggleExpanded()
+                            onDismiss()
                             onShareClick()
                         }
                     )
@@ -156,7 +153,7 @@ fun GameActionPanel(
                         label = "Theme",
                         tint = AppTheme.palette.accent,
                         onClick = {
-                            onToggleExpanded()
+                            onDismiss()
                             onThemeClick()
                         }
                     )
@@ -181,7 +178,7 @@ fun GameActionPanel(
                             tint = Color(0xFFFF5252),
                             isDestructive = true,
                             onClick = {
-                                onToggleExpanded()
+                                onDismiss()
                                 onDeleteGameClick()
                             }
                         )
