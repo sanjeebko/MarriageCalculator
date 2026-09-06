@@ -43,6 +43,30 @@ data class AppPalette(
 )
 
 enum class AppThemeOption(val displayName: String, val palette: AppPalette) {
+    BLACK_AND_WHITE(
+        "Black & White",
+        AppPalette(
+            isDark = true,
+            backgroundTop = Color(0xFF0D0E12),
+            backgroundBottom = Color(0xFF050507),
+            surface = Color(0xFF14151A),
+            accent = Color(0xFFFFFFFF),
+            accentAlt = Color(0xFFCBD5E1),
+            cta = Color(0xFF2C303B),
+            frostText = Color(0xFFFFFFFF),
+            frostAccent = Color(0xFFE2E8F0),
+            textPrimary = Color(0xFFF8FAFC),
+            tint = Color.White,
+            success = Color(0xFF4ADE80),
+            danger = Color(0xFFF87171),
+            numberPositive = Color(0xFF4ADE80),
+            numberNegative = Color(0xFFF87171),
+            numberZero = Color(0xFF94A3B8),
+            cardSurface = Color(0xFF181920),
+            chipUncleared = Color(0xFFE2E8F0),
+            chipCleared = Color(0xFF4ADE80)
+        )
+    ),
     TIHAR_NIGHT(
         "Tihar Night",
         AppPalette(
@@ -166,6 +190,6 @@ enum class AppThemeOption(val displayName: String, val palette: AppPalette) {
 
     companion object {
         fun fromName(name: String?): AppThemeOption =
-            entries.firstOrNull { it.name == name } ?: TIHAR_NIGHT
+            entries.firstOrNull { it.name == name } ?: BLACK_AND_WHITE
     }
 }

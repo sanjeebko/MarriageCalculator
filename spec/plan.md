@@ -496,6 +496,26 @@ Replaced the crowded top app bar buttons and body rectangular collapsed cards wi
 - [x] Step 41.6: **Unit Tests & Emulator Verification** — All 36 unit tests pass (`./gradlew testDebugUnitTest`). Verified default closed state, table open state, actions open state, settings dialog, and auto-collapse on tile tap via emulator screenshots (`screen_icons_closed.png`, `screen_table_open.png`, `screen_actions_open.png`, `screen_settings_dialog.png`, `screen_theme_autocollapse.png`).
 - **COMMIT**: "feat: top-row icon controls for game actions and table seating (Issue #51)"
 
+## Phase 42: Black & White / Monochrome Theme Matching App Icon & Splash Screen (Issue #53, Complete)
+Introduced a high-contrast obsidian and diamond white monochrome palette (`BLACK_AND_WHITE`) styled after the app icon (glossy obsidian and chrome Triple Ace of Spades) and splash screen logo (`marriage_logo_title.png`), making it the new clean default theme.
+- [x] Step 42.1: **Monochrome Palette Definition (`AppThemeOption.BLACK_AND_WHITE`)** — Added to `Color.kt` as the primary dark palette option:
+  - `backgroundTop = Color(0xFF0D0E12)` (Pitch dark obsidian)
+  - `backgroundBottom = Color(0xFF050507)` (Absolute black)
+  - `surface = Color(0xFF14151A)` (Charcoal card surface)
+  - `cardSurface = Color(0xFF181920)` (Polished onyx)
+  - `accent = Color(0xFFFFFFFF)` (Brilliant diamond white)
+  - `accentAlt = Color(0xFFCBD5E1)` (Metallic platinum silver)
+  - `cta = Color(0xFF2C303B)` (Titanium slate)
+  - `frostText = Color(0xFFFFFFFF)`, `frostAccent = Color(0xFFE2E8F0)`
+  - `textPrimary = Color(0xFFF8FAFC)`, `tint = Color.White`
+  - `numberPositive = Color(0xFF4ADE80)`, `numberNegative = Color(0xFFF87171)`, `numberZero = Color(0xFF94A3B8)`
+  - `chipUncleared = Color(0xFFE2E8F0)`, `chipCleared = Color(0xFF4ADE80)`
+- [x] Step 42.2: **Default Theme Configuration (`Theme.kt`)** — Set `AppThemeOption.BLACK_AND_WHITE` as the default theme in `LocalAppPalette`, `MarriageCalculatorTheme`, and `AppThemeOption.fromName(null)`.
+- [x] Step 42.3: **Splash Screen Harmonization (`SplashScreen.kt`)** — Upgraded the splash screen radial gradient from festive reds to obsidian charcoal and pitch black (`Color(0xFF22252E)`, `Color(0xFF0D0E12)`, `Color(0xFF050507)`), achieving seamless aesthetic alignment with `app_icon.jpg` and `marriage_logo_title.png`.
+- [x] Step 42.4: **Automated Unit Tests (`AppThemeTest.kt`)** — Added unit test coverage verifying `BLACK_AND_WHITE` default fallback, name lookup, dark theme classification, and palette non-null completeness. All 37/37 unit tests passing (`./gradlew testDebugUnitTest`).
+- [x] Step 42.5: **Visual Verification on Emulator** — Validated live on Android Pixel 9 Pro XL emulator across Dashboard (`screen_bw_dashboard_final2.png`), New Game (`screen_bw_playgame_final.png`), Friends & Social (`screen_bw_gameplay.png`), PlayGameScreen (`screen_bw_playgame_resumed.png`), Table Seating (`screen_bw_table_seating_open.png`), and compact Game Actions (`screen_bw_game_actions_open.png`).
+- **COMMIT**: "feat: add Black & White theme matching app icon and splash screen (Issue #53)"
+
 ---
 
 ## Key Design Decisions

@@ -13,8 +13,6 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import np.com.sanjeeb.marriagecalculator.ui.theme.DeepRedTika
-import np.com.sanjeeb.marriagecalculator.ui.theme.TiharNightBlue
 import kotlinx.coroutines.delay
 
 import androidx.compose.foundation.Image
@@ -54,9 +52,9 @@ fun SplashScreen(onSplashComplete: () -> Unit) {
             .background(
                 Brush.radialGradient(
                     colors = listOf(
-                        DeepRedTika.copy(alpha = 0.3f),
-                        TiharNightBlue,
-                        Color(0xFF0D0D1A)
+                        Color(0xFF22252E).copy(alpha = 0.45f),
+                        Color(0xFF0D0E12),
+                        Color(0xFF050507)
                     ),
                     radius = 1200f
                 )
