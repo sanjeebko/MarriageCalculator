@@ -63,6 +63,11 @@ The primary live table view during match play:
   - 1-Tap "Settle Up" cash settlement modal pairing debtors to creditors with copyable breakdown.
 - **WhatsApp & Social Share Dialog**:
   - Exports a high-resolution 1080px branded match card bitmap.
+- **Continue / Reopen Previous Round**:
+  - Host can undo advancing to a new round if the new round has not yet started (0 games played).
+  - Unstarted round header ("Round N+1 · not started") displays "Continue Round N" action with an undo icon.
+  - Closed round header ("Round N") displays "Continue Round" action as long as Round N+1 has not yet started.
+  - Reopening restores Round N to in-progress status, re-displays its blank pending game row, seamlessly preserves seating and dealer rotation, and removes the unstarted Round N+1 preview card.
 
 ### 2.5 Round Input Screen (`RoundInputScreen.kt`)
 Optimized for rapid, low-friction score input between hands:

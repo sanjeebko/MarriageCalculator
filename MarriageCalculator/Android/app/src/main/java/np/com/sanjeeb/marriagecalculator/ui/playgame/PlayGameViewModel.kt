@@ -444,6 +444,29 @@ class PlayGameViewModel @Inject constructor(
         }
     }
 
+    /** Reopens a previously closed round if the new round has not yet started. */
+    fun reopenRound(gameSetIdStr: String, roundId: String? = null) {
+        viewModelScope.launch {
+            val isLocalId = gameSetIdStr.toIntOrNull() != null
+            val isOnline = sessionManager.isOnlineMode() && !isLocalId
+
+            if (isOnline) {
+                val targetRoundId = roundId
+                    ?: _uiState.value.roundGroups.filter { it.isCompleted }.maxByOrNull { it.roundSequence }?.roundId
+                if (targetRoundId != null) {
+                    when (val result = gameSetRepository.reopenRound(gameSetIdStr, targetRoundId)) {
+                        is ApiResult.Error -> _uiState.value = _uiState.value.copy(error = result.message)
+                        else -> {}
+                    }
+                }
+            } else {
+                val gameSetId = gameSetIdStr.toIntOrNull() ?: return@launch
+                offlineGameRepository.reopenCurrentRound(gameSetId)
+            }
+            loadGame(gameSetIdStr)
+        }
+    }
+
     /** Toggles or sets paymentCleared on a completed round. */
     fun toggleRoundPaymentCleared(gameSetIdStr: String, round: RoundGroup, isCleared: Boolean) {
         viewModelScope.launch {

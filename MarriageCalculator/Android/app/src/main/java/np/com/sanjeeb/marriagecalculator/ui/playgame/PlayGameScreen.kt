@@ -397,6 +397,7 @@ fun PlayGameScreen(
                     onGameClick = { gameForDetails = it },
                     onPlayerHeaderClick = { player, position, size -> tooltipAnchor = PlayerTooltipAnchor(player, position, size) },
                     onCloseRound = { viewModel.closeCurrentRound(gameSetId) },
+                    onReopenRound = { round -> viewModel.reopenRound(gameSetId, round.roundId.takeIf { it.isNotBlank() }) },
                     onTogglePaymentCleared = { round, cleared -> viewModel.toggleRoundPaymentCleared(gameSetId, round, cleared) },
                     onDeleteLastGame = { showDeleteLastGameConfirm = true },
                     onDeleteRound = { round -> roundPendingDeletion = round },
@@ -931,6 +932,7 @@ private fun CompactRoundsTable(
     onGameClick: (GameEntry) -> Unit,
     onPlayerHeaderClick: (Player, Offset, IntSize) -> Unit,
     onCloseRound: () -> Unit,
+    onReopenRound: (RoundGroup) -> Unit,
     onTogglePaymentCleared: (RoundGroup, Boolean) -> Unit,
     onDeleteLastGame: () -> Unit,
     onDeleteRound: (RoundGroup) -> Unit,
@@ -993,6 +995,9 @@ private fun CompactRoundsTable(
             }
         }
 
+        val unstartedPreview = !hasOpenRound && displayGroups.firstOrNull()?.games?.isEmpty() == true
+        val previousCompletedRound = if (unstartedPreview && displayGroups.size > 1) displayGroups[1] else null
+
         displayGroups.forEachIndexed { index, group ->
             // Cumulative carryover money from all prior rounds with games where isPaymentCleared is false
             val priorUnclearedRounds = roundGroups.filter {
@@ -1005,6 +1010,9 @@ private fun CompactRoundsTable(
             }
 
             val isExpanded = expandedSequences.contains(group.roundSequence)
+            val canReopenThisRound = group.isCompleted && previousCompletedRound?.roundSequence == group.roundSequence && group.games.isNotEmpty()
+            val canReopenPrevious = !group.isCompleted && group.games.isEmpty() && previousCompletedRound != null && previousCompletedRound.games.isNotEmpty()
+
             RoundBlock(
                 group = group,
                 players = groupPlayers,
@@ -1016,6 +1024,9 @@ private fun CompactRoundsTable(
                 isHost = isHost,
                 isLatestRound = index == 0,
                 isExpanded = isExpanded,
+                canReopen = canReopenThisRound,
+                reopenTargetRound = if (canReopenPrevious) previousCompletedRound else null,
+                onReopenRound = onReopenRound,
                 onToggleExpand = {
                     expandedSequences = if (isExpanded) {
                         expandedSequences - group.roundSequence
@@ -1051,6 +1062,9 @@ private fun RoundBlock(
     isHost: Boolean,
     isLatestRound: Boolean,
     isExpanded: Boolean,
+    canReopen: Boolean = false,
+    reopenTargetRound: RoundGroup? = null,
+    onReopenRound: (RoundGroup) -> Unit = {},
     onToggleExpand: () -> Unit,
     onGameClick: (GameEntry) -> Unit,
     onPlayerHeaderClick: (Player, Offset, IntSize) -> Unit,
@@ -1146,6 +1160,72 @@ private fun RoundBlock(
                                 fontSize = 11.sp,
                                 fontWeight = FontWeight.Bold
                             )
+                        }
+                        Spacer(modifier = Modifier.width(6.dp))
+                    }
+                    if (isHost && group.isCompleted && canReopen) {
+                        Box(
+                            modifier = Modifier
+                                .heightIn(min = 30.dp)
+                                .clip(RoundedCornerShape(6.dp))
+                                .background(AppTheme.palette.accent.copy(alpha = 0.15f))
+                                .border(
+                                    width = 1.dp,
+                                    color = AppTheme.palette.accent.copy(alpha = 0.8f),
+                                    shape = RoundedCornerShape(6.dp)
+                                )
+                                .clickable { onReopenRound(group) }
+                                .padding(horizontal = 8.dp, vertical = 4.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Icon(
+                                    imageVector = Icons.AutoMirrored.Filled.Undo,
+                                    contentDescription = "Continue Round",
+                                    tint = AppTheme.palette.accent,
+                                    modifier = Modifier.size(13.dp)
+                                )
+                                Spacer(modifier = Modifier.width(4.dp))
+                                Text(
+                                    text = "Continue Round",
+                                    color = AppTheme.palette.accent,
+                                    fontSize = 11.sp,
+                                    fontWeight = FontWeight.Bold
+                                )
+                            }
+                        }
+                        Spacer(modifier = Modifier.width(6.dp))
+                    }
+                    if (isHost && !group.isCompleted && group.games.isEmpty() && reopenTargetRound != null) {
+                        Box(
+                            modifier = Modifier
+                                .heightIn(min = 30.dp)
+                                .clip(RoundedCornerShape(6.dp))
+                                .background(AppTheme.palette.accent.copy(alpha = 0.15f))
+                                .border(
+                                    width = 1.dp,
+                                    color = AppTheme.palette.accent.copy(alpha = 0.8f),
+                                    shape = RoundedCornerShape(6.dp)
+                                )
+                                .clickable { onReopenRound(reopenTargetRound) }
+                                .padding(horizontal = 8.dp, vertical = 4.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Icon(
+                                    imageVector = Icons.AutoMirrored.Filled.Undo,
+                                    contentDescription = "Continue Round ${reopenTargetRound.roundSequence}",
+                                    tint = AppTheme.palette.accent,
+                                    modifier = Modifier.size(13.dp)
+                                )
+                                Spacer(modifier = Modifier.width(4.dp))
+                                Text(
+                                    text = "Continue Round ${reopenTargetRound.roundSequence}",
+                                    color = AppTheme.palette.accent,
+                                    fontSize = 11.sp,
+                                    fontWeight = FontWeight.Bold
+                                )
+                            }
                         }
                         Spacer(modifier = Modifier.width(6.dp))
                     }

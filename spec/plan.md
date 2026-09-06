@@ -423,6 +423,19 @@ Replaced the simplistic circular drawing with a photorealistic casino poker tabl
 
 ---
 
+## Phase 36: Continue / Reopen Previous Round When New Round Is Not Started (Issue #42, In Progress)
+Enables hosts to undo advancing to a new round and continue playing the previous round if no games have been recorded in the new round yet.
+- [ ] Step 36.1: **DAO & Offline Repository Support** — Add `RoundDao.reopenRoundAt(id)` clearing `closesRound = 0` on the round's closing game. Add `OfflineGameRepository.reopenCurrentRound(gameSetId)` to reset `closesRound` on the latest game.
+- [ ] Step 36.2: **C# API Reopen Endpoint** — Add `POST /api/MarriageGameSets/{id}/rounds/{roundId}/reopen` in `MarriageGameSetsController` and `MarriageGameSetService.ReopenRoundAsync(gameSetId, roundId, hostUserId)` that verifies host permissions and that no subsequent round with games exists, then updates `round.Completed = false`. Add controller unit tests.
+- [ ] Step 36.3: **Android API & Repository Integration** — Add `reopenRound` in `MarriageGameSetApiService` and `GameSetRepository`.
+- [ ] Step 36.4: **PlayGameViewModel Integration** — Add `reopenRound(gameSetIdStr, roundId)` handling both online and offline game modes, reloading game state upon completion.
+- [ ] Step 36.5: **PlayGameScreen UI & Controls** — In `CompactRoundsTable` and `RoundBlock`:
+  - Show "Continue Round N" action with undo icon on unstarted round header ("Round N+1 · not started") if the previous round was closed early.
+  - Show "Continue Round" action on the completed round header if it is the latest round with games and the subsequent round has not yet started.
+- [ ] Step 36.6: **Verification & Testing** — Automated unit tests in Android (`OfflineGameRepositoryTest`) and .NET API (`ControllersTests`). Emulator walkthrough verifying reopening round, restoring pending game row, and adding subsequent games.
+
+---
+
 ## Phase 37: Authentic Nepali Carved Wood Table & Outer Player Seating Alignment (Issue #44, Complete)
 Replaced the casino-themed green felt table with an authentic traditional Nepali hand-carved wooden table, repositioned player avatars and plaques cleanly outside the carved rim, centered seat number badges, and eliminated excess whitespace.
 - [x] Step 37.1: **Authentic Nepali Carved Wood Table Asset** — Created `nepali_wood_table.png` featuring dark walnut/rosewood timber, Newari relief woodcarvings (intricate florals and peacock motifs), and an inlaid brass embossed mandala centerpiece.

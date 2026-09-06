@@ -382,6 +382,58 @@ public class MarriageGameSetService : IMarriageGameSetService
     }
 
     /// <summary>
+    /// Reopens a completed round if the subsequent round has not yet started (no games played).
+    /// </summary>
+    public async Task<MarriageGameRoundDto?> ReopenRoundAsync(string gameSetId, string roundId, string hostUserId)
+    {
+        var gameSet = await _gameSetRepository.GetByIdRawAsync(gameSetId);
+        if (gameSet == null)
+        {
+            throw new KeyNotFoundException($"Marriage game set with ID {gameSetId} not found");
+        }
+
+        if (gameSet.HostUserId != hostUserId)
+        {
+            throw new UnauthorizedAccessException("Only the game host can reopen a round.");
+        }
+
+        var round = await _context.MarriageGameRounds
+            .Find(r => r.Id == roundId && r.MarriageGameSetId == gameSetId)
+            .FirstOrDefaultAsync();
+        if (round == null) return null;
+
+        // Check if there are any games in subsequent rounds
+        var newerRounds = await _context.MarriageGameRounds
+            .Find(r => r.MarriageGameSetId == gameSetId && r.Sequence > round.Sequence)
+            .ToListAsync();
+        var newerRoundIds = newerRounds.Select(r => r.Id).ToList();
+
+        if (newerRoundIds.Count > 0)
+        {
+            var hasGamesInNewerRounds = await _context.MarriageGames
+                .Find(g => newerRoundIds.Contains(g.MarriageGameRoundId))
+                .AnyAsync();
+            if (hasGamesInNewerRounds)
+            {
+                throw new InvalidOperationException("Cannot reopen a round when subsequent rounds already contain games.");
+            }
+
+            // Clean up any empty newer rounds
+            await _context.MarriageGameRounds.DeleteManyAsync(r => newerRoundIds.Contains(r.Id));
+        }
+
+        if (round.Completed)
+        {
+            await _context.MarriageGameRounds.UpdateOneAsync(
+                r => r.Id == roundId,
+                Builders<MarriageGameRound>.Update.Set(r => r.Completed, false));
+            round.Completed = false;
+        }
+
+        return await BuildRoundDtoAsync(round);
+    }
+
+    /// <summary>
     /// Toggles or updates the payment cleared status of a round.
     /// </summary>
     public async Task<MarriageGameRoundDto?> TogglePaymentClearedAsync(string gameSetId, string roundId, string hostUserId, bool paymentCleared)

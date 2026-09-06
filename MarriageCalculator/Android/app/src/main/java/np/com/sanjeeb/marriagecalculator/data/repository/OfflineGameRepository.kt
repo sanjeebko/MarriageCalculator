@@ -276,6 +276,12 @@ class OfflineGameRepository @Inject constructor(
         roundDao.closeRoundAt(latest.id)
     }
 
+    /** Reopens the most recently closed logical round if the new round has not yet started. */
+    suspend fun reopenCurrentRound(gameSetId: Int) {
+        val latest = roundDao.getLatestGame(gameSetId) ?: return
+        roundDao.reopenRoundAt(latest.id)
+    }
+
     /** Updates paymentCleared flag on all games belonging to a logical round. */
     suspend fun toggleRoundPaymentCleared(gameIds: List<Int>, isCleared: Boolean) {
         if (gameIds.isEmpty()) return
