@@ -104,4 +104,10 @@ object NetworkModule {
     fun provideAuthApiService(retrofit: Retrofit): AuthApiService {
         return retrofit.create(AuthApiService::class.java)
     }
+
+    @Provides
+    @Singleton
+    fun provideNetworkMonitor(networkMonitor: np.com.sanjeeb.marriagecalculator.data.network.ConnectivityNetworkMonitor): np.com.sanjeeb.marriagecalculator.data.network.NetworkMonitor {
+        return networkMonitor
+    }
 }

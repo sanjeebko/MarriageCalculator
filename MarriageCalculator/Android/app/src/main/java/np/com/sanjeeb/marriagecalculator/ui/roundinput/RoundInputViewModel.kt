@@ -92,13 +92,15 @@ class RoundInputViewModel @Inject constructor(
             // round: its first game is dealt by the LAST player in the seat order (the lowest-card
             // picker at reshuffle), then the deal wraps to the top of the list. Must match
             // PlayGameViewModel's nextDealerFor.
-            val seatOrder: List<Player>
-            val gamesInOpenRound: Int
-            val settings: GameSettings
+            var seatOrder: List<Player> = emptyList()
+            var gamesInOpenRound: Int = 0
+            var settings: GameSettings = GameSettings.default()
+            var loadedOnline = false
 
             if (isOnline) {
                 when (val result = gameSetRepository.getGameSet(gameSetIdStr)) {
                     is ApiResult.Success -> {
+                        loadedOnline = true
                         val gameSet = result.data
                         val players = gameSet.gameSetPlayers?.values
                             ?.sortedBy { it.position }
@@ -112,14 +114,19 @@ class RoundInputViewModel @Inject constructor(
                             ?.takeIf { it.size == players.size }
                             ?: players
                     }
-                    is ApiResult.Error -> {
-                        _uiState.value = _uiState.value.copy(error = result.message)
+                    else -> {
+                        // Will fallback to local mirror below
+                    }
+                }
+            }
+
+            if (!loadedOnline) {
+                val gameSetId = gameSetIdStr.toIntOrNull()
+                    ?: offlineGameRepository.getGameSetByRemoteId(gameSetIdStr)?.id
+                    ?: run {
+                        _uiState.value = _uiState.value.copy(error = "Unable to load game data offline")
                         return@launch
                     }
-                    is ApiResult.Loading -> return@launch
-                }
-            } else {
-                val gameSetId = gameSetIdStr.toIntOrNull() ?: return@launch
                 val players = offlineGameRepository.getGameSetPlayers(gameSetId)
                 val gameSetEntity = offlineGameRepository.getGameSet(gameSetId) ?: return@launch
                 settings = offlineGameRepository.getGameSettings(gameSetEntity.settingsId) ?: GameSettings.default()
@@ -455,10 +462,16 @@ class RoundInputViewModel @Inject constructor(
                 }
                 when (result) {
                     is ApiResult.Success -> {
+                        saveLocalMirror(gameSetIdStr, state, winnerId, synced = true, remoteId = result.data.id)
                         _uiState.value = state.copy(submitted = true, error = null)
                     }
                     is ApiResult.Error -> {
-                        _uiState.value = state.copy(error = "Failed to save round: ${result.message}")
+                        val savedLocally = saveLocalMirror(gameSetIdStr, state, winnerId, synced = false, remoteId = null)
+                        if (savedLocally) {
+                            _uiState.value = state.copy(submitted = true, error = null)
+                        } else {
+                            _uiState.value = state.copy(error = "Failed to save round: ${result.message}")
+                        }
                     }
                     is ApiResult.Loading -> {}
                 }
@@ -506,6 +519,54 @@ class RoundInputViewModel @Inject constructor(
             } catch (e: Exception) {
                 _uiState.value = state.copy(error = "Failed to save round: ${e.message}")
             }
+        }
+    }
+
+    private suspend fun saveLocalMirror(
+        gameSetRemoteId: String,
+        state: RoundInputUiState,
+        winnerId: String,
+        synced: Boolean,
+        remoteId: String?
+    ): Boolean {
+        return try {
+            val localGameSet = offlineGameRepository.getGameSetByRemoteId(gameSetRemoteId) ?: return false
+            val scores = state.playerStates.mapNotNull { ps ->
+                val localPlayerId = ps.player.id.toIntOrNull()
+                    ?: offlineGameRepository.getPlayerEntityByName(ps.player.name)?.id
+                    ?: return@mapNotNull null
+                val isPlayerWinner = ps.player.id == winnerId
+                val dubleeBonus =
+                    if (isPlayerWinner && ps.duply && state.settings.dublee) DUBLEE_WINNER_MAAL_BONUS else 0
+                np.com.sanjeeb.marriagecalculator.data.repository.RoundScoreData(
+                    playerId = localPlayerId,
+                    score = ps.previewScore,
+                    maal = (if (ps.seen) ps.seenPoints else 0) + dubleeBonus,
+                    isSeen = ps.seen || isPlayerWinner,
+                    isWinner = isPlayerWinner,
+                    isDublee = ps.duply
+                )
+            }
+            if (scores.isEmpty()) return false
+            val totalMaal = scores.filter { it.isSeen }.sumOf { it.maal }
+            val localWinnerId = scores.find { it.isWinner }?.playerId ?: scores.first().playerId
+            val dealerState = state.playerStates.find { it.player.id == state.dealerId }
+            val localDealerId: Int = state.dealerId?.toIntOrNull()
+                ?: dealerState?.player?.name?.let { offlineGameRepository.getPlayerEntityByName(it)?.id }
+                ?: 0
+
+            offlineGameRepository.saveRound(
+                gameSetId = localGameSet.id,
+                winnerId = localWinnerId,
+                dealerId = localDealerId,
+                totalMaal = totalMaal,
+                playerScores = scores,
+                synced = synced,
+                remoteId = remoteId
+            )
+            true
+        } catch (e: Exception) {
+            false
         }
     }
 

@@ -73,3 +73,20 @@ Optimized for rapid, low-friction score input between hands:
   - Automatically marks player as SEEN.
 - **Maal Calculator Dialog**:
   - Stepper modal supporting traditional combinations (Tiplu, Poplu, Jhiplu, Alter, Tunnela, Marriage).
+
+---
+
+## 3. Network & Cloud Sync Indicator (`SyncStatusIndicator.kt`)
+
+An animated cloud status indicator is mounted on top action bars across the app (`DashboardScreen`, `PlayGameScreen`, `RoundInputScreen`):
+- **Offline Mode**:
+  - Displays a slate gray cloud-off icon (`#9E9E9E` / `textSecondary`) when Wi-Fi or cellular internet is disconnected.
+  - Tapping opens a dialog explaining that rounds and games are safely saved locally to the device's Room database and will auto-sync once back online.
+- **Pending Sync**:
+  - Displays an amber cloud-upload icon when internet is active but local unsynced records remain.
+  - Automatically enqueues and pushes pending records to the remote database in the background.
+- **Syncing Active**:
+  - Displays a spinning primary accent cloud-sync icon while network payload transfer is in flight.
+- **Synced / Up-to-Date**:
+  - Displays a bright jade green cloud-check icon (`#00E676` / `numberPositive`).
+  - Dialog confirms all matches and score entries are securely backed up to the online database, with an on-demand "Sync Now" button.

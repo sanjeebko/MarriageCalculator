@@ -8,6 +8,7 @@ import np.com.sanjeeb.marriagecalculator.ui.dashboard.EnrichedActiveGame
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.combine
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -172,6 +173,30 @@ class OfflineGameRepository @Inject constructor(
         gameSetDao.settle(gameSetId)
     }
 
+    val unsyncedCountFlow: Flow<Int> = combine(
+        roundDao.getUnsyncedCountFlow(),
+        gameSetDao.getUnsyncedCountFlow()
+    ) { roundsCount, setsCount -> roundsCount + setsCount }
+
+    suspend fun getGameSetByRemoteId(remoteId: String): GameSetEntity? {
+        return gameSetDao.getByRemoteId(remoteId)
+    }
+
+    suspend fun getUnsyncedGameSets(): List<GameSetEntity> = gameSetDao.getUnsynced()
+
+    suspend fun markGameSetSynced(localId: Int, remoteId: String) {
+        gameSetDao.markSynced(localId, remoteId)
+    }
+
+    suspend fun getUnsyncedRounds(): List<RoundEntity> = roundDao.getUnsynced()
+
+    suspend fun getUnsyncedRoundsForGameSet(gameSetId: Int): List<RoundEntity> =
+        roundDao.getUnsyncedForGameSet(gameSetId)
+
+    suspend fun markRoundSynced(localId: Int, remoteId: String) {
+        roundDao.markSynced(localId, remoteId)
+    }
+
     // ── Rounds ──
 
     suspend fun saveRound(
@@ -179,7 +204,9 @@ class OfflineGameRepository @Inject constructor(
         winnerId: Int,
         dealerId: Int,
         totalMaal: Int,
-        playerScores: List<RoundScoreData>
+        playerScores: List<RoundScoreData>,
+        synced: Boolean = false,
+        remoteId: String? = null
     ): Int {
         val roundNumber = roundDao.getRoundCount(gameSetId) + 1
         val seatOrder = gameSetPlayerDao.getPlayersForGameSet(gameSetId)
@@ -190,7 +217,9 @@ class OfflineGameRepository @Inject constructor(
             winnerId = winnerId,
             dealerId = dealerId,
             totalMaal = totalMaal,
-            seatOrder = seatOrder
+            seatOrder = seatOrder,
+            synced = synced,
+            remoteId = remoteId
         )
         val roundId = roundDao.insert(roundEntity).toInt()
 
