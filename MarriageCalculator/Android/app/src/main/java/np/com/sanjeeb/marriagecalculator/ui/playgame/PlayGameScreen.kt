@@ -67,6 +67,7 @@ import np.com.sanjeeb.marriagecalculator.data.model.Player
 import np.com.sanjeeb.marriagecalculator.data.model.User
 import np.com.sanjeeb.marriagecalculator.ui.components.AppBackground
 import np.com.sanjeeb.marriagecalculator.ui.components.DealerBadge
+import np.com.sanjeeb.marriagecalculator.ui.components.GameActionPanel
 import np.com.sanjeeb.marriagecalculator.ui.components.SettleUpDialog
 import np.com.sanjeeb.marriagecalculator.ui.components.SyncStatusIndicator
 import np.com.sanjeeb.marriagecalculator.ui.components.ThemePickerDialog
@@ -104,6 +105,7 @@ fun PlayGameScreen(
     var tooltipAnchor by remember { mutableStateOf<PlayerTooltipAnchor?>(null) }
     var standingsExpanded by remember { mutableStateOf(false) }
     var seatingRingExpanded by remember { mutableStateOf(false) }
+    var actionPanelExpanded by remember { mutableStateOf(false) }
     var showShareDialog by remember { mutableStateOf(false) }
     var showSettleUpDialog by remember { mutableStateOf(false) }
     var showOverflowMenu by remember { mutableStateOf(false) }
@@ -169,64 +171,12 @@ fun PlayGameScreen(
                     }
                 },
                 actions = {
-                    // Transfer host is disabled for now - the feature isn't fully designed yet.
-                    if (uiState.isHost && uiState.isOnlineMode && !uiState.isSettled) {
-                        IconButton(onClick = {}, enabled = false) {
-                            Icon(Icons.Default.SwapHoriz, "Transfer Host (coming soon)", tint = AppTheme.palette.accent.copy(alpha = 0.3f))
-                        }
-                    }
-                    IconButton(onClick = { showSettleUpDialog = true }) {
-                        Icon(Icons.Default.Payments, "Settle Up", tint = AppTheme.palette.accent)
-                    }
-                    IconButton(onClick = { showShareDialog = true }) {
-                        Icon(Icons.Default.Share, "Share match summary", tint = AppTheme.palette.accent)
-                    }
-                    IconButton(onClick = { showThemeDialog = true }) {
-                        Icon(Icons.Default.Palette, "App Theme", tint = AppTheme.palette.accent)
-                    }
-                    IconButton(onClick = onViewScoreboard) {
-                        Icon(Icons.Default.Leaderboard, "Scoreboard", tint = AppTheme.palette.accent)
-                    }
-                    Box {
-                        IconButton(onClick = { showOverflowMenu = true }) {
-                            Icon(Icons.Default.MoreVert, "More options", tint = AppTheme.palette.accent)
-                        }
-                        DropdownMenu(expanded = showOverflowMenu, onDismissRequest = { showOverflowMenu = false }) {
-                            DropdownMenuItem(
-                                text = { Text("Settle Up Matrix", color = AppTheme.palette.textPrimary) },
-                                leadingIcon = { Icon(Icons.Default.Payments, null, tint = AppTheme.palette.accent) },
-                                onClick = {
-                                    showOverflowMenu = false
-                                    showSettleUpDialog = true
-                                }
-                            )
-                            DropdownMenuItem(
-                                text = { Text("Share Results", color = AppTheme.palette.textPrimary) },
-                                leadingIcon = { Icon(Icons.Default.Share, null, tint = AppTheme.palette.accent) },
-                                onClick = {
-                                    showOverflowMenu = false
-                                    showShareDialog = true
-                                }
-                            )
-                            DropdownMenuItem(
-                                text = { Text("App Theme", color = AppTheme.palette.textPrimary) },
-                                leadingIcon = { Icon(Icons.Default.Palette, null, tint = AppTheme.palette.accent) },
-                                onClick = {
-                                    showOverflowMenu = false
-                                    showThemeDialog = true
-                                }
-                            )
-                            if (uiState.isHost) {
-                                DropdownMenuItem(
-                                    text = { Text("Delete Game", color = Color(0xFFFF5252)) },
-                                    leadingIcon = { Icon(Icons.Default.DeleteForever, null, tint = Color(0xFFFF5252)) },
-                                    onClick = {
-                                        showOverflowMenu = false
-                                        showDeleteGameSetConfirm = true
-                                    }
-                                )
-                            }
-                        }
+                    IconButton(onClick = { actionPanelExpanded = !actionPanelExpanded }) {
+                        Icon(
+                            imageVector = if (actionPanelExpanded) Icons.Default.Close else Icons.Default.Tune,
+                            contentDescription = if (actionPanelExpanded) "Close game actions" else "Show game actions",
+                            tint = AppTheme.palette.accent
+                        )
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent)
@@ -304,6 +254,22 @@ fun PlayGameScreen(
                         }
                     }
                 }
+
+                // Collapsible Game Action Panel (Issue #51)
+                GameActionPanel(
+                    expanded = actionPanelExpanded,
+                    onToggleExpanded = { actionPanelExpanded = !actionPanelExpanded },
+                    onSettleUpClick = { showSettleUpDialog = true },
+                    onScoreboardClick = onViewScoreboard,
+                    onShareClick = { showShareDialog = true },
+                    onThemeClick = { showThemeDialog = true },
+                    isHost = uiState.isHost,
+                    isOnlineMode = uiState.isOnlineMode,
+                    isSettled = uiState.isSettled,
+                    onTransferHostClick = { /* Coming soon */ },
+                    onDeleteGameClick = { showDeleteGameSetConfirm = true },
+                    modifier = Modifier.padding(bottom = 12.dp)
+                )
 
                 // Seating Ring Card (Issue #30)
                 val activeRound = uiState.roundGroups.firstOrNull { !it.isCompleted }

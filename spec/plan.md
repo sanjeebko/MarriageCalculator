@@ -483,6 +483,20 @@ Implemented real-time network connectivity monitoring, reactive Room database un
 
 ---
 
+## Phase 41: Collapsible Action Panel on PlayGameScreen (Issue #51, Complete)
+Replaced the crowded top app bar icon buttons on `PlayGameScreen` with a clean, minimized-by-default collapsible action panel placed directly above the `TABLE SEATING & DEALER` card, restoring full game title visibility and organizing secondary actions into accessible, theme-aware tiles.
+- [x] Step 41.1: **Top App Bar Decluttering & Title Restoral** — Removed overcrowded action icons (Settle Up, Scoreboard, Share, Theme, Transfer Host, Delete Game) from `PlayGameScreen.kt` TopAppBar, retaining only the Back navigation button, Game Title, `SyncStatusIndicator`, and a single Action Panel toggle button (`Tune` / `Close`). Game titles (e.g. `2026-09-05`) now render in full without being truncated into ellipses (`202...`).
+- [x] Step 41.2: **Collapsible Action Panel Component (`GameActionPanel.kt`)** — Created reusable, theme-aware collapsible card:
+  - **Minimized State**: Ultra-compact 38dp height displaying icon, `GAME ACTIONS` header, preview hint (`Settle Up · Scoreboard · Share · Theme`), and expand chevron (`ExpandMore`).
+  - **Expanded State**: Smooth vertical expansion with fade transition revealing rich action tiles: `Settle` (wallet), `Scores` (leaderboard), `Share` (social card export), `Theme` (palette picker), `Host` (transfer ownership), and `Delete` (danger set delete with confirmation dialog).
+  - **Auto-Collapse UX**: Selecting any action immediately triggers the corresponding modal/dialog and automatically collapses the panel back into minimized state.
+- [x] Step 41.3: **Responsive Tile Sizing & Spacing** — Engineered 42dp icon containers with 20dp glyphs and `Arrangement.SpaceEvenly` ensuring all 6 action tiles fit cleanly across standard mobile viewports (360dp–412dp) without clipping.
+- [x] Step 41.4: **Dynamic Theme Adaptation** — Styled surfaces, borders, icon containers, and typography using active theme palette tokens (`ThemePalette.surface`, `accent`, `accentAlt`, `textPrimary`, `textSecondary`), automatically restyling in sync across all 5 app themes.
+- [x] Step 41.5: **Unit Tests & Emulator Verification** — Verified all 36 unit tests pass (`./gradlew testDebugUnitTest`). Inspected both minimized and expanded states on Pixel 9 Pro XL emulator across dark, light, and Midnight Frost themes with screenshot verifications.
+- **COMMIT**: "feat: collapsible expandable action icon panel on PlayGameScreen (Issue #51)"
+
+---
+
 ## Key Design Decisions
 1. **Screen Space for 6 Players**: Use compact card grid (2×3 or circular) with collapsible details. Score input uses horizontal scroll or tabbed view.
 2. **Scoring Algorithm**: Central Collection technique per requirements - Winner collects all, then distributes Maal.
