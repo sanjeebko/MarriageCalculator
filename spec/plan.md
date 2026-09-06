@@ -483,6 +483,21 @@ Implemented real-time network connectivity monitoring, reactive Room database un
 
 ---
 
+## Phase 41: Top-Row Icon Controls for Game Actions & Table Seating (Issue #51, Complete)
+Replaced the crowded top app bar buttons and body rectangular collapsed cards with two dedicated top-row action icons positioned just left of the Settings icon. When an icon is tapped, it smoothly animates open its respective panel in the body, leaving zero vertical obstruction when inactive.
+- [x] Step 41.1: **Top App Bar Icon Navigation** — Replaced crowded buttons with 3 clean, dedicated top-row icons:
+  - **Table Seating Icon (`TableRestaurant`)**: Toggles the Table Seating & Dealer panel open/closed. Highlights with active background indicator when open.
+  - **Game Actions Icon (`Widgets`)**: Toggles the Game Action Panel open/closed. Highlights with active background indicator when open.
+  - **Match Settings Icon (`Settings`)**: Opens the Match Settings & Rules dialog.
+- [x] Step 41.2: **Zero-Height Inactive State (Whitespace Elimination)** — Removed the permanent collapsed rectangular bars from the content body. When inactive, both panels take 0dp space, allowing the rounds table and score details to sit immediately below the top app bar.
+- [x] Step 41.3: **Smooth Accordion Animations** — Clicking an icon animates open its respective card (`expandVertically` + `fadeIn` / `shrinkVertically` + `fadeOut`) and automatically closes the other panel. Each open card includes a dedicated close button (`✕`) for easy dismissal.
+- [x] Step 41.4: **Game Action Panel (`GameActionPanel.kt`)** — Displays header and compact action tiles: `Settle` (wallet), `Scores` (leaderboard), `Share` (social card export), `Theme` (palette picker), and `Delete` (danger set delete with confirmation dialog for host). Removed bulky circular icon backgrounds and tightened paddings to minimize vertical space consumption down to ~65dp. The disabled `Host (Soon)` placeholder has been hidden. Tapping any action executes the command and auto-collapses the panel.
+- [x] Step 41.5: **Match Settings & Rules Dialog** — Displays match name, game mode (Normal/Kidnap/Murder), currency, point rate, seen penalty, unseen penalty, dublee bonus, foul penalty, and a 1-tap "Change App Theme" button.
+- [x] Step 41.6: **Unit Tests & Emulator Verification** — All 36 unit tests pass (`./gradlew testDebugUnitTest`). Verified default closed state, table open state, actions open state, settings dialog, and auto-collapse on tile tap via emulator screenshots (`screen_icons_closed.png`, `screen_table_open.png`, `screen_actions_open.png`, `screen_settings_dialog.png`, `screen_theme_autocollapse.png`).
+- **COMMIT**: "feat: top-row icon controls for game actions and table seating (Issue #51)"
+
+---
+
 ## Key Design Decisions
 1. **Screen Space for 6 Players**: Use compact card grid (2×3 or circular) with collapsible details. Score input uses horizontal scroll or tabbed view.
 2. **Scoring Algorithm**: Central Collection technique per requirements - Winner collects all, then distributes Maal.
