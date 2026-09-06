@@ -68,6 +68,7 @@ import np.com.sanjeeb.marriagecalculator.data.model.User
 import np.com.sanjeeb.marriagecalculator.ui.components.AppBackground
 import np.com.sanjeeb.marriagecalculator.ui.components.DealerBadge
 import np.com.sanjeeb.marriagecalculator.ui.components.SettleUpDialog
+import np.com.sanjeeb.marriagecalculator.ui.components.SyncStatusIndicator
 import np.com.sanjeeb.marriagecalculator.ui.components.ThemePickerDialog
 import np.com.sanjeeb.marriagecalculator.ui.components.VisualSeatingRing
 import np.com.sanjeeb.marriagecalculator.ui.share.MatchShareData
@@ -147,13 +148,20 @@ fun PlayGameScreen(
         topBar = {
             TopAppBar(
                 title = {
-                    Text(
-                        text = uiState.gameName,
-                        color = AppTheme.palette.accent,
-                        fontFamily = FontFamily.Serif,
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 20.sp
-                    )
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text(
+                            text = uiState.gameName,
+                            color = AppTheme.palette.accent,
+                            fontFamily = FontFamily.Serif,
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 20.sp,
+                            maxLines = 1,
+                            overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+                            modifier = Modifier.weight(1f, fill = false)
+                        )
+                        Spacer(Modifier.width(6.dp))
+                        SyncStatusIndicator()
+                    }
                 },
                 navigationIcon = {
                     IconButton(onClick = onBack) {

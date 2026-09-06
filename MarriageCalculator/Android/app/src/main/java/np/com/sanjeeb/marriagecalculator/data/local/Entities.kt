@@ -166,6 +166,9 @@ interface GameSetDao {
     @Query("SELECT * FROM game_sets WHERE synced = 0")
     suspend fun getUnsynced(): List<GameSetEntity>
 
+    @Query("SELECT COUNT(*) FROM game_sets WHERE synced = 0")
+    fun getUnsyncedCountFlow(): Flow<Int>
+
     @Query("UPDATE game_sets SET synced = 1, remoteId = :remoteId WHERE id = :localId")
     suspend fun markSynced(localId: Int, remoteId: String)
 
@@ -213,6 +216,12 @@ interface RoundDao {
 
     @Query("SELECT * FROM rounds WHERE synced = 0")
     suspend fun getUnsynced(): List<RoundEntity>
+
+    @Query("SELECT COUNT(*) FROM rounds WHERE synced = 0")
+    fun getUnsyncedCountFlow(): Flow<Int>
+
+    @Query("SELECT * FROM rounds WHERE gameSetId = :gameSetId AND synced = 0 ORDER BY roundNumber")
+    suspend fun getUnsyncedForGameSet(gameSetId: Int): List<RoundEntity>
 
     @Query("UPDATE rounds SET synced = 1, remoteId = :remoteId WHERE id = :localId")
     suspend fun markSynced(localId: Int, remoteId: String)

@@ -55,6 +55,7 @@ import np.com.sanjeeb.marriagecalculator.data.model.Player
 import np.com.sanjeeb.marriagecalculator.data.model.UserCareerStats
 import np.com.sanjeeb.marriagecalculator.ui.components.AppBackground
 import np.com.sanjeeb.marriagecalculator.ui.components.GlassButton
+import np.com.sanjeeb.marriagecalculator.ui.components.SyncStatusIndicator
 import np.com.sanjeeb.marriagecalculator.ui.components.ThemePickerDialog
 import np.com.sanjeeb.marriagecalculator.ui.theme.*
 
@@ -293,6 +294,9 @@ fun DashboardScreen(
                         IconButton(onClick = { scope.launch { drawerState.open() } }) {
                             Icon(Icons.Default.Menu, contentDescription = "Menu", tint = AppTheme.palette.accent)
                         }
+                    },
+                    actions = {
+                        SyncStatusIndicator(modifier = Modifier.padding(end = 8.dp))
                     },
                     colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
                         containerColor = Color.Transparent,

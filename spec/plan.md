@@ -454,8 +454,19 @@ Adapted all Table Seating and Dealer Content visual elements in `VisualSeatingRi
 - [x] Step 39.5: **Unit Tests & Emulator Verification** — Verified all 36 unit tests pass (`./gradlew testDebugUnitTest`) and visually inspected across all 5 app themes via Android emulator screencaps (`screen_seating_theme1.png`, `screen_seating_frost.png`, `screen_seating_marigold.png`, `screen_seating_mist.png`, `screen_seating_tihar.png`).
 - **COMMIT**: "feat: theme-aware styling for table seating badges and dealer content (Issue #48)"
 
-## Backlog / Future Candidates (not started)
-- **True offline reconnect sync**: requirement §3.4 calls out cloud sync as "(Future)". Today, online mode writes straight to the API and offline/guest mode is local-only Room storage (Phase 6.4) — there's no queued-write/merge engine that reconciles a game played offline once connectivity returns. Would need an outbox table + WorkManager sync job + conflict resolution rule (e.g. last-write-wins vs. host-wins) if pursued.
+## Phase 40: Offline Sync Status Indicator & Database Sync Engine (Issue #49, Complete)
+Implemented real-time network connectivity monitoring, reactive Room database unsynced item tracking, an offline-first sync engine with auto-recovery, and an animated cloud sync status indicator with interactive detail/manual-sync dialogs.
+- [x] Step 40.1: **Network Connectivity Monitoring (`NetworkMonitor`)** — Implemented `ConnectivityNetworkMonitor` using Android `ConnectivityManager.NetworkCallback` with `NetworkCapabilities.NET_CAPABILITY_INTERNET` validation, emitting real-time online/offline boolean states as a Kotlin `Flow<Boolean>`. Added `ACCESS_NETWORK_STATE` to `AndroidManifest.xml` and registered in Hilt `NetworkModule`.
+- [x] Step 40.2: **Reactive Unsynced Tracking in Room** — Added reactive queries `getUnsyncedCountFlow()` and `getUnsyncedForGameSet()` to `RoundDao` and `GameSetDao` in `Entities.kt`. Exposed consolidated `unsyncedCountFlow` in `OfflineGameRepository.kt` calculating the sum of unsynced rounds and game sets.
+- [x] Step 40.3: **Sync Manager Engine (`SyncManager`)** — Developed singleton `SyncManager` evaluating `SyncStatus`:
+  - `Offline`: Network unavailable. Displays slate gray cloud off icon.
+  - `PendingSync`: Network connected but local pending unsynced records exist. Displays amber upload cloud icon. Automatically triggers background push to remote API when network returns.
+  - `Syncing`: Actively syncing rounds and game sets to remote database. Displays rotating primary accent icon.
+  - `Synced`: Online and all local records safely mirrored to remote database. Displays vibrant jade green cloud check icon.
+- [x] Step 40.4: **Offline-First Round Scoring & Local Fallback (`RoundInputViewModel`)** — Dual-writes round records: when online, pushes to remote API and persists locally with `synced = true`; if network fails or device is offline, saves locally with `synced = false`, allowing uninterrupted play without network blocking. Added fallback in `loadGameData` to load game sets from Room when API is unreachable.
+- [x] Step 40.5: **Animated Cloud Sync Status Indicator (`SyncStatusIndicator`)** — Built reusable Jetpack Compose badge in top app bars (`DashboardScreen`, `PlayGameScreen`, `RoundInputScreen`). Features smooth color and icon transitions, continuous rotation during active sync, and a full detail dialog explaining backup state with a 1-tap "Sync Now" trigger.
+- [x] Step 40.6: **Automated Unit Tests & Emulator Verification** — Added comprehensive unit tests in `SyncManagerTest.kt` covering status transitions and sync queuing; expanded `RoundInputViewModelTest.kt` to verify online dual-write and offline fallback mechanics. Verified on Android emulator across online, airplane/offline, and reconnection states with screenshot captures.
+- **COMMIT**: "feat: offline sync status indicator and database sync engine (Issue #49)"
 
 ---
 

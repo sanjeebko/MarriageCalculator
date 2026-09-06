@@ -37,6 +37,7 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import np.com.sanjeeb.marriagecalculator.data.model.Currency
 import np.com.sanjeeb.marriagecalculator.ui.components.AppBackground
+import np.com.sanjeeb.marriagecalculator.ui.components.SyncStatusIndicator
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import java.io.File
@@ -87,6 +88,9 @@ fun RoundInputScreen(
                     IconButton(onClick = onBack) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, null, tint = AppTheme.palette.accent)
                     }
+                },
+                actions = {
+                    SyncStatusIndicator(modifier = Modifier.padding(end = 8.dp))
                 },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent)
             )
