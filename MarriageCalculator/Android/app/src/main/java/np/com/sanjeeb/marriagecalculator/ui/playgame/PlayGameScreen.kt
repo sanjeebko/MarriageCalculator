@@ -320,7 +320,6 @@ fun PlayGameScreen(
                     isHost = uiState.isHost,
                     isOnlineMode = uiState.isOnlineMode,
                     isSettled = uiState.isSettled,
-                    onTransferHostClick = { /* Coming soon */ },
                     onDeleteGameClick = { showDeleteGameSetConfirm = true },
                     modifier = Modifier.padding(bottom = if (actionPanelExpanded) 12.dp else 0.dp)
                 )

@@ -44,9 +44,9 @@ fun GameActionPanel(
     onShareClick: () -> Unit,
     onThemeClick: () -> Unit,
     isHost: Boolean,
-    isOnlineMode: Boolean,
-    isSettled: Boolean,
-    onTransferHostClick: () -> Unit,
+    isOnlineMode: Boolean = false,
+    isSettled: Boolean = false,
+    onTransferHostClick: (() -> Unit)? = null,
     onDeleteGameClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -157,18 +157,6 @@ fun GameActionPanel(
                             onThemeClick()
                         }
                     )
-
-                    // Transfer Host (if host & online & not settled)
-                    if (isHost && isOnlineMode && !isSettled) {
-                        GameActionTile(
-                            icon = Icons.Default.SwapHoriz,
-                            label = "Host",
-                            tint = AppTheme.palette.accent.copy(alpha = 0.4f),
-                            enabled = false,
-                            subtitle = "Soon",
-                            onClick = onTransferHostClick
-                        )
-                    }
 
                     // Delete Game (if host)
                     if (isHost) {
