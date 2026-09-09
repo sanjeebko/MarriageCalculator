@@ -55,7 +55,8 @@ class RoundInputViewModel @Inject constructor(
     private val scoringApi: ScoringApiService,
     private val offlineGameRepository: OfflineGameRepository,
     private val gameSetRepository: GameSetRepository,
-    private val sessionManager: SessionManager
+    private val sessionManager: SessionManager,
+    private val activityLogRepository: np.com.sanjeeb.marriagecalculator.data.repository.ActivityLogRepository
 ) : ViewModel() {
 
     companion object {
@@ -463,11 +464,27 @@ class RoundInputViewModel @Inject constructor(
                 when (result) {
                     is ApiResult.Success -> {
                         saveLocalMirror(gameSetIdStr, state, winnerId, synced = true, remoteId = result.data.id)
+                        val winnerPlayer = state.playerStates.find { it.player.id == winnerId }
+                        activityLogRepository.logGamePlayed(
+                            gameSetId = gameSetIdStr,
+                            roundSequence = 1,
+                            gameSequence = state.gameNumber ?: 1,
+                            winnerName = winnerPlayer?.player?.name ?: "Winner",
+                            points = winnerPlayer?.previewScore ?: 0
+                        )
                         _uiState.value = state.copy(submitted = true, error = null)
                     }
                     is ApiResult.Error -> {
                         val savedLocally = saveLocalMirror(gameSetIdStr, state, winnerId, synced = false, remoteId = null)
                         if (savedLocally) {
+                            val winnerPlayer = state.playerStates.find { it.player.id == winnerId }
+                            activityLogRepository.logGamePlayed(
+                                gameSetId = gameSetIdStr,
+                                roundSequence = 1,
+                                gameSequence = state.gameNumber ?: 1,
+                                winnerName = winnerPlayer?.player?.name ?: "Winner",
+                                points = winnerPlayer?.previewScore ?: 0
+                            )
                             _uiState.value = state.copy(submitted = true, error = null)
                         } else {
                             _uiState.value = state.copy(error = "Failed to save round: ${result.message}")
@@ -514,6 +531,15 @@ class RoundInputViewModel @Inject constructor(
                         playerScores = scores
                     )
                 }
+
+                val winnerPlayer = state.playerStates.find { it.player.id == winnerId }
+                activityLogRepository.logGamePlayed(
+                    gameSetId = gameSetIdStr,
+                    roundSequence = 1,
+                    gameSequence = state.gameNumber ?: 1,
+                    winnerName = winnerPlayer?.player?.name ?: "Winner",
+                    points = winnerPlayer?.previewScore ?: 0
+                )
 
                 _uiState.value = state.copy(submitted = true, error = null)
             } catch (e: Exception) {

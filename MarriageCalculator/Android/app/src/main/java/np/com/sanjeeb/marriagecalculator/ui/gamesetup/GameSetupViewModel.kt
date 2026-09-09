@@ -37,7 +37,8 @@ class GameSetupViewModel @Inject constructor(
     private val gameSettingsRepository: GameSettingsRepository,
     private val gameSetRepository: GameSetRepository,
     private val offlineGameRepository: OfflineGameRepository,
-    private val sessionManager: SessionManager
+    private val sessionManager: SessionManager,
+    private val activityLogRepository: ActivityLogRepository
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(GameSetupUiState())
@@ -377,6 +378,9 @@ class GameSetupViewModel @Inject constructor(
                                     remoteId = remoteGameSet.id
                                 )
 
+                                val playerNames = getSelectedPlayers().map { it.name }
+                                activityLogRepository.logGameCreated(remoteGameSet.id, finalGameName, playerNames)
+
                                 _uiState.value = _uiState.value.copy(
                                     isLoading = false,
                                     createdGameSetId = remoteGameSet.id
@@ -408,6 +412,9 @@ class GameSetupViewModel @Inject constructor(
                 settings = state.settings,
                 playerIds = localPlayerIds
             )
+
+            val playerNames = getSelectedPlayers().map { it.name }
+            activityLogRepository.logGameCreated(localGameSetId.toString(), finalGameName, playerNames)
 
             _uiState.value = _uiState.value.copy(
                 isLoading = false,

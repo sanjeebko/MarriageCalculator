@@ -35,7 +35,8 @@ class PlayGameViewModelTest {
             playerRepository,
             friendRepository,
             sessionManager,
-            themePreference
+            themePreference,
+            mockk(relaxed = true)
         )
     }
 

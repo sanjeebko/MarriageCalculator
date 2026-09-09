@@ -30,10 +30,20 @@ class MainActivity : ComponentActivity() {
     @Inject
     lateinit var themePreference: ThemePreference
 
+    @Inject
+    lateinit var activityLogRepository: np.com.sanjeeb.marriagecalculator.data.repository.ActivityLogRepository
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         fetchAndRegisterFcmToken()
+
+        lifecycleScope.launch {
+            val user = sessionManager.getUserProfile()
+            val identifier = user?.displayName ?: user?.email ?: if (sessionManager.isGuestMode()) "Guest" else "User"
+            activityLogRepository.logAppOpen(identifier)
+            activityLogRepository.backfillFromHistory()
+        }
 
         setContent {
             val theme by themePreference.theme.collectAsState()

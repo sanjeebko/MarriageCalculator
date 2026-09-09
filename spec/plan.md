@@ -518,6 +518,31 @@ Introduced a high-contrast obsidian and diamond white monochrome palette (`BLACK
 
 ---
 
+## Phase 43: Activity & History Logging Engine and Compact History Screen (Issues #55 & #56, Complete)
+Implemented an end-to-end audit logging engine and a dedicated, compact History & Activity Log screen. Tracks app launches, user logins, game creation, round/game progression, round payment settlements, and final game closures. Features smart virtual-like windowed pagination with prefetch buffering, same-day login aggregation ("on [Date] login ×N"), calendar date-jump via DatePickerDialog, edge-fading shader viewports, filter chips, and dynamic theme-aware background vector stats.
+- [x] Step 43.1: **Data Layer & Room DB Migration (DB v6)** — Added `ActivityType` enum and `ActivityLogEntity` with indices on `timestamp` and `activityType` in `Entities.kt`. Implemented `ActivityLogDao` supporting count queries, paginated range queries (`LIMIT :limit OFFSET :offset`), filtered queries, and date-range queries. Bumped Room database version to 6 in `MarriageDatabase.kt` and updated `DatabaseModule.kt`.
+- [x] Step 43.2: **Activity Log Repository & Historical Backfill (`ActivityLogRepository`)** — Created repository with logging methods (`logAppOpen`, `logLogin`, `logGameCreated`, `logGamePlayed`, `logPaymentCleared`, `logGameSettled`). Implemented `backfillFromHistory()` to synthesize historical activity records for pre-existing games, rounds, and payments from Room, preventing an empty log state for existing users.
+- [x] Step 43.3: **Lifecycle & ViewModel Event Hooks** — Integrated activity logging hooks across key app touchpoints:
+  - `MainActivity.kt`: Logs app open on launch and initiates historical backfill.
+  - `LoginViewModel.kt`: Logs successful user login events.
+  - `GameSetupViewModel.kt`: Logs new game set creation with player names and game mode.
+  - `RoundInputViewModel.kt`: Logs completed round/game submissions with round number, game number, and winner details.
+  - `PlayGameViewModel.kt`: Logs payment cleared / marked paid events per player.
+  - `ScoreboardViewModel.kt`: Logs final game settlement events.
+- [x] Step 43.4: **History ViewModel & Data Aggregation (`HistoryViewModel`)** — Created `HistoryViewModel` handling windowed pagination (batch size 25 + buffer 15), same-day login grouping into expandable summaries (`Login × N`), filter toggling (All, Games, Rounds, Payments, Logins), and calendar jump targeting.
+- [x] Step 43.5: **Theme-Aware Analytics Background (`HistoryBackground`)** — Built custom canvas rendering subtle ambient analytics graphics: smooth bezier waves, stylized ledger guidelines, and miniature bar charts using active theme palette tokens (`LocalAppPalette`), preserving high readability and contrast.
+- [x] Step 43.6: **Compact History Screen (`HistoryScreen`)** — Built compact, density-optimized history interface:
+  - Top app bar with back navigation and small calendar icon button launching a `DatePickerDialog`.
+  - Edge-fading viewport shaders (`BlendMode.DstIn` brush) providing seamless vertical fade transitions.
+  - Compact icon-first activity cards with relative/formatted timestamps, activity badges, and metadata chips.
+  - Interactive filter chips for rapid activity type isolation.
+- [x] Step 43.7: **Navigation Integration** — Registered `Screen.History` in `Screen.kt`, wired the dashboard drawer "History & Logs" menu item in `DashboardScreen.kt`, and configured destination routing in `MarriageNavGraph.kt`.
+- [x] Step 43.8: **Automated Unit Tests & Live Verification** — Added unit test coverage in `ActivityLogRepositoryTest.kt` and `HistoryViewModelTest.kt`. Updated existing ViewModel tests (`ScoreboardViewModelTest`, `GameSetupViewModelTest`, `PlayGameViewModelTest`, `RoundInputViewModelTest`). All 38/38 unit tests passing (`./gradlew testDebugUnitTest`). Verified live on Android emulator: opened dashboard drawer, navigated to "History & Logs", verified calendar picker, activity filter chips, login aggregation, and theme-aware canvas background.
+- **COMMIT**: "feat: activity logging engine and compact history screen (#55, #56)"
+
+---
+
+
 ## Key Design Decisions
 1. **Screen Space for 6 Players**: Use compact card grid (2×3 or circular) with collapsible details. Score input uses horizontal scroll or tabbed view.
 2. **Scoring Algorithm**: Central Collection technique per requirements - Winner collects all, then distributes Maal.

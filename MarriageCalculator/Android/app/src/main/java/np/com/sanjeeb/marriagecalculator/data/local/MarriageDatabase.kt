@@ -12,9 +12,10 @@ import androidx.room.RoomDatabase
         GameSetEntity::class,
         GameSetPlayerEntity::class,
         RoundEntity::class,
-        RoundScoreEntity::class
+        RoundScoreEntity::class,
+        ActivityLogEntity::class
     ],
-    version = 5,
+    version = 6,
     exportSchema = false
 )
 abstract class MarriageDatabase : RoomDatabase() {
@@ -24,6 +25,7 @@ abstract class MarriageDatabase : RoomDatabase() {
     abstract fun gameSetPlayerDao(): GameSetPlayerDao
     abstract fun roundDao(): RoundDao
     abstract fun roundScoreDao(): RoundScoreDao
+    abstract fun activityLogDao(): ActivityLogDao
 
     companion object {
         @Volatile

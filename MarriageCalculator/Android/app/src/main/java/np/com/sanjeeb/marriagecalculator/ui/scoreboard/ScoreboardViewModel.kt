@@ -57,7 +57,8 @@ data class ScoreboardUiState(
 class ScoreboardViewModel @Inject constructor(
     private val offlineGameRepository: OfflineGameRepository,
     private val gameSetRepository: GameSetRepository,
-    private val sessionManager: SessionManager
+    private val sessionManager: SessionManager,
+    private val activityLogRepository: np.com.sanjeeb.marriagecalculator.data.repository.ActivityLogRepository
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(ScoreboardUiState())
@@ -227,6 +228,7 @@ class ScoreboardViewModel @Inject constructor(
         val gameSetId = gameSetIdStr.toIntOrNull() ?: return
         viewModelScope.launch {
             offlineGameRepository.settleGame(gameSetId)
+            activityLogRepository.logGameSettled(gameSetIdStr, "Game #$gameSetId")
             _uiState.value = _uiState.value.copy(isSettled = true)
         }
     }

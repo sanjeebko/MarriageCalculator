@@ -54,10 +54,12 @@ class ScoreboardViewModelTest {
         isSettled = false
     )
 
+    private val activityLogRepository: np.com.sanjeeb.marriagecalculator.data.repository.ActivityLogRepository = mockk(relaxed = true)
+
     @Before
     fun setup() {
         Dispatchers.setMain(testDispatcher)
-        viewModel = ScoreboardViewModel(repository, gameSetRepository, sessionManager)
+        viewModel = ScoreboardViewModel(repository, gameSetRepository, sessionManager, activityLogRepository)
     }
 
     @After
