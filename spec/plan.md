@@ -562,6 +562,53 @@ Refined button and icon aesthetics and contrast for Midnight Frost and dark them
 
 ---
 
+## Phase 45: Release Build AAPT2 Resource Fix (Issue #64, Complete)
+Resolved AAPT2 release crunching errors caused by JPEG drawables with `.png` file extensions.
+- [x] Step 45.1: **AAPT2 Drawable Header Audit** — Detected that `avatar_1.png`, `avatar_2.png`, `avatar_3.png`, `card_bg_pattern.png`, `login_bg_metal.png`, and `login_bg_pattern.png` contained JPEG magic headers (`0xFF 0xD8`), triggering AAPT2 compilation crashes during release builds.
+- [x] Step 45.2: **Lossless PNG Transcoding** — Transcoded all affected drawables to true PNGs with standard `\x89PNG` headers using PIL.
+- [x] Step 45.3: **Release Verification** — Executed `./gradlew assembleRelease` cleanly with zero AAPT2 or lint errors.
+- **COMMIT**: "fix: re-encode drawables as true PNGs to resolve AAPT2 release build failures (#64)"
+
+---
+
+## Phase 46: About Dialog with Theme Background and Legal Links (Issue #60, Complete)
+Implemented interactive About dialog showcasing app information, versioning, game rules, and legal links.
+- [x] Step 46.1: **Theme-Adaptive Artwork** — Mapped background artwork dynamically across all 6 app themes (`history_bg_monochrome`, `history_bg_dashain`, `history_bg_contrast`, `history_bg_frost`, `history_bg_marigold`, `history_bg_mist`).
+- [x] Step 46.2: **Branding & Versioning** — Displayed metallic Ace of Spades logo, app title, version "Version 1.0.0", and 21-card Marriage game rules overview.
+- [x] Step 46.3: **Interactive Legal Cards** — Added Privacy Policy and Terms of Service cards launching external browser intents via `Intent.ACTION_VIEW`.
+- [x] Step 46.4: **Drawer Integration & Verification** — Integrated into Dashboard navigation drawer; verified live on Pixel 9 Pro XL emulator.
+- **COMMIT**: "feat: implement About dialog with theme-specific background and legal links (#60)"
+
+---
+
+## Phase 47: More Apps Screen with Authentic Portfolio Icons (Issue #61, Complete)
+Showcases developer portfolio with direct links and authentic website menu icons.
+- [x] Step 47.1: **MoreAppsDialog Component** — Built modal dialog displaying developer apps with frosted glass cards and external launch action buttons.
+- [x] Step 47.2: **Authentic App Icons** — Downloaded and optimized official app icons from `sanjeebojha.com.np` menu (`ic_moreapps_diceroller`, `ic_moreapps_marriage`, `ic_moreapps_wordduel`, `ic_moreapps_fivewords`).
+- [x] Step 47.3: **Portfolio Links** — Integrated URLs for Marriage Calculator, Dice Roller, Word Duel, and Five Words.
+- [x] Step 47.4: **Verification** — Verified visual rendering on Pixel 9 Pro XL emulator with real icons across themes.
+- **COMMIT**: "feat: implement More Apps dialog with developer portfolio links (#61)"
+
+---
+
+## Phase 48: Clickable Legal Links on Login Screen (Issue #62, Complete)
+Made Privacy Policy and Terms of Service links interactive on Login screen.
+- [x] Step 48.1: **Interactive ClickableText** — Replaced static footer text with annotated clickable text string.
+- [x] Step 48.2: **External Intent Routing** — Wired clicks to open `https://sanjeebojha.com.np/privacy-policy/marriage-calculator` and `https://sanjeebojha.com.np/terms/marriage-calculator` in default browser.
+- [x] Step 48.3: **Visual Styling** — Applied theme accent coloration and underline styling for clear accessibility.
+- **COMMIT**: "feat: make Privacy Policy and Terms of Service links clickable on Login Screen (#62)"
+
+---
+
+## Phase 49: Dashboard History Navigation Polish & Route Cleanup (Issue #63, Complete)
+Polished History navigation integration and cleaned up unused route definitions.
+- [x] Step 49.1: **Drawer History Navigation** — Verified navigation from Dashboard drawer "History" item to `HistoryScreen`.
+- [x] Step 49.2: **Back Stack Integrity** — Verified back navigation returns to Dashboard without state corruption.
+- [x] Step 49.3: **Route Cleanup** — Removed unused `Screen.RoundHistory` declaration from `Screen.kt`.
+- [x] Step 49.4: **Verification** — Ran all unit tests and release builds cleanly.
+- **COMMIT**: "feat: polish Dashboard drawer History navigation and clean up routes (#63)"
+
+---
 
 ## Key Design Decisions
 1. **Screen Space for 6 Players**: Use compact card grid (2×3 or circular) with collapsible details. Score input uses horizontal scroll or tabbed view.
