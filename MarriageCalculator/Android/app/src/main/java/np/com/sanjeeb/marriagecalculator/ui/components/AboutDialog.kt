@@ -168,7 +168,7 @@ fun AboutDialog(
                         border = BorderStroke(0.8.dp, palette.accent.copy(alpha = 0.3f))
                     ) {
                         Text(
-                            text = "v1.0.0 · Production Release",
+                            text = "Version 1.0.0",
                             color = palette.accent,
                             fontSize = 11.sp,
                             fontWeight = FontWeight.SemiBold,
