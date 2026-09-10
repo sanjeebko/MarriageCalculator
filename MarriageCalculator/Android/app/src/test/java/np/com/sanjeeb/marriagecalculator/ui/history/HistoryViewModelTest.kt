@@ -33,11 +33,16 @@ class HistoryViewModelTest {
 
     @Test
     fun `loadInitial aggregates multiple logins on same day into LoginSummaryCard`() = runTest {
-        val cal = Calendar.getInstance()
+        val cal = Calendar.getInstance().apply {
+            set(Calendar.HOUR_OF_DAY, 10)
+            set(Calendar.MINUTE, 0)
+            set(Calendar.SECOND, 0)
+            set(Calendar.MILLISECOND, 0)
+        }
         val time1 = cal.timeInMillis
-        cal.add(Calendar.HOUR, 1)
+        cal.add(Calendar.HOUR_OF_DAY, 1)
         val time2 = cal.timeInMillis
-        cal.add(Calendar.HOUR, 1)
+        cal.add(Calendar.HOUR_OF_DAY, 1)
         val time3 = cal.timeInMillis
 
         val logs = listOf(
@@ -71,7 +76,13 @@ class HistoryViewModelTest {
 
     @Test
     fun `toggleLoginExpanded expands and collapses sub-logs`() = runTest {
-        val now = System.currentTimeMillis()
+        val cal = Calendar.getInstance().apply {
+            set(Calendar.HOUR_OF_DAY, 10)
+            set(Calendar.MINUTE, 0)
+            set(Calendar.SECOND, 0)
+            set(Calendar.MILLISECOND, 0)
+        }
+        val now = cal.timeInMillis
         val logs = listOf(
             ActivityLogEntity(id = 1, eventType = ActivityType.USER_LOGIN.name, timestamp = now, title = "User Login", description = "Logged in", metadata = "user@test.com"),
             ActivityLogEntity(id = 2, eventType = ActivityType.APP_OPEN.name, timestamp = now - 1000L, title = "App Opened", description = "Session started", metadata = "user@test.com")
@@ -120,7 +131,12 @@ class HistoryViewModelTest {
 
     @Test
     fun `jumpToDate finds matching date header and sets jumpToTargetIndex`() = runTest {
-        val cal = Calendar.getInstance()
+        val cal = Calendar.getInstance().apply {
+            set(Calendar.HOUR_OF_DAY, 10)
+            set(Calendar.MINUTE, 0)
+            set(Calendar.SECOND, 0)
+            set(Calendar.MILLISECOND, 0)
+        }
         val today = cal.timeInMillis
         cal.add(Calendar.DAY_OF_YEAR, -2)
         val twoDaysAgo = cal.timeInMillis
