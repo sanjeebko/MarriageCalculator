@@ -58,6 +58,7 @@ import np.com.sanjeeb.marriagecalculator.ui.components.GlassButton
 import np.com.sanjeeb.marriagecalculator.ui.components.SyncStatusIndicator
 import np.com.sanjeeb.marriagecalculator.ui.components.ThemePickerDialog
 import np.com.sanjeeb.marriagecalculator.ui.components.AboutDialog
+import np.com.sanjeeb.marriagecalculator.ui.components.MoreAppsDialog
 import np.com.sanjeeb.marriagecalculator.ui.theme.*
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -75,6 +76,7 @@ fun DashboardScreen(
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     var showThemeDialog by remember { mutableStateOf(false) }
     var showAboutDialog by remember { mutableStateOf(false) }
+    var showMoreAppsDialog by remember { mutableStateOf(false) }
 
     // The ViewModel is scoped to this destination's nav back-stack entry, so it survives
     // navigating away and back (e.g. resuming or deleting a game) without being recreated -
@@ -102,6 +104,12 @@ fun DashboardScreen(
     if (showAboutDialog) {
         AboutDialog(
             onDismiss = { showAboutDialog = false }
+        )
+    }
+
+    if (showMoreAppsDialog) {
+        MoreAppsDialog(
+            onDismiss = { showMoreAppsDialog = false }
         )
     }
 
@@ -210,7 +218,7 @@ fun DashboardScreen(
                         NavigationDrawerItem(
                             label = { Text("More Apps", fontSize = 14.sp, fontWeight = FontWeight.Medium) },
                             selected = false,
-                            onClick = { scope.launch { drawerState.close() } },
+                            onClick = { scope.launch { drawerState.close() }; showMoreAppsDialog = true },
                             icon = { Icon(Icons.Default.Apps, null, modifier = Modifier.size(18.dp)) },
                             colors = drawerItemColors,
                             modifier = drawerItemModifier,
