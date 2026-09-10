@@ -3,10 +3,13 @@ package np.com.sanjeeb.marriagecalculator.ui
 import android.app.Activity
 import android.content.Context
 import android.content.ContextWrapper
+import android.content.Intent
+import android.net.Uri
 import android.widget.Toast
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.ClickableText
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
@@ -22,10 +25,12 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -371,22 +376,40 @@ fun LoginScreen(
                 Spacer(Modifier.height(8.dp))
                 
                 // Terms Text
-                Text(
-                    text = buildAnnotatedString {
-                        append("By continuing, you agree to our ")
-                        withStyle(style = SpanStyle(color = MetalGold)) {
-                            append("Terms of Service")
-                        }
-                        append(" and ")
-                        withStyle(style = SpanStyle(color = MetalGold)) {
-                            append("Privacy Policy")
-                        }
-                    },
-                    color = Color.White.copy(alpha = 0.6f),
-                    fontSize = 11.sp,
-                    textAlign = TextAlign.Center,
-                    lineHeight = 16.sp,
-                    modifier = Modifier.padding(horizontal = 16.dp)
+                val termsText = buildAnnotatedString {
+                    append("By continuing, you agree to our ")
+                    pushStringAnnotation(tag = "URL", annotation = "https://sanjeebojha.com.np/terms/marriage-calculator")
+                    withStyle(style = SpanStyle(color = MetalGold, fontWeight = FontWeight.SemiBold, textDecoration = TextDecoration.Underline)) {
+                        append("Terms of Service")
+                    }
+                    pop()
+                    append(" and ")
+                    pushStringAnnotation(tag = "URL", annotation = "https://sanjeebojha.com.np/privacy-policy/marriage-calculator")
+                    withStyle(style = SpanStyle(color = MetalGold, fontWeight = FontWeight.SemiBold, textDecoration = TextDecoration.Underline)) {
+                        append("Privacy Policy")
+                    }
+                    pop()
+                }
+
+                @Suppress("DEPRECATION")
+                ClickableText(
+                    text = termsText,
+                    style = TextStyle(
+                        color = Color.White.copy(alpha = 0.6f),
+                        fontSize = 11.sp,
+                        textAlign = TextAlign.Center,
+                        lineHeight = 16.sp
+                    ),
+                    modifier = Modifier.padding(horizontal = 16.dp),
+                    onClick = { offset ->
+                        termsText.getStringAnnotations(tag = "URL", start = offset, end = offset)
+                            .firstOrNull()?.let { annotation ->
+                                try {
+                                    val intent = Intent(Intent.ACTION_VIEW, Uri.parse(annotation.item))
+                                    context.startActivity(intent)
+                                } catch (_: Exception) { }
+                            }
+                    }
                 )
             }
         }
