@@ -74,7 +74,7 @@ fun MoreAppsDialog(
             description = "Digital scorer and calculator for the 21-card Marriage game.",
             category = "Card Game Utility",
             url = "https://sanjeebojha.com.np/apps/marriage-calculator",
-            iconDrawableRes = R.drawable.app_icon,
+            iconDrawableRes = R.drawable.ic_moreapps_marriage,
             isCurrentApp = true
         ),
         DeveloperAppInfo(
@@ -82,21 +82,21 @@ fun MoreAppsDialog(
             description = "3D physics-based multi-dice roller for tabletop and board games.",
             category = "Board Game Utility",
             url = "https://sanjeebojha.com.np/apps/dice-roller",
-            iconVector = Icons.Default.Casino
+            iconDrawableRes = R.drawable.ic_moreapps_diceroller
         ),
         DeveloperAppInfo(
             title = "Word Duel",
             description = "Real-time competitive word puzzle challenge for Android.",
             category = "Word & Puzzle Game",
             url = "https://wordduel.sanjeebojha.com.np/android",
-            iconVector = Icons.Default.Spellcheck
+            iconDrawableRes = R.drawable.ic_moreapps_wordduel
         ),
         DeveloperAppInfo(
             title = "Five Words",
             description = "Daily 5-letter word guess puzzle on the Google Play Store.",
             category = "Play Store Game",
             url = "https://play.google.com/store/apps/details?id=com.sanjeebojha.fivewords&hl=en-US",
-            iconVector = Icons.Default.Extension
+            iconDrawableRes = R.drawable.ic_moreapps_fivewords
         )
     )
 
