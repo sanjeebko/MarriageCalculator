@@ -27,10 +27,14 @@ fun HistoryBackground(
 ) {
     val palette = AppTheme.palette
 
-    // Select background image dynamically based on active theme
+    // Each theme has its own unique, custom-tailored AI background artwork
     val bgDrawableId = when (palette) {
+        AppThemeOption.BLACK_AND_WHITE.palette -> R.drawable.history_bg_monochrome
         AppThemeOption.TIHAR_NIGHT.palette -> R.drawable.history_bg_dashain
-        AppThemeOption.MIDNIGHT_FROST.palette -> R.drawable.history_bg_luxury
+        AppThemeOption.HIGH_CONTRAST_DARK.palette -> R.drawable.history_bg_contrast
+        AppThemeOption.MIDNIGHT_FROST.palette -> R.drawable.history_bg_frost
+        AppThemeOption.MARIGOLD_DAY.palette -> R.drawable.history_bg_marigold
+        AppThemeOption.HIMALAYAN_MIST.palette -> R.drawable.history_bg_mist
         else -> R.drawable.history_bg_monochrome
     }
 
@@ -44,18 +48,24 @@ fun HistoryBackground(
         )
 
         // 2. Theme-Adaptive Vignette & Depth Gradient Overlay
+        val vignetteColors = if (palette.isDark) {
+            listOf(
+                palette.backgroundTop.copy(alpha = 0.45f),
+                Color.Transparent,
+                palette.backgroundBottom.copy(alpha = 0.65f)
+            )
+        } else {
+            listOf(
+                palette.backgroundTop.copy(alpha = 0.25f),
+                Color.Transparent,
+                palette.backgroundBottom.copy(alpha = 0.45f)
+            )
+        }
+
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .background(
-                    Brush.verticalGradient(
-                        colors = listOf(
-                            palette.backgroundTop.copy(alpha = 0.50f),
-                            Color.Transparent,
-                            palette.backgroundBottom.copy(alpha = 0.70f)
-                        )
-                    )
-                )
+                .background(Brush.verticalGradient(colors = vignetteColors))
         )
 
         // 3. Render the screen content on top

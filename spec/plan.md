@@ -539,7 +539,15 @@ Implemented an end-to-end audit logging engine and a dedicated, compact History 
 - [x] Step 43.7: **Navigation Integration** — Registered `Screen.History` in `Screen.kt`, wired the dashboard drawer "History & Logs" menu item in `DashboardScreen.kt`, and configured destination routing in `MarriageNavGraph.kt`.
 - [x] Step 43.8: **Automated Unit Tests & Live Verification** — Added unit test coverage in `ActivityLogRepositoryTest.kt` and `HistoryViewModelTest.kt`. Updated existing ViewModel tests (`ScoreboardViewModelTest`, `GameSetupViewModelTest`, `PlayGameViewModelTest`, `RoundInputViewModelTest`). All 38/38 unit tests passing (`./gradlew testDebugUnitTest`). Verified live on Android emulator: opened dashboard drawer, navigated to "History & Logs", verified calendar picker, activity filter chips, login aggregation, and theme-aware canvas background.
 - [x] Step 43.9: **AI-Generated Background Artwork (Nano Banana)** — Replaced programmatic SVG/canvas vector graphics in `HistoryBackground.kt` with high-fidelity 9:16 portrait AI-generated wallpapers featuring deep card suit motifs, carbon-fiber bevels, and sacred mandalas. Implemented dynamic theme-switching between `history_bg_monochrome` (for Black & White / High Contrast Dark), `history_bg_dashain` (for Tihar Night / Dashain), and `history_bg_luxury` with adaptive gradient depth overlays. Verified on Android emulator across themes (`screen_history_ai_bg.png`, `screen_history_bw_bg.png`).
-- **COMMIT**: "feat: AI-generated theme-adaptive background artwork for history screen (#56)"
+- [x] Step 43.10: **Unique AI Background Artwork For All 6 Themes** — Provided a distinct, dedicated 9:16 portrait background wallpaper for every single theme in the app:
+  - **Black & White** (`history_bg_monochrome.jpg`): Brushed carbon fiber, chrome filigreed Ace of Spades watermark, smoky mist.
+  - **Tihar Night** (`history_bg_dashain.jpg`): Royal maroon & indigo gradient, sacred mandala watermark, gold Nepali cards.
+  - **High Contrast Dark** (`history_bg_contrast.jpg`): Pitch black titanium card table with crisp glowing neon amber and cyan wireframe card suits.
+  - **Midnight Frost** (`history_bg_frost.jpg`): Arctic midnight navy, delicate crystalline frost ferns, frozen ice card suits.
+  - **Marigold Day** (`history_bg_marigold.jpg`): Warm cream ivory parchment, Sayapatri marigold garlands, embossed card suits.
+  - **Himalayan Mist** (`history_bg_mist.jpg`): Ethereal alpine morning mist, Himalayan snow peaks rising in clouds, floating crystal card watermarks.
+  Adaptive vignette depth gradient overlays ensure high legibility and contrast across both dark and light palettes. Verified live across themes on Pixel 9 Pro XL emulator.
+- **COMMIT**: "feat: unique AI background artwork for all 6 app themes (#56)"
 
 ---
 
