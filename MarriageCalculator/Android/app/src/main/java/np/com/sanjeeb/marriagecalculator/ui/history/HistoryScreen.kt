@@ -7,7 +7,6 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -104,30 +103,29 @@ fun HistoryScreen(
                             Icon(
                                 imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                                 contentDescription = "Back",
-                                tint = palette.textPrimary
+                                tint = palette.textPrimary,
+                                modifier = Modifier.size(24.dp)
                             )
                         }
                     },
                     actions = {
                         // Small Calendar Date Jump button
-                        IconButton(
-                            onClick = { showDatePicker = true }
-                        ) {
+                        IconButton(onClick = { showDatePicker = true }) {
                             Icon(
                                 imageVector = Icons.Default.CalendarMonth,
                                 contentDescription = "Jump to Date",
-                                tint = palette.accent
+                                tint = palette.accent,
+                                modifier = Modifier.size(22.dp)
                             )
                         }
 
                         // Refresh button
-                        IconButton(
-                            onClick = { viewModel.refresh() }
-                        ) {
+                        IconButton(onClick = { viewModel.refresh() }) {
                             Icon(
                                 imageVector = Icons.Default.Refresh,
                                 contentDescription = "Refresh",
-                                tint = palette.textPrimary
+                                tint = palette.textPrimary,
+                                modifier = Modifier.size(22.dp)
                             )
                         }
                     },
@@ -300,7 +298,7 @@ private fun CompactFilterBar(
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 14.dp, vertical = 4.dp),
+            .padding(horizontal = 14.dp, vertical = 6.dp),
         horizontalArrangement = Arrangement.spacedBy(8.dp)
     ) {
         HistoryFilter.entries.forEach { filter ->
@@ -312,35 +310,57 @@ private fun CompactFilterBar(
                 HistoryFilter.LOGINS -> Icons.Default.Person
             }
 
+            val containerColor = if (isSelected) {
+                palette.accent
+            } else {
+                palette.surface.copy(alpha = 0.88f)
+            }
+            val contentColor = if (isSelected) {
+                if (palette.isDark) palette.backgroundBottom else Color.White
+            } else {
+                palette.textPrimary
+            }
+            val borderColor = if (isSelected) {
+                palette.accent
+            } else {
+                if (palette.isDark) palette.tint.copy(alpha = 0.22f) else palette.tint.copy(alpha = 0.15f)
+            }
+            val iconTint = if (isSelected) {
+                contentColor
+            } else {
+                if (palette.isDark) palette.accentAlt else palette.accent
+            }
+
             Surface(
-                color = if (isSelected) palette.accent.copy(alpha = 0.22f) else palette.surface.copy(alpha = 0.5f),
+                color = containerColor,
                 border = androidx.compose.foundation.BorderStroke(
-                    width = 1.dp,
-                    color = if (isSelected) palette.accent else palette.tint.copy(alpha = 0.08f)
+                    width = if (isSelected) 1.5.dp else 1.dp,
+                    color = borderColor
                 ),
                 shape = RoundedCornerShape(18.dp),
+                shadowElevation = if (isSelected) 3.dp else 1.dp,
                 modifier = Modifier
                     .weight(1f)
                     .clip(RoundedCornerShape(18.dp))
                     .clickable { onFilterSelected(filter) }
             ) {
                 Row(
-                    modifier = Modifier.padding(vertical = 6.dp),
+                    modifier = Modifier.padding(vertical = 7.dp),
                     horizontalArrangement = Arrangement.Center,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Icon(
                         imageVector = icon,
                         contentDescription = filter.label,
-                        tint = if (isSelected) palette.accent else palette.textPrimary.copy(alpha = 0.6f),
+                        tint = iconTint,
                         modifier = Modifier.size(15.dp)
                     )
                     Spacer(modifier = Modifier.width(4.dp))
                     Text(
                         text = filter.label,
                         fontSize = 11.sp,
-                        fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
-                        color = if (isSelected) palette.accent else palette.textPrimary.copy(alpha = 0.8f)
+                        fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
+                        color = contentColor
                     )
                 }
             }
@@ -387,9 +407,9 @@ private fun LoginSummaryCardView(
 ) {
     val palette = AppTheme.palette
     Surface(
-        color = palette.cardSurface.copy(alpha = 0.75f),
+        color = palette.cardSurface.copy(alpha = 0.86f),
         shape = RoundedCornerShape(10.dp),
-        border = androidx.compose.foundation.BorderStroke(1.dp, palette.tint.copy(alpha = 0.08f)),
+        border = androidx.compose.foundation.BorderStroke(1.dp, palette.tint.copy(alpha = 0.16f)),
         modifier = Modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(10.dp))
@@ -401,22 +421,14 @@ private fun LoginSummaryCardView(
                 .padding(horizontal = 12.dp, vertical = 9.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // Icon Pill
-            Box(
-                modifier = Modifier
-                    .size(28.dp)
-                    .background(palette.surface, CircleShape),
-                contentAlignment = Alignment.Center
-            ) {
-                Icon(
-                    imageVector = Icons.Default.Login,
-                    contentDescription = null,
-                    tint = palette.accent,
-                    modifier = Modifier.size(16.dp)
-                )
-            }
+            Icon(
+                imageVector = Icons.Default.Login,
+                contentDescription = null,
+                tint = palette.accent,
+                modifier = Modifier.size(20.dp)
+            )
 
-            Spacer(modifier = Modifier.width(10.dp))
+            Spacer(modifier = Modifier.width(12.dp))
 
             Column(modifier = Modifier.weight(1f)) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
@@ -465,16 +477,16 @@ private fun ActivityCardView(log: ActivityLogEntity) {
     }
 
     val (icon, iconTint, borderTint) = when (log.eventType) {
-        ActivityType.GAME_CREATED.name -> Triple(Icons.Default.AddCircleOutline, palette.accent, palette.tint.copy(alpha = 0.10f))
-        ActivityType.GAME_PLAYED.name -> Triple(Icons.Default.EmojiEvents, palette.accent, palette.tint.copy(alpha = 0.08f))
-        ActivityType.PAYMENT_CLEARED.name -> Triple(Icons.Default.CheckCircle, palette.numberPositive, palette.numberPositive.copy(alpha = 0.35f))
-        ActivityType.GAME_SETTLED.name -> Triple(Icons.Default.Lock, palette.frostAccent, palette.tint.copy(alpha = 0.12f))
-        ActivityType.USER_LOGIN.name, ActivityType.APP_OPEN.name -> Triple(Icons.Default.AccountCircle, palette.textPrimary.copy(alpha = 0.7f), palette.tint.copy(alpha = 0.06f))
-        else -> Triple(Icons.Default.Info, palette.textPrimary, palette.tint.copy(alpha = 0.08f))
+        ActivityType.GAME_CREATED.name -> Triple(Icons.Default.AddCircleOutline, palette.accent, palette.tint.copy(alpha = 0.20f))
+        ActivityType.GAME_PLAYED.name -> Triple(Icons.Default.EmojiEvents, palette.accent, palette.tint.copy(alpha = 0.18f))
+        ActivityType.PAYMENT_CLEARED.name -> Triple(Icons.Default.CheckCircle, palette.numberPositive, palette.numberPositive.copy(alpha = 0.40f))
+        ActivityType.GAME_SETTLED.name -> Triple(Icons.Default.Lock, palette.frostAccent, palette.tint.copy(alpha = 0.20f))
+        ActivityType.USER_LOGIN.name, ActivityType.APP_OPEN.name -> Triple(Icons.Default.AccountCircle, palette.textPrimary.copy(alpha = 0.85f), palette.tint.copy(alpha = 0.14f))
+        else -> Triple(Icons.Default.Info, palette.textPrimary, palette.tint.copy(alpha = 0.16f))
     }
 
     Surface(
-        color = palette.cardSurface.copy(alpha = 0.70f),
+        color = palette.cardSurface.copy(alpha = 0.86f),
         shape = RoundedCornerShape(10.dp),
         border = androidx.compose.foundation.BorderStroke(1.dp, borderTint),
         modifier = Modifier.fillMaxWidth()
@@ -485,22 +497,14 @@ private fun ActivityCardView(log: ActivityLogEntity) {
                 .padding(horizontal = 12.dp, vertical = 9.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // Event Icon Pill
-            Box(
-                modifier = Modifier
-                    .size(28.dp)
-                    .background(palette.surface, CircleShape),
-                contentAlignment = Alignment.Center
-            ) {
-                Icon(
-                    imageVector = icon,
-                    contentDescription = null,
-                    tint = iconTint,
-                    modifier = Modifier.size(16.dp)
-                )
-            }
+            Icon(
+                imageVector = icon,
+                contentDescription = null,
+                tint = iconTint,
+                modifier = Modifier.size(20.dp)
+            )
 
-            Spacer(modifier = Modifier.width(10.dp))
+            Spacer(modifier = Modifier.width(12.dp))
 
             // Details
             Column(modifier = Modifier.weight(1f)) {
