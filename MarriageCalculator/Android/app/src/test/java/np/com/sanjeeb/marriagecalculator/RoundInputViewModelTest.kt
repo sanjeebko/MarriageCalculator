@@ -28,7 +28,8 @@ class RoundInputViewModelTest {
             scoringApi = mockk(relaxed = true),
             offlineGameRepository = mockk(relaxed = true),
             gameSetRepository = mockk(relaxed = true),
-            sessionManager = mockk(relaxed = true)
+            sessionManager = mockk(relaxed = true),
+            activityLogRepository = mockk(relaxed = true)
         )
     }
 

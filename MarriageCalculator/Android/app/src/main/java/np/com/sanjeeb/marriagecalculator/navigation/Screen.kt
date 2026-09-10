@@ -19,4 +19,5 @@ sealed class Screen(val route: String) {
         fun createRoute(gameSetId: String) = "round_history/$gameSetId"
     }
     data object Friend : Screen("friend")
+    data object History : Screen("history")
 }

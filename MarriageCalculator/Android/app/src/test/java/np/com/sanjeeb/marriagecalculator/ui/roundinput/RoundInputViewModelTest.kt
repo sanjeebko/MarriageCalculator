@@ -39,7 +39,8 @@ class RoundInputViewModelTest {
             scoringApi = scoringApi,
             offlineGameRepository = offlineGameRepository,
             gameSetRepository = gameSetRepository,
-            sessionManager = sessionManager
+            sessionManager = sessionManager,
+            activityLogRepository = mockk(relaxed = true)
         )
         viewModel.initPlayers(testPlayers, GameSettings.default())
     }

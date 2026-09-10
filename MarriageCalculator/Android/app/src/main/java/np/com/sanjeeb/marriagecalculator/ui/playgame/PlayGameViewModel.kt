@@ -85,7 +85,8 @@ class PlayGameViewModel @Inject constructor(
     private val playerRepository: PlayerRepository,
     private val friendRepository: FriendRepository,
     private val sessionManager: SessionManager,
-    private val themePreference: ThemePreference
+    private val themePreference: ThemePreference,
+    private val activityLogRepository: np.com.sanjeeb.marriagecalculator.data.repository.ActivityLogRepository
 ) : ViewModel() {
 
     val theme: StateFlow<AppThemeOption> = themePreference.theme
@@ -512,6 +513,9 @@ class PlayGameViewModel @Inject constructor(
                 if (gameIds.isNotEmpty()) {
                     offlineGameRepository.toggleRoundPaymentCleared(gameIds, isCleared)
                 }
+            }
+            if (isCleared) {
+                activityLogRepository.logPaymentCleared(gameSetIdStr, round.roundSequence)
             }
         }
     }

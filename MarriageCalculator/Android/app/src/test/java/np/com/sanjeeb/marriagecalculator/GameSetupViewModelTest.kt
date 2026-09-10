@@ -43,7 +43,8 @@ class GameSetupViewModelTest {
             gameSettingsRepository,
             gameSetRepository,
             offlineGameRepository,
-            sessionManager
+            sessionManager,
+            mockk(relaxed = true)
         )
     }
 

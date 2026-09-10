@@ -14,6 +14,7 @@ import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 import np.com.sanjeeb.marriagecalculator.data.repository.AuthRepository
+import np.com.sanjeeb.marriagecalculator.data.repository.ActivityLogRepository
 
 sealed class LoginUiState {
     object Idle : LoginUiState()
@@ -27,7 +28,8 @@ sealed class LoginUiState {
 class LoginViewModel @Inject constructor(
     private val userRepository: UserRepository,
     private val authRepository: AuthRepository,
-    private val sessionManager: SessionManager
+    private val sessionManager: SessionManager,
+    private val activityLogRepository: ActivityLogRepository
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow<LoginUiState>(LoginUiState.Idle)
@@ -71,6 +73,7 @@ class LoginViewModel @Inject constructor(
                     sessionManager.getFcmToken()?.let { fcmToken ->
                         userRepository.registerFcmToken(fcmToken)
                     }
+                    activityLogRepository.logLogin(user.email, isGuest = false)
                     _uiState.value = LoginUiState.Success(user)
                 }
                 .onFailure { error ->
@@ -98,6 +101,7 @@ class LoginViewModel @Inject constructor(
                     sessionManager.getFcmToken()?.let { fcmToken ->
                         userRepository.registerFcmToken(fcmToken)
                     }
+                    activityLogRepository.logLogin(user.email, isGuest = false)
                     _uiState.value = LoginUiState.Success(user)
                 }
                 .onFailure { error ->
@@ -127,6 +131,7 @@ class LoginViewModel @Inject constructor(
                     sessionManager.getFcmToken()?.let { fcmToken ->
                         userRepository.registerFcmToken(fcmToken)
                     }
+                    activityLogRepository.logLogin(result.data.email.ifBlank { trimmed }, isGuest = false)
                     _uiState.value = LoginUiState.Success(result.data)
                 }
                 is ApiResult.Error -> {
@@ -153,6 +158,7 @@ class LoginViewModel @Inject constructor(
                     sessionManager.getFcmToken()?.let { fcmToken ->
                         userRepository.registerFcmToken(fcmToken)
                     }
+                    activityLogRepository.logLogin(finalUser.email, isGuest = false)
                     _uiState.value = LoginUiState.Success(finalUser)
                 }
                 is ApiResult.Error -> {
@@ -176,6 +182,7 @@ class LoginViewModel @Inject constructor(
                 email = "guest@marriagecalculator.local"
             )
             sessionManager.saveSession("guest-token", guestUser)
+            activityLogRepository.logLogin("Guest", isGuest = true)
             _uiState.value = LoginUiState.Success(guestUser)
         }
     }

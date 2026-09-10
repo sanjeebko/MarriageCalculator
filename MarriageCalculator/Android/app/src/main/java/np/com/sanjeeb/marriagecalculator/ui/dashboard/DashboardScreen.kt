@@ -66,6 +66,7 @@ fun DashboardScreen(
     onResumeGame: (String) -> Unit,
     onFriends: () -> Unit,
     onLogout: () -> Unit,
+    onHistory: () -> Unit = {},
     viewModel: DashboardViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
@@ -174,7 +175,7 @@ fun DashboardScreen(
                         NavigationDrawerItem(
                             label = { Text("History", fontSize = 14.sp, fontWeight = FontWeight.Medium) },
                             selected = false,
-                            onClick = { scope.launch { drawerState.close() } },
+                            onClick = { scope.launch { drawerState.close() }; onHistory() },
                             icon = { Icon(Icons.Default.History, null, modifier = Modifier.size(18.dp)) },
                             colors = drawerItemColors,
                             modifier = drawerItemModifier,

@@ -154,6 +154,9 @@ interface GameSetDao {
     @Query("SELECT * FROM game_sets ORDER BY createdAt DESC")
     fun getAllGameSets(): Flow<List<GameSetEntity>>
 
+    @Query("SELECT * FROM game_sets ORDER BY createdAt DESC")
+    suspend fun getAllGameSetsList(): List<GameSetEntity>
+
     @Query("SELECT * FROM game_sets WHERE id = :id")
     suspend fun getById(id: Int): GameSetEntity?
 
@@ -201,6 +204,9 @@ interface RoundDao {
 
     @Query("SELECT * FROM rounds WHERE gameSetId = :gameSetId ORDER BY roundNumber")
     fun getRoundsForGameSet(gameSetId: Int): Flow<List<RoundEntity>>
+
+    @Query("SELECT * FROM rounds WHERE gameSetId = :gameSetId ORDER BY roundNumber")
+    suspend fun getRoundsForGameSetList(gameSetId: Int): List<RoundEntity>
 
     @Query("SELECT COUNT(*) FROM rounds WHERE gameSetId = :gameSetId")
     suspend fun getRoundCount(gameSetId: Int): Int
@@ -280,3 +286,69 @@ interface RoundScoreDao {
     @Query("SELECT * FROM round_scores WHERE playerId = :playerId")
     suspend fun getScoresForPlayer(playerId: Int): List<RoundScoreEntity>
 }
+
+enum class ActivityType {
+    APP_OPEN,
+    USER_LOGIN,
+    GAME_CREATED,
+    GAME_PLAYED,
+    ROUND_COMPLETED,
+    PAYMENT_CLEARED,
+    GAME_SETTLED
+}
+
+@Entity(
+    tableName = "activity_logs",
+    indices = [
+        Index(value = ["timestamp"]),
+        Index(value = ["eventType"]),
+        Index(value = ["gameSetId"])
+    ]
+)
+data class ActivityLogEntity(
+    @PrimaryKey(autoGenerate = true) val id: Long = 0,
+    val eventType: String,
+    val timestamp: Long = System.currentTimeMillis(),
+    val gameSetId: String? = null,
+    val roundId: String? = null,
+    val title: String,
+    val description: String,
+    val metadata: String? = null
+)
+
+@Dao
+interface ActivityLogDao {
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insert(log: ActivityLogEntity): Long
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertAll(logs: List<ActivityLogEntity>): List<Long>
+
+    @Query("SELECT * FROM activity_logs ORDER BY timestamp DESC")
+    fun getAllLogsFlow(): Flow<List<ActivityLogEntity>>
+
+    @Query("SELECT * FROM activity_logs ORDER BY timestamp DESC LIMIT :limit OFFSET :offset")
+    suspend fun getPagedLogs(limit: Int, offset: Int): List<ActivityLogEntity>
+
+    @Query("SELECT * FROM activity_logs WHERE eventType IN (:types) ORDER BY timestamp DESC LIMIT :limit OFFSET :offset")
+    suspend fun getPagedLogsByTypes(types: List<String>, limit: Int, offset: Int): List<ActivityLogEntity>
+
+    @Query("SELECT * FROM activity_logs WHERE timestamp >= :startTime AND timestamp <= :endTime ORDER BY timestamp ASC")
+    suspend fun getLogsInRange(startTime: Long, endTime: Long): List<ActivityLogEntity>
+
+    @Query("SELECT COUNT(*) FROM activity_logs")
+    suspend fun getCount(): Int
+
+    @Query("SELECT COUNT(*) FROM activity_logs WHERE gameSetId = :gameSetId")
+    suspend fun getCountForGameSet(gameSetId: String): Int
+
+    @Query("SELECT COUNT(*) FROM activity_logs WHERE eventType = :eventType")
+    suspend fun getCountForType(eventType: String): Int
+
+    @Query("DELETE FROM activity_logs WHERE id = :id")
+    suspend fun deleteById(id: Long)
+
+    @Query("DELETE FROM activity_logs")
+    suspend fun clearAll()
+}
+

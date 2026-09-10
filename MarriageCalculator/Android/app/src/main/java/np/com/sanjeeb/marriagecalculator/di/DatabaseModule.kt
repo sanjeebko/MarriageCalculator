@@ -36,4 +36,8 @@ object DatabaseModule {
 
     @Provides
     fun provideRoundScoreDao(db: MarriageDatabase): RoundScoreDao = db.roundScoreDao()
+
+    @Provides
+    fun provideActivityLogDao(db: MarriageDatabase): ActivityLogDao = db.activityLogDao()
 }
+
