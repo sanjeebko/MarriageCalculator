@@ -551,6 +551,17 @@ Implemented an end-to-end audit logging engine and a dedicated, compact History 
 
 ---
 
+## Phase 44: Button Visibility and Circle-Free Icon Enhancements (Issue #58, Complete)
+Refined button and icon aesthetics and contrast for Midnight Frost and dark themes based on user visual feedback.
+- [x] Step 44.1: **Frameless Circle-Free Icons (`HistoryScreen.kt`)** — Removed artificial circular background containers and borders from the TopAppBar (Back arrow, Calendar jump, Refresh) and activity cards (`LoginSummaryCardView`, `ActivityCardView`). All icons render as clean, modern, frameless vector icons.
+- [x] Step 44.2: **Top-Down Vignette Scrim (`HistoryBackground.kt`)** — Tuned the dark theme vignette gradient (`0.72f` down to `0.35f` to `Transparent`) to provide natural contrast for header icons and title without boxing them in circular badges.
+- [x] Step 44.3: **High-Contrast Filter Pills (`CompactFilterBar`)** — Active filter button is an illuminated `palette.accent` pill with dark, bold text and icon. Inactive filter buttons feature solid dark navy frosted pills (`0.88f` opacity) with crisp borders and vibrant seafoam cyan icons (`#5FD0C0`).
+- [x] Step 44.4: **App-Wide Button Visibility (`Color.kt`)** — Upgraded `MIDNIGHT_FROST` CTA button color from dull navy (`0xFF24466E`) to luminous arctic sapphire (`0xFF2A62A4`), ensuring all action buttons pop across the application.
+- [x] Step 44.5: **Automated Tests & Emulator Verification** — Verified all 38/38 unit tests pass (`./gradlew testDebugUnitTest`). Verified live on Pixel 9 Pro XL emulator across collapsed/expanded card states and filter selections.
+- **COMMIT**: "fix: improve button visibility and remove circle containers around icons in Midnight Frost (#58)"
+
+---
+
 
 ## Key Design Decisions
 1. **Screen Space for 6 Players**: Use compact card grid (2×3 or circular) with collapsible details. Score input uses horizontal scroll or tabbed view.
