@@ -15,9 +15,6 @@ sealed class Screen(val route: String) {
     data object Scoreboard : Screen("scoreboard/{gameSetId}") {
         fun createRoute(gameSetId: String) = "scoreboard/$gameSetId"
     }
-    data object RoundHistory : Screen("round_history/{gameSetId}") {
-        fun createRoute(gameSetId: String) = "round_history/$gameSetId"
-    }
     data object Friend : Screen("friend")
     data object History : Screen("history")
 }
