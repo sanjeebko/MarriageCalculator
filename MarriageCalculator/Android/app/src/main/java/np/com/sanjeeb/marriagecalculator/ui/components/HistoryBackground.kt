@@ -50,13 +50,14 @@ fun HistoryBackground(
         // 2. Theme-Adaptive Vignette & Depth Gradient Overlay
         val vignetteColors = if (palette.isDark) {
             listOf(
-                palette.backgroundTop.copy(alpha = 0.45f),
+                palette.backgroundTop.copy(alpha = 0.72f),
+                palette.backgroundTop.copy(alpha = 0.35f),
                 Color.Transparent,
-                palette.backgroundBottom.copy(alpha = 0.65f)
+                palette.backgroundBottom.copy(alpha = 0.70f)
             )
         } else {
             listOf(
-                palette.backgroundTop.copy(alpha = 0.25f),
+                palette.backgroundTop.copy(alpha = 0.35f),
                 Color.Transparent,
                 palette.backgroundBottom.copy(alpha = 0.45f)
             )

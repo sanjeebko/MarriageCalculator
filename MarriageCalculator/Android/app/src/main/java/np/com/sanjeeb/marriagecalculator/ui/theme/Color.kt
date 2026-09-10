@@ -124,7 +124,7 @@ enum class AppThemeOption(val displayName: String, val palette: AppPalette) {
             surface = Color(0xFF162032),
             accent = Color(0xFF8FB8E8),
             accentAlt = Color(0xFF5FD0C0),
-            cta = Color(0xFF24466E),
+            cta = Color(0xFF2A62A4),
             frostText = Color(0xFFEAF0F8),
             frostAccent = Color(0xFF9DC1E8),
             textPrimary = Color(0xFFE8EDF5),
