@@ -13,6 +13,8 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -67,7 +69,7 @@ fun FriendScreen(
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(
-                            imageVector = Icons.Default.ArrowBack,
+                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                             contentDescription = "Back",
                             tint = AppTheme.palette.accent
                         )
@@ -592,7 +594,7 @@ private fun AddFriendsTab(
             enabled = emailInput.trim().isNotEmpty(),
             isLoading = addEmailLoading,
             leadingIcon = {
-                Icon(Icons.Default.Send, null, tint = AppTheme.palette.accent, modifier = Modifier.size(16.dp))
+                Icon(Icons.AutoMirrored.Filled.Send, null, tint = AppTheme.palette.accent, modifier = Modifier.size(16.dp))
             }
         )
         Text(

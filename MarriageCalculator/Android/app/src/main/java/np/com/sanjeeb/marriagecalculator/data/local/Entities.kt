@@ -35,6 +35,9 @@ data class GameSettingsEntity(
     tableName = "game_sets",
     foreignKeys = [
         ForeignKey(entity = GameSettingsEntity::class, parentColumns = ["id"], childColumns = ["settingsId"])
+    ],
+    indices = [
+        Index("settingsId")
     ]
 )
 data class GameSetEntity(
@@ -54,6 +57,9 @@ data class GameSetEntity(
     foreignKeys = [
         ForeignKey(entity = GameSetEntity::class, parentColumns = ["id"], childColumns = ["gameSetId"]),
         ForeignKey(entity = PlayerEntity::class, parentColumns = ["id"], childColumns = ["playerId"])
+    ],
+    indices = [
+        Index("playerId")
     ]
 )
 data class GameSetPlayerEntity(
@@ -67,6 +73,10 @@ data class GameSetPlayerEntity(
     foreignKeys = [
         ForeignKey(entity = GameSetEntity::class, parentColumns = ["id"], childColumns = ["gameSetId"]),
         ForeignKey(entity = PlayerEntity::class, parentColumns = ["id"], childColumns = ["winnerId"])
+    ],
+    indices = [
+        Index("gameSetId"),
+        Index("winnerId")
     ]
 )
 data class RoundEntity(
@@ -92,6 +102,10 @@ data class RoundEntity(
     foreignKeys = [
         ForeignKey(entity = RoundEntity::class, parentColumns = ["id"], childColumns = ["roundId"]),
         ForeignKey(entity = PlayerEntity::class, parentColumns = ["id"], childColumns = ["playerId"])
+    ],
+    indices = [
+        Index("roundId"),
+        Index("playerId")
     ]
 )
 data class RoundScoreEntity(

@@ -15,7 +15,7 @@ import androidx.room.RoomDatabase
         RoundScoreEntity::class,
         ActivityLogEntity::class
     ],
-    version = 6,
+    version = 7,
     exportSchema = false
 )
 abstract class MarriageDatabase : RoomDatabase() {
@@ -37,7 +37,7 @@ abstract class MarriageDatabase : RoomDatabase() {
                     context.applicationContext,
                     MarriageDatabase::class.java,
                     "marriage_calculator.db"
-                ).fallbackToDestructiveMigration()
+                ).fallbackToDestructiveMigration(dropAllTables = true)
                  .build().also { INSTANCE = it }
             }
         }
