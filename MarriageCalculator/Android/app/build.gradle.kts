@@ -16,14 +16,17 @@ android {
         minSdk = 26
         targetSdk = 34
         versionCode = 1
-        versionName = "1.0"
+        versionName = "1.0.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
             useSupportLibrary = true
         }
 
-        buildConfigField("String", "API_BASE_URL", "\"http://192.168.0.45:5000/api/\"")
+        val apiBaseUrl = (project.findProperty("API_BASE_URL") as? String)
+            ?: System.getenv("API_BASE_URL")
+            ?: "http://192.168.0.45:5000/api/"
+        buildConfigField("String", "API_BASE_URL", "\"$apiBaseUrl\"")
     }
 
     buildTypes {
