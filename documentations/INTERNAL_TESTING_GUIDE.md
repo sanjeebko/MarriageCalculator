@@ -10,8 +10,8 @@ This guide covers everything required to sign, bundle, deploy, and distribute **
 | :--- | :--- | :--- |
 | **Package / Application ID** | `np.com.sanjeeb.marriagecalculator` | Matches `google-services.json` |
 | **App Name** | `AAA Marriage Calculator` | Defined in `res/values/strings.xml` |
-| **Version Code** | `2` | Increment for subsequent releases |
-| **Version Name** | `1.0.1` | In `app/build.gradle.kts` & About dialog |
+| **Version Code** | `3` | Increment for subsequent releases |
+| **Version Name** | `1.0.2` | In `app/build.gradle.kts` & About dialog |
 | **Target SDK** | `36` (Android 16) | Meets Google Play requirement (API 36+) |
 | **Minimum SDK** | `26` (Android 8.0) | Covers ~96% of active Android devices |
 | **Build Artifact** | `.aab` (Android App Bundle) | Required for Play Console upload |
@@ -128,15 +128,14 @@ For Google Sign-In to work on tester devices installed from Google Play:
 1. In Play Console, navigate to **Testing > Internal testing**.
 2. Click **Create new release**.
 3. Upload `app-prod-release.aab` (located at `MarriageCalculator/Android/app/build/outputs/bundle/prodRelease/app-prod-release.aab`).
-4. Set Release name: `1.0.1 (2)`.
+4. Set Release name: `1.0.2 (3)`.
 5. Enter Release notes:
    ```
-   Initial internal test build of AAA Marriage Calculator:
-   - 2-6 player Marriage card game score calculation (Normal, Kidnap, Murder modes)
-   - Real-time seating table and dealer management
-   - Offline guest mode and Google Sign-In support
-   - History and audit logging
-   - 6 custom app themes
+   AAA Marriage Calculator v1.0.2:
+   - Joined Games Dashboard: View active and past games you are participating in with read-only score tracking
+   - Player Creation: Added live avatar photo preview when selecting images
+   - Game Rules: Dublee option now restricted to games with 4 or more players with corrected terminology
+   - Backend: Authentication audit logging and OAuth account resolution improvements
    ```
 6. Click **Next**, review summary, and click **Start rollout to Internal testing**.
 
