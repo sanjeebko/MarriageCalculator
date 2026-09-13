@@ -107,6 +107,8 @@ public class MarriageGameSetDto
 {
     public string Id { get; set; } = string.Empty;
     public string HostUserId { get; set; } = string.Empty;
+    public string HostUserName { get; set; } = string.Empty;
+    public string HostUserEmail { get; set; } = string.Empty;
     public string Name { get; set; } = string.Empty;
     public DateTime LastPlayed { get; set; }
     public DateTime Created { get; set; }

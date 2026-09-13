@@ -582,4 +582,41 @@ public class ControllersTests
         // Assert
         Assert.IsType<ForbidResult>(result.Result);
     }
+
+    [Fact]
+    public async Task MarriageGameSetsController_GetJoinedMarriageGameSets_ReturnsOkWithJoinedGames()
+    {
+        // Arrange
+        var serviceMock = new Mock<IMarriageGameSetService>();
+        var loggerMock = new Mock<ILogger<MarriageGameSetsController>>();
+        var controller = new MarriageGameSetsController(serviceMock.Object, loggerMock.Object);
+        SetControllerUser(controller, "user-player-1");
+
+        var expectedJoined = new List<MarriageGameSetDto>
+        {
+            new MarriageGameSetDto
+            {
+                Id = "game-set-joined-1",
+                HostUserId = "other-host-user",
+                HostUserName = "Other Host",
+                Name = "Friday Night Match",
+                IsActive = true
+            }
+        };
+
+        serviceMock.Setup(s => s.GetJoinedGameSetsAsync("user-player-1", It.IsAny<string>()))
+            .ReturnsAsync(expectedJoined);
+
+        // Act
+        var result = await controller.GetJoinedMarriageGameSets();
+
+        // Assert
+        var okResult = Assert.IsType<OkObjectResult>(result.Result);
+        var returnedGames = Assert.IsAssignableFrom<IEnumerable<MarriageGameSetDto>>(okResult.Value);
+        var list = new List<MarriageGameSetDto>(returnedGames);
+        Assert.Single(list);
+        Assert.Equal("game-set-joined-1", list[0].Id);
+        Assert.Equal("other-host-user", list[0].HostUserId);
+        Assert.Equal("Other Host", list[0].HostUserName);
+    }
 }

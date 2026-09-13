@@ -17,4 +17,5 @@ sealed class Screen(val route: String) {
     }
     data object Friend : Screen("friend")
     data object History : Screen("history")
+    data object JoinedGames : Screen("joined_games")
 }

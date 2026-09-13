@@ -12,5 +12,11 @@ data class EnrichedActiveGame(
     val roundStatusText: String = "Not started",
     val totalGamesPlayed: Int = 0,
     val isSettled: Boolean = false,
-    val cardSuit: String = "♠"
+    val cardSuit: String = "♠",
+    val hostUserName: String? = null,
+    val hostUserId: String? = null,
+    val myMoney: Double? = null,
+    val myNetPoints: Int? = null,
+    val myRank: Int? = null,
+    val isHost: Boolean = true
 )

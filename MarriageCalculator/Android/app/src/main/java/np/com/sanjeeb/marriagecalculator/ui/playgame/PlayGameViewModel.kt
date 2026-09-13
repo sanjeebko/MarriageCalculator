@@ -70,6 +70,7 @@ data class PlayGameUiState(
     val isSettled: Boolean = false,
     val isLoading: Boolean = false,
     val isHost: Boolean = true,
+    val hostUserName: String? = null,
     val isOnlineMode: Boolean = false,
     val friendsList: List<User> = emptyList(),
     val currentUserEmail: String = "",
@@ -185,6 +186,9 @@ class PlayGameViewModel @Inject constructor(
 
                         val isCurrentUserHost = gameSet.hostUserId == sessionManager.getUserProfile()?.userId
                         val userEmail = sessionManager.getUserProfile()?.email ?: ""
+                        val hostDisplayName = gameSet.hostUserName?.takeIf { it.isNotBlank() }
+                            ?: players.find { it.id == gameSet.hostUserId }?.name
+                            ?: "Host"
 
                         _uiState.value = PlayGameUiState(
                             gameName = gameSet.name,
@@ -196,6 +200,7 @@ class PlayGameViewModel @Inject constructor(
                             isSettled = !gameSet.isActive,
                             isLoading = false,
                             isHost = isCurrentUserHost,
+                            hostUserName = hostDisplayName,
                             isOnlineMode = true,
                             friendsList = emptyList(),
                             currentUserEmail = userEmail,
