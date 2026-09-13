@@ -41,6 +41,26 @@ public class MarriageGameSetsController : ControllerBase
     }
 
     /// <summary>
+    /// Get marriage game sets where the user is a participant player (not host)
+    /// </summary>
+    [HttpGet("joined")]
+    public async Task<ActionResult<IEnumerable<MarriageGameSetDto>>> GetJoinedMarriageGameSets()
+    {
+        try
+        {
+            var hostUserId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? string.Empty;
+            var email = User.FindFirst(ClaimTypes.Email)?.Value ?? string.Empty;
+            var gameSets = await _gameSetService.GetJoinedGameSetsAsync(hostUserId, email);
+            return Ok(gameSets);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error retrieving joined marriage game sets");
+            return StatusCode(500, "An error occurred while retrieving joined marriage game sets");
+        }
+    }
+
+    /// <summary>
     /// Get marriage game set by ID
     /// </summary>
     [HttpGet("{id}")]

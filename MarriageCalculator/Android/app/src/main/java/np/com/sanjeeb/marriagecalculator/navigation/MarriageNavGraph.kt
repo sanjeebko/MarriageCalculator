@@ -16,6 +16,7 @@ import np.com.sanjeeb.marriagecalculator.ui.scoreboard.ScoreboardScreen
 import np.com.sanjeeb.marriagecalculator.ui.splash.SplashScreen
 import np.com.sanjeeb.marriagecalculator.ui.friend.FriendScreen
 import np.com.sanjeeb.marriagecalculator.ui.history.HistoryScreen
+import np.com.sanjeeb.marriagecalculator.ui.joinedgames.JoinedGamesScreen
 
 @Composable
 fun MarriageNavGraph(
@@ -59,6 +60,7 @@ fun MarriageNavGraph(
                 },
                 onFriends = { navController.navigate(Screen.Friend.route) },
                 onHistory = { navController.navigate(Screen.History.route) },
+                onJoinedGames = { navController.navigate(Screen.JoinedGames.route) },
                 onLogout = {
                     sessionManager.clearSession()
                     navController.navigate(Screen.Login.route) {
@@ -153,6 +155,15 @@ fun MarriageNavGraph(
 
         composable(Screen.History.route) {
             HistoryScreen(
+                onBack = { navController.popBackStack() }
+            )
+        }
+
+        composable(Screen.JoinedGames.route) {
+            JoinedGamesScreen(
+                onOpenGame = { gameSetId ->
+                    navController.navigate(Screen.PlayGame.createRoute(gameSetId))
+                },
                 onBack = { navController.popBackStack() }
             )
         }

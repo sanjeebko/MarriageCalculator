@@ -33,17 +33,55 @@ public class MarriageGameSetService : IMarriageGameSetService
         _context = context;
     }
 
-    public async Task<IEnumerable<MarriageGameSetDto>> GetAllGameSetsAsync(string hostUserId, string email)
+    private async Task<List<string>> ResolveParticipantPlayerIdsAsync(string hostUserId, string email)
     {
-        var playerIds = new List<string>();
+        var playerIds = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+        if (!string.IsNullOrEmpty(hostUserId))
+        {
+            playerIds.Add(hostUserId);
+            var user = await _userRepository.GetByUserIdAsync(hostUserId);
+            if (user != null)
+            {
+                playerIds.Add(user.Id);
+                playerIds.Add(user.UserId);
+                if (string.IsNullOrEmpty(email) && !string.IsNullOrEmpty(user.Email))
+                {
+                    email = user.Email;
+                }
+            }
+        }
+
         if (!string.IsNullOrEmpty(email))
         {
             var players = await _playerRepository.GetPlayersByEmailAsync(email);
-            playerIds.AddRange(players.Select(p => p.Id));
+            foreach (var p in players)
+            {
+                playerIds.Add(p.Id);
+            }
         }
 
+        return playerIds.ToList();
+    }
+
+    public async Task<IEnumerable<MarriageGameSetDto>> GetAllGameSetsAsync(string hostUserId, string email)
+    {
+        var playerIds = await ResolveParticipantPlayerIdsAsync(hostUserId, email);
         var gameSets = await _gameSetRepository.GetAllForUserAsync(hostUserId, playerIds);
         
+        var dtoList = new List<MarriageGameSetDto>();
+        foreach (var gs in gameSets)
+        {
+            dtoList.Add(await MapToDtoAsync(gs));
+        }
+        return dtoList;
+    }
+
+    public async Task<IEnumerable<MarriageGameSetDto>> GetJoinedGameSetsAsync(string hostUserId, string email)
+    {
+        var playerIds = await ResolveParticipantPlayerIdsAsync(hostUserId, email);
+        var gameSets = await _gameSetRepository.GetJoinedForUserAsync(hostUserId, playerIds);
+
         var dtoList = new List<MarriageGameSetDto>();
         foreach (var gs in gameSets)
         {
@@ -63,10 +101,9 @@ public class MarriageGameSetService : IMarriageGameSetService
         {
             authorized = true;
         }
-        else if (!string.IsNullOrEmpty(email))
+        else
         {
-            var players = await _playerRepository.GetPlayersByEmailAsync(email);
-            var playerIds = players.Select(p => p.Id).ToList();
+            var playerIds = await ResolveParticipantPlayerIdsAsync(hostUserId, email);
             if (gameSet.PlayerIds.Any(pId => playerIds.Contains(pId)))
             {
                 authorized = true;
@@ -683,10 +720,14 @@ public class MarriageGameSetService : IMarriageGameSetService
 
     private async Task<MarriageGameSetDto> MapToDtoAsync(MarriageGameSet gameSet)
     {
+        var hostUser = await _context.Users.Find(u => u.UserId == gameSet.HostUserId || u.Id == gameSet.HostUserId).FirstOrDefaultAsync();
+
         var dto = new MarriageGameSetDto
         {
             Id = gameSet.Id,
             HostUserId = gameSet.HostUserId,
+            HostUserName = hostUser?.DisplayName ?? string.Empty,
+            HostUserEmail = hostUser?.Email ?? string.Empty,
             Name = gameSet.Name,
             LastPlayed = gameSet.LastPlayed,
             Created = gameSet.Created,

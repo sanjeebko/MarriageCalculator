@@ -27,6 +27,18 @@ public class MarriageGameSetRepository : IMarriageGameSetRepository
             .ToListAsync();
     }
 
+    public async Task<IEnumerable<MarriageGameSet>> GetJoinedForUserAsync(string userId, List<string> playerIds)
+    {
+        if (playerIds == null || playerIds.Count == 0)
+        {
+            return [];
+        }
+
+        return await _collection.Find(gs => gs.HostUserId != userId && gs.PlayerIds.Any(id => playerIds.Contains(id)))
+            .SortByDescending(gs => gs.Created)
+            .ToListAsync();
+    }
+
     public async Task<MarriageGameSet?> GetByIdAsync(string id, string hostUserId)
     {
         return await _collection.Find(gs => gs.Id == id && gs.HostUserId == hostUserId).FirstOrDefaultAsync();

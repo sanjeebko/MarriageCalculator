@@ -42,6 +42,9 @@ interface MarriageGameSetApiService {
     @GET("MarriageGameSets")
     suspend fun getGameSets(): Response<List<MarriageGameSet>>
 
+    @GET("MarriageGameSets/joined")
+    suspend fun getJoinedGameSets(): Response<List<MarriageGameSet>>
+
     @GET("MarriageGameSets/{id}")
     suspend fun getGameSet(@Path("id") id: String): Response<MarriageGameSet>
 

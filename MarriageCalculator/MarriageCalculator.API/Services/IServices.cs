@@ -41,6 +41,7 @@ public interface IGameSettingsService
 public interface IMarriageGameSetService
 {
     Task<IEnumerable<MarriageGameSetDto>> GetAllGameSetsAsync(string hostUserId, string email);
+    Task<IEnumerable<MarriageGameSetDto>> GetJoinedGameSetsAsync(string hostUserId, string email);
     Task<MarriageGameSetDto?> GetGameSetByIdAsync(string id, string hostUserId, string email);
     Task<MarriageGameSetDto> CreateGameSetAsync(CreateMarriageGameSetDto createGameSetDto);
     Task<MarriageGameSetDto?> UpdateGameSetAsync(string id, CreateMarriageGameSetDto updateGameSetDto, string hostUserId);

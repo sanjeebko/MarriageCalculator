@@ -37,6 +37,7 @@ class GameSetRepository @Inject constructor(
     private val api: MarriageGameSetApiService
 ) {
     suspend fun getGameSets(): ApiResult<List<MarriageGameSet>> = safeApiCall { api.getGameSets() }
+    suspend fun getJoinedGameSets(): ApiResult<List<MarriageGameSet>> = safeApiCall { api.getJoinedGameSets() }
     suspend fun getGameSet(id: String): ApiResult<MarriageGameSet> = safeApiCall { api.getGameSet(id) }
     suspend fun createGameSet(request: CreateGameSetRequest): ApiResult<MarriageGameSet> = safeApiCall { api.createGameSet(request) }
     suspend fun updateGameSet(id: String, request: CreateGameSetRequest): ApiResult<MarriageGameSet> = safeApiCall { api.updateGameSet(id, request) }

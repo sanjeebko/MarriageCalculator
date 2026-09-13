@@ -44,6 +44,7 @@ public interface IMarriageGameSetRepository
 {
     Task<IEnumerable<MarriageGameSet>> GetAllByHostUserIdAsync(string hostUserId);
     Task<IEnumerable<MarriageGameSet>> GetAllForUserAsync(string userId, List<string> playerIds);
+    Task<IEnumerable<MarriageGameSet>> GetJoinedForUserAsync(string userId, List<string> playerIds);
     Task<MarriageGameSet?> GetByIdAsync(string id, string hostUserId);
     Task<MarriageGameSet?> GetByIdRawAsync(string id);
     Task<MarriageGameSet> CreateAsync(MarriageGameSet gameSet);

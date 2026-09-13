@@ -69,6 +69,7 @@ fun DashboardScreen(
     onFriends: () -> Unit,
     onLogout: () -> Unit,
     onHistory: () -> Unit = {},
+    onJoinedGames: () -> Unit = {},
     viewModel: DashboardViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
@@ -175,6 +176,15 @@ fun DashboardScreen(
                             selected = false,
                             onClick = { scope.launch { drawerState.close() }; onNewGame() },
                             icon = { Icon(Icons.Default.Add, null, modifier = Modifier.size(18.dp)) },
+                            colors = drawerItemColors,
+                            modifier = drawerItemModifier,
+                            shape = RoundedCornerShape(8.dp)
+                        )
+                        NavigationDrawerItem(
+                            label = { Text("Joined Games", fontSize = 14.sp, fontWeight = FontWeight.Medium) },
+                            selected = false,
+                            onClick = { scope.launch { drawerState.close() }; onJoinedGames() },
+                            icon = { Icon(Icons.Default.SportsEsports, null, modifier = Modifier.size(18.dp)) },
                             colors = drawerItemColors,
                             modifier = drawerItemModifier,
                             shape = RoundedCornerShape(8.dp)
@@ -357,7 +367,7 @@ fun DashboardScreen(
                         Column {
                             Row(
                                 modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.spacedBy(12.dp)
+                                horizontalArrangement = Arrangement.spacedBy(10.dp)
                             ) {
                                 GlassButton(
                                     onClick = onNewGame,
@@ -365,13 +375,25 @@ fun DashboardScreen(
                                     containerColor = AppTheme.palette.cta.copy(alpha = 0.35f),
                                     textColor = AppTheme.palette.accent,
                                     height = 44,
-                                    modifier = Modifier.weight(1f),
+                                    modifier = Modifier.weight(1.2f),
                                     leadingIcon = {
                                         Icon(Icons.Default.Add, null, tint = AppTheme.palette.accent, modifier = Modifier.size(18.dp))
                                     }
                                 )
 
                                 if (!uiState.isOfflineMode) {
+                                    GlassButton(
+                                        onClick = onJoinedGames,
+                                        text = "Joined",
+                                        containerColor = AppTheme.palette.tint.copy(alpha = 0.18f),
+                                        textColor = AppTheme.palette.accent,
+                                        height = 44,
+                                        modifier = Modifier.weight(1f),
+                                        leadingIcon = {
+                                            Icon(Icons.Default.SportsEsports, null, tint = AppTheme.palette.accent, modifier = Modifier.size(18.dp))
+                                        }
+                                    )
+
                                     GlassButton(
                                         onClick = onFriends,
                                         text = "Friends",

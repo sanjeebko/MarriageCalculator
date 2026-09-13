@@ -232,6 +232,21 @@ fun PlayGameScreen(
                             modifier = Modifier.size(20.dp)
                         )
                     }
+
+                    if (uiState.isOnlineMode) {
+                        Spacer(modifier = Modifier.width(2.dp))
+                        IconButton(
+                            onClick = { viewModel.loadGame(gameSetId) },
+                            modifier = Modifier.size(38.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Refresh,
+                                contentDescription = "Refresh scores",
+                                tint = AppTheme.palette.accent.copy(alpha = 0.85f),
+                                modifier = Modifier.size(20.dp)
+                            )
+                        }
+                    }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent)
             )
@@ -304,6 +319,63 @@ fun PlayGameScreen(
                             Text(text = err, color = AppTheme.palette.danger, fontSize = 14.sp, modifier = Modifier.weight(1f))
                             IconButton(onClick = { viewModel.clearError() }) {
                                 Icon(Icons.Default.Close, contentDescription = "Clear error", tint = AppTheme.palette.textPrimary)
+                            }
+                        }
+                    }
+                }
+
+                // Read-Only Participant Banner
+                if (uiState.isOnlineMode && !uiState.isHost && uiState.gameName.isNotEmpty()) {
+                    Card(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(bottom = 12.dp),
+                        shape = RoundedCornerShape(12.dp),
+                        colors = CardDefaults.cardColors(containerColor = AppTheme.palette.tint.copy(alpha = 0.12f)),
+                        border = BorderStroke(1.dp, AppTheme.palette.accent.copy(alpha = 0.30f))
+                    ) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 12.dp, vertical = 10.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                modifier = Modifier.weight(1f)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Visibility,
+                                    contentDescription = "Read-only mode",
+                                    tint = AppTheme.palette.accent,
+                                    modifier = Modifier.size(20.dp)
+                                )
+                                Spacer(modifier = Modifier.width(10.dp))
+                                Column {
+                                    Text(
+                                        text = "Viewing as Participant (Read-Only)",
+                                        color = AppTheme.palette.accent,
+                                        fontSize = 12.sp,
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                    Text(
+                                        text = "Hosted by ${uiState.hostUserName ?: "Host"}",
+                                        color = AppTheme.palette.textPrimary.copy(alpha = 0.75f),
+                                        fontSize = 11.sp
+                                    )
+                                }
+                            }
+                            IconButton(
+                                onClick = { viewModel.loadGame(gameSetId) },
+                                modifier = Modifier.size(32.dp)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Refresh,
+                                    contentDescription = "Refresh scores",
+                                    tint = AppTheme.palette.accent,
+                                    modifier = Modifier.size(18.dp)
+                                )
                             }
                         }
                     }
