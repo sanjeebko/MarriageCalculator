@@ -79,6 +79,12 @@ public class UserService : IUserService
         return updated != null;
     }
 
+    public async Task<bool> UpdateLastLoginAsync(string userId, DateTime timestamp, string? ipAddress)
+    {
+        var updated = await _userRepository.UpdateLastLoginAsync(userId, timestamp, ipAddress);
+        return updated != null;
+    }
+
     public async Task<bool> DeleteUserAsync(string id)
     {
         return await _userRepository.DeleteAsync(id);
@@ -129,6 +135,7 @@ public class UserService : IUserService
             Email = user.Email,
             FcmToken = user.FcmToken,
             PhotoUrl = user.PhotoUrl,
+            LastLoginAt = user.LastLoginAt,
             CreatedAt = user.CreatedAt
         };
     }

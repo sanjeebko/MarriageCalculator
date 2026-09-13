@@ -64,6 +64,7 @@ builder.Services.AddScoped<IFriendshipRepository, FriendshipRepository>();
 builder.Services.AddScoped<IFriendInviteCodeRepository, FriendInviteCodeRepository>();
 builder.Services.AddScoped<IPendingEmailInviteRepository, PendingEmailInviteRepository>();
 builder.Services.AddScoped<IEmailVerificationCodeRepository, EmailVerificationCodeRepository>();
+builder.Services.AddScoped<ILoginAuditRepository, LoginAuditRepository>();
 
 // Register services
 builder.Services.AddSingleton<IFcmService, FcmService>();

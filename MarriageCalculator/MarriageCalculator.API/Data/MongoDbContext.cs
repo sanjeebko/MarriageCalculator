@@ -48,6 +48,9 @@ public class MongoDbContext
     public IMongoCollection<EmailVerificationCode> EmailVerificationCodes =>
         _database.GetCollection<EmailVerificationCode>("emailVerificationCodes");
 
+    public IMongoCollection<LoginAudit> LoginAudits =>
+        _database.GetCollection<LoginAudit>("loginAudits");
+
     /// <summary>
     /// Idempotent index setup (called at startup). Unique invite codes, TTL cleanup of
     /// expired codes/invites, unique username index, and lookup indexes.
@@ -92,6 +95,10 @@ public class MongoDbContext
             new CreateIndexModel<EmailVerificationCode>(
                 Builders<EmailVerificationCode>.IndexKeys.Ascending(c => c.ExpiresAt), ttl),
         });
+
+        await LoginAudits.Indexes.CreateOneAsync(
+            new CreateIndexModel<LoginAudit>(
+                Builders<LoginAudit>.IndexKeys.Descending(l => l.TimestampUtc)));
     }
 
     public async Task<bool> CanConnectAsync()
