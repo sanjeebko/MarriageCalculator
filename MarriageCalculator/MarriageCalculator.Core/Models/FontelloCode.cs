@@ -1,12 +1,12 @@
-﻿  
+  
 namespace MarriageCalculator.Core.Models;
 
 public static class FontelloCode
 {
     public const string Seen   = "\uE800";
     public const string Unseen = "\uE801";
-    public const string Winner = "\uF074";
-    public const string Duplee   = "\uE802";
+    public const string Dublee = "\uE802";
+    public const string Duplee = Dublee;
     public const string Close = "\uE803";
     public const string Settings = "\uE804";
     public const string Foul = "\uF21B";

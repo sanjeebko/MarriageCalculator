@@ -180,7 +180,7 @@ public class ScoringEngineTests
     }
 
     [Fact]
-    public void CalculateScores_DubleeWinner_GetsFiveExtraMaal()
+    public void CalculateScores_DubleeWinner_GetsFiveExtraMaal_With4OrMorePlayers()
     {
         var settings = DefaultSettings();
         settings.Murder = true;
@@ -191,6 +191,7 @@ public class ScoringEngineTests
             ("1", true, 10, true),   // Winner with dublee: maal counts as 10 + 5
             ("2", true, 5, false),   // Seen
             ("3", false, 0, false),  // Unseen
+            ("4", false, 0, false),  // Unseen
         });
 
         ScoringEngine.CalculateScores(game, settings);
@@ -202,7 +203,30 @@ public class ScoringEngineTests
     }
 
     [Fact]
-    public void CalculateScores_SeenDubleeLoser_PaysNoSeenPenalty()
+    public void CalculateScores_DubleeWinner_NotApplied_WhenFewerThan4Players()
+    {
+        var settings = DefaultSettings();
+        settings.Murder = true;
+        settings.Dublee = true;
+
+        // Only 3 players: Dublee is not available/disabled
+        var game = CreateGame("1", new()
+        {
+            ("1", true, 10, true),   // Winner with dublee flag set
+            ("2", true, 5, false),   // Seen
+            ("3", false, 0, false),  // Unseen
+        });
+
+        ScoringEngine.CalculateScores(game, settings);
+        Assert.True(ScoringEngine.ValidateZeroSum(game));
+
+        // In a 3-player game, Dublee winner bonus is NOT applied
+        Assert.Equal(10, game.MarriageGameScores["1"].Maal);
+        Assert.Equal(10 + 5, game.TotalMaal);
+    }
+
+    [Fact]
+    public void CalculateScores_SeenDubleeLoser_PaysNoSeenPenalty_With4OrMorePlayers()
     {
         var settings = DefaultSettings();
         settings.Murder = true;
@@ -214,6 +238,7 @@ public class ScoringEngineTests
             ("1", true, 0, false),   // Winner (no dublee)
             ("2", true, 0, true),    // Seen loser playing dublee: exempt from seen penalty
             ("3", true, 0, false),   // Seen loser: pays seenPoint
+            ("4", false, 0, false),  // Unseen loser: pays unseenPoint
         });
 
         ScoringEngine.CalculateScores(game, settings);
@@ -221,7 +246,32 @@ public class ScoringEngineTests
 
         Assert.Equal(0, game.MarriageGameScores["2"].Score);
         Assert.Equal(-settings.SeenPoint, game.MarriageGameScores["3"].Score);
-        Assert.Equal(settings.SeenPoint, game.MarriageGameScores["1"].Score);
+        Assert.Equal(-settings.UnseenPoint, game.MarriageGameScores["4"].Score);
+        Assert.Equal(settings.SeenPoint + settings.UnseenPoint, game.MarriageGameScores["1"].Score);
+    }
+
+    [Fact]
+    public void CalculateScores_SeenDubleeLoser_PaysSeenPenalty_WhenFewerThan4Players()
+    {
+        var settings = DefaultSettings();
+        settings.Murder = true;
+        settings.Dublee = true;
+
+        // 3 players: Dublee is disabled, so seen player with dublee flag still pays seen penalty
+        var game = CreateGame("1", new()
+        {
+            ("1", true, 0, false),   // Winner
+            ("2", true, 0, true),    // Seen loser with dublee flag
+            ("3", true, 0, false),   // Seen loser
+        });
+
+        ScoringEngine.CalculateScores(game, settings);
+        Assert.True(ScoringEngine.ValidateZeroSum(game));
+
+        // Exemption does NOT apply in 3-player game
+        Assert.Equal(-settings.SeenPoint, game.MarriageGameScores["2"].Score);
+        Assert.Equal(-settings.SeenPoint, game.MarriageGameScores["3"].Score);
+        Assert.Equal(settings.SeenPoint * 2, game.MarriageGameScores["1"].Score);
     }
 
     [Fact]
@@ -235,6 +285,8 @@ public class ScoringEngineTests
         {
             ("1", true, 0, false),   // Winner
             ("2", false, 0, true),   // Unseen dublee loser: exemption only applies when seen
+            ("3", false, 0, false),  // Unseen
+            ("4", true, 0, false),   // Seen
         });
 
         ScoringEngine.CalculateScores(game, settings);

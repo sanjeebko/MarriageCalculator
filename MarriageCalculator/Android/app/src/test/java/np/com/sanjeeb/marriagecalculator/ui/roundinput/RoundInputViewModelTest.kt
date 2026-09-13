@@ -29,7 +29,8 @@ class RoundInputViewModelTest {
     private val testPlayers = listOf(
         Player(id = "1", name = "Player 1"),
         Player(id = "2", name = "Player 2"),
-        Player(id = "3", name = "Player 3")
+        Player(id = "3", name = "Player 3"),
+        Player(id = "4", name = "Player 4")
     )
 
     @Before
@@ -48,6 +49,19 @@ class RoundInputViewModelTest {
     @org.junit.After
     fun tearDown() {
         kotlinx.coroutines.Dispatchers.resetMain()
+    }
+
+    @Test
+    fun toggleDuply_WhenFewerThan4Players_DoesNothing() {
+        val threePlayers = listOf(
+            Player(id = "1", name = "Player 1"),
+            Player(id = "2", name = "Player 2"),
+            Player(id = "3", name = "Player 3")
+        )
+        viewModel.initPlayers(threePlayers, GameSettings.default())
+        viewModel.toggleDuply("1")
+        val player = viewModel.uiState.value.playerStates.first { it.player.id == "1" }
+        assertFalse(player.duply)
     }
 
     @Test

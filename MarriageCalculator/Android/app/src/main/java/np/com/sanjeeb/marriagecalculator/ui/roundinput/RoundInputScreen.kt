@@ -156,6 +156,8 @@ fun RoundInputScreen(
 
                 Spacer(modifier = Modifier.height(12.dp))
 
+                val isDubleeAllowed = uiState.playerStates.size >= 4 && uiState.settings.dublee
+
                 // ---- Compact score grid ----
                 Column(
                     modifier = Modifier
@@ -164,7 +166,7 @@ fun RoundInputScreen(
                         .background(AppTheme.palette.tint.copy(alpha = 0.05f))
                         .border(1.dp, AppTheme.palette.tint.copy(alpha = 0.08f), RoundedCornerShape(12.dp))
                 ) {
-                    ScoreGridHeader()
+                    ScoreGridHeader(isDubleeAllowed = isDubleeAllowed)
 
                     uiState.playerStates.forEachIndexed { index, playerState ->
                         PlayerScoreRow(
@@ -173,6 +175,7 @@ fun RoundInputScreen(
                             isSelectedForQuickMaal = activeQuickMaalPlayerId == playerState.player.id,
                             showPreview = uiState.showPreview,
                             currency = uiState.settings.currency,
+                            isDubleeAllowed = isDubleeAllowed,
                             onSelectWinner = {
                                 haptic.performHapticFeedback(HapticFeedbackType.LongPress)
                                 viewModel.setWinner(playerState.player.id)
@@ -203,7 +206,7 @@ fun RoundInputScreen(
                 }
 
                 // Dublee winner notice: the +5 is applied automatically, so say so
-                if (uiState.playerStates.any { it.isWinner && it.duply } && uiState.settings.dublee) {
+                if (uiState.playerStates.any { it.isWinner && it.duply } && isDubleeAllowed) {
                     Spacer(modifier = Modifier.height(8.dp))
                     Text(
                         text = "Dublee win: +${RoundInputViewModel.DUBLEE_WINNER_MAAL_BONUS} Maal added to the total Maal.",
@@ -264,7 +267,7 @@ fun RoundInputScreen(
 }
 
 @Composable
-private fun ScoreGridHeader() {
+private fun ScoreGridHeader(isDubleeAllowed: Boolean = true) {
     Row(
         verticalAlignment = Alignment.CenterVertically,
         modifier = Modifier
@@ -282,7 +285,7 @@ private fun ScoreGridHeader() {
         )
         HeaderCell(Icons.Default.EmojiEvents, "Winner", WinnerColWidth)
         HeaderText("SEEN", CheckColWidth)
-        HeaderText("DUB", CheckColWidth)
+        HeaderText("DUB", CheckColWidth, alpha = if (isDubleeAllowed) 1f else 0.35f)
         HeaderText("MAAL", MaalColWidth)
     }
 }
@@ -295,10 +298,10 @@ private fun HeaderCell(icon: androidx.compose.ui.graphics.vector.ImageVector, de
 }
 
 @Composable
-private fun HeaderText(text: String, width: androidx.compose.ui.unit.Dp) {
+private fun HeaderText(text: String, width: androidx.compose.ui.unit.Dp, alpha: Float = 1f) {
     Text(
         text = text,
-        color = AppTheme.palette.frostAccent,
+        color = AppTheme.palette.frostAccent.copy(alpha = alpha),
         fontSize = 10.sp,
         fontWeight = FontWeight.Bold,
         letterSpacing = 1.sp,
@@ -315,6 +318,7 @@ private fun PlayerScoreRow(
     isSelectedForQuickMaal: Boolean,
     showPreview: Boolean,
     currency: Currency,
+    isDubleeAllowed: Boolean = true,
     onSelectWinner: () -> Unit,
     onToggleSeen: () -> Unit,
     onToggleDuply: () -> Unit,
@@ -448,9 +452,9 @@ private fun PlayerScoreRow(
             // Dublee checkbox
             GridCheckbox(
                 checked = state.duply,
-                enabled = true,
+                enabled = isDubleeAllowed,
                 activeColor = AppTheme.palette.cta,
-                description = "Dublee",
+                description = if (isDubleeAllowed) "Dublee" else "Dublee (requires 4+ players)",
                 width = CheckColWidth,
                 onToggle = onToggleDuply
             )

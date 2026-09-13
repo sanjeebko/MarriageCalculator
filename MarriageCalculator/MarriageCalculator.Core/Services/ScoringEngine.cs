@@ -29,9 +29,12 @@ public class ScoringEngine
 
         int playerCount = scores.Count;
 
+        // Dublee is available only when there are 4 or more players.
+        bool dubleeActive = settings.Dublee && playerCount >= 4;
+
         // Dublee winner rule: their Maal counts DubleeWinnerMaalBonus above the
         // maal they actually held, flowing through maal distribution and TotalMaal.
-        if (winner.Duply && settings.Dublee)
+        if (winner.Duply && dubleeActive)
         {
             winner.Maal += DubleeWinnerMaalBonus;
         }
@@ -91,6 +94,7 @@ public class ScoringEngine
     private static int CollectPenalties(List<MarriageGameScore> scores, MarriageGameScore winner, GameSettings settings, int playerCount)
     {
         int totalCollected = 0;
+        bool dubleeActive = settings.Dublee && playerCount >= 4;
 
         foreach (var loser in scores.Where(s => !s.Winner))
         {
@@ -99,7 +103,7 @@ public class ScoringEngine
             {
                 penalty = settings.UnseenPoint;
             }
-            else if (loser.Duply && settings.Dublee)
+            else if (loser.Duply && dubleeActive)
             {
                 // Dublee loser who has seen the joker doesn't pay the seen penalty.
                 penalty = 0;
