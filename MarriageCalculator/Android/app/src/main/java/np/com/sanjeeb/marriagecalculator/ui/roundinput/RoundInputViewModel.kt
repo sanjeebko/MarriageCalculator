@@ -181,6 +181,7 @@ class RoundInputViewModel @Inject constructor(
                         ?.takeIf { it.size == players.size }
                         ?: players
 
+                    val dubleeAllowed = seatOrder.size >= 4 && settings.dublee
                     _uiState.value = _uiState.value.copy(
                         gameSetId = gameSetIdStr,
                         editGameId = editGameId,
@@ -190,7 +191,7 @@ class RoundInputViewModel @Inject constructor(
                                 player = player,
                                 seen = score?.seen ?: false,
                                 seenPoints = score?.maal ?: 0,
-                                duply = score?.duply ?: false,
+                                duply = if (dubleeAllowed) (score?.duply ?: false) else false,
                                 isWinner = player.id == game.winnerId,
                                 isDealer = player.id == game.dealerId
                             )
@@ -220,6 +221,7 @@ class RoundInputViewModel @Inject constructor(
                 .takeIf { it.size == players.size }
                 ?: players
 
+            val dubleeAllowed = seatOrder.size >= 4 && settings.dublee
             _uiState.value = _uiState.value.copy(
                 gameSetId = gameSetIdStr,
                 editGameId = editGameId,
@@ -229,7 +231,7 @@ class RoundInputViewModel @Inject constructor(
                         player = player,
                         seen = score?.isSeen ?: false,
                         seenPoints = score?.maal ?: 0,
-                        duply = score?.isDublee ?: false,
+                        duply = if (dubleeAllowed) (score?.isDublee ?: false) else false,
                         isWinner = player.id == game.winnerId.toString(),
                         isDealer = player.id == game.dealerId.toString()
                     )
@@ -289,6 +291,9 @@ class RoundInputViewModel @Inject constructor(
 
     fun toggleDuply(playerId: String) {
         val current = _uiState.value
+        // Dublee is available only when there are 4 or more players and settings.dublee is enabled
+        if (current.playerStates.size < 4 || !current.settings.dublee) return
+
         val newStates = current.playerStates.map {
             if (it.player.id == playerId) {
                 val newDuply = !it.duply
@@ -365,7 +370,9 @@ class RoundInputViewModel @Inject constructor(
 
         // Dublee winner rule: their maal counts DUBLEE_WINNER_MAAL_BONUS above
         // the maal they actually held (mirrors C# ScoringEngine).
-        if (players[winnerIdx].duply && settings.dublee) {
+        // Available only when 4 or more players are playing.
+        val dubleeAllowed = players.size >= 4 && settings.dublee
+        if (players[winnerIdx].duply && dubleeAllowed) {
             maalValues[winnerIdx] += DUBLEE_WINNER_MAAL_BONUS
         }
 
@@ -386,12 +393,12 @@ class RoundInputViewModel @Inject constructor(
 
         val scores = MutableList(players.size) { 0 }
 
-        // Fixed penalties. A seen loser playing dublee is exempt from the seen penalty.
+        // Fixed penalties. A seen loser playing dublee is exempt from the seen penalty (if 4+ players).
         for (i in players.indices) {
             if (players[i].isWinner) continue
             val penalty = when {
                 !seenFlags[i] -> settings.unseenPoint
-                players[i].duply && settings.dublee -> 0
+                players[i].duply && dubleeAllowed -> 0
                 else -> settings.seenPoint
             }
             scores[i] -= penalty
@@ -443,6 +450,7 @@ class RoundInputViewModel @Inject constructor(
 
         viewModelScope.launch {
             if (isOnline) {
+                val dubleeAllowed = state.playerStates.size >= 4 && state.settings.dublee
                 val request = SubmitRoundRequest(
                     winnerId = winnerId,
                     dealerId = state.dealerId ?: "",
@@ -451,7 +459,7 @@ class RoundInputViewModel @Inject constructor(
                         RoundPlayerInput(
                             playerId = ps.player.id,
                             seen = ps.seen || isPlayerWinner,
-                            duply = ps.duply,
+                            duply = if (dubleeAllowed) ps.duply else false,
                             maal = if (ps.seen) ps.seenPoints else 0
                         )
                     }
@@ -497,19 +505,20 @@ class RoundInputViewModel @Inject constructor(
 
             val gameSetId = gameSetIdStr.toIntOrNull() ?: return@launch
             try {
+                val dubleeAllowed = state.playerStates.size >= 4 && state.settings.dublee
                 val scores = state.playerStates.map { ps ->
                     val isPlayerWinner = ps.player.id == state.winnerId
                     // Persist the dublee winner's maal with the fixed +5 bonus applied,
-                    // matching what the C# ScoringEngine stores in online mode.
+                    // matching what the C# ScoringEngine stores in online mode (4+ players).
                     val dubleeBonus =
-                        if (isPlayerWinner && ps.duply && state.settings.dublee) DUBLEE_WINNER_MAAL_BONUS else 0
+                        if (isPlayerWinner && ps.duply && dubleeAllowed) DUBLEE_WINNER_MAAL_BONUS else 0
                     np.com.sanjeeb.marriagecalculator.data.repository.RoundScoreData(
                         playerId = ps.player.id.toInt(),
                         score = ps.previewScore,
                         maal = (if (ps.seen) ps.seenPoints else 0) + dubleeBonus,
                         isSeen = ps.seen || isPlayerWinner,
                         isWinner = isPlayerWinner,
-                        isDublee = ps.duply
+                        isDublee = ps.duply && dubleeAllowed
                     )
                 }
                 val totalMaal = scores.filter { it.isSeen }.sumOf { it.maal }
@@ -557,20 +566,21 @@ class RoundInputViewModel @Inject constructor(
     ): Boolean {
         return try {
             val localGameSet = offlineGameRepository.getGameSetByRemoteId(gameSetRemoteId) ?: return false
+            val dubleeAllowed = state.playerStates.size >= 4 && state.settings.dublee
             val scores = state.playerStates.mapNotNull { ps ->
                 val localPlayerId = ps.player.id.toIntOrNull()
                     ?: offlineGameRepository.getPlayerEntityByName(ps.player.name)?.id
                     ?: return@mapNotNull null
                 val isPlayerWinner = ps.player.id == winnerId
                 val dubleeBonus =
-                    if (isPlayerWinner && ps.duply && state.settings.dublee) DUBLEE_WINNER_MAAL_BONUS else 0
+                    if (isPlayerWinner && ps.duply && dubleeAllowed) DUBLEE_WINNER_MAAL_BONUS else 0
                 np.com.sanjeeb.marriagecalculator.data.repository.RoundScoreData(
                     playerId = localPlayerId,
                     score = ps.previewScore,
                     maal = (if (ps.seen) ps.seenPoints else 0) + dubleeBonus,
                     isSeen = ps.seen || isPlayerWinner,
                     isWinner = isPlayerWinner,
-                    isDublee = ps.duply
+                    isDublee = ps.duply && dubleeAllowed
                 )
             }
             if (scores.isEmpty()) return false

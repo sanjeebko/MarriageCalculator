@@ -130,6 +130,7 @@ fun GameSetupScreen(
                 // Settings Section
                 SettingsSection(
                     settings = uiState.settings,
+                    selectedPlayerCount = uiState.selectedPlayerIds.size,
                     onSettingsChange = viewModel::updateSettings
                 )
 
@@ -749,7 +750,11 @@ fun copyUriToInternalStorage(context: android.content.Context, uri: Uri): String
 }
 
 @Composable
-private fun SettingsSection(settings: GameSettings, onSettingsChange: (GameSettings) -> Unit) {
+private fun SettingsSection(
+    settings: GameSettings,
+    selectedPlayerCount: Int,
+    onSettingsChange: (GameSettings) -> Unit
+) {
     var expanded by remember { mutableStateOf(false) }
 
     Card(
@@ -834,17 +839,36 @@ private fun SettingsSection(settings: GameSettings, onSettingsChange: (GameSetti
 
                 Spacer(modifier = Modifier.height(12.dp))
 
-                // Dublee toggle
+                // Dublee toggle (available only when 4 or more players are selected)
+                val canEnableDublee = selectedPlayerCount >= 4
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
-                    Text("Dublee", color = AppTheme.palette.tint.copy(alpha = 0.7f))
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            "Dublee",
+                            color = if (canEnableDublee) AppTheme.palette.tint.copy(alpha = 0.7f) else AppTheme.palette.tint.copy(alpha = 0.35f)
+                        )
+                        if (!canEnableDublee) {
+                            Text(
+                                "Requires 4 or more players",
+                                color = AppTheme.palette.tint.copy(alpha = 0.4f),
+                                fontSize = 11.sp
+                            )
+                        }
+                    }
                     Switch(
-                        checked = settings.dublee,
+                        checked = settings.dublee && canEnableDublee,
+                        enabled = canEnableDublee,
                         onCheckedChange = { onSettingsChange(settings.copy(dublee = it)) },
-                        colors = SwitchDefaults.colors(checkedTrackColor = AppTheme.palette.cta, checkedThumbColor = AppTheme.palette.accent)
+                        colors = SwitchDefaults.colors(
+                            checkedTrackColor = AppTheme.palette.cta,
+                            checkedThumbColor = AppTheme.palette.accent,
+                            disabledCheckedTrackColor = AppTheme.palette.tint.copy(alpha = 0.1f),
+                            disabledUncheckedTrackColor = AppTheme.palette.tint.copy(alpha = 0.05f)
+                        )
                     )
                 }
             }

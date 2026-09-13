@@ -39,10 +39,24 @@ class RoundInputViewModelTest {
     }
 
     @Test
+    fun `toggleDuply does nothing when fewer than 4 players`() {
+        val players = listOf(
+            Player(id = "1", name = "San"),
+            Player(id = "2", name = "Aar"),
+            Player(id = "3", name = "Ram")
+        )
+        viewModel.initPlayers(players, GameSettings.default())
+        viewModel.toggleDuply("1")
+        assertFalse(viewModel.uiState.value.playerStates[0].duply)
+    }
+
+    @Test
     fun `toggleDuply to true automatically selects seen`() {
         val players = listOf(
             Player(id = "1", name = "San"),
-            Player(id = "2", name = "Aar")
+            Player(id = "2", name = "Aar"),
+            Player(id = "3", name = "Ram"),
+            Player(id = "4", name = "Hari")
         )
         viewModel.initPlayers(players, GameSettings.default())
 
@@ -59,7 +73,9 @@ class RoundInputViewModelTest {
     fun `toggleDuply to false keeps seen checked`() {
         val players = listOf(
             Player(id = "1", name = "San"),
-            Player(id = "2", name = "Aar")
+            Player(id = "2", name = "Aar"),
+            Player(id = "3", name = "Ram"),
+            Player(id = "4", name = "Hari")
         )
         viewModel.initPlayers(players, GameSettings.default())
 
@@ -76,7 +92,9 @@ class RoundInputViewModelTest {
     fun `toggleSeen to false clears duply`() {
         val players = listOf(
             Player(id = "1", name = "San"),
-            Player(id = "2", name = "Aar")
+            Player(id = "2", name = "Aar"),
+            Player(id = "3", name = "Ram"),
+            Player(id = "4", name = "Hari")
         )
         viewModel.initPlayers(players, GameSettings.default())
 

@@ -201,14 +201,25 @@ class GameSetupViewModel @Inject constructor(
             }.toSet()
             withoutDuplicates + playerId
         }
+        val settings = if (newSelection.size < 4 && _uiState.value.settings.dublee) {
+            _uiState.value.settings.copy(dublee = false)
+        } else {
+            _uiState.value.settings
+        }
         _uiState.value = _uiState.value.copy(
             selectedPlayerIds = newSelection,
+            settings = settings,
             error = null
         )
     }
 
     fun updateSettings(settings: GameSettings) {
-        _uiState.value = _uiState.value.copy(settings = settings)
+        val enforcedSettings = if (_uiState.value.selectedPlayerIds.size < 4 && settings.dublee) {
+            settings.copy(dublee = false)
+        } else {
+            settings
+        }
+        _uiState.value = _uiState.value.copy(settings = enforcedSettings)
     }
 
     fun getAllPlayers(): List<Player> {
@@ -289,6 +300,11 @@ class GameSetupViewModel @Inject constructor(
             }
 
             val isOnline = !state.isOfflineMode && sessionManager.isOnlineMode()
+            val effectiveSettings = if (finalOrder.size < 4 && state.settings.dublee) {
+                state.settings.copy(dublee = false)
+            } else {
+                state.settings
+            }
 
             if (isOnline) {
                 try {
@@ -334,18 +350,18 @@ class GameSetupViewModel @Inject constructor(
                     }
 
                     val settingsRequest = CreateGameSettingsRequest(
-                        murder = state.settings.murder,
-                        kidnap = state.settings.kidnap,
-                        seenPoint = state.settings.seenPoint,
-                        unseenPoint = state.settings.unseenPoint,
-                        pointRate = state.settings.pointRate,
-                        currency = state.settings.currency,
-                        dublee = state.settings.dublee,
-                        dubleePointLess = state.settings.dubleePointLess,
-                        dubleePointBonus = state.settings.dubleePointBonus,
-                        foulPoint = state.settings.foulPoint,
-                        foulPointBonus = state.settings.foulPointBonus,
-                        audio = state.settings.audio
+                        murder = effectiveSettings.murder,
+                        kidnap = effectiveSettings.kidnap,
+                        seenPoint = effectiveSettings.seenPoint,
+                        unseenPoint = effectiveSettings.unseenPoint,
+                        pointRate = effectiveSettings.pointRate,
+                        currency = effectiveSettings.currency,
+                        dublee = effectiveSettings.dublee,
+                        dubleePointLess = effectiveSettings.dubleePointLess,
+                        dubleePointBonus = effectiveSettings.dubleePointBonus,
+                        foulPoint = effectiveSettings.foulPoint,
+                        foulPointBonus = effectiveSettings.foulPointBonus,
+                        audio = effectiveSettings.audio
                     )
 
                     val settingsResult = gameSettingsRepository.createGameSettings(settingsRequest)
@@ -370,7 +386,7 @@ class GameSetupViewModel @Inject constructor(
                                     }
                                 }.filter { it != -1 }
 
-                                val localSettingsId = offlineGameRepository.createGameSettingsWithRemoteId(state.settings, settingsResult.data.id)
+                                val localSettingsId = offlineGameRepository.createGameSettingsWithRemoteId(effectiveSettings, settingsResult.data.id)
                                 val localGameSetId = offlineGameRepository.createGameSetWithRemoteId(
                                     name = finalGameName,
                                     settingsId = localSettingsId,
@@ -409,7 +425,7 @@ class GameSetupViewModel @Inject constructor(
 
             val localGameSetId = offlineGameRepository.createGameSet(
                 name = finalGameName,
-                settings = state.settings,
+                settings = effectiveSettings,
                 playerIds = localPlayerIds
             )
 

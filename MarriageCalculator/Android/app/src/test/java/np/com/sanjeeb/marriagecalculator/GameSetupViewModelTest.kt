@@ -116,4 +116,89 @@ class GameSetupViewModelTest {
             )
         }
     }
+
+    @Test
+    fun `updateSettings with fewer than 4 players forces dublee false`() = runTest {
+        val p1 = Player(id = "1", name = "P1")
+        val p2 = Player(id = "2", name = "P2")
+        val p3 = Player(id = "3", name = "P3")
+        every { sessionManager.isOnlineMode() } returns false
+        coEvery { offlineGameRepository.getAllPlayers() } returns flowOf(listOf(p1, p2, p3))
+
+        val viewModel = createViewModel()
+        viewModel.togglePlayerSelection("1")
+        viewModel.togglePlayerSelection("2")
+        viewModel.togglePlayerSelection("3")
+
+        viewModel.updateSettings(GameSettings.default().copy(dublee = true))
+
+        assertFalse(viewModel.uiState.value.settings.dublee)
+    }
+
+    @Test
+    fun `updateSettings with 4 or more players allows dublee true`() = runTest {
+        val p1 = Player(id = "1", name = "P1")
+        val p2 = Player(id = "2", name = "P2")
+        val p3 = Player(id = "3", name = "P3")
+        val p4 = Player(id = "4", name = "P4")
+        every { sessionManager.isOnlineMode() } returns false
+        coEvery { offlineGameRepository.getAllPlayers() } returns flowOf(listOf(p1, p2, p3, p4))
+
+        val viewModel = createViewModel()
+        viewModel.togglePlayerSelection("1")
+        viewModel.togglePlayerSelection("2")
+        viewModel.togglePlayerSelection("3")
+        viewModel.togglePlayerSelection("4")
+
+        viewModel.updateSettings(GameSettings.default().copy(dublee = true))
+
+        assertTrue(viewModel.uiState.value.settings.dublee)
+    }
+
+    @Test
+    fun `togglePlayerSelection dropping below 4 players resets dublee to false`() = runTest {
+        val p1 = Player(id = "1", name = "P1")
+        val p2 = Player(id = "2", name = "P2")
+        val p3 = Player(id = "3", name = "P3")
+        val p4 = Player(id = "4", name = "P4")
+        every { sessionManager.isOnlineMode() } returns false
+        coEvery { offlineGameRepository.getAllPlayers() } returns flowOf(listOf(p1, p2, p3, p4))
+
+        val viewModel = createViewModel()
+        viewModel.togglePlayerSelection("1")
+        viewModel.togglePlayerSelection("2")
+        viewModel.togglePlayerSelection("3")
+        viewModel.togglePlayerSelection("4")
+
+        viewModel.updateSettings(GameSettings.default().copy(dublee = true))
+        assertTrue(viewModel.uiState.value.settings.dublee)
+
+        // Deselect player 4 -> down to 3 players
+        viewModel.togglePlayerSelection("4")
+        assertFalse(viewModel.uiState.value.settings.dublee)
+    }
+
+    @Test
+    fun `createGame with 3 players enforces dublee false in saved settings`() = runTest {
+        val p1 = Player(id = "1", name = "P1")
+        val p2 = Player(id = "2", name = "P2")
+        val p3 = Player(id = "3", name = "P3")
+        every { sessionManager.isOnlineMode() } returns false
+        coEvery { offlineGameRepository.getAllPlayers() } returns flowOf(listOf(p1, p2, p3))
+
+        val viewModel = createViewModel()
+        viewModel.togglePlayerSelection("1")
+        viewModel.togglePlayerSelection("2")
+        viewModel.togglePlayerSelection("3")
+
+        viewModel.createGame(listOf("1", "2", "3"))
+
+        coVerify {
+            offlineGameRepository.createGameSet(
+                name = any(),
+                settings = match { !it.dublee },
+                playerIds = listOf(1, 2, 3)
+            )
+        }
+    }
 }
