@@ -140,7 +140,7 @@ public class AuthService : IAuthService
         {
             Token = token,
             UserId = user.UserId,
-            Username = user.Username,
+            Username = user.Username ?? string.Empty,
             Email = user.Email,
             DisplayName = user.DisplayName,
             ExpiresAt = expiresAt
@@ -181,7 +181,7 @@ public class AuthService : IAuthService
         {
             Token = token,
             UserId = user.UserId,
-            Username = user.Username,
+            Username = user.Username ?? string.Empty,
             Email = user.Email,
             DisplayName = user.DisplayName,
             ExpiresAt = expiresAt

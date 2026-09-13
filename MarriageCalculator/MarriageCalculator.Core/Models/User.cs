@@ -12,7 +12,8 @@ public class User
 
     public string UserId { get; set; } = string.Empty; // Firebase / Provider unique user ID
 
-    public string Username { get; set; } = string.Empty;
+    [BsonIgnoreIfNull]
+    public string? Username { get; set; }
 
     public string DisplayName { get; set; } = string.Empty;
 

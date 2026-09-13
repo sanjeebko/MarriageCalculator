@@ -59,6 +59,18 @@ public class MongoDbContext
     {
         var ttl = new CreateIndexOptions { ExpireAfter = TimeSpan.Zero };
 
+        // Clean up any empty string usernames so sparse unique index ignores them
+        try
+        {
+            await Users.UpdateManyAsync(
+                u => u.Username == string.Empty,
+                Builders<User>.Update.Unset(u => u.Username));
+        }
+        catch
+        {
+            // Ignore if collection is empty or initial startup
+        }
+
         await Users.Indexes.CreateManyAsync(new[]
         {
             new CreateIndexModel<User>(
