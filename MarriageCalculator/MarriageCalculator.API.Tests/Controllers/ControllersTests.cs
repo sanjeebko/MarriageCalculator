@@ -49,6 +49,60 @@ public class ControllersTests
     }
 
     [Fact]
+    public async Task UsersController_Login_WithAuditRepository_RecordsAuditAndUpdatesLastLogin()
+    {
+        // Arrange
+        var serviceMock = new Mock<IUserService>();
+        var auditRepoMock = new Mock<MarriageCalculator.API.Repositories.ILoginAuditRepository>();
+        var loggerMock = new Mock<ILogger<UsersController>>();
+        var controller = new UsersController(serviceMock.Object, loggerMock.Object, auditRepoMock.Object);
+        SetControllerUser(controller, "mock-google-user");
+
+        var userDto = new UserDto { UserId = "mock-google-user", Email = "reviewer@google.com", DisplayName = "Google Reviewer" };
+        serviceMock.Setup(s => s.GetOrCreateUserFromClaimsAsync(It.IsAny<ClaimsPrincipal>()))
+            .ReturnsAsync(userDto);
+
+        // Act
+        var result = await controller.Login();
+
+        // Assert
+        var okResult = Assert.IsType<OkObjectResult>(result.Result);
+        var returnedUser = Assert.IsType<UserDto>(okResult.Value);
+        Assert.Equal("reviewer@google.com", returnedUser.Email);
+
+        auditRepoMock.Verify(r => r.RecordLoginAsync(It.Is<MarriageCalculator.Core.Models.LoginAudit>(
+            a => a.UserId == "mock-google-user" && a.Email == "reviewer@google.com" && a.AuthMethod == "Google/Bearer"
+        )), Times.Once);
+
+        serviceMock.Verify(s => s.UpdateLastLoginAsync("mock-google-user", It.IsAny<DateTime>(), It.IsAny<string?>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task UsersController_GetRecentLoginAudits_ReturnsAudits()
+    {
+        // Arrange
+        var serviceMock = new Mock<IUserService>();
+        var auditRepoMock = new Mock<MarriageCalculator.API.Repositories.ILoginAuditRepository>();
+        var loggerMock = new Mock<ILogger<UsersController>>();
+        var controller = new UsersController(serviceMock.Object, loggerMock.Object, auditRepoMock.Object);
+        SetControllerUser(controller, "admin-user");
+
+        var audits = new List<MarriageCalculator.Core.Models.LoginAudit>
+        {
+            new() { Id = "audit-1", UserId = "user-1", Email = "user1@test.com", DisplayName = "User 1", AuthMethod = "Google/Bearer", TimestampUtc = DateTime.UtcNow }
+        };
+        auditRepoMock.Setup(r => r.GetRecentLoginsAsync(50)).ReturnsAsync(audits);
+
+        // Act
+        var result = await controller.GetRecentLoginAudits(50);
+
+        // Assert
+        var okResult = Assert.IsType<OkObjectResult>(result.Result);
+        var returnedAudits = Assert.IsAssignableFrom<IEnumerable<LoginAuditDto>>(okResult.Value);
+        Assert.Single(returnedAudits);
+    }
+
+    [Fact]
     public async Task GameSettingsController_GetGameSettings_FiltersByUserId()
     {
         // Arrange

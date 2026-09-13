@@ -25,6 +25,7 @@ public interface IUserRepository
     Task<User> CreateAsync(User user);
     Task<User?> UpdateAsync(string id, User user);
     Task<User?> UpdateFcmTokenAsync(string userId, string fcmToken);
+    Task<User?> UpdateLastLoginAsync(string userId, DateTime timestamp, string? ipAddress);
     Task<bool> DeleteAsync(string id);
     Task<bool> ExistsAsync(string id);
 }
@@ -93,4 +94,10 @@ public interface IPendingEmailInviteRepository
     Task<PendingEmailInvite?> GetPendingByInviterAndEmailAsync(string inviterUserId, string email);
     Task<PendingEmailInvite> CreateAsync(PendingEmailInvite invite);
     Task<bool> MarkClaimedAsync(string id);
+}
+
+public interface ILoginAuditRepository
+{
+    Task RecordLoginAsync(LoginAudit audit);
+    Task<IEnumerable<LoginAudit>> GetRecentLoginsAsync(int limit = 50);
 }

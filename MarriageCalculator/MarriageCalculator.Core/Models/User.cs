@@ -24,5 +24,9 @@ public class User
 
     public string? PhotoUrl { get; set; }
 
+    public DateTime? LastLoginAt { get; set; }
+
+    public string? LastLoginIp { get; set; }
+
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 }

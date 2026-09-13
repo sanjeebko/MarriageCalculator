@@ -22,6 +22,7 @@ public interface IUserService
     Task<UserDto> CreateUserAsync(CreateUserDto createUserDto);
     Task<UserDto?> UpdateUserAsync(string id, UpdateUserDto updateUserDto);
     Task<bool> UpdateFcmTokenAsync(string userId, string fcmToken);
+    Task<bool> UpdateLastLoginAsync(string userId, DateTime timestamp, string? ipAddress);
     Task<bool> DeleteUserAsync(string id);
     Task<bool> UserExistsAsync(string id);
     Task<UserDto> GetOrCreateUserFromClaimsAsync(System.Security.Claims.ClaimsPrincipal principal);

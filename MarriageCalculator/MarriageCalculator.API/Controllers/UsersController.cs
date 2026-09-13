@@ -1,9 +1,12 @@
 using MarriageCalculator.Core.DTOs;
+using MarriageCalculator.Core.Models;
+using MarriageCalculator.API.Repositories;
 using MarriageCalculator.API.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Security.Claims;
 using System.Threading.Tasks;
 
@@ -14,12 +17,52 @@ namespace MarriageCalculator.API.Controllers;
 public class UsersController : ControllerBase
 {
     private readonly IUserService _userService;
+    private readonly ILoginAuditRepository? _loginAuditRepository;
     private readonly ILogger<UsersController> _logger;
 
-    public UsersController(IUserService userService, ILogger<UsersController> logger)
+    public UsersController(
+        IUserService userService, 
+        ILogger<UsersController> logger,
+        ILoginAuditRepository? loginAuditRepository = null)
     {
         _userService = userService;
         _logger = logger;
+        _loginAuditRepository = loginAuditRepository;
+    }
+
+    private string GetClientIp()
+    {
+        try
+        {
+            if (Request?.Headers != null)
+            {
+                if (Request.Headers.TryGetValue("CF-Connecting-IP", out var cfIp) && !string.IsNullOrWhiteSpace(cfIp))
+                {
+                    return cfIp.ToString();
+                }
+                if (Request.Headers.TryGetValue("X-Forwarded-For", out var forwardedFor) && !string.IsNullOrWhiteSpace(forwardedFor))
+                {
+                    return forwardedFor.ToString().Split(',')[0].Trim();
+                }
+            }
+            return HttpContext?.Connection?.RemoteIpAddress?.ToString() ?? "Unknown";
+        }
+        catch
+        {
+            return "Unknown";
+        }
+    }
+
+    private string GetClientUserAgent()
+    {
+        try
+        {
+            return Request?.Headers?.UserAgent.ToString() ?? "Unknown";
+        }
+        catch
+        {
+            return "Unknown";
+        }
     }
 
     /// <summary>
@@ -32,6 +75,30 @@ public class UsersController : ControllerBase
         try
         {
             var userDto = await _userService.GetOrCreateUserFromClaimsAsync(User);
+            var ip = GetClientIp();
+            var userAgent = GetClientUserAgent();
+            var now = DateTime.UtcNow;
+
+            _logger.LogInformation(
+                "LOGIN AUDIT [Google/Bearer]: User {Email} (UID: {UserId}, Name: {DisplayName}) logged in from IP {Ip} at {TimeUtc:u}. UA: {UserAgent}",
+                userDto.Email, userDto.UserId, userDto.DisplayName, ip, now, userAgent);
+
+            if (_loginAuditRepository != null)
+            {
+                await _loginAuditRepository.RecordLoginAsync(new LoginAudit
+                {
+                    UserId = userDto.UserId,
+                    Email = userDto.Email,
+                    DisplayName = userDto.DisplayName,
+                    AuthMethod = "Google/Bearer",
+                    IpAddress = ip,
+                    UserAgent = userAgent,
+                    TimestampUtc = now
+                });
+            }
+
+            await _userService.UpdateLastLoginAsync(userDto.UserId, now, ip);
+
             return Ok(userDto);
         }
         catch (ArgumentException ex)
@@ -43,6 +110,41 @@ public class UsersController : ControllerBase
         {
             _logger.LogError(ex, "Error processing user login/registration");
             return StatusCode(500, "An error occurred during authentication.");
+        }
+    }
+
+    /// <summary>
+    /// Get recent login audit records
+    /// </summary>
+    [HttpGet("login-audits")]
+    [Authorize]
+    public async Task<ActionResult<IEnumerable<LoginAuditDto>>> GetRecentLoginAudits([FromQuery] int limit = 50)
+    {
+        try
+        {
+            if (_loginAuditRepository == null)
+            {
+                return Ok(Enumerable.Empty<LoginAuditDto>());
+            }
+
+            var audits = await _loginAuditRepository.GetRecentLoginsAsync(limit);
+            var dtos = audits.Select(a => new LoginAuditDto
+            {
+                Id = a.Id,
+                UserId = a.UserId,
+                Email = a.Email,
+                DisplayName = a.DisplayName,
+                AuthMethod = a.AuthMethod,
+                IpAddress = a.IpAddress,
+                UserAgent = a.UserAgent,
+                TimestampUtc = a.TimestampUtc
+            });
+            return Ok(dtos);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error retrieving login audits");
+            return StatusCode(500, "An error occurred while retrieving login audits");
         }
     }
 
