@@ -3,6 +3,7 @@ package np.com.sanjeeb.marriagecalculator.ui.components
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
+import np.com.sanjeeb.marriagecalculator.BuildConfig
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -168,7 +169,7 @@ fun AboutDialog(
                         border = BorderStroke(0.8.dp, palette.accent.copy(alpha = 0.3f))
                     ) {
                         Text(
-                            text = "Version 1.0.0",
+                            text = "Version ${BuildConfig.VERSION_NAME}",
                             color = palette.accent,
                             fontSize = 11.sp,
                             fontWeight = FontWeight.SemiBold,
