@@ -35,10 +35,39 @@ android {
             useSupportLibrary = true
         }
 
-        val apiBaseUrl = (project.findProperty("API_BASE_URL") as? String)
-            ?: System.getenv("API_BASE_URL")
-            ?: "http://192.168.0.45:5000/api/"
-        buildConfigField("String", "API_BASE_URL", "\"$apiBaseUrl\"")
+        manifestPlaceholders["appLabel"] = "Marriage Calculator"
+    }
+
+    flavorDimensions += "environment"
+
+    productFlavors {
+        create("local") {
+            dimension = "environment"
+            val defaultUrl = "http://10.0.2.2:5000/api/"
+            val apiBaseUrl = (project.findProperty("API_BASE_URL") as? String)
+                ?: System.getenv("API_BASE_URL")
+                ?: defaultUrl
+            buildConfigField("String", "API_BASE_URL", "\"$apiBaseUrl\"")
+            manifestPlaceholders["appLabel"] = "Marriage Calc (Local)"
+        }
+        create("dev") {
+            dimension = "environment"
+            val defaultUrl = "http://192.168.1.159/api/"
+            val apiBaseUrl = (project.findProperty("API_BASE_URL") as? String)
+                ?: System.getenv("API_BASE_URL")
+                ?: defaultUrl
+            buildConfigField("String", "API_BASE_URL", "\"$apiBaseUrl\"")
+            manifestPlaceholders["appLabel"] = "Marriage Calc (Dev)"
+        }
+        create("prod") {
+            dimension = "environment"
+            val defaultUrl = "https://mcapi.sanjeebojha.com.np/api/"
+            val apiBaseUrl = (project.findProperty("API_BASE_URL") as? String)
+                ?: System.getenv("API_BASE_URL")
+                ?: defaultUrl
+            buildConfigField("String", "API_BASE_URL", "\"$apiBaseUrl\"")
+            manifestPlaceholders["appLabel"] = "Marriage Calculator"
+        }
     }
 
     signingConfigs {

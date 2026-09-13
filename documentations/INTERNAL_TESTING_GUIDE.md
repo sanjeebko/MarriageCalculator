@@ -46,39 +46,61 @@ keytool -genkey -v -keystore upload-keystore.jks -alias marriage-calculator-uplo
 
 ---
 
-## 3. Building for Release
+## 3. Product Flavors & Environments
 
-### Step 3.1: Build Signed Android App Bundle (AAB for Google Play)
-To build the AAB with default local development API:
-```bash
-cd MarriageCalculator/Android
-./gradlew bundleRelease
-```
+The app supports 3 distinct product flavors for different stages of testing:
 
-To build against your hosted/remote Kubernetes or staging API:
-```bash
-./gradlew bundleRelease -PAPI_BASE_URL="https://mcapi.sanjeebojha.com.np/api/"
-```
-
-**Output Artifact**:
-- `MarriageCalculator/Android/app/build/outputs/bundle/release/app-release.aab`
-
-### Step 3.2: Build Standalone Signed APK (For Direct Tester Sideloading)
-To build a universal/standalone release APK for testers who cannot use the Play Store:
-```bash
-./gradlew assembleRelease -PAPI_BASE_URL="https://mcapi.sanjeebojha.com.np/api/"
-```
-
-**Output Artifact**:
-- `MarriageCalculator/Android/app/build/outputs/apk/release/app-release.apk`
+| Flavor | Target Backend API | Build Variant | Output Artifact | Typical Use Case |
+| :--- | :--- | :--- | :--- | :--- |
+| **`local`** | `http://10.0.2.2:5000/api/` | `localDebug` / `localRelease` | `app-local-debug.apk` | Fast local iteration against .NET API running locally |
+| **`dev`** | `http://192.168.1.159/api/` | `devDebug` / `devRelease` | `app-dev-debug.apk` | Testing against Kubernetes dev cluster on home LAN |
+| **`prod`** | `https://mcapi.sanjeebojha.com.np/api/` | `prodDebug` / `prodRelease` | `app-prod-release.aab` | Google Play Internal Testing & public verification |
 
 ---
 
-## 4. Google Play Console Setup: Internal Testing Track
+## 4. Building Artifacts
+
+### Step 4.1: Build Signed Android App Bundle for Google Play (`prodRelease`)
+To build the signed AAB bundle for the internal test release:
+```bash
+cd MarriageCalculator/Android
+./gradlew bundleProdRelease
+```
+
+*(Optional)* If you ever need to override the backend API URL for this build:
+```bash
+./gradlew bundleProdRelease -PAPI_BASE_URL="https://mcapi.sanjeebojha.com.np/api/"
+```
+
+**Output Artifact**:
+- `MarriageCalculator/Android/app/build/outputs/bundle/prodRelease/app-prod-release.aab`
+
+### Step 4.2: Build Standalone Signed APK (`prodRelease`)
+To build a standalone signed APK for direct tester sideloading:
+```bash
+cd MarriageCalculator/Android
+./gradlew assembleProdRelease
+```
+
+**Output Artifact**:
+- `MarriageCalculator/Android/app/build/outputs/apk/prod/release/app-prod-release.apk`
+
+### Step 4.3: Build Local / Dev Testing APKs
+```bash
+# Local environment (running against local API on host)
+./gradlew assembleLocalDebug
+
+# Dev environment (running against Kubernetes dev cluster)
+./gradlew assembleDevDebug
+```
+
+---
+
+## 5. Google Play Console Setup: Internal Testing Track
 
 The **Internal Testing** track allows up to 100 invited testers to install and test updates within seconds of uploading, with zero Play Store review delays.
 
-### Step 4.1: Create the Application
+### Step 5.1: Create the Application
 1. Go to [Google Play Console](https://play.google.com/console).
 2. Click **Create app**:
    - **App name**: `AAA Marriage Calculator`
@@ -87,12 +109,12 @@ The **Internal Testing** track allows up to 100 invited testers to install and t
    - **Free or paid**: Free
 3. Accept the declarations and click **Create app**.
 
-### Step 4.2: Enable Google Play App Signing
+### Step 5.2: Enable Google Play App Signing
 1. Navigate to **Release > Setup > App signing**.
 2. Choose **Use Google-generated key** or upload your private key.
 3. Once enabled, copy the **SHA-1 certificate fingerprint** from the **App signing key certificate** and the **Upload key certificate**.
 
-### Step 4.3: Add SHA-1 to Firebase & Google Cloud (For Google Sign-In)
+### Step 5.3: Add SHA-1 to Firebase & Google Cloud (For Google Sign-In)
 For Google Sign-In to work on tester devices installed from Google Play:
 1. Open the [Firebase Console](https://console.firebase.google.com/) > Project `marriagecalculator-197bd`.
 2. Go to **Project Settings > General > Your apps > np.com.sanjeeb.marriagecalculator**.
@@ -102,10 +124,10 @@ For Google Sign-In to work on tester devices installed from Google Play:
    - The **Google Play App Signing SHA-1** (critical for Play Store installs)
 4. Download the updated `google-services.json` if new OAuth client IDs are generated.
 
-### Step 4.4: Create an Internal Test Release
+### Step 5.4: Create an Internal Test Release
 1. In Play Console, navigate to **Testing > Internal testing**.
 2. Click **Create new release**.
-3. Upload `app-release.aab`.
+3. Upload `app-prod-release.aab` (located at `MarriageCalculator/Android/app/build/outputs/bundle/prodRelease/app-prod-release.aab`).
 4. Set Release name: `1.0.0 (1)`.
 5. Enter Release notes:
    ```
@@ -120,7 +142,7 @@ For Google Sign-In to work on tester devices installed from Google Play:
 
 ---
 
-## 5. Inviting Testers & Distribution
+## 6. Inviting Testers & Distribution
 
 1. In Play Console, under **Internal testing**, switch to the **Testers** tab.
 2. Create an email list (e.g. `marriage-calculator-internal-testers`) and add tester Gmail addresses.
@@ -129,7 +151,7 @@ For Google Sign-In to work on tester devices installed from Google Play:
 
 ---
 
-## 6. Tester Smoke-Test Checklist
+## 7. Tester Smoke-Test Checklist
 
 Ask your internal testers to verify the following key features:
 
