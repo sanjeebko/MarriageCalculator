@@ -1,0 +1,26 @@
+# Ignore version control and IDE files
+.git/
+.gitignore
+.vs/
+.vscode/
+*.user
+*.suo
+
+# Ignore build artifacts
+**/bin/
+**/obj/
+**/build/
+.gradle/
+
+# Ignore Android app directory (not part of API container)
+Android/
+archive.MarriageCalculator.MAUI/
+prompts/
+
+# Ignore documentation & markdown files
+*.md
+**/*.md
+
+# Ignore temp and test results
+**/TestResults/
+temp/
