@@ -21,12 +21,12 @@ val hasKeystore = if (keystorePropertiesFile.exists()) {
 
 android {
     namespace = "np.com.sanjeeb.marriagecalculator"
-    compileSdk = 34
+    compileSdk = 36
 
     defaultConfig {
         applicationId = "np.com.sanjeeb.marriagecalculator"
         minSdk = 26
-        targetSdk = 34
+        targetSdk = 36
         versionCode = 1
         versionName = "1.0.0"
 

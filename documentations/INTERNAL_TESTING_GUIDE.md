@@ -12,7 +12,7 @@ This guide covers everything required to sign, bundle, deploy, and distribute **
 | **App Name** | `AAA Marriage Calculator` | Defined in `res/values/strings.xml` |
 | **Version Code** | `1` | Increment for subsequent releases |
 | **Version Name** | `1.0.0` | In `app/build.gradle.kts` & About dialog |
-| **Target SDK** | `34` (Android 14) | Meets Google Play requirement (API 34+) |
+| **Target SDK** | `36` (Android 16) | Meets Google Play requirement (API 36+) |
 | **Minimum SDK** | `26` (Android 8.0) | Covers ~96% of active Android devices |
 | **Build Artifact** | `.aab` (Android App Bundle) | Required for Play Console upload |
 | **Sideload Artifact** | `.apk` (APK Package) | For direct tester phone installation |
