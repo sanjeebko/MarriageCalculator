@@ -30,8 +30,6 @@ bld/
 *.userprefs
 .vs/
 
-# Docker
-.dockerignore
 
 # Database
 *.db
