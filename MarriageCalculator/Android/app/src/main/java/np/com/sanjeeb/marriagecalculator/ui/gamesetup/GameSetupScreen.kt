@@ -466,17 +466,103 @@ fun PlayerSelectionSheetContent(
 fun CreatePlayerSheetContent(onPlayerCreated: (String, String?) -> Unit) {
     var name by remember { mutableStateOf("") }
     var selectedPhotoUri by remember { mutableStateOf<String?>(null) }
+    var customPhotoUri by remember { mutableStateOf<String?>(null) }
     val context = LocalContext.current
 
     val galleryLauncher = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri: Uri? ->
         uri?.let {
             val savedUri = copyUriToInternalStorage(context, it)
-            selectedPhotoUri = savedUri
+            if (savedUri.isNotBlank()) {
+                customPhotoUri = savedUri
+                selectedPhotoUri = savedUri
+            }
         }
     }
 
-    Column(modifier = Modifier.padding(16.dp).fillMaxWidth().padding(bottom = 32.dp)) {
-        Text("Create New Player", fontSize = 20.sp, fontWeight = FontWeight.Bold, color = AppTheme.palette.accent, fontFamily = FontFamily.Serif)
+    Column(
+        modifier = Modifier
+            .padding(16.dp)
+            .fillMaxWidth()
+            .padding(bottom = 32.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Text(
+            text = "Create New Player",
+            fontSize = 20.sp,
+            fontWeight = FontWeight.Bold,
+            color = AppTheme.palette.accent,
+            fontFamily = FontFamily.Serif,
+            modifier = Modifier.align(Alignment.Start)
+        )
+        Spacer(modifier = Modifier.height(16.dp))
+
+        // Selected Avatar / Photo Preview Box
+        Box(
+            modifier = Modifier
+                .size(88.dp)
+                .clip(CircleShape)
+                .background(AppTheme.palette.tint.copy(alpha = 0.12f))
+                .border(
+                    width = 2.dp,
+                    color = if (selectedPhotoUri != null) AppTheme.palette.accent else AppTheme.palette.accent.copy(alpha = 0.3f),
+                    shape = CircleShape
+                )
+                .clickable { galleryLauncher.launch("image/*") },
+            contentAlignment = Alignment.Center
+        ) {
+            if (!selectedPhotoUri.isNullOrBlank()) {
+                val model = if (selectedPhotoUri!!.startsWith("android") || selectedPhotoUri!!.startsWith("http")) {
+                    selectedPhotoUri
+                } else {
+                    File(selectedPhotoUri!!)
+                }
+                AsyncImage(
+                    model = ImageRequest.Builder(context)
+                        .data(model)
+                        .crossfade(true)
+                        .build(),
+                    contentDescription = "Selected photo preview",
+                    contentScale = ContentScale.Crop,
+                    modifier = Modifier.fillMaxSize()
+                )
+            } else if (name.isNotBlank()) {
+                Text(
+                    text = name.trim().take(1).uppercase(),
+                    color = AppTheme.palette.accent,
+                    fontSize = 36.sp,
+                    fontWeight = FontWeight.Bold
+                )
+            } else {
+                Icon(
+                    imageVector = Icons.Default.Person,
+                    contentDescription = "No photo selected",
+                    tint = AppTheme.palette.accent.copy(alpha = 0.6f),
+                    modifier = Modifier.size(44.dp)
+                )
+            }
+        }
+
+        if (selectedPhotoUri != null) {
+            Spacer(modifier = Modifier.height(4.dp))
+            TextButton(
+                onClick = { selectedPhotoUri = null },
+                contentPadding = PaddingValues(horizontal = 8.dp, vertical = 2.dp)
+            ) {
+                Text(
+                    text = "Remove Photo",
+                    fontSize = 12.sp,
+                    color = AppTheme.palette.danger
+                )
+            }
+        } else {
+            Spacer(modifier = Modifier.height(6.dp))
+            Text(
+                text = "Tap or select photo below",
+                fontSize = 11.sp,
+                color = AppTheme.palette.tint.copy(alpha = 0.6f)
+            )
+        }
+
         Spacer(modifier = Modifier.height(16.dp))
 
         OutlinedTextField(
@@ -492,35 +578,156 @@ fun CreatePlayerSheetContent(onPlayerCreated: (String, String?) -> Unit) {
             ),
             singleLine = true
         )
-        
-        Spacer(modifier = Modifier.height(24.dp))
-        Text("Select Photo", color = AppTheme.palette.tint.copy(alpha = 0.7f), fontSize = 14.sp)
-        Spacer(modifier = Modifier.height(8.dp))
-        
-        Row(horizontalArrangement = Arrangement.spacedBy(16.dp), modifier = Modifier.horizontalScroll(rememberScrollState())) {
+
+        Spacer(modifier = Modifier.height(20.dp))
+        Text(
+            text = "Select Photo",
+            color = AppTheme.palette.tint.copy(alpha = 0.7f),
+            fontSize = 14.sp,
+            modifier = Modifier.align(Alignment.Start)
+        )
+        Spacer(modifier = Modifier.height(10.dp))
+
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(14.dp),
+            modifier = Modifier
+                .fillMaxWidth()
+                .horizontalScroll(rememberScrollState()),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            // Preset Avatars
             listOf("avatar_1", "avatar_2", "avatar_3").forEach { avatarName ->
-                val isSelected = selectedPhotoUri?.contains(avatarName) == true
-                Box(modifier = Modifier.size(64.dp).clip(RoundedCornerShape(8.dp)).clickable { 
-                    selectedPhotoUri = "android.resource://${context.packageName}/drawable/$avatarName" 
-                }.border(if (isSelected) 2.dp else 0.dp, AppTheme.palette.accent, RoundedCornerShape(8.dp))) {
-                    AsyncImage(model = "android.resource://${context.packageName}/drawable/$avatarName", contentDescription = null, modifier = Modifier.fillMaxSize())
+                val resourceUri = "android.resource://${context.packageName}/drawable/$avatarName"
+                val isSelected = selectedPhotoUri == resourceUri
+                Box(
+                    modifier = Modifier
+                        .size(60.dp)
+                        .clip(RoundedCornerShape(10.dp))
+                        .clickable { selectedPhotoUri = resourceUri }
+                        .border(
+                            width = if (isSelected) 2.5.dp else 1.dp,
+                            color = if (isSelected) AppTheme.palette.accent else AppTheme.palette.tint.copy(alpha = 0.2f),
+                            shape = RoundedCornerShape(10.dp)
+                        )
+                ) {
+                    AsyncImage(
+                        model = resourceUri,
+                        contentDescription = avatarName,
+                        contentScale = ContentScale.Crop,
+                        modifier = Modifier.fillMaxSize()
+                    )
+                    if (isSelected) {
+                        Box(
+                            modifier = Modifier
+                                .align(Alignment.TopEnd)
+                                .padding(3.dp)
+                                .size(16.dp)
+                                .clip(CircleShape)
+                                .background(AppTheme.palette.accent),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Check,
+                                contentDescription = null,
+                                tint = AppTheme.palette.cta,
+                                modifier = Modifier.size(12.dp)
+                            )
+                        }
+                    }
                 }
             }
 
-            Box(modifier = Modifier.size(64.dp).clip(RoundedCornerShape(8.dp)).background(AppTheme.palette.tint.copy(alpha = 0.1f)).clickable { 
-                galleryLauncher.launch("image/*") 
-            }, contentAlignment = Alignment.Center) {
-                Icon(Icons.Default.PhotoLibrary, "Gallery", tint = AppTheme.palette.accent)
+            // Custom Photo (if picked from gallery)
+            if (!customPhotoUri.isNullOrBlank()) {
+                val isCustomSelected = selectedPhotoUri == customPhotoUri
+                Box(
+                    modifier = Modifier
+                        .size(60.dp)
+                        .clip(RoundedCornerShape(10.dp))
+                        .clickable { selectedPhotoUri = customPhotoUri }
+                        .border(
+                            width = if (isCustomSelected) 2.5.dp else 1.dp,
+                            color = if (isCustomSelected) AppTheme.palette.accent else AppTheme.palette.tint.copy(alpha = 0.2f),
+                            shape = RoundedCornerShape(10.dp)
+                        )
+                ) {
+                    AsyncImage(
+                        model = ImageRequest.Builder(context)
+                            .data(File(customPhotoUri!!))
+                            .crossfade(true)
+                            .build(),
+                        contentDescription = "Custom picked photo",
+                        contentScale = ContentScale.Crop,
+                        modifier = Modifier.fillMaxSize()
+                    )
+                    if (isCustomSelected) {
+                        Box(
+                            modifier = Modifier
+                                .align(Alignment.TopEnd)
+                                .padding(3.dp)
+                                .size(16.dp)
+                                .clip(CircleShape)
+                                .background(AppTheme.palette.accent),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Check,
+                                contentDescription = null,
+                                tint = AppTheme.palette.cta,
+                                modifier = Modifier.size(12.dp)
+                            )
+                        }
+                    }
+                }
+            }
+
+            // Gallery picker button
+            Box(
+                modifier = Modifier
+                    .size(60.dp)
+                    .clip(RoundedCornerShape(10.dp))
+                    .background(AppTheme.palette.tint.copy(alpha = 0.1f))
+                    .border(
+                        width = 1.dp,
+                        color = AppTheme.palette.accent.copy(alpha = 0.4f),
+                        shape = RoundedCornerShape(10.dp)
+                    )
+                    .clickable { galleryLauncher.launch("image/*") },
+                contentAlignment = Alignment.Center
+            ) {
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Center
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.PhotoLibrary,
+                        contentDescription = "Gallery",
+                        tint = AppTheme.palette.accent,
+                        modifier = Modifier.size(22.dp)
+                    )
+                    Spacer(modifier = Modifier.height(2.dp))
+                    Text(
+                        text = if (customPhotoUri != null) "Change" else "Gallery",
+                        fontSize = 10.sp,
+                        color = AppTheme.palette.accent,
+                        fontWeight = FontWeight.Medium
+                    )
+                }
             }
         }
-        
-        Spacer(modifier = Modifier.height(32.dp))
-        
+
+        Spacer(modifier = Modifier.height(28.dp))
+
         Button(
             onClick = { onPlayerCreated(name, selectedPhotoUri) },
-            modifier = Modifier.fillMaxWidth().height(50.dp),
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(50.dp),
             enabled = name.isNotBlank(),
-            colors = ButtonDefaults.buttonColors(containerColor = AppTheme.palette.cta, contentColor = AppTheme.palette.accent)
+            colors = ButtonDefaults.buttonColors(
+                containerColor = AppTheme.palette.cta,
+                contentColor = AppTheme.palette.accent
+            )
         ) {
             Text("Save & Add Player")
         }
@@ -528,13 +735,17 @@ fun CreatePlayerSheetContent(onPlayerCreated: (String, String?) -> Unit) {
 }
 
 fun copyUriToInternalStorage(context: android.content.Context, uri: Uri): String {
-    val inputStream = context.contentResolver.openInputStream(uri) ?: return ""
-    val file = File(context.filesDir, "player_${System.currentTimeMillis()}.jpg")
-    val outputStream = FileOutputStream(file)
-    inputStream.copyTo(outputStream)
-    inputStream.close()
-    outputStream.close()
-    return file.absolutePath
+    return try {
+        val file = File(context.filesDir, "player_${System.currentTimeMillis()}.jpg")
+        context.contentResolver.openInputStream(uri)?.use { input ->
+            FileOutputStream(file).use { output ->
+                input.copyTo(output)
+            }
+        } ?: return ""
+        file.absolutePath
+    } catch (e: Exception) {
+        ""
+    }
 }
 
 @Composable
