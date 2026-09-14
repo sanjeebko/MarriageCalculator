@@ -114,7 +114,7 @@ if (-not $SkipBuild -or -not $SkipPush) {
 # Pre-flight Check: SSH connectivity
 if (-not $SkipDeploy) {
     Write-Step "Checking SSH access to Kubernetes cluster ($K8sUser@$K8sHost)"
-    $sshTest = ssh -o BatchMode=yes -o ConnectTimeout=5 "$K8sUser@$K8sHost" "echo ready" 2>&1
+    $sshTest = ssh -n -o BatchMode=yes -o ConnectTimeout=5 "$K8sUser@$K8sHost" "echo ready" 2>&1
     if ($LASTEXITCODE -ne 0 -or $sshTest -notmatch "ready") {
         Write-Failure "Cannot reach Kubernetes cluster via SSH ($K8sUser@$K8sHost). Check your network or SSH keys."
         exit 1
@@ -171,7 +171,7 @@ if (-not $SkipDeploy) {
         
         # Rollout restart
         Write-Host "Restarting deployment/marriagecalculatordeployment in namespace $envName..."
-        ssh "$K8sUser@$K8sHost" "kubectl -n $envName rollout restart deployment/marriagecalculatordeployment"
+        ssh -n -o BatchMode=yes "$K8sUser@$K8sHost" "kubectl -n $envName rollout restart deployment/marriagecalculatordeployment"
         if ($LASTEXITCODE -ne 0) {
             Write-Failure "Failed to trigger rollout restart in namespace $envName."
             exit $LASTEXITCODE
@@ -179,9 +179,9 @@ if (-not $SkipDeploy) {
 
         # Rollout status
         Write-Host "Waiting for rollout to complete..."
-        ssh "$K8sUser@$K8sHost" "kubectl -n $envName rollout status deployment/marriagecalculatordeployment --timeout=150s"
+        ssh -n -o BatchMode=yes "$K8sUser@$K8sHost" "kubectl -n $envName rollout status deployment/marriagecalculatordeployment --timeout=150s"
         if ($LASTEXITCODE -ne 0) {
-            Write-Failure "Rollout failed in namespace $envName. Check pod logs: ssh $K8sUser@$K8sHost 'kubectl -n $envName logs -l app=marriagecalculatorapi --tail=50'"
+            Write-Failure "Rollout failed in namespace $envName. Check pod logs: ssh -n -o BatchMode=yes $K8sUser@$K8sHost 'kubectl -n $envName logs -l app=marriagecalculatorapi --tail=50'"
             exit $LASTEXITCODE
         }
         Write-Success "Deployment in namespace '$envName' rolled out successfully."
