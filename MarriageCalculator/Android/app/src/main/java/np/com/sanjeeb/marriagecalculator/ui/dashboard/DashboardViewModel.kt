@@ -7,6 +7,7 @@ import np.com.sanjeeb.marriagecalculator.data.model.MarriageGameSet
 import np.com.sanjeeb.marriagecalculator.data.model.Player
 import np.com.sanjeeb.marriagecalculator.data.model.User
 import np.com.sanjeeb.marriagecalculator.data.model.UserCareerStats
+import np.com.sanjeeb.marriagecalculator.data.network.NetworkMonitor
 import np.com.sanjeeb.marriagecalculator.data.repository.ApiResult
 import np.com.sanjeeb.marriagecalculator.data.repository.FriendRepository
 import np.com.sanjeeb.marriagecalculator.data.repository.GameSetRepository
@@ -18,6 +19,7 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -40,7 +42,8 @@ class DashboardViewModel @Inject constructor(
     private val offlineGameRepository: OfflineGameRepository,
     private val friendRepository: FriendRepository,
     private val sessionManager: SessionManager,
-    private val themePreference: ThemePreference
+    private val themePreference: ThemePreference,
+    private val networkMonitor: NetworkMonitor
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(DashboardUiState())
@@ -56,6 +59,15 @@ class DashboardViewModel @Inject constructor(
         _uiState.value = _uiState.value.copy(user = user)
         loadActiveGames()
         claimPendingInvites()
+
+        viewModelScope.launch {
+            networkMonitor.isOnline.distinctUntilChanged().collect { isOnline ->
+                if (isOnline && sessionManager.isOnlineMode()) {
+                    loadActiveGames()
+                    claimPendingInvites()
+                }
+            }
+        }
     }
 
     /**

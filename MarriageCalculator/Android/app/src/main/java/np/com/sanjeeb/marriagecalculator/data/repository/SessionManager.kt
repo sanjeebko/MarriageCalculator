@@ -90,7 +90,7 @@ class SessionManager @Inject constructor(
 
     fun isOnlineMode(): Boolean {
         return try {
-            prefs.getBoolean("is_online_mode", false) && isLoggedIn()
+            prefs.getBoolean("is_online_mode", true) && isLoggedIn()
         } catch (e: Exception) {
             false
         }
