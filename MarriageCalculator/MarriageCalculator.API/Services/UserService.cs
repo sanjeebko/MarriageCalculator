@@ -48,10 +48,22 @@ public class UserService : IUserService
 
     public async Task<UserDto> CreateUserAsync(CreateUserDto createUserDto)
     {
+        var displayName = createUserDto.DisplayName;
+        if (!string.IsNullOrWhiteSpace(displayName))
+        {
+            var normalized = MarriageCalculator.Core.Utilities.UsernameValidator.Normalize(displayName);
+            var (isValid, error) = MarriageCalculator.Core.Utilities.UsernameValidator.Validate(normalized);
+            if (!isValid)
+            {
+                throw new ArgumentException(error);
+            }
+            displayName = normalized;
+        }
+
         var user = new User
         {
             UserId = createUserDto.UserId,
-            DisplayName = createUserDto.DisplayName,
+            DisplayName = displayName,
             Email = createUserDto.Email,
             PhotoUrl = createUserDto.PhotoUrl
         };
@@ -62,9 +74,21 @@ public class UserService : IUserService
 
     public async Task<UserDto?> UpdateUserAsync(string id, UpdateUserDto updateUserDto)
     {
+        var displayName = updateUserDto.DisplayName;
+        if (!string.IsNullOrWhiteSpace(displayName))
+        {
+            var normalized = MarriageCalculator.Core.Utilities.UsernameValidator.Normalize(displayName);
+            var (isValid, error) = MarriageCalculator.Core.Utilities.UsernameValidator.Validate(normalized);
+            if (!isValid)
+            {
+                throw new ArgumentException(error);
+            }
+            displayName = normalized;
+        }
+
         var userToUpdate = new User
         {
-            DisplayName = updateUserDto.DisplayName,
+            DisplayName = displayName,
             Email = updateUserDto.Email,
             PhotoUrl = updateUserDto.PhotoUrl
         };

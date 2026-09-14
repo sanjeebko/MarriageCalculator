@@ -6,6 +6,7 @@ import android.content.ContextWrapper
 import android.content.Intent
 import android.net.Uri
 import android.widget.Toast
+import np.com.sanjeeb.marriagecalculator.data.util.UsernameValidator
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -253,8 +254,9 @@ fun LoginScreen(
 
                         OutlinedTextField(
                             value = regUsernameInput,
-                            onValueChange = { regUsernameInput = it },
+                            onValueChange = { regUsernameInput = UsernameValidator.sanitizeInput(it) },
                             label = { Text("Username", color = MetalGold) },
+                            supportingText = { Text("${regUsernameInput.length}/15", color = Color.White.copy(alpha = 0.5f), fontSize = 10.sp) },
                             modifier = Modifier.weight(1f),
                             singleLine = true,
                             colors = OutlinedTextFieldDefaults.colors(

@@ -87,7 +87,27 @@ public class AuthService : IAuthService
         }
 
         var normalizedEmail = dto.Email.Trim().ToLowerInvariant();
-        var normalizedUsername = dto.Username.Trim().ToLowerInvariant();
+        var normalizedUsername = MarriageCalculator.Core.Utilities.UsernameValidator.Normalize(dto.Username);
+        var (isUserValid, userError) = MarriageCalculator.Core.Utilities.UsernameValidator.Validate(normalizedUsername);
+        if (!isUserValid)
+        {
+            throw new ArgumentException(userError);
+        }
+
+        string normalizedDisplayName;
+        if (!string.IsNullOrWhiteSpace(dto.DisplayName))
+        {
+            normalizedDisplayName = MarriageCalculator.Core.Utilities.UsernameValidator.Normalize(dto.DisplayName);
+            var (isDisplayValid, displayError) = MarriageCalculator.Core.Utilities.UsernameValidator.Validate(normalizedDisplayName);
+            if (!isDisplayValid)
+            {
+                throw new ArgumentException(displayError);
+            }
+        }
+        else
+        {
+            normalizedDisplayName = normalizedUsername;
+        }
 
         // Validate verification code
         var validCode = await _verificationCodeRepository.GetLatestValidCodeAsync(normalizedEmail);
@@ -122,7 +142,7 @@ public class AuthService : IAuthService
         };
 
         user.Username = normalizedUsername;
-        user.DisplayName = string.IsNullOrWhiteSpace(dto.DisplayName) ? dto.Username : dto.DisplayName;
+        user.DisplayName = normalizedDisplayName;
         user.PasswordHash = _passwordHasher.HashPassword(user, dto.Password);
 
         if (string.IsNullOrEmpty(user.Id) || existingEmail == null)
