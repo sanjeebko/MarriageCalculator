@@ -290,16 +290,18 @@ fun DashboardScreen(
                                     }
                                     
                                     // Google Badge
-                                    Surface(
-                                        modifier = Modifier.size(12.dp).offset(x = 2.dp, y = 2.dp),
-                                        shape = RoundedCornerShape(6.dp),
-                                        color = AppTheme.palette.textPrimary
-                                    ) {
-                                        Image(
-                                            painter = painterResource(id = R.drawable.ic_google_logo),
-                                            contentDescription = null,
-                                            modifier = Modifier.padding(2.dp)
-                                        )
+                                    if (!user.photoUrl.isNullOrEmpty() && user.userId != "guest") {
+                                        Surface(
+                                            modifier = Modifier.size(12.dp).offset(x = 2.dp, y = 2.dp),
+                                            shape = RoundedCornerShape(6.dp),
+                                            color = AppTheme.palette.textPrimary
+                                        ) {
+                                            Image(
+                                                painter = painterResource(id = R.drawable.ic_google_logo),
+                                                contentDescription = null,
+                                                modifier = Modifier.padding(2.dp)
+                                            )
+                                        }
                                     }
                                 }
                                 

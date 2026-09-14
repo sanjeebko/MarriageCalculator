@@ -46,6 +46,17 @@ class FriendViewModel @Inject constructor(
     }
 
     fun loadData() {
+        if (sessionManager.isGuestMode() || !sessionManager.isOnlineMode()) {
+            _uiState.value = _uiState.value.copy(
+                isLoading = false,
+                friends = emptyList(),
+                pendingReceived = emptyList(),
+                pendingSent = emptyList(),
+                currentUser = sessionManager.getUserProfile(),
+                error = null
+            )
+            return
+        }
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isLoading = true, error = null)
             

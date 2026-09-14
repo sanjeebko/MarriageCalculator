@@ -15,20 +15,50 @@ class SessionManager @Inject constructor(
 ) {
     private val prefs: SharedPreferences = context.getSharedPreferences("user_session", Context.MODE_PRIVATE)
 
+    private val _userKeyFlow = kotlinx.coroutines.flow.MutableStateFlow(getCurrentUserKey())
+    val userKeyFlow: kotlinx.coroutines.flow.StateFlow<String> = _userKeyFlow
+
+    fun getCurrentUserKey(): String {
+        if (isGuestMode() || !isLoggedIn()) {
+            return "guest"
+        }
+        val user = getUserProfile() ?: return "guest"
+        val identifier = when {
+            user.userId.isNotBlank() && user.userId != "google-temp" -> user.userId
+            user.id.isNotBlank() && user.id != "google-temp" -> user.id
+            user.email.isNotBlank() -> user.email
+            user.userId.isNotBlank() -> user.userId
+            user.id.isNotBlank() -> user.id
+            else -> "guest"
+        }
+        if (identifier == "guest") return "guest"
+        val sanitized = identifier.replace(Regex("[^a-zA-Z0-9_]"), "_")
+        return "user_$sanitized"
+    }
+
     fun saveSession(token: String, user: User) {
         prefs.edit()
             .putString("auth_token", token)
             .putString("user_profile", gson.toJson(user))
             .putBoolean("is_online_mode", token != "guest-token")
             .apply()
+        _userKeyFlow.value = getCurrentUserKey()
     }
 
     fun getAuthToken(): String? {
-        return prefs.getString("auth_token", null)
+        return try {
+            prefs.getString("auth_token", null)
+        } catch (e: Exception) {
+            null
+        }
     }
 
     fun getUserProfile(): User? {
-        val userJson = prefs.getString("user_profile", null) ?: return null
+        val userJson = try {
+            prefs.getString("user_profile", null)
+        } catch (e: Exception) {
+            null
+        } ?: return null
         return try {
             gson.fromJson(userJson, User::class.java)
         } catch (e: Exception) {
@@ -38,6 +68,7 @@ class SessionManager @Inject constructor(
 
     fun clearSession() {
         prefs.edit().clear().apply()
+        _userKeyFlow.value = getCurrentUserKey()
     }
 
     fun isLoggedIn(): Boolean {
@@ -54,10 +85,15 @@ class SessionManager @Inject constructor(
             // Logged out of online or switched to guest
             prefs.edit().putString("auth_token", "guest-token").apply()
         }
+        _userKeyFlow.value = getCurrentUserKey()
     }
 
     fun isOnlineMode(): Boolean {
-        return prefs.getBoolean("is_online_mode", false) && isLoggedIn()
+        return try {
+            prefs.getBoolean("is_online_mode", false) && isLoggedIn()
+        } catch (e: Exception) {
+            false
+        }
     }
 
     fun saveFcmToken(token: String) {
@@ -65,6 +101,10 @@ class SessionManager @Inject constructor(
     }
 
     fun getFcmToken(): String? {
-        return prefs.getString("fcm_token", null)
+        return try {
+            prefs.getString("fcm_token", null)
+        } catch (e: Exception) {
+            null
+        }
     }
 }

@@ -35,6 +35,8 @@ class AuthIntegrationTests {
     fun setUp() {
         Dispatchers.setMain(testDispatcher)
         every { context.getSharedPreferences(any(), any()) } returns sharedPreferences
+        every { sharedPreferences.getString(any(), any()) } returns null
+        every { sharedPreferences.getBoolean(any(), any()) } returns false
         every { sharedPreferences.edit() } returns editor
         every { editor.putString(any(), any()) } returns editor
         every { editor.putBoolean(any(), any()) } returns editor

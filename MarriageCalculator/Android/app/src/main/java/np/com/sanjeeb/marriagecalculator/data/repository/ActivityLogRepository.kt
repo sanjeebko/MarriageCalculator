@@ -1,22 +1,73 @@
 package np.com.sanjeeb.marriagecalculator.data.repository
 
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.withContext
 import np.com.sanjeeb.marriagecalculator.data.local.*
 import javax.inject.Inject
 import javax.inject.Singleton
 
 @Singleton
-class ActivityLogRepository @Inject constructor(
-    private val activityLogDao: ActivityLogDao,
-    private val gameSetDao: GameSetDao,
-    private val roundDao: RoundDao,
-    private val gameSetPlayerDao: GameSetPlayerDao,
-    private val playerDao: PlayerDao,
-    private val roundScoreDao: RoundScoreDao
+class ActivityLogRepository(
+    private val databaseProvider: MarriageDatabaseProvider?,
+    private val activityLogDaoOverride: ActivityLogDao? = null,
+    private val gameSetDaoOverride: GameSetDao? = null,
+    private val roundDaoOverride: RoundDao? = null,
+    private val gameSetPlayerDaoOverride: GameSetPlayerDao? = null,
+    private val playerDaoOverride: PlayerDao? = null,
+    private val roundScoreDaoOverride: RoundScoreDao? = null
 ) {
-    val allLogsFlow: Flow<List<ActivityLogEntity>> = activityLogDao.getAllLogsFlow()
+    @Inject
+    constructor(databaseProvider: MarriageDatabaseProvider) : this(
+        databaseProvider = databaseProvider,
+        activityLogDaoOverride = null,
+        gameSetDaoOverride = null,
+        roundDaoOverride = null,
+        gameSetPlayerDaoOverride = null,
+        playerDaoOverride = null,
+        roundScoreDaoOverride = null
+    )
+
+    // Secondary constructor for testing
+    constructor(
+        activityLogDao: ActivityLogDao,
+        gameSetDao: GameSetDao,
+        roundDao: RoundDao,
+        gameSetPlayerDao: GameSetPlayerDao,
+        playerDao: PlayerDao,
+        roundScoreDao: RoundScoreDao
+    ) : this(
+        databaseProvider = null,
+        activityLogDaoOverride = activityLogDao,
+        gameSetDaoOverride = gameSetDao,
+        roundDaoOverride = roundDao,
+        gameSetPlayerDaoOverride = gameSetPlayerDao,
+        playerDaoOverride = playerDao,
+        roundScoreDaoOverride = roundScoreDao
+    )
+
+    private val activityLogDao: ActivityLogDao
+        get() = activityLogDaoOverride ?: databaseProvider!!.getDatabase().activityLogDao()
+    private val gameSetDao: GameSetDao
+        get() = gameSetDaoOverride ?: databaseProvider!!.getDatabase().gameSetDao()
+    private val roundDao: RoundDao
+        get() = roundDaoOverride ?: databaseProvider!!.getDatabase().roundDao()
+    private val gameSetPlayerDao: GameSetPlayerDao
+        get() = gameSetPlayerDaoOverride ?: databaseProvider!!.getDatabase().gameSetPlayerDao()
+    private val playerDao: PlayerDao
+        get() = playerDaoOverride ?: databaseProvider!!.getDatabase().playerDao()
+    private val roundScoreDao: RoundScoreDao
+        get() = roundScoreDaoOverride ?: databaseProvider!!.getDatabase().roundScoreDao()
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    val allLogsFlow: Flow<List<ActivityLogEntity>>
+        get() = if (databaseProvider != null) {
+            databaseProvider.userKeyFlow.flatMapLatest { activityLogDao.getAllLogsFlow() }
+        } else {
+            activityLogDao.getAllLogsFlow()
+        }
 
     suspend fun getPagedLogs(
         limit: Int = 30,

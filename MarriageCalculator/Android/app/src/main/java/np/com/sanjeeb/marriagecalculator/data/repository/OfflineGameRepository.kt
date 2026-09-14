@@ -5,10 +5,12 @@ import np.com.sanjeeb.marriagecalculator.data.model.*
 import np.com.sanjeeb.marriagecalculator.data.remote.MarriageGameSetApiService
 import np.com.sanjeeb.marriagecalculator.data.remote.PlayerApiService
 import np.com.sanjeeb.marriagecalculator.ui.dashboard.EnrichedActiveGame
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.flatMapLatest
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -16,19 +18,70 @@ import javax.inject.Singleton
  * Offline-first repository: saves locally first, then syncs to API when available.
  */
 @Singleton
-class OfflineGameRepository @Inject constructor(
-    private val playerDao: PlayerDao,
-    private val gameSetDao: GameSetDao,
-    private val gameSetPlayerDao: GameSetPlayerDao,
-    private val gameSettingsDao: GameSettingsDao,
-    private val roundDao: RoundDao,
-    private val roundScoreDao: RoundScoreDao
+class OfflineGameRepository(
+    private val databaseProvider: MarriageDatabaseProvider?,
+    private val playerDaoOverride: PlayerDao? = null,
+    private val gameSetDaoOverride: GameSetDao? = null,
+    private val gameSetPlayerDaoOverride: GameSetPlayerDao? = null,
+    private val gameSettingsDaoOverride: GameSettingsDao? = null,
+    private val roundDaoOverride: RoundDao? = null,
+    private val roundScoreDaoOverride: RoundScoreDao? = null
 ) {
+    @Inject
+    constructor(databaseProvider: MarriageDatabaseProvider) : this(
+        databaseProvider = databaseProvider,
+        playerDaoOverride = null,
+        gameSetDaoOverride = null,
+        gameSetPlayerDaoOverride = null,
+        gameSettingsDaoOverride = null,
+        roundDaoOverride = null,
+        roundScoreDaoOverride = null
+    )
+
+    // Secondary constructor for testing
+    constructor(
+        playerDao: PlayerDao,
+        gameSetDao: GameSetDao,
+        gameSetPlayerDao: GameSetPlayerDao,
+        gameSettingsDao: GameSettingsDao,
+        roundDao: RoundDao,
+        roundScoreDao: RoundScoreDao
+    ) : this(
+        databaseProvider = null,
+        playerDaoOverride = playerDao,
+        gameSetDaoOverride = gameSetDao,
+        gameSetPlayerDaoOverride = gameSetPlayerDao,
+        gameSettingsDaoOverride = gameSettingsDao,
+        roundDaoOverride = roundDao,
+        roundScoreDaoOverride = roundScoreDao
+    )
+
+    private val playerDao: PlayerDao
+        get() = playerDaoOverride ?: databaseProvider!!.getDatabase().playerDao()
+    private val gameSetDao: GameSetDao
+        get() = gameSetDaoOverride ?: databaseProvider!!.getDatabase().gameSetDao()
+    private val gameSetPlayerDao: GameSetPlayerDao
+        get() = gameSetPlayerDaoOverride ?: databaseProvider!!.getDatabase().gameSetPlayerDao()
+    private val gameSettingsDao: GameSettingsDao
+        get() = gameSettingsDaoOverride ?: databaseProvider!!.getDatabase().gameSettingsDao()
+    private val roundDao: RoundDao
+        get() = roundDaoOverride ?: databaseProvider!!.getDatabase().roundDao()
+    private val roundScoreDao: RoundScoreDao
+        get() = roundScoreDaoOverride ?: databaseProvider!!.getDatabase().roundScoreDao()
 
     // ── Players ──
 
-    fun getAllPlayers(): Flow<List<Player>> = playerDao.getAllPlayers().map { entities ->
-        entities.map { it.toDomainModel() }
+    @OptIn(ExperimentalCoroutinesApi::class)
+    fun getAllPlayers(): Flow<List<Player>> = if (databaseProvider != null) {
+        databaseProvider.userKeyFlow.flatMapLatest {
+            playerDao.getAllPlayers().map { entities ->
+                entities.map { it.toDomainModel() }
+            }
+        }
+    } else {
+        playerDao.getAllPlayers().map { entities ->
+            entities.map { it.toDomainModel() }
+        }
     }
 
     suspend fun createGuestPlayer(name: String): Int {
@@ -155,7 +208,14 @@ class OfflineGameRepository @Inject constructor(
         }
     }
 
-    fun getActiveGameSets(): Flow<List<GameSetEntity>> = gameSetDao.getActiveGameSets()
+    @OptIn(ExperimentalCoroutinesApi::class)
+    fun getActiveGameSets(): Flow<List<GameSetEntity>> = if (databaseProvider != null) {
+        databaseProvider.userKeyFlow.flatMapLatest {
+            gameSetDao.getActiveGameSets()
+        }
+    } else {
+        gameSetDao.getActiveGameSets()
+    }
 
     suspend fun getGameSetPlayers(gameSetId: Int): List<Player> {
         return gameSetPlayerDao.getPlayersForGameSet(gameSetId).map { it.toDomainModel() }
@@ -173,10 +233,21 @@ class OfflineGameRepository @Inject constructor(
         gameSetDao.settle(gameSetId)
     }
 
-    val unsyncedCountFlow: Flow<Int> = combine(
-        roundDao.getUnsyncedCountFlow(),
-        gameSetDao.getUnsyncedCountFlow()
-    ) { roundsCount, setsCount -> roundsCount + setsCount }
+    @OptIn(ExperimentalCoroutinesApi::class)
+    val unsyncedCountFlow: Flow<Int>
+        get() = if (databaseProvider != null) {
+            databaseProvider.userKeyFlow.flatMapLatest {
+                combine(
+                    roundDao.getUnsyncedCountFlow(),
+                    gameSetDao.getUnsyncedCountFlow()
+                ) { roundsCount, setsCount -> roundsCount + setsCount }
+            }
+        } else {
+            combine(
+                roundDao.getUnsyncedCountFlow(),
+                gameSetDao.getUnsyncedCountFlow()
+            ) { roundsCount, setsCount -> roundsCount + setsCount }
+        }
 
     suspend fun getGameSetByRemoteId(remoteId: String): GameSetEntity? {
         return gameSetDao.getByRemoteId(remoteId)
