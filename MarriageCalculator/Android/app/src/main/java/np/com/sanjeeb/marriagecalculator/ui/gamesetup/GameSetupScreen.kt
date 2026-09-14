@@ -1,6 +1,7 @@
 package np.com.sanjeeb.marriagecalculator.ui.gamesetup
 
 import np.com.sanjeeb.marriagecalculator.ui.theme.AppTheme
+import np.com.sanjeeb.marriagecalculator.data.util.UsernameValidator
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
@@ -568,8 +569,9 @@ fun CreatePlayerSheetContent(onPlayerCreated: (String, String?) -> Unit) {
 
         OutlinedTextField(
             value = name,
-            onValueChange = { name = it },
+            onValueChange = { name = UsernameValidator.sanitizeInput(it) },
             label = { Text("Player Name", color = AppTheme.palette.accent.copy(alpha = 0.7f)) },
+            supportingText = { Text("${name.length}/15", color = AppTheme.palette.textPrimary.copy(alpha = 0.5f), fontSize = 10.sp) },
             modifier = Modifier.fillMaxWidth(),
             colors = OutlinedTextFieldDefaults.colors(
                 focusedTextColor = AppTheme.palette.textPrimary,
@@ -720,7 +722,12 @@ fun CreatePlayerSheetContent(onPlayerCreated: (String, String?) -> Unit) {
         Spacer(modifier = Modifier.height(28.dp))
 
         Button(
-            onClick = { onPlayerCreated(name, selectedPhotoUri) },
+            onClick = {
+                val normalized = UsernameValidator.normalize(name)
+                if (normalized.isNotBlank()) {
+                    onPlayerCreated(normalized, selectedPhotoUri)
+                }
+            },
             modifier = Modifier
                 .fillMaxWidth()
                 .height(50.dp),

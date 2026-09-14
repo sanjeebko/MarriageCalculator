@@ -109,4 +109,66 @@ public class AuthServiceTests
         // Act & Assert
         await Assert.ThrowsAsync<InvalidOperationException>(() => _service.RegisterAsync(registerDto));
     }
+
+    [Fact]
+    public async Task RegisterAsync_UsernameWithSpaces_NormalizesAndTrims()
+    {
+        // Arrange
+        var registerDto = new RegisterUserDto
+        {
+            Email = "user@example.com",
+            VerificationCode = "654321",
+            Username = "  John   Doe  ",
+            Password = "SecurePassword123!"
+        };
+
+        var validCode = new EmailVerificationCode
+        {
+            Id = "code_1",
+            Email = "user@example.com",
+            Code = "654321",
+            ExpiresAt = DateTime.UtcNow.AddMinutes(5),
+            IsUsed = false
+        };
+
+        _verificationCodeRepositoryMock.Setup(r => r.GetLatestValidCodeAsync("user@example.com"))
+            .ReturnsAsync(validCode);
+
+        _userRepositoryMock.Setup(r => r.GetByUsernameAsync("John Doe"))
+            .ReturnsAsync((User?)null);
+
+        _userRepositoryMock.Setup(r => r.GetByEmailAsync("user@example.com"))
+            .ReturnsAsync((User?)null);
+
+        _jwtTokenServiceMock.Setup(j => j.GenerateToken(It.IsAny<User>()))
+            .Returns(("jwt.token.valid", DateTime.UtcNow.AddDays(7)));
+
+        // Act
+        var result = await _service.RegisterAsync(registerDto);
+
+        // Assert
+        Assert.Equal("John Doe", result.Username);
+        Assert.Equal("John Doe", result.DisplayName);
+        _userRepositoryMock.Verify(r => r.CreateAsync(It.Is<User>(u => u.Username == "John Doe" && u.DisplayName == "John Doe")), Times.Once);
+    }
+
+    [Theory]
+    [InlineData("1234567890123456")] // 16 chars
+    [InlineData("User@123")] // invalid char
+    [InlineData("A B C D")] // 3 spaces
+    public async Task RegisterAsync_InvalidUsername_ThrowsArgumentException(string invalidUsername)
+    {
+        // Arrange
+        var registerDto = new RegisterUserDto
+        {
+            Email = "user@example.com",
+            VerificationCode = "654321",
+            Username = invalidUsername,
+            Password = "SecurePassword123!"
+        };
+
+        // Act & Assert
+        await Assert.ThrowsAsync<ArgumentException>(() => _service.RegisterAsync(registerDto));
+    }
 }
+

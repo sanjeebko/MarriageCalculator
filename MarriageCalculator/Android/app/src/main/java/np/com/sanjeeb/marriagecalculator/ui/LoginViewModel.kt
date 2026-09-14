@@ -60,9 +60,28 @@ class LoginViewModel @Inject constructor(
             return
         }
 
+        val normalizedUsername = np.com.sanjeeb.marriagecalculator.data.util.UsernameValidator.normalize(username)
+        val validation = np.com.sanjeeb.marriagecalculator.data.util.UsernameValidator.validate(normalizedUsername)
+        if (!validation.isValid) {
+            _uiState.value = LoginUiState.Error(validation.errorMessage ?: "Invalid username.")
+            return
+        }
+
+        val normalizedDisplayName = if (displayName.isNotBlank()) {
+            val normDisp = np.com.sanjeeb.marriagecalculator.data.util.UsernameValidator.normalize(displayName)
+            val dispValidation = np.com.sanjeeb.marriagecalculator.data.util.UsernameValidator.validate(normDisp)
+            if (!dispValidation.isValid) {
+                _uiState.value = LoginUiState.Error(dispValidation.errorMessage ?: "Invalid display name.")
+                return
+            }
+            normDisp
+        } else {
+            normalizedUsername
+        }
+
         _uiState.value = LoginUiState.Loading
         viewModelScope.launch {
-            authRepository.register(email, code, username, password, displayName)
+            authRepository.register(email.trim(), code.trim(), normalizedUsername, password, normalizedDisplayName)
                 .onSuccess { result ->
                     val user = User(
                         id = result.userId,
