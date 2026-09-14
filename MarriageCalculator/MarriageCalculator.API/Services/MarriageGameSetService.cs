@@ -3,6 +3,7 @@ using MarriageCalculator.API.Repositories;
 using MarriageCalculator.Core.Models;
 using MarriageCalculator.Core.Services;
 using MarriageCalculator.API.Data;
+using MongoDB.Bson;
 using MongoDB.Driver;
 using System;
 using System.Collections.Generic;
@@ -37,18 +38,12 @@ public class MarriageGameSetService : IMarriageGameSetService
     {
         var playerIds = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
-        if (!string.IsNullOrEmpty(hostUserId))
+        if (string.IsNullOrEmpty(email) && !string.IsNullOrEmpty(hostUserId))
         {
-            playerIds.Add(hostUserId);
             var user = await _userRepository.GetByUserIdAsync(hostUserId);
-            if (user != null)
+            if (user != null && !string.IsNullOrEmpty(user.Email))
             {
-                playerIds.Add(user.Id);
-                playerIds.Add(user.UserId);
-                if (string.IsNullOrEmpty(email) && !string.IsNullOrEmpty(user.Email))
-                {
-                    email = user.Email;
-                }
+                email = user.Email;
             }
         }
 
@@ -57,7 +52,10 @@ public class MarriageGameSetService : IMarriageGameSetService
             var players = await _playerRepository.GetPlayersByEmailAsync(email);
             foreach (var p in players)
             {
-                playerIds.Add(p.Id);
+                if (!string.IsNullOrEmpty(p.Id) && ObjectId.TryParse(p.Id, out _))
+                {
+                    playerIds.Add(p.Id);
+                }
             }
         }
 
@@ -481,9 +479,13 @@ public class MarriageGameSetService : IMarriageGameSetService
             throw new KeyNotFoundException($"Marriage game set with ID {gameSetId} not found");
         }
 
-        if (gameSet.HostUserId != hostUserId && (gameSet.PlayerIds == null || !gameSet.PlayerIds.Contains(hostUserId)))
+        if (gameSet.HostUserId != hostUserId)
         {
-            throw new UnauthorizedAccessException("Only game set participants or host can update payment status.");
+            var participantIds = await ResolveParticipantPlayerIdsAsync(hostUserId, string.Empty);
+            if (gameSet.PlayerIds == null || !gameSet.PlayerIds.Any(pId => participantIds.Contains(pId)))
+            {
+                throw new UnauthorizedAccessException("Only game set participants or host can update payment status.");
+            }
         }
 
         int.TryParse(roundId.Replace("local-", ""), out var parsedSeq);
