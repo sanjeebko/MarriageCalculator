@@ -1,5 +1,6 @@
 using MarriageCalculator.API.Data;
 using MarriageCalculator.Core.Models;
+using MongoDB.Bson;
 using MongoDB.Driver;
 
 namespace MarriageCalculator.API.Repositories;
@@ -22,19 +23,46 @@ public class MarriageGameSetRepository : IMarriageGameSetRepository
 
     public async Task<IEnumerable<MarriageGameSet>> GetAllForUserAsync(string userId, List<string> playerIds)
     {
-        return await _collection.Find(gs => gs.HostUserId == userId || gs.PlayerIds.Any(id => playerIds.Contains(id)))
+        var validObjectIds = playerIds?
+            .Where(id => ObjectId.TryParse(id, out _))
+            .Distinct()
+            .ToList() ?? [];
+
+        if (validObjectIds.Count == 0)
+        {
+            return await _collection.Find(gs => gs.HostUserId == userId)
+                .SortByDescending(gs => gs.Created)
+                .ToListAsync();
+        }
+
+        var filter = Builders<MarriageGameSet>.Filter.Or(
+            Builders<MarriageGameSet>.Filter.Eq(gs => gs.HostUserId, userId),
+            Builders<MarriageGameSet>.Filter.AnyIn(gs => gs.PlayerIds, validObjectIds)
+        );
+
+        return await _collection.Find(filter)
             .SortByDescending(gs => gs.Created)
             .ToListAsync();
     }
 
     public async Task<IEnumerable<MarriageGameSet>> GetJoinedForUserAsync(string userId, List<string> playerIds)
     {
-        if (playerIds == null || playerIds.Count == 0)
+        var validObjectIds = playerIds?
+            .Where(id => ObjectId.TryParse(id, out _))
+            .Distinct()
+            .ToList() ?? [];
+
+        if (validObjectIds.Count == 0)
         {
             return [];
         }
 
-        return await _collection.Find(gs => gs.HostUserId != userId && gs.PlayerIds.Any(id => playerIds.Contains(id)))
+        var filter = Builders<MarriageGameSet>.Filter.And(
+            Builders<MarriageGameSet>.Filter.Ne(gs => gs.HostUserId, userId),
+            Builders<MarriageGameSet>.Filter.AnyIn(gs => gs.PlayerIds, validObjectIds)
+        );
+
+        return await _collection.Find(filter)
             .SortByDescending(gs => gs.Created)
             .ToListAsync();
     }
