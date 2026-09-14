@@ -67,6 +67,17 @@ class JoinedGamesViewModel @Inject constructor(
     }
 
     fun loadJoinedGames() {
+        if (sessionManager.isGuestMode() || !sessionManager.isOnlineMode()) {
+            _uiState.value = _uiState.value.copy(
+                isLoading = false,
+                joinedGames = emptyList(),
+                filteredGames = emptyList(),
+                careerStats = JoinedGamesCareerStats(),
+                currentUser = sessionManager.getUserProfile(),
+                error = null
+            )
+            return
+        }
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isLoading = true, error = null)
             val currentUser = sessionManager.getUserProfile()

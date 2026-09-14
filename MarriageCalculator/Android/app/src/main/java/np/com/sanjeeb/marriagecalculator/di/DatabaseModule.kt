@@ -1,43 +1,39 @@
 package np.com.sanjeeb.marriagecalculator.di
 
-import android.content.Context
 import np.com.sanjeeb.marriagecalculator.data.local.*
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
-import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
-import javax.inject.Singleton
 
 @Module
 @InstallIn(SingletonComponent::class)
 object DatabaseModule {
 
     @Provides
-    @Singleton
-    fun provideDatabase(@ApplicationContext context: Context): MarriageDatabase {
-        return MarriageDatabase.getInstance(context)
+    fun provideDatabase(provider: MarriageDatabaseProvider): MarriageDatabase {
+        return provider.getDatabase()
     }
 
     @Provides
-    fun providePlayerDao(db: MarriageDatabase): PlayerDao = db.playerDao()
+    fun providePlayerDao(provider: MarriageDatabaseProvider): PlayerDao = provider.getDatabase().playerDao()
 
     @Provides
-    fun provideGameSettingsDao(db: MarriageDatabase): GameSettingsDao = db.gameSettingsDao()
+    fun provideGameSettingsDao(provider: MarriageDatabaseProvider): GameSettingsDao = provider.getDatabase().gameSettingsDao()
 
     @Provides
-    fun provideGameSetDao(db: MarriageDatabase): GameSetDao = db.gameSetDao()
+    fun provideGameSetDao(provider: MarriageDatabaseProvider): GameSetDao = provider.getDatabase().gameSetDao()
 
     @Provides
-    fun provideGameSetPlayerDao(db: MarriageDatabase): GameSetPlayerDao = db.gameSetPlayerDao()
+    fun provideGameSetPlayerDao(provider: MarriageDatabaseProvider): GameSetPlayerDao = provider.getDatabase().gameSetPlayerDao()
 
     @Provides
-    fun provideRoundDao(db: MarriageDatabase): RoundDao = db.roundDao()
+    fun provideRoundDao(provider: MarriageDatabaseProvider): RoundDao = provider.getDatabase().roundDao()
 
     @Provides
-    fun provideRoundScoreDao(db: MarriageDatabase): RoundScoreDao = db.roundScoreDao()
+    fun provideRoundScoreDao(provider: MarriageDatabaseProvider): RoundScoreDao = provider.getDatabase().roundScoreDao()
 
     @Provides
-    fun provideActivityLogDao(db: MarriageDatabase): ActivityLogDao = db.activityLogDao()
+    fun provideActivityLogDao(provider: MarriageDatabaseProvider): ActivityLogDao = provider.getDatabase().activityLogDao()
 }
 
