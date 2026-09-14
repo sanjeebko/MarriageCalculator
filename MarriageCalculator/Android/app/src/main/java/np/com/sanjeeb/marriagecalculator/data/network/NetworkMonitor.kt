@@ -39,8 +39,7 @@ class ConnectivityNetworkMonitor @Inject constructor(
             }
 
             override fun onCapabilitiesChanged(network: Network, capabilities: NetworkCapabilities) {
-                val hasInternet = capabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET) &&
-                        capabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_VALIDATED)
+                val hasInternet = capabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
                 if (hasInternet) {
                     networks += network
                 } else {
@@ -62,8 +61,7 @@ class ConnectivityNetworkMonitor @Inject constructor(
 
         val currentNetwork = connectivityManager?.activeNetwork
         val caps = connectivityManager?.getNetworkCapabilities(currentNetwork)
-        val isInitiallyOnline = caps?.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET) == true &&
-                caps.hasCapability(NetworkCapabilities.NET_CAPABILITY_VALIDATED)
+        val isInitiallyOnline = caps?.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET) == true
         trySend(isInitiallyOnline)
 
         awaitClose {

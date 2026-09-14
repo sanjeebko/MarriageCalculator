@@ -10,12 +10,18 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import np.com.sanjeeb.marriagecalculator.data.model.CreateGameSetRequest
+import np.com.sanjeeb.marriagecalculator.data.model.CreateGameSettingsRequest
+import np.com.sanjeeb.marriagecalculator.data.model.CreatePlayerRequest
+import np.com.sanjeeb.marriagecalculator.data.model.GameSettings
 import np.com.sanjeeb.marriagecalculator.data.model.RoundPlayerInput
 import np.com.sanjeeb.marriagecalculator.data.model.SubmitRoundRequest
 import np.com.sanjeeb.marriagecalculator.data.network.NetworkMonitor
 import np.com.sanjeeb.marriagecalculator.data.repository.ApiResult
 import np.com.sanjeeb.marriagecalculator.data.repository.GameSetRepository
+import np.com.sanjeeb.marriagecalculator.data.repository.GameSettingsRepository
 import np.com.sanjeeb.marriagecalculator.data.repository.OfflineGameRepository
+import np.com.sanjeeb.marriagecalculator.data.repository.PlayerRepository
 import np.com.sanjeeb.marriagecalculator.data.repository.SessionManager
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -35,6 +41,8 @@ class SyncManager @Inject constructor(
     private val networkMonitor: NetworkMonitor,
     private val offlineGameRepository: OfflineGameRepository,
     private val gameSetRepository: GameSetRepository,
+    private val playerRepository: PlayerRepository,
+    private val gameSettingsRepository: GameSettingsRepository,
     private val sessionManager: SessionManager
 ) {
     private val syncScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
@@ -74,7 +82,77 @@ class SyncManager @Inject constructor(
 
         _isSyncing.value = true
         try {
-            // 1. Sync pending rounds for game sets that have a remoteId
+            // 1. Sync pending game sets (and their players/settings) that do not yet have a remoteId
+            val unsyncedGameSets = offlineGameRepository.getUnsyncedGameSets()
+            for (gameSet in unsyncedGameSets) {
+                val existingRemoteId = gameSet.remoteId
+                if (!existingRemoteId.isNullOrEmpty()) {
+                    offlineGameRepository.markGameSetSynced(gameSet.id, existingRemoteId)
+                    continue
+                }
+
+                val settings = offlineGameRepository.getGameSettings(gameSet.settingsId) ?: GameSettings()
+                val settingsRequest = CreateGameSettingsRequest(
+                    murder = settings.murder,
+                    kidnap = settings.kidnap,
+                    seenPoint = settings.seenPoint,
+                    unseenPoint = settings.unseenPoint,
+                    pointRate = settings.pointRate,
+                    currency = settings.currency,
+                    dublee = settings.dublee,
+                    dubleePointLess = settings.dubleePointLess,
+                    dubleePointBonus = settings.dubleePointBonus,
+                    foulPoint = settings.foulPoint,
+                    foulPointBonus = settings.foulPointBonus,
+                    audio = settings.audio
+                )
+                val settingsResult = gameSettingsRepository.createGameSettings(settingsRequest)
+                val remoteSettingsId = if (settingsResult is ApiResult.Success) settingsResult.data.id else continue
+
+                val players = offlineGameRepository.getGameSetPlayers(gameSet.id)
+                val remotePlayerIds = mutableListOf<String>()
+                var playerFailed = false
+                for (player in players) {
+                    val localPlayerId = player.id.toIntOrNull()
+                    val entity = if (localPlayerId != null) offlineGameRepository.getPlayerEntity(localPlayerId) else null
+                    val playerRemoteId = entity?.remoteId ?: player.id.takeIf { it.toIntOrNull() == null }
+                    if (!playerRemoteId.isNullOrEmpty()) {
+                        remotePlayerIds.add(playerRemoteId)
+                    } else {
+                        val createReq = CreatePlayerRequest(
+                            name = player.name,
+                            email = player.email,
+                            photoUri = player.photoUri
+                        )
+                        when (val pResult = playerRepository.createPlayer(createReq)) {
+                            is ApiResult.Success -> {
+                                val newRemoteId = pResult.data.id
+                                remotePlayerIds.add(newRemoteId)
+                                if (localPlayerId != null) {
+                                    offlineGameRepository.updatePlayerRemoteId(localPlayerId, newRemoteId)
+                                }
+                            }
+                            else -> {
+                                playerFailed = true
+                                break
+                            }
+                        }
+                    }
+                }
+                if (playerFailed) continue
+
+                val gameSetRequest = CreateGameSetRequest(
+                    name = gameSet.name.ifEmpty { "Game Set #${gameSet.id}" },
+                    gameSettingsId = remoteSettingsId,
+                    playerIds = remotePlayerIds
+                )
+                val createResult = gameSetRepository.createGameSet(gameSetRequest)
+                if (createResult is ApiResult.Success) {
+                    offlineGameRepository.markGameSetSynced(gameSet.id, createResult.data.id)
+                }
+            }
+
+            // 2. Sync pending rounds for game sets that have a remoteId
             val unsyncedRounds = offlineGameRepository.getUnsyncedRounds()
             for (round in unsyncedRounds) {
                 val gameSet = offlineGameRepository.getGameSet(round.gameSetId) ?: continue
@@ -82,7 +160,6 @@ class SyncManager @Inject constructor(
                 if (remoteGameSetId.isNullOrEmpty()) continue
 
                 val scores = offlineGameRepository.getRoundScores(round.id)
-                val players = offlineGameRepository.getGameSetPlayers(round.gameSetId)
 
                 val winnerEntity = offlineGameRepository.getPlayerEntity(round.winnerId)
                 val remoteWinnerId = winnerEntity?.remoteId ?: round.winnerId.toString()

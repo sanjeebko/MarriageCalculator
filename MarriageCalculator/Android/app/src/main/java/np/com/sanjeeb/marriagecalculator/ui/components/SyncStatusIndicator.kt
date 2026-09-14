@@ -34,6 +34,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.ViewModel
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.StateFlow
+import np.com.sanjeeb.marriagecalculator.BuildConfig
 import np.com.sanjeeb.marriagecalculator.data.sync.SyncManager
 import np.com.sanjeeb.marriagecalculator.data.sync.SyncStatus
 import np.com.sanjeeb.marriagecalculator.ui.theme.AppTheme
@@ -211,7 +212,27 @@ fun SyncStatusDetailDialog(
                     lineHeight = 18.sp
                 )
 
-                Spacer(modifier = Modifier.height(20.dp))
+                Spacer(modifier = Modifier.height(14.dp))
+
+                Surface(
+                    shape = RoundedCornerShape(10.dp),
+                    color = AppTheme.palette.tint.copy(alpha = 0.08f),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Column(
+                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Text(
+                            text = "Server (${BuildConfig.FLAVOR.uppercase()}): ${BuildConfig.API_BASE_URL}",
+                            fontSize = 11.sp,
+                            color = AppTheme.palette.textPrimary.copy(alpha = 0.7f),
+                            textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                        )
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(16.dp))
 
                 Row(
                     modifier = Modifier.fillMaxWidth(),
