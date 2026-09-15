@@ -1,5 +1,6 @@
 using MarriageCalculator.API.Data;
 using MarriageCalculator.Core.Models;
+using MongoDB.Bson;
 using MongoDB.Driver;
 
 namespace MarriageCalculator.API.Repositories;
@@ -20,6 +21,10 @@ public class GameSettingsRepository : IGameSettingsRepository
 
     public async Task<GameSettings?> GetByIdAsync(string id, string userId)
     {
+        if (string.IsNullOrEmpty(id) || !ObjectId.TryParse(id, out _))
+        {
+            return null;
+        }
         return await _collection.Find(gs => gs.Id == id && gs.UserId == userId).FirstOrDefaultAsync();
     }
 

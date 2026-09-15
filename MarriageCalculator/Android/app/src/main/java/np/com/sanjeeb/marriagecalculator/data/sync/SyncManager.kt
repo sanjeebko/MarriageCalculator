@@ -118,6 +118,10 @@ class SyncManager @Inject constructor(
                     sessionManager.emitSessionExpired()
                     return false
                 }
+                if (settingsResult is ApiResult.Error) {
+                    _lastError.value = "Settings sync failed: ${settingsResult.message}"
+                    return false
+                }
                 val remoteSettingsId = if (settingsResult is ApiResult.Success) settingsResult.data.id else continue
 
                 val players = offlineGameRepository.getGameSetPlayers(gameSet.id)
@@ -148,6 +152,11 @@ class SyncManager @Inject constructor(
                                 sessionManager.emitSessionExpired()
                                 return false
                             }
+                            is ApiResult.Error -> {
+                                _lastError.value = "Player sync failed: ${pResult.message}"
+                                playerFailed = true
+                                break
+                            }
                             else -> {
                                 playerFailed = true
                                 break
@@ -155,7 +164,7 @@ class SyncManager @Inject constructor(
                         }
                     }
                 }
-                if (playerFailed) continue
+                if (playerFailed) return false
 
                 val gameSetRequest = CreateGameSetRequest(
                     name = gameSet.name.ifEmpty { "Game Set #${gameSet.id}" },
@@ -166,6 +175,10 @@ class SyncManager @Inject constructor(
                 if (createResult is ApiResult.Unauthorized) {
                     _lastError.value = "Session expired. Please sign in again."
                     sessionManager.emitSessionExpired()
+                    return false
+                }
+                if (createResult is ApiResult.Error) {
+                    _lastError.value = "Game set sync failed: ${createResult.message}"
                     return false
                 }
                 if (createResult is ApiResult.Success) {
@@ -211,12 +224,17 @@ class SyncManager @Inject constructor(
                     sessionManager.emitSessionExpired()
                     return false
                 }
+                if (apiResult is ApiResult.Error) {
+                    _lastError.value = "Round sync failed: ${apiResult.message}"
+                    return false
+                }
                 if (apiResult is ApiResult.Success) {
                     offlineGameRepository.markRoundSynced(round.id, apiResult.data.id)
                 }
             }
             return true
         } catch (e: Exception) {
+            _lastError.value = "Sync error: ${e.message ?: "Unknown error"}"
             return false
         } finally {
             _isSyncing.value = false

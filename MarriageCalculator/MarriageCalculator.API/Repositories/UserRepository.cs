@@ -1,5 +1,6 @@
 using MarriageCalculator.API.Data;
 using MarriageCalculator.Core.Models;
+using MongoDB.Bson;
 using MongoDB.Driver;
 using System.Collections.Generic;
 using System.Threading.Tasks;
@@ -22,6 +23,10 @@ public class UserRepository : IUserRepository
 
     public async Task<User?> GetByIdAsync(string id)
     {
+        if (string.IsNullOrEmpty(id) || !ObjectId.TryParse(id, out _))
+        {
+            return null;
+        }
         return await _collection.Find(u => u.Id == id).FirstOrDefaultAsync();
     }
 
