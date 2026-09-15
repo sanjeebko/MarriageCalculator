@@ -722,7 +722,15 @@ public class MarriageGameSetService : IMarriageGameSetService
 
     private async Task<MarriageGameSetDto> MapToDtoAsync(MarriageGameSet gameSet)
     {
-        var hostUser = await _context.Users.Find(u => u.UserId == gameSet.HostUserId || u.Id == gameSet.HostUserId).FirstOrDefaultAsync();
+        User? hostUser = null;
+        if (!string.IsNullOrEmpty(gameSet.HostUserId))
+        {
+            hostUser = await _context.Users.Find(u => u.UserId == gameSet.HostUserId).FirstOrDefaultAsync();
+            if (hostUser == null && ObjectId.TryParse(gameSet.HostUserId, out _))
+            {
+                hostUser = await _context.Users.Find(u => u.Id == gameSet.HostUserId).FirstOrDefaultAsync();
+            }
+        }
 
         var dto = new MarriageGameSetDto
         {
@@ -739,7 +747,7 @@ public class MarriageGameSetService : IMarriageGameSetService
         };
 
         // 1. Fetch GameSettings
-        if (!string.IsNullOrEmpty(gameSet.GameSettingsId))
+        if (!string.IsNullOrEmpty(gameSet.GameSettingsId) && ObjectId.TryParse(gameSet.GameSettingsId, out _))
         {
             var settings = await _context.GameSettings.Find(s => s.Id == gameSet.GameSettingsId).FirstOrDefaultAsync();
             if (settings != null)
@@ -769,12 +777,21 @@ public class MarriageGameSetService : IMarriageGameSetService
         for (int i = 0; i < gameSet.PlayerIds.Count; i++)
         {
             var playerId = gameSet.PlayerIds[i];
-            var player = await _context.Players.Find(p => p.Id == playerId).FirstOrDefaultAsync();
+            var player = (!string.IsNullOrEmpty(playerId) && ObjectId.TryParse(playerId, out _))
+                ? await _context.Players.Find(p => p.Id == playerId).FirstOrDefaultAsync()
+                : null;
             
             User? user = null;
             if (player == null)
             {
-                user = await _context.Users.Find(u => u.Id == playerId).FirstOrDefaultAsync();
+                if (!string.IsNullOrEmpty(playerId) && ObjectId.TryParse(playerId, out _))
+                {
+                    user = await _context.Users.Find(u => u.Id == playerId).FirstOrDefaultAsync();
+                }
+                if (user == null && !string.IsNullOrEmpty(playerId))
+                {
+                    user = await _context.Users.Find(u => u.UserId == playerId).FirstOrDefaultAsync();
+                }
             }
             else if (!string.IsNullOrEmpty(player.Email))
             {

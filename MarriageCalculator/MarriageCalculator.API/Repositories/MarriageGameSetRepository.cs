@@ -69,11 +69,19 @@ public class MarriageGameSetRepository : IMarriageGameSetRepository
 
     public async Task<MarriageGameSet?> GetByIdAsync(string id, string hostUserId)
     {
+        if (string.IsNullOrEmpty(id) || !ObjectId.TryParse(id, out _))
+        {
+            return null;
+        }
         return await _collection.Find(gs => gs.Id == id && gs.HostUserId == hostUserId).FirstOrDefaultAsync();
     }
 
     public async Task<MarriageGameSet?> GetByIdRawAsync(string id)
     {
+        if (string.IsNullOrEmpty(id) || !ObjectId.TryParse(id, out _))
+        {
+            return null;
+        }
         return await _collection.Find(gs => gs.Id == id).FirstOrDefaultAsync();
     }
 
