@@ -157,6 +157,10 @@ class LoginViewModel @Inject constructor(
                     sessionManager.clearSession()
                     _uiState.value = LoginUiState.Error(result.message)
                 }
+                is ApiResult.Unauthorized -> {
+                    sessionManager.clearSession()
+                    _uiState.value = LoginUiState.Error("Session expired. Please sign in again.")
+                }
                 is ApiResult.Loading -> {
                     _uiState.value = LoginUiState.Loading
                 }
@@ -183,6 +187,10 @@ class LoginViewModel @Inject constructor(
                 is ApiResult.Error -> {
                     sessionManager.clearSession()
                     _uiState.value = LoginUiState.Error(result.message)
+                }
+                is ApiResult.Unauthorized -> {
+                    sessionManager.clearSession()
+                    _uiState.value = LoginUiState.Error("Session expired. Please sign in again.")
                 }
                 is ApiResult.Loading -> {
                     _uiState.value = LoginUiState.Loading

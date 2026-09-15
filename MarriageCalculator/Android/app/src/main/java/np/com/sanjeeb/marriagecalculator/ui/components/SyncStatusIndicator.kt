@@ -17,6 +17,7 @@ import androidx.compose.material.icons.filled.CloudDone
 import androidx.compose.material.icons.filled.CloudOff
 import androidx.compose.material.icons.filled.CloudUpload
 import androidx.compose.material.icons.filled.Sync
+import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -40,12 +41,21 @@ import np.com.sanjeeb.marriagecalculator.data.sync.SyncStatus
 import np.com.sanjeeb.marriagecalculator.ui.theme.AppTheme
 import javax.inject.Inject
 
+import np.com.sanjeeb.marriagecalculator.data.repository.SessionManager
+
 @HiltViewModel
 class SyncViewModel @Inject constructor(
-    private val syncManager: SyncManager
+    private val syncManager: SyncManager,
+    private val sessionManager: SessionManager
 ) : ViewModel() {
     val syncStatus: StateFlow<SyncStatus> = syncManager.syncStatus
-    fun triggerSync() = syncManager.triggerSync()
+    fun triggerSync() {
+        if (syncStatus.value is SyncStatus.Error) {
+            sessionManager.emitSessionExpired()
+        } else {
+            syncManager.triggerSync()
+        }
+    }
 }
 
 @Composable
@@ -60,6 +70,7 @@ fun SyncStatusIndicator(
     val targetColor = when (syncStatus) {
         is SyncStatus.Synced -> Color(0xFF00E676) // Bright vibrant emerald green
         is SyncStatus.Syncing -> AppTheme.palette.accent
+        is SyncStatus.Error -> Color(0xFFFF5252) // Red for error/session expired
         else -> Color(0xFF9E9E9E) // Gray for offline or pending local-only sync
     }
     val animatedColor by animateColorAsState(targetValue = targetColor, label = "syncColor")
@@ -88,6 +99,7 @@ fun SyncStatusIndicator(
             is SyncStatus.Syncing -> Icons.Default.Sync
             is SyncStatus.PendingSync -> Icons.Default.CloudUpload
             is SyncStatus.Offline -> Icons.Default.CloudOff
+            is SyncStatus.Error -> Icons.Default.Warning
         }
 
         Icon(
@@ -97,6 +109,7 @@ fun SyncStatusIndicator(
                 is SyncStatus.Syncing -> "Syncing data..."
                 is SyncStatus.PendingSync -> "Pending sync"
                 is SyncStatus.Offline -> "Offline (local storage)"
+                is SyncStatus.Error -> "Sync error — tap for details"
             },
             tint = animatedColor,
             modifier = Modifier
@@ -154,6 +167,7 @@ fun SyncStatusDetailDialog(
                 val iconColor = when (status) {
                     is SyncStatus.Synced -> Color(0xFF00E676)
                     is SyncStatus.Syncing -> AppTheme.palette.accent
+                    is SyncStatus.Error -> Color(0xFFFF5252)
                     else -> Color(0xFF9E9E9E)
                 }
 
@@ -171,6 +185,7 @@ fun SyncStatusDetailDialog(
                             is SyncStatus.Syncing -> Icons.Default.Sync
                             is SyncStatus.PendingSync -> Icons.Default.CloudUpload
                             is SyncStatus.Offline -> Icons.Default.CloudOff
+                            is SyncStatus.Error -> Icons.Default.Warning
                         },
                         contentDescription = null,
                         tint = iconColor,
@@ -186,6 +201,7 @@ fun SyncStatusDetailDialog(
                         is SyncStatus.Syncing -> "Syncing with Cloud..."
                         is SyncStatus.PendingSync -> "Local Only (Pending Sync)"
                         is SyncStatus.Offline -> "Offline Mode"
+                        is SyncStatus.Error -> "Sync Failed"
                     },
                     fontSize = 18.sp,
                     fontWeight = FontWeight.Bold,
@@ -205,6 +221,8 @@ fun SyncStatusDetailDialog(
                             "${(status as SyncStatus.PendingSync).pendingCount} record(s) written to local database only. They will automatically sync when connected to the server."
                         is SyncStatus.Offline ->
                             "Internet is currently not available. Scores are written safely to the local database and will automatically sync once online."
+                        is SyncStatus.Error ->
+                            (status as SyncStatus.Error).message
                     },
                     fontSize = 13.sp,
                     color = AppTheme.palette.textPrimary.copy(alpha = 0.75f),
@@ -239,15 +257,19 @@ fun SyncStatusDetailDialog(
                     horizontalArrangement = Arrangement.End
                 ) {
                     if (status !is SyncStatus.Synced && status !is SyncStatus.Syncing) {
+                        val buttonLabel = if (status is SyncStatus.Error) "Sign In Again" else "Sync Now"
                         OutlinedButton(
                             onClick = onSyncNow,
                             colors = ButtonDefaults.outlinedButtonColors(
-                                contentColor = AppTheme.palette.accent
+                                contentColor = if (status is SyncStatus.Error) Color(0xFFFF5252) else AppTheme.palette.accent
                             ),
-                            border = androidx.compose.foundation.BorderStroke(1.dp, AppTheme.palette.accent.copy(alpha = 0.5f)),
+                            border = androidx.compose.foundation.BorderStroke(
+                                1.dp,
+                                if (status is SyncStatus.Error) Color(0xFFFF5252).copy(alpha = 0.5f) else AppTheme.palette.accent.copy(alpha = 0.5f)
+                            ),
                             shape = RoundedCornerShape(10.dp)
                         ) {
-                            Text("Sync Now", fontSize = 13.sp)
+                            Text(buttonLabel, fontSize = 13.sp)
                         }
                         Spacer(modifier = Modifier.width(8.dp))
                     }

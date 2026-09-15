@@ -78,6 +78,7 @@ fun DashboardScreen(
     var showThemeDialog by remember { mutableStateOf(false) }
     var showAboutDialog by remember { mutableStateOf(false) }
     var showMoreAppsDialog by remember { mutableStateOf(false) }
+    val snackbarHostState = remember { SnackbarHostState() }
 
     // The ViewModel is scoped to this destination's nav back-stack entry, so it survives
     // navigating away and back (e.g. resuming or deleting a game) without being recreated -
@@ -93,6 +94,13 @@ fun DashboardScreen(
         onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
     }
     val scope = rememberCoroutineScope()
+
+    // When the session expires (stale/invalid token), navigate to the login screen.
+    LaunchedEffect(uiState.sessionExpired) {
+        if (uiState.sessionExpired) {
+            onLogout()
+        }
+    }
 
     if (showThemeDialog) {
         ThemePickerDialog(

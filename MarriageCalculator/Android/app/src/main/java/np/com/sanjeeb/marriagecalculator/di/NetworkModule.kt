@@ -40,6 +40,18 @@ object NetworkModule {
                 }
                 chain.proceed(requestBuilder.build())
             }
+            .addInterceptor { chain ->
+                // Global 401/403 interceptor: session expired — clear auth and notify observers
+                val response = chain.proceed(chain.request())
+                if (response.code == 401 || response.code == 403) {
+                    // Only clear session if we were actually logged in (not a guest/anonymous request)
+                    if (sessionManager.isLoggedIn()) {
+                        sessionManager.clearSession()
+                        sessionManager.emitSessionExpired()
+                    }
+                }
+                response
+            }
             .addInterceptor(logging) // Add logging AFTER auth to see headers in log
             .connectTimeout(30, TimeUnit.SECONDS)
             .readTimeout(30, TimeUnit.SECONDS)

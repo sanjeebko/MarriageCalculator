@@ -5,6 +5,9 @@ import android.content.SharedPreferences
 import com.google.gson.Gson
 import np.com.sanjeeb.marriagecalculator.data.model.User
 import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.SharedFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -17,6 +20,14 @@ class SessionManager @Inject constructor(
 
     private val _userKeyFlow = kotlinx.coroutines.flow.MutableStateFlow(getCurrentUserKey())
     val userKeyFlow: kotlinx.coroutines.flow.StateFlow<String> = _userKeyFlow
+
+    /** Fires once when the server rejects the stored token (HTTP 401/403). Observe to navigate to login. */
+    private val _sessionExpiredEvent = MutableSharedFlow<Unit>(extraBufferCapacity = 1)
+    val sessionExpiredEvent: SharedFlow<Unit> = _sessionExpiredEvent.asSharedFlow()
+
+    fun emitSessionExpired() {
+        _sessionExpiredEvent.tryEmit(Unit)
+    }
 
     fun getCurrentUserKey(): String {
         if (isGuestMode() || !isLoggedIn()) {

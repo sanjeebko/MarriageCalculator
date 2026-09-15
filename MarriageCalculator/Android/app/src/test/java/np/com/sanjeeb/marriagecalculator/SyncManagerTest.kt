@@ -149,4 +149,38 @@ class SyncManagerTest {
         coVerify { gameSetRepository.createGameSet(any()) }
         coVerify { offlineGameRepository.markGameSetSynced(2, "remote-set-456") }
     }
+
+    @Test
+    fun `syncPendingData with ApiResult Unauthorized emits sessionExpired and sets Error state`() = runTest {
+        val unsyncedGameSet = GameSetEntity(id = 2, settingsId = 5, name = "Offline Game", synced = false, remoteId = null)
+        coEvery { offlineGameRepository.getUnsyncedGameSets() } returns listOf(unsyncedGameSet)
+        coEvery { offlineGameRepository.getGameSettings(5) } returns GameSettings(id = "5")
+        coEvery { gameSettingsRepository.createGameSettings(any()) } returns ApiResult.Unauthorized
+
+        val result = syncManager.syncPendingData()
+        assertFalse(result)
+        coVerify { sessionManager.emitSessionExpired() }
+
+        val status = syncManager.syncStatus.first { it is SyncStatus.Error }
+        assertTrue(status is SyncStatus.Error)
+        assertEquals("Session expired. Please sign in again.", (status as SyncStatus.Error).message)
+    }
+
+    @Test
+    fun `syncPendingData with ApiResult Unauthorized on round submit emits sessionExpired`() = runTest {
+        val unsyncedRound = RoundEntity(id = 10, gameSetId = 1, roundNumber = 1, winnerId = 101, dealerId = 102, totalMaal = 5, synced = false)
+        val gameSet = GameSetEntity(id = 1, settingsId = 1, remoteId = "remote-set-123")
+        coEvery { offlineGameRepository.getUnsyncedGameSets() } returns emptyList()
+        coEvery { offlineGameRepository.getUnsyncedRounds() } returns listOf(unsyncedRound)
+        coEvery { offlineGameRepository.getGameSet(1) } returns gameSet
+        coEvery { offlineGameRepository.getRoundScores(10) } returns emptyList()
+        coEvery { gameSetRepository.submitRound(any(), any()) } returns ApiResult.Unauthorized
+
+        val result = syncManager.syncPendingData()
+        assertFalse(result)
+        coVerify { sessionManager.emitSessionExpired() }
+
+        val status = syncManager.syncStatus.first { it is SyncStatus.Error }
+        assertTrue(status is SyncStatus.Error)
+    }
 }

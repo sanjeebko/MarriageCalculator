@@ -33,7 +33,9 @@ data class DashboardUiState(
     val recentPlayers: List<Player> = emptyList(),
     val isQuickStarting: Boolean = false,
     val error: String? = null,
-    val isOfflineMode: Boolean = true
+    val isOfflineMode: Boolean = true,
+    /** Set to true when the server rejects our auth token — the UI should navigate to the login screen. */
+    val sessionExpired: Boolean = false
 )
 
 @HiltViewModel
@@ -66,6 +68,14 @@ class DashboardViewModel @Inject constructor(
                     loadActiveGames()
                     claimPendingInvites()
                 }
+            }
+        }
+
+        // Observe session expiry events fired by the OkHttp interceptor or SyncManager.
+        // When the server rejects our token, navigate to login immediately.
+        viewModelScope.launch {
+            sessionManager.sessionExpiredEvent.collect {
+                _uiState.value = _uiState.value.copy(sessionExpired = true, isOfflineMode = true)
             }
         }
     }
@@ -144,6 +154,20 @@ class DashboardViewModel @Inject constructor(
                             careerStats = careerStats,
                             recentPlayers = recentPlayers,
                             isOfflineMode = false
+                        )
+                    }
+                    is ApiResult.Unauthorized -> {
+                        // Token is expired or invalid — clear session and signal re-login
+                        sessionManager.clearSession()
+                        sessionManager.emitSessionExpired()
+                        _uiState.value = _uiState.value.copy(
+                            isLoading = false,
+                            activeGames = localGames,
+                            enrichedGames = localEnriched,
+                            careerStats = careerStats,
+                            recentPlayers = recentPlayers,
+                            isOfflineMode = true,
+                            sessionExpired = true
                         )
                     }
                     is ApiResult.Error -> {

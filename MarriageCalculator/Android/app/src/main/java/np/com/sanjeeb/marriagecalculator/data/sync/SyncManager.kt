@@ -31,6 +31,8 @@ sealed interface SyncStatus {
     data class PendingSync(val pendingCount: Int) : SyncStatus
     data class Syncing(val pendingCount: Int = 0) : SyncStatus
     data object Synced : SyncStatus
+    /** Sync was attempted but failed — message describes the reason (e.g. "Session expired"). */
+    data class Error(val message: String, val pendingCount: Int = 0) : SyncStatus
 
     val isSynced: Boolean get() = this is Synced
     val isOffline: Boolean get() = this is Offline
@@ -47,15 +49,18 @@ class SyncManager @Inject constructor(
 ) {
     private val syncScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     private val _isSyncing = MutableStateFlow(false)
+    private val _lastError = MutableStateFlow<String?>(null)
 
     val syncStatus: StateFlow<SyncStatus> = combine(
         networkMonitor.isOnline,
         offlineGameRepository.unsyncedCountFlow,
-        _isSyncing
-    ) { isOnline, pendingCount, isSyncing ->
+        _isSyncing,
+        _lastError
+    ) { isOnline, pendingCount, isSyncing, lastError ->
         when {
             !isOnline -> SyncStatus.Offline(pendingCount)
             isSyncing -> SyncStatus.Syncing(pendingCount)
+            lastError != null -> SyncStatus.Error(lastError, pendingCount)
             pendingCount > 0 -> SyncStatus.PendingSync(pendingCount)
             else -> SyncStatus.Synced
         }
@@ -81,6 +86,7 @@ class SyncManager @Inject constructor(
         if (!sessionManager.isOnlineMode()) return false
 
         _isSyncing.value = true
+        _lastError.value = null  // Clear any previous error on new sync attempt
         try {
             // 1. Sync pending game sets (and their players/settings) that do not yet have a remoteId
             val unsyncedGameSets = offlineGameRepository.getUnsyncedGameSets()
@@ -107,6 +113,11 @@ class SyncManager @Inject constructor(
                     audio = settings.audio
                 )
                 val settingsResult = gameSettingsRepository.createGameSettings(settingsRequest)
+                if (settingsResult is ApiResult.Unauthorized) {
+                    _lastError.value = "Session expired. Please sign in again."
+                    sessionManager.emitSessionExpired()
+                    return false
+                }
                 val remoteSettingsId = if (settingsResult is ApiResult.Success) settingsResult.data.id else continue
 
                 val players = offlineGameRepository.getGameSetPlayers(gameSet.id)
@@ -132,6 +143,11 @@ class SyncManager @Inject constructor(
                                     offlineGameRepository.updatePlayerRemoteId(localPlayerId, newRemoteId)
                                 }
                             }
+                            is ApiResult.Unauthorized -> {
+                                _lastError.value = "Session expired. Please sign in again."
+                                sessionManager.emitSessionExpired()
+                                return false
+                            }
                             else -> {
                                 playerFailed = true
                                 break
@@ -147,6 +163,11 @@ class SyncManager @Inject constructor(
                     playerIds = remotePlayerIds
                 )
                 val createResult = gameSetRepository.createGameSet(gameSetRequest)
+                if (createResult is ApiResult.Unauthorized) {
+                    _lastError.value = "Session expired. Please sign in again."
+                    sessionManager.emitSessionExpired()
+                    return false
+                }
                 if (createResult is ApiResult.Success) {
                     offlineGameRepository.markGameSetSynced(gameSet.id, createResult.data.id)
                 }
@@ -185,6 +206,11 @@ class SyncManager @Inject constructor(
                 )
 
                 val apiResult = gameSetRepository.submitRound(remoteGameSetId, submitRequest)
+                if (apiResult is ApiResult.Unauthorized) {
+                    _lastError.value = "Session expired. Please sign in again."
+                    sessionManager.emitSessionExpired()
+                    return false
+                }
                 if (apiResult is ApiResult.Success) {
                     offlineGameRepository.markRoundSynced(round.id, apiResult.data.id)
                 }
@@ -199,6 +225,7 @@ class SyncManager @Inject constructor(
 
     fun triggerSync() {
         syncScope.launch {
+            _lastError.value = null  // Clear error state when user manually triggers sync
             syncPendingData()
         }
     }
