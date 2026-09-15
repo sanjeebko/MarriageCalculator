@@ -99,6 +99,9 @@ class FriendViewModel @Inject constructor(
                 is ApiResult.Error -> {
                     _uiState.value = _uiState.value.copy(inviteCodeLoading = false, error = result.message)
                 }
+                is ApiResult.Unauthorized -> {
+                    _uiState.value = _uiState.value.copy(inviteCodeLoading = false, error = "Session expired. Please sign in again.")
+                }
                 is ApiResult.Loading -> {}
             }
         }
@@ -118,6 +121,9 @@ class FriendViewModel @Inject constructor(
                 }
                 is ApiResult.Error -> {
                     _uiState.value = _uiState.value.copy(redeemLoading = false, error = result.message)
+                }
+                is ApiResult.Unauthorized -> {
+                    _uiState.value = _uiState.value.copy(redeemLoading = false, error = "Session expired. Please sign in again.")
                 }
                 is ApiResult.Loading -> {}
             }
@@ -146,6 +152,9 @@ class FriendViewModel @Inject constructor(
                         error = result.message
                     )
                 }
+                is ApiResult.Unauthorized -> {
+                    _uiState.value = _uiState.value.copy(addEmailLoading = false, error = "Session expired. Please sign in again.")
+                }
                 is ApiResult.Loading -> {}
             }
         }
@@ -164,6 +173,9 @@ class FriendViewModel @Inject constructor(
                         error = result.message
                     )
                 }
+                is ApiResult.Unauthorized -> {
+                    _uiState.value = _uiState.value.copy(isLoading = false, error = "Session expired. Please sign in again.")
+                }
                 is ApiResult.Loading -> {}
             }
         }
@@ -181,6 +193,9 @@ class FriendViewModel @Inject constructor(
                         isLoading = false,
                         error = result.message
                     )
+                }
+                is ApiResult.Unauthorized -> {
+                    _uiState.value = _uiState.value.copy(isLoading = false, error = "Session expired. Please sign in again.")
                 }
                 is ApiResult.Loading -> {}
             }

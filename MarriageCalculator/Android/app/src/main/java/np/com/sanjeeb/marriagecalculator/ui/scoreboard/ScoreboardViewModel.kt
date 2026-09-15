@@ -214,6 +214,9 @@ class ScoreboardViewModel @Inject constructor(
                 is ApiResult.Error -> {
                     _uiState.value = _uiState.value.copy(isLoading = false)
                 }
+                is ApiResult.Unauthorized -> {
+                    _uiState.value = _uiState.value.copy(isLoading = false)
+                }
                 is ApiResult.Loading -> {}
             }
         }

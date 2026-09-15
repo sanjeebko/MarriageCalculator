@@ -203,6 +203,7 @@ class RoundInputViewModel @Inject constructor(
                     calculatePreview()
                 }
                 is ApiResult.Error -> _uiState.value = _uiState.value.copy(error = result.message)
+                is ApiResult.Unauthorized -> _uiState.value = _uiState.value.copy(error = "Session expired. Please sign in again.")
                 is ApiResult.Loading -> {}
             }
         } else {
@@ -496,6 +497,15 @@ class RoundInputViewModel @Inject constructor(
                             _uiState.value = state.copy(submitted = true, error = null)
                         } else {
                             _uiState.value = state.copy(error = "Failed to save round: ${result.message}")
+                        }
+                    }
+                    is ApiResult.Unauthorized -> {
+                        // Token expired — save locally so the round isn't lost; SyncManager will retry
+                        val savedLocally = saveLocalMirror(gameSetIdStr, state, winnerId, synced = false, remoteId = null)
+                        if (savedLocally) {
+                            _uiState.value = state.copy(submitted = true, error = null)
+                        } else {
+                            _uiState.value = state.copy(error = "Session expired. Please sign in again.")
                         }
                     }
                     is ApiResult.Loading -> {}

@@ -215,6 +215,9 @@ class PlayGameViewModel @Inject constructor(
                             error = result.message
                         )
                     }
+                    is ApiResult.Unauthorized -> {
+                        _uiState.value = _uiState.value.copy(isLoading = false, error = "Session expired. Please sign in again.")
+                    }
                     is ApiResult.Loading -> {}
                 }
             } else {
@@ -371,6 +374,10 @@ class PlayGameViewModel @Inject constructor(
                         }
                         is ApiResult.Error -> {
                             _uiState.value = _uiState.value.copy(isLoading = false, error = result.message)
+                            return@launch
+                        }
+                        is ApiResult.Unauthorized -> {
+                            _uiState.value = _uiState.value.copy(isLoading = false, error = "Session expired. Please sign in again.")
                             return@launch
                         }
                         is ApiResult.Loading -> {}
@@ -586,6 +593,7 @@ class PlayGameViewModel @Inject constructor(
                         onDeleted()
                     }
                     is ApiResult.Error -> _uiState.value = _uiState.value.copy(isLoading = false, error = result.message)
+                    is ApiResult.Unauthorized -> _uiState.value = _uiState.value.copy(isLoading = false, error = "Session expired. Please sign in again.")
                     is ApiResult.Loading -> {}
                 }
             } else {
