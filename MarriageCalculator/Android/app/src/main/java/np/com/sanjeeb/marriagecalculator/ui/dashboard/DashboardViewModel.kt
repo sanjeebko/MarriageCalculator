@@ -123,7 +123,12 @@ class DashboardViewModel @Inject constructor(
             if (isOnline) {
                 when (val result = gameSetRepository.getGameSets()) {
                     is ApiResult.Success -> {
-                        val remoteGames = result.data.filter { it.isActive }
+                        // The API also returns games I only participate in; those live in
+                        // Joined Games, so the dashboard lists just the games I host.
+                        val myUserId = sessionManager.getUserProfile()?.userId
+                        val remoteGames = result.data.filter {
+                            it.isActive && (myUserId.isNullOrEmpty() || it.hostUserId == myUserId)
+                        }
                         val remoteIds = remoteGames.map { it.id }.toSet()
 
                         val localEntities = try {

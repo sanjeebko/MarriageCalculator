@@ -610,6 +610,19 @@ Polished History navigation integration and cleaned up unused route definitions.
 
 ---
 
+## Phase 50: Friends Added to a Game Can View It (Issue #121, In Review)
+Bug: host added two friends to a game and submitted scores, but the friends saw nothing in Joined Games. Requirement: every real-user participant can view the game and its submitted scores (read-only); only the host edits.
+- [x] Step 50.1: **Root cause** — Game Setup uses a friend's **User** document id as the player id, so `MarriageGameSet.PlayerIds` holds User ids for friends (`MapToDtoAsync` already renders these). But `ResolveParticipantPlayerIdsAsync` only collected **Player** ids matched by the caller's email, so a friend never matched — empty Joined Games, and `GET MarriageGameSets/{id}` denied them.
+- [x] Step 50.2: **API fix** — `ResolveParticipantPlayerIdsAsync` always loads the caller's User record and includes its `_id` alongside email-matched Player ids. Retroactive for existing games (no migration). Host-only writes unchanged (submit/update/delete all check `HostUserId`).
+- [x] Step 50.3: **Tests** — updated the two service tests that encoded the old exclusion; added "friend without a Player record is searched by User id" and "non-participant can't open someone else's game" (65/65 API, 48/48 Core).
+- [x] Step 50.4: **Android** — participants' game view refreshes on resume and silently re-fetches every 15s while an active online game is on screen (`loadGame(silent = true)`: no spinner, failed polls keep current data). Dashboard now lists only games the user hosts; games they participate in live in Joined Games (otherwise the fix would duplicate them onto friends' dashboards).
+- [x] Step 50.5: **Live API verification** (local Docker API, mock accounts mirroring the report: host + 2 friends via invite code, friends added by User id): friends see the game in Joined and can open it; stranger can't list or open it; host's submitted game is visible to friends; a friend's submit attempt is rejected and doesn't change the game. 10/10 checks; test data removed.
+- [x] Step 50.6: **Gemini review + emulator QA** (handoff via issue comments) — verdict "approve with changes"; QA 9/9 PASS on emulator (friends see the game in Joined Games with scores, read-only for participants, auto-refresh within 18s, Dashboard host-only, outsider 404, no crashes). Participant payment-clearing confirmed intended.
+- [x] Step 50.7: **Review fixes** — (a) **transfer-host** stored the id the app sends (a friend's User doc id / Player id) as `HostUserId`, so after transferring nobody could edit the game: `TransferHostAsync` now resolves it to the new host's auth `UserId`, requires them to be a player in the game, and returns 400 on bad input (+2 tests; 67/67 API). (b) participant polling no longer double-fetches on first open and no longer re-fetches the friends list each poll (host-only data). (c) Joined Games "me" detection's id fallback compared a document id with the auth id (never matched) — now compares the User document id. Re-verified end to end: 16/16 incl. transfer-to-friend, transfer-to-outsider rejected; all test data removed.
+- **Follow-up (not in scope)**: FCM push to participants when the host submits a game.
+
+---
+
 ## Key Design Decisions
 1. **Screen Space for 6 Players**: Use compact card grid (2×3 or circular) with collapsible details. Score input uses horizontal scroll or tabbed view.
 2. **Scoring Algorithm**: Central Collection technique per requirements - Winner collects all, then distributes Maal.

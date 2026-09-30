@@ -34,16 +34,29 @@ public class MarriageGameSetService : IMarriageGameSetService
         _context = context;
     }
 
+    /// <summary>
+    /// Every id under which the caller can appear in a game set's PlayerIds:
+    /// Player documents matching their email (added by name/email), plus their
+    /// own User document id (added as a friend — the client uses the friend's
+    /// User id as the player id, which MapToDtoAsync resolves via Users).
+    /// </summary>
     private async Task<List<string>> ResolveParticipantPlayerIdsAsync(string hostUserId, string email)
     {
         var playerIds = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
-        if (string.IsNullOrEmpty(email) && !string.IsNullOrEmpty(hostUserId))
+        if (!string.IsNullOrEmpty(hostUserId))
         {
             var user = await _userRepository.GetByUserIdAsync(hostUserId);
-            if (user != null && !string.IsNullOrEmpty(user.Email))
+            if (user != null)
             {
-                email = user.Email;
+                if (!string.IsNullOrEmpty(user.Id) && ObjectId.TryParse(user.Id, out _))
+                {
+                    playerIds.Add(user.Id);
+                }
+                if (string.IsNullOrEmpty(email) && !string.IsNullOrEmpty(user.Email))
+                {
+                    email = user.Email;
+                }
             }
         }
 
@@ -231,11 +244,51 @@ public class MarriageGameSetService : IMarriageGameSetService
             throw new UnauthorizedAccessException("Only the current host can transfer game set ownership.");
         }
 
-        gameSet.HostUserId = newHostUserId;
+        // The client sends the new host's id as it appears in the game (a friend's User document
+        // id, or an email-linked Player id), but HostUserId must be the auth UserId — otherwise the
+        // new host's requests never match it and nobody can edit the game any more.
+        var newHostAuthId = await ResolveAuthUserIdAsync(newHostUserId)
+            ?? throw new ArgumentException("The new host must be a registered user.");
+        if (newHostAuthId == currentHostUserId)
+        {
+            throw new ArgumentException("You are already the host of this game.");
+        }
+        var newHostParticipantIds = await ResolveParticipantPlayerIdsAsync(newHostAuthId, string.Empty);
+        if (!gameSet.PlayerIds.Any(pId => newHostParticipantIds.Contains(pId)))
+        {
+            throw new ArgumentException("The new host must be a player in this game.");
+        }
+
+        gameSet.HostUserId = newHostAuthId;
         gameSet.LastPlayed = DateTime.UtcNow;
 
         var updated = await _gameSetRepository.UpdateAsync(id, gameSet, currentHostUserId);
         return updated != null ? await MapToDtoAsync(updated) : null;
+    }
+
+    /// <summary>
+    /// Maps an id as used in a game set's PlayerIds (User document id, or a Player id linked by
+    /// email) — or an auth id already — to the registered user's auth UserId. Null if no user.
+    /// </summary>
+    private async Task<string?> ResolveAuthUserIdAsync(string id)
+    {
+        if (string.IsNullOrEmpty(id)) return null;
+
+        if (ObjectId.TryParse(id, out _))
+        {
+            var userByDocId = await _userRepository.GetByIdAsync(id);
+            if (userByDocId != null) return userByDocId.UserId;
+
+            var player = await _playerRepository.GetByIdAsync(id);
+            if (!string.IsNullOrEmpty(player?.Email))
+            {
+                var userByEmail = await _userRepository.GetByEmailAsync(player.Email);
+                if (userByEmail != null) return userByEmail.UserId;
+            }
+        }
+
+        var userByAuthId = await _userRepository.GetByUserIdAsync(id);
+        return userByAuthId?.UserId;
     }
 
     public async Task<bool> NudgePlayerAsync(string gameSetId, string hostUserId, string playerId)

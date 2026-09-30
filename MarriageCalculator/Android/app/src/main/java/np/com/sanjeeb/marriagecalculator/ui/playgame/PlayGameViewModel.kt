@@ -98,10 +98,17 @@ class PlayGameViewModel @Inject constructor(
 
     private var loadGameJob: kotlinx.coroutines.Job? = null
 
-    fun loadGame(gameSetIdStr: String) {
+    /**
+     * @param silent background refresh (resume / participant auto-refresh): no loading
+     *   spinner, and a failed fetch keeps the current data instead of showing an error.
+     */
+    fun loadGame(gameSetIdStr: String, silent: Boolean = false) {
         val isLocalId = gameSetIdStr.toIntOrNull() != null
         val isOnline = sessionManager.isOnlineMode() && !isLocalId
-        _uiState.value = _uiState.value.copy(isLoading = true, isOnlineMode = isOnline, error = null)
+        if (silent && !isOnline) return
+        if (!silent) {
+            _uiState.value = _uiState.value.copy(isLoading = true, isOnlineMode = isOnline, error = null)
+        }
 
         loadGameJob?.cancel()
         loadGameJob = viewModelScope.launch {
@@ -202,18 +209,23 @@ class PlayGameViewModel @Inject constructor(
                             isHost = isCurrentUserHost,
                             hostUserName = hostDisplayName,
                             isOnlineMode = true,
-                            friendsList = emptyList(),
+                            // Kept across refreshes; only the host's player-mapping dialog uses it
+                            friendsList = _uiState.value.friendsList,
                             currentUserEmail = userEmail,
                             gameSettingsId = gameSet.gameSettingsId,
                             settings = settings
                         )
-                        loadFriends()
+                        if (isCurrentUserHost && (!silent || _uiState.value.friendsList.isEmpty())) {
+                            loadFriends()
+                        }
                     }
                     is ApiResult.Error -> {
-                        _uiState.value = _uiState.value.copy(
-                            isLoading = false,
-                            error = result.message
-                        )
+                        if (!silent) {
+                            _uiState.value = _uiState.value.copy(
+                                isLoading = false,
+                                error = result.message
+                            )
+                        }
                     }
                     is ApiResult.Unauthorized -> {
                         _uiState.value = _uiState.value.copy(isLoading = false, error = "Session expired. Please sign in again.")
