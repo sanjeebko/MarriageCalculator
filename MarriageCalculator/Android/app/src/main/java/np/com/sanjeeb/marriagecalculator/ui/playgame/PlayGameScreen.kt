@@ -59,6 +59,9 @@ import androidx.compose.ui.window.Popup
 import androidx.compose.ui.window.PopupPositionProvider
 import androidx.compose.ui.window.PopupProperties
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LocalLifecycleOwner
+import androidx.lifecycle.repeatOnLifecycle
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import kotlinx.coroutines.delay
@@ -117,6 +120,21 @@ fun PlayGameScreen(
 
     LaunchedEffect(gameSetId) {
         viewModel.loadGame(gameSetId)
+    }
+
+    // Participants can't submit scores themselves, so keep their view current: refresh on
+    // returning to the screen, then poll while an active online game is visible.
+    val lifecycleOwner = LocalLifecycleOwner.current
+    val autoRefreshAsParticipant = uiState.isOnlineMode && !uiState.isHost &&
+        !uiState.isSettled && uiState.gameName.isNotEmpty()
+    LaunchedEffect(gameSetId, autoRefreshAsParticipant) {
+        if (!autoRefreshAsParticipant) return@LaunchedEffect
+        lifecycleOwner.repeatOnLifecycle(Lifecycle.State.RESUMED) {
+            while (true) {
+                viewModel.loadGame(gameSetId, silent = true)
+                delay(PARTICIPANT_REFRESH_INTERVAL_MS)
+            }
+        }
     }
 
     if (showThemeDialog) {
@@ -1085,6 +1103,9 @@ private fun PlayerStandingsRow(
 }
 
 private enum class RoundDisplayMode { MAAL, POINTS }
+
+/** How often a participant's (non-host) view re-fetches an active online game. */
+private const val PARTICIPANT_REFRESH_INTERVAL_MS = 15_000L
 
 private const val ROUND_SEQ_COL_WIDTH_DP = 28
 private const val ROUND_PLAYER_COL_WIDTH_DP = 58

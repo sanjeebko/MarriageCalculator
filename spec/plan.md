@@ -610,6 +610,18 @@ Polished History navigation integration and cleaned up unused route definitions.
 
 ---
 
+## Phase 50: Friends Added to a Game Can View It (Issue #121, In Review)
+Bug: host added two friends to a game and submitted scores, but the friends saw nothing in Joined Games. Requirement: every real-user participant can view the game and its submitted scores (read-only); only the host edits.
+- [x] Step 50.1: **Root cause** — Game Setup uses a friend's **User** document id as the player id, so `MarriageGameSet.PlayerIds` holds User ids for friends (`MapToDtoAsync` already renders these). But `ResolveParticipantPlayerIdsAsync` only collected **Player** ids matched by the caller's email, so a friend never matched — empty Joined Games, and `GET MarriageGameSets/{id}` denied them.
+- [x] Step 50.2: **API fix** — `ResolveParticipantPlayerIdsAsync` always loads the caller's User record and includes its `_id` alongside email-matched Player ids. Retroactive for existing games (no migration). Host-only writes unchanged (submit/update/delete all check `HostUserId`).
+- [x] Step 50.3: **Tests** — updated the two service tests that encoded the old exclusion; added "friend without a Player record is searched by User id" and "non-participant can't open someone else's game" (65/65 API, 48/48 Core).
+- [x] Step 50.4: **Android** — participants' game view refreshes on resume and silently re-fetches every 15s while an active online game is on screen (`loadGame(silent = true)`: no spinner, failed polls keep current data). Dashboard now lists only games the user hosts; games they participate in live in Joined Games (otherwise the fix would duplicate them onto friends' dashboards).
+- [x] Step 50.5: **Live API verification** (local Docker API, mock accounts mirroring the report: host + 2 friends via invite code, friends added by User id): friends see the game in Joined and can open it; stranger can't list or open it; host's submitted game is visible to friends; a friend's submit attempt is rejected and doesn't change the game. 10/10 checks; test data removed.
+- [ ] Step 50.6: **Emulator testing + review** by Gemini agent.
+- **Follow-up (not in scope)**: FCM push to participants when the host submits a game.
+
+---
+
 ## Key Design Decisions
 1. **Screen Space for 6 Players**: Use compact card grid (2×3 or circular) with collapsible details. Score input uses horizontal scroll or tabbed view.
 2. **Scoring Algorithm**: Central Collection technique per requirements - Winner collects all, then distributes Maal.

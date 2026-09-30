@@ -34,16 +34,29 @@ public class MarriageGameSetService : IMarriageGameSetService
         _context = context;
     }
 
+    /// <summary>
+    /// Every id under which the caller can appear in a game set's PlayerIds:
+    /// Player documents matching their email (added by name/email), plus their
+    /// own User document id (added as a friend — the client uses the friend's
+    /// User id as the player id, which MapToDtoAsync resolves via Users).
+    /// </summary>
     private async Task<List<string>> ResolveParticipantPlayerIdsAsync(string hostUserId, string email)
     {
         var playerIds = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
-        if (string.IsNullOrEmpty(email) && !string.IsNullOrEmpty(hostUserId))
+        if (!string.IsNullOrEmpty(hostUserId))
         {
             var user = await _userRepository.GetByUserIdAsync(hostUserId);
-            if (user != null && !string.IsNullOrEmpty(user.Email))
+            if (user != null)
             {
-                email = user.Email;
+                if (!string.IsNullOrEmpty(user.Id) && ObjectId.TryParse(user.Id, out _))
+                {
+                    playerIds.Add(user.Id);
+                }
+                if (string.IsNullOrEmpty(email) && !string.IsNullOrEmpty(user.Email))
+                {
+                    email = user.Email;
+                }
             }
         }
 
