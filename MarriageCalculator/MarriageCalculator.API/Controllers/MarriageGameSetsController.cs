@@ -220,6 +220,10 @@ public class MarriageGameSetsController : ControllerBase
         {
             return Forbid(ex.Message);
         }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(ex.Message);
+        }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error transferring host of game set {GameSetId} to user {NewHostUserId}", id, transferDto.NewHostUserId);

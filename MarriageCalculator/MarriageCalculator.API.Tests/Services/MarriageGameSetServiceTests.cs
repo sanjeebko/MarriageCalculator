@@ -153,4 +153,62 @@ public class MarriageGameSetServiceTests
         // Assert: non-participants still can't read someone else's game
         Assert.Null(result);
     }
+
+    [Fact]
+    public async Task TransferHostAsync_ToFriendByUserDocId_StoresFriendsAuthUserId()
+    {
+        // Arrange: the app sends the friend's id as it appears in PlayerIds (User document id)
+        var gameSetId = "65a1b2c3d4e5f6a7b8c9d0ff";
+        var hostUid = "host-uid";
+        var friendUid = "222228289240832351249";
+        var friendDocId = "65a1b2c3d4e5f6a7b8c9d0e1";
+
+        _gameSetRepoMock.Setup(r => r.GetByIdRawAsync(gameSetId))
+            .ReturnsAsync(new MarriageGameSet
+            {
+                Id = gameSetId,
+                HostUserId = hostUid,
+                PlayerIds = new List<string> { "65a1b2c3d4e5f6a7b8c9d0e0", friendDocId }
+            });
+        var friend = new User { Id = friendDocId, UserId = friendUid, Email = "friend@example.com" };
+        _userRepoMock.Setup(r => r.GetByIdAsync(friendDocId)).ReturnsAsync(friend);
+        _userRepoMock.Setup(r => r.GetByUserIdAsync(friendUid)).ReturnsAsync(friend);
+        _playerRepoMock.Setup(r => r.GetPlayersByEmailAsync(It.IsAny<string>())).ReturnsAsync(new List<Player>());
+
+        MarriageGameSet? saved = null;
+        _gameSetRepoMock.Setup(r => r.UpdateAsync(gameSetId, It.IsAny<MarriageGameSet>(), hostUid))
+            .Callback<string, MarriageGameSet, string>((_, gs, _) => saved = gs)
+            .ReturnsAsync((MarriageGameSet?)null);
+
+        // Act
+        await _service.TransferHostAsync(gameSetId, hostUid, friendDocId);
+
+        // Assert: HostUserId holds the auth id the friend's requests carry, not the doc id
+        Assert.NotNull(saved);
+        Assert.Equal(friendUid, saved!.HostUserId);
+    }
+
+    [Fact]
+    public async Task TransferHostAsync_ToUserNotInGame_IsRejected()
+    {
+        var gameSetId = "65a1b2c3d4e5f6a7b8c9d0ff";
+        var outsiderDocId = "65a1b2c3d4e5f6a7b8c9d0e9";
+        var outsider = new User { Id = outsiderDocId, UserId = "outsider-uid", Email = "out@example.com" };
+
+        _gameSetRepoMock.Setup(r => r.GetByIdRawAsync(gameSetId))
+            .ReturnsAsync(new MarriageGameSet
+            {
+                Id = gameSetId,
+                HostUserId = "host-uid",
+                PlayerIds = new List<string> { "65a1b2c3d4e5f6a7b8c9d0e0", "65a1b2c3d4e5f6a7b8c9d0e1" }
+            });
+        _userRepoMock.Setup(r => r.GetByIdAsync(outsiderDocId)).ReturnsAsync(outsider);
+        _userRepoMock.Setup(r => r.GetByUserIdAsync("outsider-uid")).ReturnsAsync(outsider);
+        _playerRepoMock.Setup(r => r.GetPlayersByEmailAsync(It.IsAny<string>())).ReturnsAsync(new List<Player>());
+
+        await Assert.ThrowsAsync<ArgumentException>(
+            () => _service.TransferHostAsync(gameSetId, "host-uid", outsiderDocId));
+        _gameSetRepoMock.Verify(
+            r => r.UpdateAsync(It.IsAny<string>(), It.IsAny<MarriageGameSet>(), It.IsAny<string>()), Times.Never);
+    }
 }

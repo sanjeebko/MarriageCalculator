@@ -129,7 +129,14 @@ fun PlayGameScreen(
         !uiState.isSettled && uiState.gameName.isNotEmpty()
     LaunchedEffect(gameSetId, autoRefreshAsParticipant) {
         if (!autoRefreshAsParticipant) return@LaunchedEffect
+        // Data was just loaded when this starts, so the first pass waits; returning from the
+        // background later re-enters RESUMED and refreshes straight away.
+        var justLoaded = true
         lifecycleOwner.repeatOnLifecycle(Lifecycle.State.RESUMED) {
+            if (justLoaded) {
+                justLoaded = false
+                delay(PARTICIPANT_REFRESH_INTERVAL_MS)
+            }
             while (true) {
                 viewModel.loadGame(gameSetId, silent = true)
                 delay(PARTICIPANT_REFRESH_INTERVAL_MS)

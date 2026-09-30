@@ -209,12 +209,15 @@ class PlayGameViewModel @Inject constructor(
                             isHost = isCurrentUserHost,
                             hostUserName = hostDisplayName,
                             isOnlineMode = true,
-                            friendsList = emptyList(),
+                            // Kept across refreshes; only the host's player-mapping dialog uses it
+                            friendsList = _uiState.value.friendsList,
                             currentUserEmail = userEmail,
                             gameSettingsId = gameSet.gameSettingsId,
                             settings = settings
                         )
-                        loadFriends()
+                        if (isCurrentUserHost && (!silent || _uiState.value.friendsList.isEmpty())) {
+                            loadFriends()
+                        }
                     }
                     is ApiResult.Error -> {
                         if (!silent) {

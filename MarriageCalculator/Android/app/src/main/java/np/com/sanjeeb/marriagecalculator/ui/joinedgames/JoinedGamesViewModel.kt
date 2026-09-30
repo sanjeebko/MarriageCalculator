@@ -81,14 +81,15 @@ class JoinedGamesViewModel @Inject constructor(
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isLoading = true, error = null)
             val currentUser = sessionManager.getUserProfile()
-            val myUserId = currentUser?.userId ?: ""
+            // A friend appears in a game under their User document id, not their auth userId
+            val myUserDocId = currentUser?.id ?: ""
             val myEmail = currentUser?.email ?: ""
 
             when (val result = gameSetRepository.getJoinedGameSets()) {
                 is ApiResult.Success -> {
                     val rawGames = result.data
                     val enriched = rawGames.map { game ->
-                        enrichJoinedGame(game, myUserId, myEmail)
+                        enrichJoinedGame(game, myUserDocId, myEmail)
                     }
 
                     val stats = computeCareerStats(enriched)
@@ -119,7 +120,7 @@ class JoinedGamesViewModel @Inject constructor(
         }
     }
 
-    private fun enrichJoinedGame(game: MarriageGameSet, myUserId: String, myEmail: String): EnrichedActiveGame {
+    private fun enrichJoinedGame(game: MarriageGameSet, myUserDocId: String, myEmail: String): EnrichedActiveGame {
         val settings = game.gameSettings ?: GameSettings()
         val players = game.gameSetPlayers?.values?.mapNotNull { it.player } ?: emptyList()
         val rounds = game.rounds ?: emptyList()
@@ -139,7 +140,7 @@ class JoinedGamesViewModel @Inject constructor(
         // Find current user among players
         val myEntryIndex = standings.indexOfFirst {
             (myEmail.isNotEmpty() && it.first.email.equals(myEmail, ignoreCase = true)) ||
-            it.first.id == myUserId
+            (myUserDocId.isNotEmpty() && it.first.id == myUserDocId)
         }
 
         val myStanding = if (myEntryIndex != -1) standings[myEntryIndex] else null
