@@ -3,19 +3,18 @@
     Builds, pushes, deploys, and verifies the Marriage Calculator API to Kubernetes dev and prod environments.
 
 .DESCRIPTION
-    Automates the complete release lifecycle:
-    1. Validates prerequisites (Docker, SSH connectivity to cluster node).
-    2. Builds .NET 10 container image with git hash and 'latest' tags.
-    3. Pushes image tags to Docker Hub.
-    4. Triggers Kubernetes rollout restart in target namespace(s) via SSH.
-    5. Awaits rollout completion status.
-    6. Verifies /health/live and /health/ready endpoints.
+    Automates the split-tag release lifecycle:
+    - dev:  Builds .NET 10 container image with git hash and 'latest' tags, pushes to Docker Hub,
+            restarts dev deployment, and verifies health.
+    - prod: Verifies that the specified git hash tag exists on Docker Hub, promotes it to 'stable'
+            (without rebuilding), restarts prod deployment, and verifies health.
+    - all:  Performs dev release followed by prod promotion of the same tag.
 
 .PARAMETER Environment
     Target environment: 'dev', 'prod', or 'all'. Defaults to 'dev'.
 
 .PARAMETER Tag
-    Image tag to publish. Defaults to the current Git short commit hash.
+    Image tag to publish/promote. Defaults to the current Git short commit hash.
 
 .PARAMETER K8sHost
     Control plane host IP. Defaults to '192.168.0.210'.
@@ -24,10 +23,10 @@
     SSH username for cluster control plane. Defaults to 'sanjeeb'.
 
 .PARAMETER SkipBuild
-    Skip docker build step.
+    Skip docker build step (applies to dev).
 
 .PARAMETER SkipPush
-    Skip docker push step.
+    Skip docker push/promotion step.
 
 .PARAMETER SkipDeploy
     Skip kubectl rollout restart step.
@@ -38,7 +37,8 @@
 .EXAMPLE
     pwsh release-api.ps1 -Environment dev
     pwsh release-api.ps1 -Environment prod
-    pwsh release-api.ps1 -Environment all -Tag v1.0.0
+    pwsh release-api.ps1 -Environment prod -Tag fd61036
+    pwsh release-api.ps1 -Environment all
 #>
 
 [CmdletBinding()]
@@ -78,6 +78,51 @@ function Write-Warn {
 function Write-Failure {
     param([string]$Message)
     Write-Host "  [FAIL] $Message" -ForegroundColor Red
+}
+
+function Invoke-EnvironmentDeploy {
+    param([string]$EnvName)
+
+    Write-Step "Deploying to '$EnvName' namespace on Kubernetes cluster"
+    Write-Host "Restarting deployment/marriagecalculatordeployment in namespace $EnvName..."
+    ssh -n -o BatchMode=yes "$K8sUser@$K8sHost" "kubectl -n $EnvName rollout restart deployment/marriagecalculatordeployment"
+    if ($LASTEXITCODE -ne 0) {
+        Write-Failure "Failed to trigger rollout restart in namespace $EnvName."
+        exit $LASTEXITCODE
+    }
+
+    Write-Host "Waiting for rollout to complete..."
+    ssh -n -o BatchMode=yes "$K8sUser@$K8sHost" "kubectl -n $EnvName rollout status deployment/marriagecalculatordeployment --timeout=150s"
+    if ($LASTEXITCODE -ne 0) {
+        Write-Failure "Rollout failed in namespace $EnvName. Check pod logs: ssh -n -o BatchMode=yes $K8sUser@$K8sHost 'kubectl -n $EnvName logs -l app=marriagecalculatorapi --tail=50'"
+        exit $LASTEXITCODE
+    }
+    Write-Success "Deployment in namespace '$EnvName' rolled out successfully."
+}
+
+function Test-EnvironmentHealth {
+    param([string]$EnvName)
+
+    $liveUrl = if ($EnvName -eq 'dev') { "http://192.168.1.159/health/live" } else { "https://mcapi.sanjeebojha.com.np/health/live" }
+    $readyUrl = if ($EnvName -eq 'dev') { "http://192.168.1.159/health/ready" } else { "https://mcapi.sanjeebojha.com.np/health/ready" }
+
+    Write-Host "`nTesting health endpoints for environment: $EnvName"
+
+    # Probe Liveness
+    try {
+        $liveResp = Invoke-RestMethod -Uri $liveUrl -TimeoutSec 10 -ErrorAction Stop
+        Write-Success "Liveness check passed ($liveUrl): $liveResp"
+    } catch {
+        Write-Warn "Liveness check warning on $liveUrl : $_"
+    }
+
+    # Probe Readiness
+    try {
+        $readyResp = Invoke-RestMethod -Uri $readyUrl -TimeoutSec 10 -ErrorAction Stop
+        Write-Success "Readiness check passed ($readyUrl): $readyResp"
+    } catch {
+        Write-Warn "Readiness check warning on $readyUrl : $_"
+    }
 }
 
 # Resolve Git Root directory
@@ -122,101 +167,107 @@ if (-not $SkipDeploy) {
     Write-Success "SSH connection to cluster control plane confirmed."
 }
 
-# 1. Build Docker Image
 $ImageRepo = "sanjeebojha/marriagecalculatorapi"
-if (-not $SkipBuild) {
-    Write-Step "Building container image (${ImageRepo}:${Tag} and ${ImageRepo}:latest)"
-    $dockerfile = "MarriageCalculator/MarriageCalculator.API/Dockerfile"
-    $buildContext = "MarriageCalculator"
-    
-    docker build `
-        -t "${ImageRepo}:${Tag}" `
-        -t "${ImageRepo}:latest" `
-        -f $dockerfile `
-        $buildContext
 
-    if ($LASTEXITCODE -ne 0) {
-        Write-Failure "Docker build failed."
-        exit $LASTEXITCODE
-    }
-    Write-Success "Docker image built successfully."
-} else {
-    Write-Warn "Skipping Docker build (-SkipBuild specified)."
-}
+# --- Dev Workflow ---
+if ($Environment -eq 'dev' -or $Environment -eq 'all') {
+    Write-Step "=== Processing DEV Release (Target: ${ImageRepo}:latest & ${ImageRepo}:${Tag}) ==="
 
-# 2. Push Docker Image
-if (-not $SkipPush) {
-    Write-Step "Pushing images to Docker Hub ($ImageRepo)"
-    docker push "${ImageRepo}:${Tag}"
-    if ($LASTEXITCODE -ne 0) {
-        Write-Failure "Failed to push ${ImageRepo}:${Tag} to Docker Hub."
-        exit $LASTEXITCODE
-    }
-    docker push "${ImageRepo}:latest"
-    if ($LASTEXITCODE -ne 0) {
-        Write-Failure "Failed to push ${ImageRepo}:latest to Docker Hub."
-        exit $LASTEXITCODE
-    }
-    Write-Success "Docker images pushed successfully."
-} else {
-    Write-Warn "Skipping Docker push (-SkipPush specified)."
-}
+    # 1. Build Docker Image
+    if (-not $SkipBuild) {
+        Write-Step "Building container image (${ImageRepo}:${Tag} and ${ImageRepo}:latest)"
+        $dockerfile = "MarriageCalculator/MarriageCalculator.API/Dockerfile"
+        $buildContext = "MarriageCalculator"
 
-# 3. Deploy to Environments
-$EnvironmentsToDeploy = if ($Environment -eq 'all') { @('dev', 'prod') } else { @($Environment) }
+        docker build `
+            -t "${ImageRepo}:${Tag}" `
+            -t "${ImageRepo}:latest" `
+            -f $dockerfile `
+            $buildContext
 
-if (-not $SkipDeploy) {
-    foreach ($envName in $EnvironmentsToDeploy) {
-        Write-Step "Deploying to '$envName' namespace on Kubernetes cluster"
-        
-        # Rollout restart
-        Write-Host "Restarting deployment/marriagecalculatordeployment in namespace $envName..."
-        ssh -n -o BatchMode=yes "$K8sUser@$K8sHost" "kubectl -n $envName rollout restart deployment/marriagecalculatordeployment"
         if ($LASTEXITCODE -ne 0) {
-            Write-Failure "Failed to trigger rollout restart in namespace $envName."
+            Write-Failure "Docker build failed."
             exit $LASTEXITCODE
         }
+        Write-Success "Docker image built successfully."
+    } else {
+        Write-Warn "Skipping Docker build (-SkipBuild specified)."
+    }
 
-        # Rollout status
-        Write-Host "Waiting for rollout to complete..."
-        ssh -n -o BatchMode=yes "$K8sUser@$K8sHost" "kubectl -n $envName rollout status deployment/marriagecalculatordeployment --timeout=150s"
+    # 2. Push Docker Image
+    if (-not $SkipPush) {
+        Write-Step "Pushing dev images to Docker Hub ($ImageRepo)"
+        docker push "${ImageRepo}:${Tag}"
         if ($LASTEXITCODE -ne 0) {
-            Write-Failure "Rollout failed in namespace $envName. Check pod logs: ssh -n -o BatchMode=yes $K8sUser@$K8sHost 'kubectl -n $envName logs -l app=marriagecalculatorapi --tail=50'"
+            Write-Failure "Failed to push ${ImageRepo}:${Tag} to Docker Hub."
             exit $LASTEXITCODE
         }
-        Write-Success "Deployment in namespace '$envName' rolled out successfully."
+        docker push "${ImageRepo}:latest"
+        if ($LASTEXITCODE -ne 0) {
+            Write-Failure "Failed to push ${ImageRepo}:latest to Docker Hub."
+            exit $LASTEXITCODE
+        }
+        Write-Success "Docker images pushed successfully."
+    } else {
+        Write-Warn "Skipping Docker push (-SkipPush specified)."
     }
-} else {
-    Write-Warn "Skipping deployment rollout (-SkipDeploy specified)."
+
+    # 3. Deploy Dev
+    if (-not $SkipDeploy) {
+        Invoke-EnvironmentDeploy -EnvName 'dev'
+    } else {
+        Write-Warn "Skipping dev deployment rollout (-SkipDeploy specified)."
+    }
+
+    # 4. Health Check Dev
+    if (-not $SkipHealthCheck -and -not $SkipDeploy) {
+        Write-Step "Verifying dev service health checks"
+        Write-Host "Allowing 5 seconds for network routes to stabilize..."
+        Start-Sleep -Seconds 5
+        Test-EnvironmentHealth -EnvName 'dev'
+    }
 }
 
-# 4. Health Checks
-if (-not $SkipHealthCheck -and -not $SkipDeploy) {
-    Write-Step "Verifying service health checks"
-    Write-Host "Allowing 5 seconds for network routes to stabilize..."
-    Start-Sleep -Seconds 5
-    
-    foreach ($envName in $EnvironmentsToDeploy) {
-        Write-Host "`nTesting health endpoints for environment: $envName"
-        
-        $liveUrl = if ($envName -eq 'dev') { "http://192.168.1.159/health/live" } else { "https://mcapi.sanjeebojha.com.np/health/live" }
-        $readyUrl = if ($envName -eq 'dev') { "http://192.168.1.159/health/ready" } else { "https://mcapi.sanjeebojha.com.np/health/ready" }
-        
-        # Probe Liveness
-        try {
-            $liveResp = Invoke-RestMethod -Uri $liveUrl -TimeoutSec 10 -ErrorAction Stop
-            Write-Success "Liveness check passed ($liveUrl): $liveResp"
-        } catch {
-            Write-Warn "Liveness check warning on $liveUrl : $_"
-        }
+# --- Prod Promotion Workflow ---
+if ($Environment -eq 'prod' -or $Environment -eq 'all') {
+    Write-Step "=== Processing PROD Promotion (Target: ${ImageRepo}:stable from ${ImageRepo}:${Tag}) ==="
+    Write-Host "Production runs the promoted ':stable' tag without rebuilding."
 
-        # Probe Readiness
-        try {
-            $readyResp = Invoke-RestMethod -Uri $readyUrl -TimeoutSec 10 -ErrorAction Stop
-            Write-Success "Readiness check passed ($readyUrl): $readyResp"
-        } catch {
-            Write-Warn "Readiness check warning on $readyUrl : $_"
+    # 1. Verify Image exists on Docker Hub
+    Write-Step "Verifying ${ImageRepo}:${Tag} exists on Docker Hub"
+    docker buildx imagetools inspect "${ImageRepo}:${Tag}" | Out-Null
+    if ($LASTEXITCODE -ne 0) {
+        Write-Failure "Image ${ImageRepo}:${Tag} not found on Docker Hub. Please release to dev first or specify an existing tag with -Tag."
+        exit $LASTEXITCODE
+    }
+    Write-Success "Verified ${ImageRepo}:${Tag} is present on Docker Hub."
+
+    # 2. Promote to :stable
+    if (-not $SkipPush) {
+        Write-Step "Promoting image: ${ImageRepo}:${Tag} -> ${ImageRepo}:stable"
+        docker buildx imagetools create --prefer-index=false -t "${ImageRepo}:stable" "${ImageRepo}:${Tag}"
+        if ($LASTEXITCODE -ne 0) {
+            Write-Failure "Failed to promote ${ImageRepo}:${Tag} to ${ImageRepo}:stable on Docker Hub."
+            exit $LASTEXITCODE
         }
+        Write-Success "Promoted ${ImageRepo}:${Tag} to ${ImageRepo}:stable successfully."
+    } else {
+        Write-Warn "Skipping promotion push (-SkipPush specified)."
+    }
+
+    # 3. Deploy Prod
+    if (-not $SkipDeploy) {
+        Invoke-EnvironmentDeploy -EnvName 'prod'
+    } else {
+        Write-Warn "Skipping prod deployment rollout (-SkipDeploy specified)."
+    }
+
+    # 4. Health Check Prod
+    if (-not $SkipHealthCheck -and -not $SkipDeploy) {
+        Write-Step "Verifying prod service health checks"
+        Write-Host "Allowing 5 seconds for network routes to stabilize..."
+        Start-Sleep -Seconds 5
+        Test-EnvironmentHealth -EnvName 'prod'
     }
 }
 
