@@ -4,25 +4,38 @@ This guide details how to build the Docker image, run the container locally with
 
 ---
 
-## 1. Build & Push API Docker Images
+## 1. Build, Tagging & Promotion Workflow
 
-Use the following commands from the root directory of the repository to compile and publish the API docker image to your registry (`sanjeebojha/marriagecalculatorapi`):
+The API follows a split-tagging model to ensure production stability:
+- **`:<git-sha>`**: Immutable build published for every release commit.
+- **`:latest`**: Built from `main` and pulled by the **Development** (`dev`) environment.
+- **`:stable`**: Explicitly promoted from a verified `:<git-sha>` image and pulled by the **Production** (`prod`) environment.
+
+### Development: Build & Push
+From the workspace root directory:
 
 ```bash
-# Navigate to the workspace root directory (where MarriageCalculator.sln is located)
-cd /path/to/MarriageCalculator/
+# Obtain current git commit hash
+GIT_TAG=$(git rev-parse --short HEAD)
 
 # 1. Build the Docker image (clean .NET 10 build stage)
-docker build -f MarriageCalculator.API/Dockerfile -t sanjeebojha/marriagecalculatorapi:latest .
+docker build -f MarriageCalculator/MarriageCalculator.API/Dockerfile \
+  -t sanjeebojha/marriagecalculatorapi:$GIT_TAG \
+  -t sanjeebojha/marriagecalculatorapi:latest \
+  MarriageCalculator
 
-# 2. Tag image versions (e.g. latest, stable, specific release version)
-docker tag sanjeebojha/marriagecalculatorapi:latest sanjeebojha/marriagecalculatorapi:stable
-docker tag sanjeebojha/marriagecalculatorapi:latest sanjeebojha/marriagecalculatorapi:1.0.2
-
-# 3. Push images to Docker Hub
+# 2. Push images to Docker Hub
+docker push sanjeebojha/marriagecalculatorapi:$GIT_TAG
 docker push sanjeebojha/marriagecalculatorapi:latest
-docker push sanjeebojha/marriagecalculatorapi:stable
-docker push sanjeebojha/marriagecalculatorapi:1.0.2
+```
+
+### Production: Promotion (No Rebuild)
+Once verified in `dev`, promote the exact verified `:<git-sha>` image to `:stable`:
+
+```bash
+docker buildx imagetools create --prefer-index=false \
+  -t sanjeebojha/marriagecalculatorapi:stable \
+  sanjeebojha/marriagecalculatorapi:$GIT_TAG
 ```
 
 ---
@@ -112,11 +125,11 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: marriagecalculator-api
-  namespace: mc-namespace
+  namespace: prod # Note: Use 'dev' with image :latest for development
   labels:
     app: marriagecalculator-api
 spec:
-  replicas: 2
+  replicas: 1
   selector:
     matchLabels:
       app: marriagecalculator-api
@@ -127,7 +140,8 @@ spec:
     spec:
       containers:
       - name: api
-        image: sanjeebojha/marriagecalculatorapi:stable
+        image: sanjeebojha/marriagecalculatorapi:stable # prod uses :stable, dev uses :latest
+        imagePullPolicy: Always
         ports:
         - containerPort: 8080
         env:
@@ -162,9 +176,9 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: marriagecalculator-api
-  namespace: mc-namespace
+  namespace: prod # Note: Use 'dev' with image :latest for development
 spec:
-  replicas: 2
+  replicas: 1
   selector:
     matchLabels:
       app: marriagecalculator-api
@@ -175,7 +189,8 @@ spec:
     spec:
       containers:
       - name: api
-        image: sanjeebojha/marriagecalculatorapi:stable
+        image: sanjeebojha/marriagecalculatorapi:stable # prod uses :stable, dev uses :latest
+        imagePullPolicy: Always
         ports:
         - containerPort: 8080
         env:
