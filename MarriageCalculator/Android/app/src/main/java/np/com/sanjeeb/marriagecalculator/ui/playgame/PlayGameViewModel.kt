@@ -112,127 +112,129 @@ class PlayGameViewModel @Inject constructor(
 
         loadGameJob?.cancel()
         loadGameJob = viewModelScope.launch {
-            if (isOnline) {
-                when (val result = gameSetRepository.getGameSet(gameSetIdStr)) {
-                    is ApiResult.Success -> {
-                        val gameSet = result.data
-                        val gameSetPlayers = gameSet.gameSetPlayers?.values?.sortedBy { it.position } ?: emptyList()
-                        val players = gameSetPlayers.mapNotNull { it.player }
-                        val settings = gameSet.gameSettings ?: GameSettings.default()
+            try {
+                if (isOnline) {
+                    when (val result = gameSetRepository.getGameSet(gameSetIdStr)) {
+                        is ApiResult.Success -> {
+                            val gameSet = result.data
+                            val gameSetPlayers = gameSet.gameSetPlayers?.values?.sortedBy { it.position } ?: emptyList()
+                            val players = gameSetPlayers.mapNotNull { it.player }
+                            val settings = gameSet.gameSettings ?: GameSettings.default()
 
-                        val roundGroups = gameSet.rounds?.sortedBy { it.sequence }?.map { r ->
-                            val seatOrder = r.playerIds
-                                ?.mapNotNull { pid -> players.find { it.id == pid } }
-                                ?.takeIf { it.size == players.size }
-                                ?: players // legacy rounds predate seat-order snapshots
-                            val games = r.marriageGames?.sortedBy { it.sequence }?.map { g ->
-                                val winnerName = players.find { it.id == g.winnerId }?.name ?: "Unknown"
-                                val playerEntries = players.map { p ->
-                                    val score = g.marriageGameScores?.get(p.id)
-                                    RoundPlayerEntry(
-                                        playerId = p.id,
-                                        playerName = p.name,
-                                        isSeen = score?.seen ?: false,
-                                        isDublee = score?.duply ?: false,
-                                        isWinner = score?.winner ?: false,
-                                        maal = score?.maal ?: 0,
-                                        score = score?.score ?: 0,
-                                        money = (score?.score ?: 0) * settings.pointRate
+                            val roundGroups = gameSet.rounds?.sortedBy { it.sequence }?.map { r ->
+                                val seatOrder = r.playerIds
+                                    ?.mapNotNull { pid -> players.find { it.id == pid } }
+                                    ?.takeIf { it.size == players.size }
+                                    ?: players // legacy rounds predate seat-order snapshots
+                                val games = r.marriageGames?.sortedBy { it.sequence }?.map { g ->
+                                    val winnerName = players.find { it.id == g.winnerId }?.name ?: "Unknown"
+                                    val playerEntries = players.map { p ->
+                                        val score = g.marriageGameScores?.get(p.id)
+                                        RoundPlayerEntry(
+                                            playerId = p.id,
+                                            playerName = p.name,
+                                            isSeen = score?.seen ?: false,
+                                            isDublee = score?.duply ?: false,
+                                            isWinner = score?.winner ?: false,
+                                            maal = score?.maal ?: 0,
+                                            score = score?.score ?: 0,
+                                            money = (score?.score ?: 0) * settings.pointRate
+                                        )
+                                    }
+                                    GameEntry(
+                                        gameId = g.id,
+                                        gameSequenceInRound = g.sequence,
+                                        // Legacy games predate dealer recording - derive from the
+                                        // round's rotation so every row still shows its dealer.
+                                        dealerId = g.dealerId.ifBlank {
+                                            nextDealerFor(seatOrder, g.sequence - 1)?.id ?: ""
+                                        },
+                                        winnerId = g.winnerId,
+                                        winnerName = winnerName,
+                                        totalMaal = g.totalMaal,
+                                        playerEntries = playerEntries
                                     )
-                                }
-                                GameEntry(
-                                    gameId = g.id,
-                                    gameSequenceInRound = g.sequence,
-                                    // Legacy games predate dealer recording - derive from the
-                                    // round's rotation so every row still shows its dealer.
-                                    dealerId = g.dealerId.ifBlank {
-                                        nextDealerFor(seatOrder, g.sequence - 1)?.id ?: ""
-                                    },
-                                    winnerId = g.winnerId,
-                                    winnerName = winnerName,
-                                    totalMaal = g.totalMaal,
-                                    playerEntries = playerEntries
+                                } ?: emptyList()
+
+                                RoundGroup(
+                                    roundId = r.id,
+                                    roundSequence = r.sequence,
+                                    isCompleted = r.completed,
+                                    games = games,
+                                    totalScoreByPlayer = r.totalScore?.mapValues { (it.value as? Number)?.toInt() ?: it.value.toInt() } ?: emptyMap(),
+                                    seatOrder = seatOrder,
+                                    isPaymentCleared = r.paymentCleared
                                 )
                             } ?: emptyList()
 
-                            RoundGroup(
-                                roundId = r.id,
-                                roundSequence = r.sequence,
-                                isCompleted = r.completed,
-                                games = games,
-                                totalScoreByPlayer = r.totalScore?.mapValues { it.value.toInt() } ?: emptyMap(),
-                                seatOrder = seatOrder,
-                                isPaymentCleared = r.paymentCleared
+                            val totalGamesPlayed = roundGroups.sumOf { it.games.size }
+                            // Dealer rotates within the round: the open round's seat order if one
+                            // exists, otherwise the (possibly reshuffled) game-set order for the
+                            // round about to start. Must match RoundInputViewModel.loadGameData.
+                            val openRound = roundGroups.lastOrNull { !it.isCompleted }
+                            val nextDealer = nextDealerFor(
+                                seatOrder = openRound?.seatOrder ?: players,
+                                gamesInOpenRound = openRound?.games?.size ?: 0
                             )
-                        } ?: emptyList()
 
-                        val totalGamesPlayed = roundGroups.sumOf { it.games.size }
-                        // Dealer rotates within the round: the open round's seat order if one
-                        // exists, otherwise the (possibly reshuffled) game-set order for the
-                        // round about to start. Must match RoundInputViewModel.loadGameData.
-                        val openRound = roundGroups.lastOrNull { !it.isCompleted }
-                        val nextDealer = nextDealerFor(
-                            seatOrder = openRound?.seatOrder ?: players,
-                            gamesInOpenRound = openRound?.games?.size ?: 0
-                        )
-
-                        val standings = gameSetPlayers.map { gsp ->
-                            val p = gsp.player ?: Player(id = gsp.playerId, name = "Unknown")
-                            var netPoints = 0
-                            gameSet.rounds?.forEach { r ->
-                                val scoreMap = r.totalScore ?: emptyMap()
-                                netPoints += scoreMap[p.id]?.toInt() ?: 0
+                            val standings = gameSetPlayers.map { gsp ->
+                                val p = gsp.player ?: Player(id = gsp.playerId, name = "Unknown")
+                                var netPoints = 0
+                                gameSet.rounds?.forEach { r ->
+                                    val scoreMap = r.totalScore ?: emptyMap()
+                                    val score = scoreMap[p.id]
+                                    netPoints += (score as? Number)?.toInt() ?: score?.toInt() ?: 0
+                                }
+                                PlayerStandings(
+                                    player = p,
+                                    netPoints = netPoints,
+                                    totalMoney = netPoints * settings.pointRate,
+                                    isNextDealer = p.id == nextDealer?.id
+                                )
                             }
-                            PlayerStandings(
-                                player = p,
-                                netPoints = netPoints,
-                                totalMoney = netPoints * settings.pointRate,
-                                isNextDealer = p.id == nextDealer?.id
-                            )
-                        }
 
-                        val isCurrentUserHost = gameSet.hostUserId == sessionManager.getUserProfile()?.userId
-                        val userEmail = sessionManager.getUserProfile()?.email ?: ""
-                        val hostDisplayName = gameSet.hostUserName?.takeIf { it.isNotBlank() }
-                            ?: players.find { it.id == gameSet.hostUserId }?.name
-                            ?: "Host"
+                            val isCurrentUserHost = gameSet.hostUserId == sessionManager.getUserProfile()?.userId
+                            val userEmail = sessionManager.getUserProfile()?.email ?: ""
+                            val hostDisplayName = gameSet.hostUserName?.takeIf { it.isNotBlank() }
+                                ?: players.find { it.id == gameSet.hostUserId }?.name
+                                ?: "Host"
 
-                        _uiState.value = PlayGameUiState(
-                            gameName = gameSet.name,
-                            players = standings,
-                            roundGroups = roundGroups,
-                            totalGamesPlayed = totalGamesPlayed,
-                            nextDealerId = nextDealer?.id ?: "",
-                            nextDealerName = nextDealer?.name ?: "None",
-                            isSettled = !gameSet.isActive,
-                            isLoading = false,
-                            isHost = isCurrentUserHost,
-                            hostUserName = hostDisplayName,
-                            isOnlineMode = true,
-                            // Kept across refreshes; only the host's player-mapping dialog uses it
-                            friendsList = _uiState.value.friendsList,
-                            currentUserEmail = userEmail,
-                            gameSettingsId = gameSet.gameSettingsId,
-                            settings = settings
-                        )
-                        if (isCurrentUserHost && (!silent || _uiState.value.friendsList.isEmpty())) {
-                            loadFriends()
-                        }
-                    }
-                    is ApiResult.Error -> {
-                        if (!silent) {
-                            _uiState.value = _uiState.value.copy(
+                            _uiState.value = PlayGameUiState(
+                                gameName = gameSet.name,
+                                players = standings,
+                                roundGroups = roundGroups,
+                                totalGamesPlayed = totalGamesPlayed,
+                                nextDealerId = nextDealer?.id ?: "",
+                                nextDealerName = nextDealer?.name ?: "None",
+                                isSettled = !gameSet.isActive,
                                 isLoading = false,
-                                error = result.message
+                                isHost = isCurrentUserHost,
+                                hostUserName = hostDisplayName,
+                                isOnlineMode = true,
+                                // Kept across refreshes; only the host's player-mapping dialog uses it
+                                friendsList = _uiState.value.friendsList,
+                                currentUserEmail = userEmail,
+                                gameSettingsId = gameSet.gameSettingsId,
+                                settings = settings
                             )
+                            if (isCurrentUserHost && (!silent || _uiState.value.friendsList.isEmpty())) {
+                                loadFriends()
+                            }
                         }
+                        is ApiResult.Error -> {
+                            if (!silent) {
+                                _uiState.value = _uiState.value.copy(
+                                    isLoading = false,
+                                    error = result.message
+                                )
+                            }
+                        }
+                        is ApiResult.Unauthorized -> {
+                            _uiState.value = _uiState.value.copy(isLoading = false, error = "Session expired. Please sign in again.")
+                        }
+                        is ApiResult.Loading -> {}
                     }
-                    is ApiResult.Unauthorized -> {
-                        _uiState.value = _uiState.value.copy(isLoading = false, error = "Session expired. Please sign in again.")
-                    }
-                    is ApiResult.Loading -> {}
-                }
-            } else {
+                } else {
                 val gameSetId = gameSetIdStr.toIntOrNull() ?: return@launch
                 val gameSet = offlineGameRepository.getGameSet(gameSetId) ?: return@launch
                 val players = offlineGameRepository.getGameSetPlayers(gameSetId)
@@ -331,7 +333,8 @@ class PlayGameViewModel @Inject constructor(
                     )
 
                     val standings = players.map { p ->
-                        val pScores = allScores.filter { it.playerId == p.id.toInt() }
+                        val pIdInt = p.id.toIntOrNull()
+                        val pScores = if (pIdInt != null) allScores.filter { it.playerId == pIdInt } else emptyList()
                         val netPoints = pScores.sumOf { it.score }
                         PlayerStandings(
                             player = p,
@@ -357,6 +360,12 @@ class PlayGameViewModel @Inject constructor(
                     )
                 }
             }
+            } catch (e: Exception) {
+                _uiState.value = _uiState.value.copy(
+                    isLoading = false,
+                    error = e.message ?: "Failed to load game"
+                )
+            }
         }
     }
 
@@ -365,7 +374,7 @@ class PlayGameViewModel @Inject constructor(
             _uiState.value = _uiState.value.copy(isLoading = true, error = null)
             val isLocalId = gameSetIdStr.toIntOrNull() != null
             if (isLocalId) {
-                val gameSetId = gameSetIdStr.toInt()
+                val gameSetId = gameSetIdStr.toIntOrNull() ?: return@launch
                 val localPlayerIds = orderedPlayerIds.mapNotNull { it.toIntOrNull() }
                 try {
                     offlineGameRepository.updateGameSetPlayerPositions(gameSetId, localPlayerIds)

@@ -270,4 +270,23 @@ class PlayGameViewModelTest {
             gameSetRepository.reopenRound(gameSetId, "round-1")
         }
     }
+
+    @Test
+    fun `loadGame offline safely handles non-integer player IDs without crash`() = runTest {
+        val gameSetId = "123"
+        val nonIntPlayer = Player(id = "remote-player-oid-67a", name = "Remote Synced Player")
+
+        every { sessionManager.isOnlineMode() } returns false
+        coEvery { offlineGameRepository.getGameSet(123) } returns mockk(relaxed = true)
+        coEvery { offlineGameRepository.getGameSetPlayers(123) } returns listOf(nonIntPlayer)
+        every { offlineGameRepository.getRounds(123) } returns kotlinx.coroutines.flow.flowOf(emptyList())
+
+        viewModel.loadGame(gameSetId)
+
+        val state = viewModel.uiState.value
+        assertFalse(state.isOnlineMode)
+        assertEquals(1, state.players.size)
+        assertEquals("remote-player-oid-67a", state.players[0].player.id)
+        assertNull(state.error)
+    }
 }

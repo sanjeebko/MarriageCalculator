@@ -44,12 +44,16 @@ class SyncManagerTest {
     private val gameSettingsRepository: GameSettingsRepository = mockk(relaxed = true)
     private val sessionManager: SessionManager = mockk(relaxed = true) {
         every { isOnlineMode() } returns true
+        every { userKeyFlow } returns MutableStateFlow("user_123")
     }
 
     private lateinit var syncManager: SyncManager
 
     @Before
     fun setUp() {
+        every { sessionManager.isOnlineMode() } returns true
+        isOnlineFlow.value = true
+        unsyncedCountFlow.value = 0
         syncManager = SyncManager(
             networkMonitor = networkMonitor,
             offlineGameRepository = offlineGameRepository,
@@ -78,6 +82,24 @@ class SyncManagerTest {
         val status = syncManager.syncStatus.first { it is SyncStatus.Offline }
         assertTrue(status.isOffline)
         assertEquals(2, (status as SyncStatus.Offline).pendingCount)
+    }
+
+    @Test
+    fun `syncStatus is Offline when user is in guest or offline mode`() = runTest {
+        val guestSessionManager: SessionManager = mockk(relaxed = true) {
+            every { isOnlineMode() } returns false
+        }
+        val guestSyncManager = SyncManager(
+            networkMonitor = networkMonitor,
+            offlineGameRepository = offlineGameRepository,
+            gameSetRepository = gameSetRepository,
+            playerRepository = playerRepository,
+            gameSettingsRepository = gameSettingsRepository,
+            sessionManager = guestSessionManager
+        )
+        val status = guestSyncManager.syncStatus.first { it is SyncStatus.Offline }
+        assertTrue(status.isOffline)
+        assertEquals(0, (status as SyncStatus.Offline).pendingCount)
     }
 
     @Test

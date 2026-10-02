@@ -7,7 +7,7 @@ import javax.inject.Singleton
 
 sealed class ApiResult<out T> {
     data class Success<T>(val data: T) : ApiResult<T>()
-    data class Error(val message: String, val code: Int = 0) : ApiResult<Nothing>()
+    data class Error(val message: String, val code: Int = 0, val isNetworkError: Boolean = false) : ApiResult<Nothing>()
     /** Returned when the server responds with HTTP 401 or 403 — session has expired or is invalid. */
     data object Unauthorized : ApiResult<Nothing>()
     data object Loading : ApiResult<Nothing>()
@@ -80,8 +80,11 @@ internal suspend fun <T> safeApiCall(call: suspend () -> retrofit2.Response<T>):
         } else if (response.code() == 401 || response.code() == 403) {
             ApiResult.Unauthorized
         } else {
-            ApiResult.Error("API error: ${response.code()} ${response.message()}", response.code())
+            val isServerDown = response.code() in listOf(502, 503, 504)
+            ApiResult.Error("API error: ${response.code()} ${response.message()}", response.code(), isNetworkError = isServerDown)
         }
+    } catch (e: java.io.IOException) {
+        ApiResult.Error(e.message ?: "Network unreachable", isNetworkError = true)
     } catch (e: Exception) {
         ApiResult.Error(e.message ?: "Unknown error")
     }
@@ -96,8 +99,11 @@ internal suspend fun safeUnitApiCall(call: suspend () -> retrofit2.Response<Unit
         } else if (response.code() == 401 || response.code() == 403) {
             ApiResult.Unauthorized
         } else {
-            ApiResult.Error("API error: ${response.code()} ${response.message()}", response.code())
+            val isServerDown = response.code() in listOf(502, 503, 504)
+            ApiResult.Error("API error: ${response.code()} ${response.message()}", response.code(), isNetworkError = isServerDown)
         }
+    } catch (e: java.io.IOException) {
+        ApiResult.Error(e.message ?: "Network unreachable", isNetworkError = true)
     } catch (e: Exception) {
         ApiResult.Error(e.message ?: "Unknown error")
     }

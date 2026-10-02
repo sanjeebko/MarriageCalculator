@@ -33,7 +33,7 @@ data class DashboardUiState(
     val recentPlayers: List<Player> = emptyList(),
     val isQuickStarting: Boolean = false,
     val error: String? = null,
-    val isOfflineMode: Boolean = true,
+    val isOfflineMode: Boolean = false,
     /** Set to true when the server rejects our auth token — the UI should navigate to the login screen. */
     val sessionExpired: Boolean = false
 )
@@ -58,15 +58,21 @@ class DashboardViewModel @Inject constructor(
 
     init {
         val user = sessionManager.getUserProfile()
-        _uiState.value = _uiState.value.copy(user = user)
+        val isOffline = !sessionManager.isOnlineMode()
+        _uiState.value = _uiState.value.copy(user = user, isOfflineMode = isOffline)
         loadActiveGames()
         claimPendingInvites()
 
         viewModelScope.launch {
             networkMonitor.isOnline.distinctUntilChanged().collect { isOnline ->
-                if (isOnline && sessionManager.isOnlineMode()) {
-                    loadActiveGames()
-                    claimPendingInvites()
+                if (sessionManager.isLoggedIn()) {
+                    if (!isOnline) {
+                        _uiState.value = _uiState.value.copy(isOfflineMode = true)
+                    } else {
+                        _uiState.value = _uiState.value.copy(isOfflineMode = false)
+                        loadActiveGames()
+                        claimPendingInvites()
+                    }
                 }
             }
         }
@@ -176,14 +182,17 @@ class DashboardViewModel @Inject constructor(
                         )
                     }
                     is ApiResult.Error -> {
+                        val isServerDown = result.isNetworkError
+                        val isDisconnected = try { !networkMonitor.isOnline.first() } catch (e: Exception) { false }
+                        val offline = !sessionManager.isOnlineMode() || isServerDown || isDisconnected
                         _uiState.value = _uiState.value.copy(
                             isLoading = false,
                             activeGames = localGames,
                             enrichedGames = localEnriched,
                             careerStats = careerStats,
                             recentPlayers = recentPlayers,
-                            isOfflineMode = true,
-                            error = null
+                            isOfflineMode = offline,
+                            error = if (offline) null else result.message
                         )
                     }
                     is ApiResult.Loading -> {}
@@ -203,14 +212,17 @@ class DashboardViewModel @Inject constructor(
 
     private fun enrichRemoteGame(game: MarriageGameSet): EnrichedActiveGame {
         val settings = game.gameSettings ?: GameSettings()
-        val players = game.gameSetPlayers?.values?.mapNotNull { it.player } ?: emptyList()
+        val players = game.gameSetPlayers?.values?.sortedBy { it.position }?.mapNotNull { gsp ->
+            gsp.player ?: Player(id = gsp.playerId, name = "Player")
+        } ?: emptyList()
         val rounds = game.rounds ?: emptyList()
 
         val standings = players.map { p ->
             var netPoints = 0
             rounds.forEach { r ->
                 val scoreMap = r.totalScore ?: emptyMap()
-                netPoints += scoreMap[p.id]?.toInt() ?: 0
+                val score = scoreMap[p.id]
+                netPoints += (score as? Number)?.toInt() ?: score?.toInt() ?: 0
             }
             val money = netPoints * settings.pointRate
             p to money
