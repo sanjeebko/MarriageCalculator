@@ -58,6 +58,7 @@ class SyncManager @Inject constructor(
         _lastError
     ) { isOnline, pendingCount, isSyncing, lastError ->
         when {
+            !sessionManager.isOnlineMode() -> SyncStatus.Offline(0)
             !isOnline -> SyncStatus.Offline(pendingCount)
             isSyncing -> SyncStatus.Syncing(pendingCount)
             lastError != null -> SyncStatus.Error(lastError, pendingCount)
@@ -67,7 +68,7 @@ class SyncManager @Inject constructor(
     }.stateIn(
         scope = syncScope,
         started = SharingStarted.Eagerly,
-        initialValue = SyncStatus.Synced
+        initialValue = if (sessionManager.isOnlineMode()) SyncStatus.Synced else SyncStatus.Offline(0)
     )
 
     init {
