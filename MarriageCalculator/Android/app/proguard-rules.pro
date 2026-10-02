@@ -24,12 +24,30 @@
 # Gson rules
 -keepattributes Signature
 -keepattributes *Annotation*
+-keepattributes InnerClasses,EnclosingMethod
+-keep class com.google.gson.** { *; }
+-keep class * extends com.google.gson.TypeAdapter
+-keep class * implements com.google.gson.TypeAdapterFactory
+-keep class * implements com.google.gson.JsonSerializer
+-keep class * implements com.google.gson.JsonDeserializer
+-keep,allowobfuscation,allowshrinking class * extends com.google.gson.reflect.TypeToken
 -keepclassmembers class * {
     @com.google.gson.annotations.SerializedName <fields>;
 }
 
-# Retrofit / OkHttp rules
--keepattributes EnclosingMethod
+# Retrofit / OkHttp / Coroutines rules
+-keep,allowobfuscation,allowshrinking interface retrofit2.Call
+-keep,allowobfuscation,allowshrinking class retrofit2.Response
+-keep,allowobfuscation,allowshrinking class kotlin.coroutines.Continuation
+-keep class retrofit2.** { *; }
+-keep interface retrofit2.** { *; }
+-keep interface np.com.sanjeeb.marriagecalculator.data.remote.** { *; }
+-keepclassmembers interface np.com.sanjeeb.marriagecalculator.data.remote.** {
+    <methods>;
+}
+-keepclassmembers class * {
+    @retrofit2.http.* <methods>;
+}
 -keepclassmembers enum * { *; }
 -dontwarn retrofit2.**
 -dontwarn okhttp3.**
