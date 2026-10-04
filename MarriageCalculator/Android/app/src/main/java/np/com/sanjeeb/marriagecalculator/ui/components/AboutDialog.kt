@@ -252,18 +252,11 @@ fun AboutDialog(
 
                     Spacer(modifier = Modifier.height(18.dp))
 
-                    // Developer Attribution
+                    // Attribution — deliberately carries no personal name (#146)
                     Column(
                         horizontalAlignment = Alignment.CenterHorizontally,
                         modifier = Modifier.fillMaxWidth()
                     ) {
-                        Text(
-                            text = "Created by Sanjeeb Ojha",
-                            color = palette.textPrimary.copy(alpha = 0.85f),
-                            fontSize = 12.sp,
-                            fontWeight = FontWeight.Medium
-                        )
-                        Spacer(modifier = Modifier.height(2.dp))
                         Text(
                             text = "Made with ❤️ in Nepal",
                             color = palette.accent,

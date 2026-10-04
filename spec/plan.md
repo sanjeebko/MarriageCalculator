@@ -685,3 +685,14 @@ Sign-in failures were reported by a transient Toast carrying a raw GMS status co
 - [x] Step 54.7: **Documentation** — `documentations/GOOGLE_SIGNIN_SIGNING_KEYS.md` records the three certificates involved (debug / upload / Play App Signing), the upload SHA-1 `5760b27e907518130b48c924606dcfefb88e3479`, how to read and register the Play App Signing SHA-1, and a status-code triage table.
 - [x] Step 54.8: **Signing keys confirmed (2026-10-04)** — Play Console's *App signing key certificate* reports the same SHA-1/SHA-256 as our upload keystore (`57:60:B2:7E:…` / `34:E3:8A:02:…`), and that fingerprint is present in Firebase. Store builds are therefore signed with an already-registered certificate and the earlier "unverified for Store users" risk is **closed**. Re-check if Play App Signing is ever enrolled with a Google-generated key or the upload key is rotated.
 - **COMMIT**: "fix(android): make Google Sign-In failures persistent and actionable (#139)"
+
+---
+
+## Phase 55: Remove Developer Name from App UI (Issue #146, Complete)
+Make the in-app experience carry no personal name.
+- [x] Step 55.1: **About dialog** — removed the "Created by Sanjeeb Ojha" attribution line; kept "Made with ❤️ in Nepal", which carries the same character without naming anyone.
+- [x] Step 55.2: **More Apps dialog** — "Discover more apps and games by Sanjeeb Ojha" → "Discover more apps and games". Found after the scope was agreed; the name was removed, the feature itself left intact.
+- [x] Step 55.3: **Audit** — no personal name remains in any displayed string across `.kt` and `.xml` sources.
+- **Deliberately kept**: the `sanjeebojha.com.np` Privacy Policy and Terms links in `AboutDialog.kt` and `LoginScreen.kt`. Google Play requires a reachable privacy policy, and removing it while the app is clearing a Broken Functionality strike would risk a second violation. Swap them only once a replacement exists on a neutral domain.
+- **Not achievable in code**: the app cannot be made fully anonymous. The application id `np.com.sanjeeb.marriagecalculator` contains the name, is visible in the Play Store URL and Android app settings, and is **immutable once published** — a different package id is a different app with no upgrade path. The Play Console developer name is likewise public and is not controlled from this repo. This phase anonymises the in-app UI only.
+- **COMMIT**: "chore(android): remove developer name from the app UI (#146)"
