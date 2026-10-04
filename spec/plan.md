@@ -699,6 +699,16 @@ Make the in-app experience carry no personal name.
 
 ---
 
+## Phase 56: Fix Flaky SyncManagerTest (Issue #143, Complete)
+`SyncManagerTest > syncStatus is Offline when internet is not available` failed intermittently due to race conditions between `StateFlow` updates and an unconfined `Dispatchers.IO` scope in `SyncManager`.
+- [x] Step 56.1: **Dispatcher Injection** — added an injectable `syncDispatcher: CoroutineDispatcher` to `SyncManager`'s primary constructor while preserving the 6-parameter `@Inject` constructor for Hilt (defaulting to `Dispatchers.IO`).
+- [x] Step 56.2: **Deterministic Test Scope** — updated `SyncManagerTest` to inject `UnconfinedTestDispatcher()` into `SyncManager`.
+- [x] Step 56.3: **Targeted Predicates** — narrowed `syncStatus.first { ... }` predicates in `SyncManagerTest` to assert both status type and expected `pendingCount` (`SyncStatus.Offline && it.pendingCount == 2`, `SyncStatus.PendingSync && it.pendingCount == 3`, etc.), preventing early termination on intermediate flow states.
+- [x] Step 56.4: **Verification** — verified `SyncManagerTest` and the full Android test suite (`testProdDebugUnitTest`) pass deterministically.
+- **COMMIT**: "test(android): resolve SyncManagerTest flakiness with dispatcher injection and exact predicates (#143)"
+
+---
+
 ## Phase 57: Enable Resource Shrinking (Issue #150, Complete)
 Play Console recommended "Improve your app's memory and performance with R8 optimization" against release 10 (1.0.9). R8 was already on (`isMinifyEnabled = true` since 1.0.6, full mode by default under AGP 9); the genuine gap alongside it was that **resource shrinking was never enabled**.
 - [x] Step 57.1: **Audited dynamic references first** — nine drawables had no `R.drawable.X` or `@drawable/X` reference. Three of them are live: `avatar_1..3` are loaded by `GameSetupScreen` as `android.resource://<pkg>/drawable/avatar_N` URIs handed to Coil, which resource shrinking cannot see. Those URIs are also persisted against saved players, so stripping them would have broken existing profiles, not just the picker.

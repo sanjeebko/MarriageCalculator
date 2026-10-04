@@ -1,5 +1,6 @@
 package np.com.sanjeeb.marriagecalculator.data.sync
 
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -39,15 +40,34 @@ sealed interface SyncStatus {
 }
 
 @Singleton
-class SyncManager @Inject constructor(
+class SyncManager(
     private val networkMonitor: NetworkMonitor,
     private val offlineGameRepository: OfflineGameRepository,
     private val gameSetRepository: GameSetRepository,
     private val playerRepository: PlayerRepository,
     private val gameSettingsRepository: GameSettingsRepository,
-    private val sessionManager: SessionManager
+    private val sessionManager: SessionManager,
+    private val syncDispatcher: CoroutineDispatcher
 ) {
-    private val syncScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+    @Inject
+    constructor(
+        networkMonitor: NetworkMonitor,
+        offlineGameRepository: OfflineGameRepository,
+        gameSetRepository: GameSetRepository,
+        playerRepository: PlayerRepository,
+        gameSettingsRepository: GameSettingsRepository,
+        sessionManager: SessionManager
+    ) : this(
+        networkMonitor = networkMonitor,
+        offlineGameRepository = offlineGameRepository,
+        gameSetRepository = gameSetRepository,
+        playerRepository = playerRepository,
+        gameSettingsRepository = gameSettingsRepository,
+        sessionManager = sessionManager,
+        syncDispatcher = Dispatchers.IO
+    )
+
+    private val syncScope = CoroutineScope(SupervisorJob() + syncDispatcher)
     private val _isSyncing = MutableStateFlow(false)
     private val _lastError = MutableStateFlow<String?>(null)
 

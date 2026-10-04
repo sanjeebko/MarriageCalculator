@@ -4,8 +4,11 @@ import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
+import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.runTest
 import np.com.sanjeeb.marriagecalculator.data.local.GameSetEntity
 import np.com.sanjeeb.marriagecalculator.data.local.PlayerEntity
@@ -28,7 +31,10 @@ import org.junit.Assert.*
 import org.junit.Before
 import org.junit.Test
 
+@OptIn(ExperimentalCoroutinesApi::class)
 class SyncManagerTest {
+
+    private val testDispatcher = UnconfinedTestDispatcher()
 
     private val isOnlineFlow = MutableStateFlow(true)
     private val unsyncedCountFlow = MutableStateFlow(0)
@@ -49,19 +55,27 @@ class SyncManagerTest {
 
     private lateinit var syncManager: SyncManager
 
-    @Before
-    fun setUp() {
-        every { sessionManager.isOnlineMode() } returns true
-        isOnlineFlow.value = true
-        unsyncedCountFlow.value = 0
-        syncManager = SyncManager(
+    private fun createSyncManager(
+        session: SessionManager = sessionManager,
+        dispatcher: CoroutineDispatcher = testDispatcher
+    ): SyncManager {
+        return SyncManager(
             networkMonitor = networkMonitor,
             offlineGameRepository = offlineGameRepository,
             gameSetRepository = gameSetRepository,
             playerRepository = playerRepository,
             gameSettingsRepository = gameSettingsRepository,
-            sessionManager = sessionManager
+            sessionManager = session,
+            syncDispatcher = dispatcher
         )
+    }
+
+    @Before
+    fun setUp() {
+        every { sessionManager.isOnlineMode() } returns true
+        isOnlineFlow.value = true
+        unsyncedCountFlow.value = 0
+        syncManager = createSyncManager()
     }
 
     @Test
@@ -79,7 +93,7 @@ class SyncManagerTest {
         isOnlineFlow.value = false
         unsyncedCountFlow.value = 2
 
-        val status = syncManager.syncStatus.first { it is SyncStatus.Offline }
+        val status = syncManager.syncStatus.first { it is SyncStatus.Offline && it.pendingCount == 2 }
         assertTrue(status.isOffline)
         assertEquals(2, (status as SyncStatus.Offline).pendingCount)
     }
@@ -89,15 +103,8 @@ class SyncManagerTest {
         val guestSessionManager: SessionManager = mockk(relaxed = true) {
             every { isOnlineMode() } returns false
         }
-        val guestSyncManager = SyncManager(
-            networkMonitor = networkMonitor,
-            offlineGameRepository = offlineGameRepository,
-            gameSetRepository = gameSetRepository,
-            playerRepository = playerRepository,
-            gameSettingsRepository = gameSettingsRepository,
-            sessionManager = guestSessionManager
-        )
-        val status = guestSyncManager.syncStatus.first { it is SyncStatus.Offline }
+        val guestSyncManager = createSyncManager(session = guestSessionManager)
+        val status = guestSyncManager.syncStatus.first { it is SyncStatus.Offline && it.pendingCount == 0 }
         assertTrue(status.isOffline)
         assertEquals(0, (status as SyncStatus.Offline).pendingCount)
     }
@@ -107,7 +114,7 @@ class SyncManagerTest {
         isOnlineFlow.value = true
         unsyncedCountFlow.value = 3
 
-        val status = syncManager.syncStatus.first { it is SyncStatus.PendingSync }
+        val status = syncManager.syncStatus.first { it is SyncStatus.PendingSync && it.pendingCount == 3 }
         assertEquals(3, (status as SyncStatus.PendingSync).pendingCount)
     }
 
