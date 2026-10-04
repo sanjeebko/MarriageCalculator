@@ -20,11 +20,21 @@ Every certificate whose builds need Google Sign-In must be registered in Firebas
 
 ## Registered SHA-1 fingerprints
 
+> **For this app the upload key and the Play app signing key are the same certificate.**
+> Play Console's *App signing key certificate* shows the same SHA-1 and SHA-256 as our
+> upload keystore (confirmed 2026-10-04). Google is not re-signing Store builds with a
+> separate key, so the three-certificate trap described above does not currently apply —
+> there is one certificate to register, and it is registered.
+>
+> This stops being true if Play App Signing is ever enrolled with a Google-generated key,
+> or if the upload key is rotated. Re-check this table if either happens.
+
 | Certificate | SHA-1 | Registered in Firebase |
 |---|---|---|
-| Upload key | `5760b27e907518130b48c924606dcfefb88e3479` | Yes — verified working on a locally signed release build |
-| Play App Signing | _record it here once read from Play Console_ | **Must be confirmed** |
+| Upload key **— also the Play app signing key** | `57:60:B2:7E:90:75:18:13:0B:48:C9:24:60:6D:CF:EF:B8:8E:34:79` | Yes — confirmed present in Firebase, and verified working on a locally signed release build |
 | Debug | _per developer machine_ | As needed for local work |
+
+SHA-256 of the same certificate: `34:E3:8A:02:B5:A6:F4:2D:15:B8:13:A6:32:E3:61:16:69:1F:B8:4F:FE:84:B7:6C:64:BF:3B:0C:44:61:49:A9`
 
 ### Reading the Play App Signing SHA-1
 
@@ -64,4 +74,6 @@ Since #139 the app shows a persistent inline error rather than a Toast, and logs
 
 ## Verifying after a Play release
 
-Install the app **from the Play Store** (internal testing track counts — it is signed by the app signing key, unlike a locally installed APK) and sign in with Google. A locally built APK cannot prove this path, because it carries the upload key rather than Google's.
+Install the app **from the Play Store** (internal testing track counts) and sign in with Google.
+
+While the app signing key and the upload key remain the same certificate, a locally signed release build does exercise the same signature the Store delivers, so local verification is meaningful. That equivalence is a property of the current setup, not a general rule — if a Google-generated app signing key is ever introduced, only a Store install can prove the Store path.
