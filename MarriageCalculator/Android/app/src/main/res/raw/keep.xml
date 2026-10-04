@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Resources referenced only by name at runtime, which resource shrinking cannot
+  see. Without these entries the shrinker deletes them and the references fail
+  silently at runtime. See #150.
+
+  - avatar_1..3: GameSetupScreen builds
+    "android.resource://<pkg>/drawable/avatar_N" URIs and hands them to Coil.
+    These are also persisted against saved players, so stripping them would
+    break existing profiles, not just the picker.
+  - app_icon: MyFirebaseMessagingService resolves it via
+    resources.getIdentifier("app_icon", "drawable", ...) for notifications.
+    It is additionally referenced from the manifest, so it would survive
+    anyway — listed here so the runtime lookup is self-documenting.
+-->
+<resources xmlns:tools="http://schemas.android.com/tools"
+    tools:keep="@drawable/avatar_1,@drawable/avatar_2,@drawable/avatar_3,@drawable/app_icon" />
