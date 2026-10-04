@@ -34,6 +34,7 @@ import np.com.sanjeeb.marriagecalculator.data.remote.InviteCodeDto
 import np.com.sanjeeb.marriagecalculator.ui.components.AppBackground
 import np.com.sanjeeb.marriagecalculator.ui.components.GlassButton
 import androidx.compose.material3.TabRowDefaults.tabIndicatorOffset
+import np.com.sanjeeb.marriagecalculator.data.util.InputValidator
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -536,7 +537,7 @@ private fun AddFriendsTab(
         Spacer(modifier = Modifier.height(8.dp))
         OutlinedTextField(
             value = codeInput,
-            onValueChange = { codeInput = it.uppercase() },
+            onValueChange = { codeInput = InputValidator.sanitizeInviteCode(it) },
             label = { Text("Enter invite code") },
             leadingIcon = { Icon(Icons.Default.Key, contentDescription = null, tint = AppTheme.palette.accent) },
             modifier = Modifier.fillMaxWidth(),
@@ -591,7 +592,7 @@ private fun AddFriendsTab(
             containerColor = AppTheme.palette.tint.copy(alpha = 0.12f),
             textColor = AppTheme.palette.textPrimary,
             height = 48,
-            enabled = emailInput.trim().isNotEmpty(),
+            enabled = InputValidator.isValidEmail(emailInput),
             isLoading = addEmailLoading,
             leadingIcon = {
                 Icon(Icons.AutoMirrored.Filled.Send, null, tint = AppTheme.palette.accent, modifier = Modifier.size(16.dp))

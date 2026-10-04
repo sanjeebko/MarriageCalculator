@@ -68,6 +68,40 @@ class ScoreboardViewModelTest {
     }
 
     @Test
+    fun `a mongo object id player does not crash the offline scoreboard`() = runTest {
+        // Regression for #138: Player.id is a String holding a Room row id offline
+        // but a MongoDB ObjectId online. The old code called p.id.toInt() here and
+        // threw NumberFormatException as soon as an online player appeared.
+        val gameSetId = 1
+        val mixedPlayers = listOf(
+            Player(id = "1", name = "Alice"),
+            Player(id = "68d2f1a4c3b2e19f4a7c1234", name = "Online Bob")
+        )
+
+        coEvery { repository.getGameSetPlayers(gameSetId) } returns mixedPlayers
+        coEvery { repository.getGameSet(gameSetId) } returns gameSetEntity
+        coEvery { repository.getGameSettings(1) } returns settings
+
+        val roundEntity = RoundEntity(id = 10, gameSetId = gameSetId, roundNumber = 1, winnerId = 1, totalMaal = 15)
+        every { repository.getRounds(gameSetId) } returns flowOf(listOf(roundEntity))
+        coEvery { repository.getAllScoresForGameSet(gameSetId) } returns listOf(
+            RoundScoreEntity(id = 101, roundId = 10, playerId = 1, score = 30, maal = 15, isSeen = true, isWinner = true)
+        )
+
+        viewModel.loadScoreboardData("1")
+
+        val state = viewModel.uiState.value
+        assertEquals(2, state.players.size)
+        // The local player still totals normally...
+        assertEquals(30, state.players.find { it.player.id == "1" }!!.totalPoints)
+        // ...and the online player simply has no local scores instead of crashing.
+        val online = state.players.find { it.player.id == "68d2f1a4c3b2e19f4a7c1234" }!!
+        assertEquals(0, online.totalPoints)
+        assertEquals(0, online.gamesPlayed)
+        assertEquals(0.0, online.totalMoney, 0.01)
+    }
+
+    @Test
     fun `loadScoreboardData successfully updates uiState`() = runTest {
         val gameSetId = 1
         
