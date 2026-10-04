@@ -7,6 +7,7 @@ plugins {
     kotlin("kapt")
     alias(libs.plugins.hilt.android)
     alias(libs.plugins.google.services)
+    alias(libs.plugins.firebase.crashlytics)
     alias(libs.plugins.kotlin.compose)
 }
 
@@ -91,6 +92,10 @@ android {
     buildTypes {
         release {
             isMinifyEnabled = true
+            // Upload the R8 mapping so Crashlytics stack traces are readable (see #137)
+            configure<com.google.firebase.crashlytics.buildtools.gradle.CrashlyticsExtension> {
+                mappingFileUploadEnabled = true
+            }
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
@@ -98,6 +103,13 @@ android {
             val releaseSigning = signingConfigs.getByName("release")
             if (releaseSigning.storeFile?.exists() == true) {
                 signingConfig = releaseSigning
+            }
+        }
+        debug {
+            // No mapping to upload for an unminified build; collection itself is
+            // switched off at runtime in MarriageCalculatorApp (see #137)
+            configure<com.google.firebase.crashlytics.buildtools.gradle.CrashlyticsExtension> {
+                mappingFileUploadEnabled = false
             }
         }
     }
@@ -176,6 +188,7 @@ dependencies {
     // Firebase
     implementation(platform(libs.firebase.bom))
     implementation(libs.firebase.messaging)
+    implementation(libs.firebase.crashlytics)
 
     // Testing
     testImplementation(libs.junit)

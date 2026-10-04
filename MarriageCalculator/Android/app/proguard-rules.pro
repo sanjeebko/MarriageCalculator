@@ -51,3 +51,7 @@
 -keepclassmembers enum * { *; }
 -dontwarn retrofit2.**
 -dontwarn okhttp3.**
+# Crashlytics — keep exception metadata so stack traces deobfuscate usefully (#137)
+-keepattributes *Annotation*
+-keepattributes SourceFile,LineNumberTable
+-keep public class * extends java.lang.Exception
