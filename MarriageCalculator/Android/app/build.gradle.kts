@@ -92,6 +92,10 @@ android {
     buildTypes {
         release {
             isMinifyEnabled = true
+            // Strips unused resources as well as unused code. Resources referenced
+            // only by name at runtime are invisible to the shrinker and are listed
+            // in res/raw/keep.xml — see #150 before adding dynamic lookups.
+            isShrinkResources = true
             // Upload the R8 mapping so Crashlytics stack traces are readable (see #137)
             configure<com.google.firebase.crashlytics.buildtools.gradle.CrashlyticsExtension> {
                 mappingFileUploadEnabled = true

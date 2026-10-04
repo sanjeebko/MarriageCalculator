@@ -696,3 +696,17 @@ Make the in-app experience carry no personal name.
 - **Deliberately kept**: the `sanjeebojha.com.np` Privacy Policy and Terms links in `AboutDialog.kt` and `LoginScreen.kt`. Google Play requires a reachable privacy policy, and removing it while the app is clearing a Broken Functionality strike would risk a second violation. Swap them only once a replacement exists on a neutral domain.
 - **Not achievable in code**: the app cannot be made fully anonymous. The application id `np.com.sanjeeb.marriagecalculator` contains the name, is visible in the Play Store URL and Android app settings, and is **immutable once published** — a different package id is a different app with no upgrade path. The Play Console developer name is likewise public and is not controlled from this repo. This phase anonymises the in-app UI only.
 - **COMMIT**: "chore(android): remove developer name from the app UI (#146)"
+
+---
+
+## Phase 57: Enable Resource Shrinking (Issue #150, Complete)
+Play Console recommended "Improve your app's memory and performance with R8 optimization" against release 10 (1.0.9). R8 was already on (`isMinifyEnabled = true` since 1.0.6, full mode by default under AGP 9); the genuine gap alongside it was that **resource shrinking was never enabled**.
+- [x] Step 57.1: **Audited dynamic references first** — nine drawables had no `R.drawable.X` or `@drawable/X` reference. Three of them are live: `avatar_1..3` are loaded by `GameSetupScreen` as `android.resource://<pkg>/drawable/avatar_N` URIs handed to Coil, which resource shrinking cannot see. Those URIs are also persisted against saved players, so stripping them would have broken existing profiles, not just the picker.
+- [x] Step 57.2: **`res/raw/keep.xml`** — keeps `avatar_1..3` and `app_icon` (the latter resolved at runtime via `getIdentifier` in `MyFirebaseMessagingService`; also manifest-referenced, listed for self-documentation).
+- [x] Step 57.3: **Enabled** `isShrinkResources = true` on the release build type.
+- [x] Step 57.4: **Measured** — APK 18,755,844 → 18,201,689 bytes, a saving of 554,155 bytes (~541 KB, 3.0%).
+- [x] Step 57.5: **Verified on device** — signed release build installed; `aapt2 dump resources` confirms `avatar_1..3` and `app_icon` survive; app launches, dashboard renders, and the Create New Player photo picker shows all three avatars with no image-load errors in logcat.
+- **Genuinely dead and correctly stripped**: `history_bg_luxury`, `login_bg_pattern`, `deck_of_cards`, `ic_guest`, `ic_avatar_female`, `ic_avatar_male`. Note `shrinkResources` replaces unused files with stubs rather than deleting resource IDs, so these still appear in the resource table — the size saving is the file content.
+- **Left alone**: `android.r8.optimizedResourceShrinking=false` in `gradle.properties`, deliberately unchanged — one variable at a time.
+- **Risk note for future work**: any new runtime resource lookup (`getIdentifier`, `android.resource://` URIs, names built from strings) must be added to `keep.xml` or it will be stripped and fail silently in release only.
+- **COMMIT**: "perf(android): enable resource shrinking for release builds (#150)"
