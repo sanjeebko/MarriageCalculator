@@ -648,3 +648,14 @@ Google Play rejected 1.0.9 under the Broken Functionality policy ("the app opens
 - [x] Step 51.5: **Verification** — Seed 4242 now 300/300 clean; 4 seeds x 1500 events on the APK and 3 seeds x 1500 events on **Play split APKs** (bundletool, generated from the AAB) all signed in: 0 crashes. 149 unit tests pass.
 - **Known follow-ups (not in this hotfix)**: no crash reporting in the app (Crashlytics absent — field crashes are invisible); unguarded `String.toInt()` on `Player.id` in `ScoreboardViewModel.kt:123` and `RoundInputViewModel.kt:526` would throw on MongoDB ObjectId values if an online player ever reaches those offline branches.
 - **COMMIT**: "fix(android): bump lifecycle to 2.8.7 to resolve LocalLifecycleOwner crash, release 1.0.10 (#135)"
+
+---
+
+## Phase 52: Firebase Crashlytics (Issue #137, Complete)
+Field crashes were invisible — #135 took four releases to diagnose because the app shipped no crash reporting and Play review crashes never reach Android Vitals.
+- [x] Step 52.1: **Wiring** — Added the `com.google.firebase.crashlytics` Gradle plugin (3.0.2) and the `firebase-crashlytics` dependency via the existing Firebase BOM.
+- [x] Step 52.2: **Deobfuscation** — `mappingFileUploadEnabled = true` on release so R8-obfuscated stack traces are readable; disabled on debug. Added ProGuard rules preserving `SourceFile`/`LineNumberTable` and exception classes.
+- [x] Step 52.3: **Debug isolation** — `MarriageCalculatorApp.onCreate` calls `setCrashlyticsCollectionEnabled(!BuildConfig.DEBUG)` inside a try/catch, so local work never reaches the dashboard and a missing GMS never breaks startup.
+- [x] Step 52.4: **Verified end to end** — Temporary crash in a signed release build on the emulator; logcat confirmed "Successfully configured exception handler", "Handling uncaught exception", "Crashlytics report successfully enqueued to DataTransport", and the POST to `crashlyticsreports-pa.googleapis.com`. `uploadCrashlyticsMappingFileProdRelease` authenticated against the Firebase project on every release build. Temporary crash removed; `MainActivity` unchanged in the final diff.
+- **Finding**: breadcrumbs are NOT available — logcat shows "Skipping logging Crashlytics event to Firebase, no Firebase Analytics" and "Could not register handler for breadcrumbs events". Analytics is enabled on the Firebase *project*, but the app does not bundle the `firebase-analytics` SDK. Adding it is one line but begins collecting analytics data, which affects the privacy policy — deferred as a product decision.
+- **COMMIT**: "feat(android): add Firebase Crashlytics with R8 mapping upload (#137)"
