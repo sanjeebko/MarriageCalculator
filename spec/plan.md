@@ -662,6 +662,18 @@ Field crashes were invisible — #135 took four releases to diagnose because the
 
 ---
 
+## Phase 53: Input Validation & Unsafe ID Parsing (Issue #138, Complete)
+`Player.id` is a `String` holding a Room row id offline but a **MongoDB ObjectId** online. Several call sites parsed it with the throwing `String.toInt()`.
+- [x] Step 53.1: **ScoreboardViewModel** — `p.id.toInt()` → `toIntOrNull()`; a player with no Int id now shows zero local scores instead of raising `NumberFormatException`.
+- [x] Step 53.2: **RoundInputViewModel** — validates all player ids and the winner id up front and refuses the offline save with a readable message naming the online player, rather than throwing inside the try/catch. Also replaced three silent `?: return@launch` paths that made "Save" do nothing with no feedback.
+- [x] Step 53.3: **Shared `InputValidator`** (`data/util/`) — bounded, non-throwing parsing for points (0..1000), point rate (0.0..100000.0, finite only) and maal (clamped 0..9999), plus game-name sanitising (40 chars, control characters stripped, whitespace collapsed), digits-only 6-digit OTP, alphanumeric invite codes, and structural email validation. Bounds matter beyond crashes: scores sum as `Int`, so an unbounded point value corrupts a scoreboard silently.
+- [x] Step 53.4: **Wired in** — Game Setup (game name, Seen/Unseen Pts, Point Rate, now with numeric keyboards), Round Input (maal), Friends (invite code, email-gated submit), Login (OTP). Player names/usernames keep the existing `UsernameValidator`.
+- [x] Step 53.5: **Tests** — new `InputValidatorTest` (21 cases incl. the ObjectId regression, Int-overflow and non-finite rates) and a ScoreboardViewModel regression test mixing a local and an ObjectId player. 163 tests pass, up from 149.
+- [x] Step 53.6: **Device verification** — signed release build, 2 seeds x 1200 monkey events, 0 crashes, 0 FATAL in logcat.
+- **COMMIT**: "fix(android): harden ID parsing and add shared input validation (#138)"
+
+---
+
 ## Phase 54: Google Sign-In Error Reporting (Issue #139, Complete)
 Sign-in failures were reported by a transient Toast carrying a raw GMS status code.
 - [x] Step 54.1: **Corrected the original report** — the failure was NOT silent; it showed `Google Sign-in error: [16] Account reauth failed.` via Toast. The earlier "no error" claim came from a screenshot taken 14s after the tap, by which time the Toast had expired.

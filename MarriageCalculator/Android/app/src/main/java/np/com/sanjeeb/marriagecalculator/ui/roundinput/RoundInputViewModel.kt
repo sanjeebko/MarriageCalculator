@@ -513,7 +513,23 @@ class RoundInputViewModel @Inject constructor(
                 return@launch
             }
 
-            val gameSetId = gameSetIdStr.toIntOrNull() ?: return@launch
+            val gameSetId = gameSetIdStr.toIntOrNull() ?: run {
+                _uiState.value = state.copy(error = "Can't save: this game has no local id.")
+                return@launch
+            }
+            // The local store keys players by Room row id. Online players carry a
+            // MongoDB ObjectId instead, which has no Int form — refuse the save with a
+            // clear message rather than throwing NumberFormatException. See #138.
+            val localWinnerId = winnerId.toIntOrNull()
+            val unsaveablePlayer = state.playerStates.firstOrNull { it.player.id.toIntOrNull() == null }
+            if (unsaveablePlayer != null || localWinnerId == null) {
+                _uiState.value = state.copy(
+                    error = "Can't save this round offline because " +
+                        "${unsaveablePlayer?.player?.name ?: "the winner"} is an online player. " +
+                        "Reconnect and try again."
+                )
+                return@launch
+            }
             try {
                 val dubleeAllowed = state.playerStates.size >= 4 && state.settings.dublee
                 val scores = state.playerStates.map { ps ->
@@ -523,7 +539,7 @@ class RoundInputViewModel @Inject constructor(
                     val dubleeBonus =
                         if (isPlayerWinner && ps.duply && dubleeAllowed) DUBLEE_WINNER_MAAL_BONUS else 0
                     np.com.sanjeeb.marriagecalculator.data.repository.RoundScoreData(
-                        playerId = ps.player.id.toInt(),
+                        playerId = ps.player.id.toIntOrNull() ?: 0,
                         score = ps.previewScore,
                         maal = (if (ps.seen) ps.seenPoints else 0) + dubleeBonus,
                         isSeen = ps.seen || isPlayerWinner,
@@ -537,14 +553,14 @@ class RoundInputViewModel @Inject constructor(
                 if (editGameId != null) {
                     offlineGameRepository.updateGame(
                         gameId = editGameId,
-                        winnerId = winnerId.toIntOrNull() ?: return@launch,
+                        winnerId = localWinnerId,
                         totalMaal = totalMaal,
                         playerScores = scores
                     )
                 } else {
                     offlineGameRepository.saveRound(
                         gameSetId = gameSetId,
-                        winnerId = winnerId.toIntOrNull() ?: return@launch,
+                        winnerId = localWinnerId,
                         dealerId = state.dealerId?.toIntOrNull() ?: 0,
                         totalMaal = totalMaal,
                         playerScores = scores

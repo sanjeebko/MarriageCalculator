@@ -55,6 +55,7 @@ import np.com.sanjeeb.marriagecalculator.data.model.GameSettings
 import np.com.sanjeeb.marriagecalculator.data.model.Player
 import np.com.sanjeeb.marriagecalculator.ui.components.AppBackground
 import np.com.sanjeeb.marriagecalculator.ui.components.GlassButton
+import np.com.sanjeeb.marriagecalculator.data.util.InputValidator
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -103,7 +104,7 @@ fun GameSetupScreen(
                 // Game Name
                 OutlinedTextField(
                     value = uiState.gameName,
-                    onValueChange = { viewModel.setGameName(it) },
+                    onValueChange = { viewModel.setGameName(InputValidator.sanitizeGameName(it)) },
                     label = { Text("Game Name (optional)", color = AppTheme.palette.accent.copy(alpha = 0.7f)) },
                     modifier = Modifier.fillMaxWidth(),
                     colors = OutlinedTextFieldDefaults.colors(
@@ -814,13 +815,13 @@ private fun SettingsSection(
                 // Point Settings Row
                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     SettingField("Seen Pts", settings.seenPoint.toString(), Modifier.weight(1f)) { value ->
-                        value.toIntOrNull()?.let { onSettingsChange(settings.copy(seenPoint = it)) }
+                        InputValidator.parsePoint(value)?.let { onSettingsChange(settings.copy(seenPoint = it)) }
                     }
                     SettingField("Unseen Pts", settings.unseenPoint.toString(), Modifier.weight(1f)) { value ->
-                        value.toIntOrNull()?.let { onSettingsChange(settings.copy(unseenPoint = it)) }
+                        InputValidator.parsePoint(value)?.let { onSettingsChange(settings.copy(unseenPoint = it)) }
                     }
-                    SettingField("Point Rate", settings.pointRate.toString(), Modifier.weight(1f)) { value ->
-                        value.toDoubleOrNull()?.let { onSettingsChange(settings.copy(pointRate = it)) }
+                    SettingField("Point Rate", settings.pointRate.toString(), Modifier.weight(1f), KeyboardType.Decimal) { value ->
+                        InputValidator.parsePointRate(value)?.let { onSettingsChange(settings.copy(pointRate = it)) }
                     }
                 }
 
@@ -898,10 +899,17 @@ private fun GameModeChip(label: String, isSelected: Boolean, onClick: () -> Unit
 }
 
 @Composable
-private fun SettingField(label: String, value: String, modifier: Modifier = Modifier, onValueChange: (String) -> Unit) {
+private fun SettingField(
+    label: String,
+    value: String,
+    modifier: Modifier = Modifier,
+    keyboardType: KeyboardType = KeyboardType.Number,
+    onValueChange: (String) -> Unit
+) {
     OutlinedTextField(
         value = value,
         onValueChange = onValueChange,
+        keyboardOptions = KeyboardOptions(keyboardType = keyboardType),
         label = { Text(label, color = AppTheme.palette.accent.copy(alpha = 0.7f), fontSize = 10.sp) },
         modifier = modifier,
         colors = OutlinedTextFieldDefaults.colors(

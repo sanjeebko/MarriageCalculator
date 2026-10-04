@@ -120,8 +120,11 @@ class ScoreboardViewModel @Inject constructor(
                 }
 
                 val playerTotalScores = players.map { p ->
-                    val pId = p.id.toInt()
-                    val pScores = allScores.filter { it.playerId == pId }
+                    // Local scores are keyed by Room row id. An online player carries a
+                    // MongoDB ObjectId, which has no Int form — show them with no local
+                    // scores rather than throwing NumberFormatException. See #138.
+                    val pId = p.id.toIntOrNull()
+                    val pScores = if (pId == null) emptyList() else allScores.filter { it.playerId == pId }
                     val totalPoints = pScores.sumOf { it.score }
                     val gamesPlayed = pScores.size
                     val gamesWon = pScores.count { it.isWinner }

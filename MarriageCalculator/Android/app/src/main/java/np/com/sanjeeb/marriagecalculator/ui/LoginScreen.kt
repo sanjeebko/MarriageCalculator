@@ -45,6 +45,7 @@ import np.com.sanjeeb.marriagecalculator.R
 import np.com.sanjeeb.marriagecalculator.ui.components.GlassButton
 import kotlinx.coroutines.launch
 import np.com.sanjeeb.marriagecalculator.data.util.GoogleSignInErrors
+import np.com.sanjeeb.marriagecalculator.data.util.InputValidator
 import android.util.Log
 
 // Metallic Noir Color Palette
@@ -240,7 +241,7 @@ fun LoginScreen(
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         OutlinedTextField(
                             value = otpCodeInput,
-                            onValueChange = { otpCodeInput = it },
+                            onValueChange = { otpCodeInput = InputValidator.sanitizeOtp(it) },
                             label = { Text("6-Digit Code", color = MetalGold) },
                             modifier = Modifier.weight(1f),
                             singleLine = true,

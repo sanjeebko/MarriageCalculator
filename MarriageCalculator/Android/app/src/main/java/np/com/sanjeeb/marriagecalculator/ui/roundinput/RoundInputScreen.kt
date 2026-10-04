@@ -50,6 +50,7 @@ import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.BorderStroke
+import np.com.sanjeeb.marriagecalculator.data.util.InputValidator
 
 // Column widths for the compact score grid — header and rows must stay in sync.
 private val WinnerColWidth = 36.dp
@@ -468,7 +469,7 @@ private fun PlayerScoreRow(
                 if (state.seen) {
                     BasicTextField(
                         value = if (state.seenPoints == 0) "" else state.seenPoints.toString(),
-                        onValueChange = { onMaalPointsChange(it.toIntOrNull() ?: 0) },
+                        onValueChange = { onMaalPointsChange(InputValidator.parseMaal(it)) },
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                         singleLine = true,
                         textStyle = TextStyle(
