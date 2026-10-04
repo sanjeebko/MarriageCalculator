@@ -106,8 +106,9 @@ android {
             }
         }
         debug {
-            // No mapping to upload for an unminified build; collection itself is
-            // switched off at runtime in MarriageCalculatorApp (see #137)
+            // Debug builds are not minified, so there is no mapping to upload and
+            // their stack traces are already readable. Crash *collection* is on for
+            // every build type (see #144).
             configure<com.google.firebase.crashlytics.buildtools.gradle.CrashlyticsExtension> {
                 mappingFileUploadEnabled = false
             }
