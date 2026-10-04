@@ -5,7 +5,6 @@ import android.content.Context
 import android.content.ContextWrapper
 import android.content.Intent
 import android.net.Uri
-import android.widget.Toast
 import np.com.sanjeeb.marriagecalculator.data.util.UsernameValidator
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.*
@@ -45,6 +44,8 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import np.com.sanjeeb.marriagecalculator.R
 import np.com.sanjeeb.marriagecalculator.ui.components.GlassButton
 import kotlinx.coroutines.launch
+import np.com.sanjeeb.marriagecalculator.data.util.GoogleSignInErrors
+import android.util.Log
 
 // Metallic Noir Color Palette
 val MetalGold = Color(0xFFD4AF37)
@@ -55,6 +56,8 @@ val SilverGlow = Color(0xFFFFFFFF)
 val BlueTop = Color(0xFF0088FF)
 val BlueBottom = Color(0xFF003399)
 val BlueGlow = Color(0xFF00FFFF)
+
+private const val TAG = "LoginScreen"
 
 @Composable
 fun LoginScreen(
@@ -331,9 +334,25 @@ fun LoginScreen(
                                             displayName = googleIdTokenCredential.displayName,
                                             photoUrl = googleIdTokenCredential.profilePictureUri?.toString()
                                         )
+                                    } else {
+                                        // Credential Manager returned something that is not a Google
+                                        // ID token. Without this branch the tap did nothing at all.
+                                        Log.w(TAG, "Unexpected credential type: ${credential.type}")
+                                        viewModel.reportGoogleSignInError(
+                                            GoogleSignInErrors.toUserMessage(null, "Unexpected credential type")
+                                        )
                                     }
                                 } catch (e: Exception) {
-                                    Toast.makeText(context, "Google Sign-in error: ${e.message}", Toast.LENGTH_LONG).show()
+                                    val className = e.javaClass.simpleName
+                                    if (GoogleSignInErrors.isUserCancellation(className, e.message)) {
+                                        // Dismissing the picker is not a failure.
+                                        viewModel.clearGoogleSignInAttempt()
+                                    } else {
+                                        Log.w(TAG, "Google Sign-In failed: $className", e)
+                                        viewModel.reportGoogleSignInError(
+                                            GoogleSignInErrors.toUserMessage(className, e.message)
+                                        )
+                                    }
                                 }
                             }
                         }

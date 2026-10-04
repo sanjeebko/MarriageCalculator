@@ -168,6 +168,21 @@ class LoginViewModel @Inject constructor(
         }
     }
 
+    /**
+     * Surfaces a Google Sign-In failure in the same persistent inline error the
+     * password path uses, instead of a Toast that vanishes in a few seconds (#139).
+     */
+    fun reportGoogleSignInError(message: String) {
+        _uiState.value = LoginUiState.Error(message)
+    }
+
+    /** Returns to Idle after the user simply dismisses the account picker (#139). */
+    fun clearGoogleSignInAttempt() {
+        if (_uiState.value is LoginUiState.Loading) {
+            _uiState.value = LoginUiState.Idle
+        }
+    }
+
     fun loginWithGoogle(idToken: String, displayName: String?, photoUrl: String?) {
         _uiState.value = LoginUiState.Loading
         viewModelScope.launch {
