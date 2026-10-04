@@ -636,3 +636,15 @@ Bug: host added two friends to a game and submitted scores, but the friends saw 
 - API environment variables: MCDATABASE, MCUSER, MCPASSWORD
 - Festive theme (Dashain/Tihar) colors: DeepRed, MarigoldOrange, Gold, NightBlue
 - Android package: `com.sanjeeb.marriagecalculator`
+
+---
+
+## Phase 51: Play Policy Crash — LocalLifecycleOwner (Issue #135, Complete)
+Google Play rejected 1.0.9 under the Broken Functionality policy ("the app opens, but it keeps crashing"). No trace in Android Vitals.
+- [x] Step 51.1: **Reproduced** — Built the R8-minified `prodRelease` and drove it on an emulator. Guest mode was clean (2500 monkey events); the crash only appears in the **signed-in** state, which unlocks the Joined/Friends destinations.
+- [x] Step 51.2: **Root cause** — `java.lang.IllegalStateException: CompositionLocal LocalLifecycleOwner not present`. lifecycle 2.8.2 moved `LocalLifecycleOwner` to `androidx.lifecycle.compose`, but navigation-compose 2.7.7 still reads the old `androidx.compose.ui.platform` one. The compat shim shipped in lifecycle **2.8.4**. Not an R8 problem — unrelated to the 1.0.6–1.0.9 ProGuard work.
+- [x] Step 51.3: **Trigger** — D-pad / focus navigation (`KEYCODE_DPAD_*`), which Play's automated review crawler generates and manual touch testing misses. Deterministic repro: monkey seed 4242, crash at event 130/300.
+- [x] Step 51.4: **Fix** — `lifecycle` 2.8.2 → 2.8.7 in `libs.versions.toml`; version bumped to 1.0.10 (versionCode 11).
+- [x] Step 51.5: **Verification** — Seed 4242 now 300/300 clean; 4 seeds x 1500 events on the APK and 3 seeds x 1500 events on **Play split APKs** (bundletool, generated from the AAB) all signed in: 0 crashes. 149 unit tests pass.
+- **Known follow-ups (not in this hotfix)**: no crash reporting in the app (Crashlytics absent — field crashes are invisible); unguarded `String.toInt()` on `Player.id` in `ScoreboardViewModel.kt:123` and `RoundInputViewModel.kt:526` would throw on MongoDB ObjectId values if an online player ever reaches those offline branches.
+- **COMMIT**: "fix(android): bump lifecycle to 2.8.7 to resolve LocalLifecycleOwner crash, release 1.0.10 (#135)"
