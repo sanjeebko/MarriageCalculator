@@ -187,7 +187,7 @@ fun MoreAppsDialog(
                     }
 
                     Text(
-                        text = "Discover more apps and games by Sanjeeb Ojha",
+                        text = "Discover more apps and games",
                         color = palette.textPrimary.copy(alpha = 0.70f),
                         fontSize = 12.sp,
                         modifier = Modifier.padding(top = 2.dp, bottom = 14.dp)
