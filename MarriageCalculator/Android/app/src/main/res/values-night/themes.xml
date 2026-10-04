@@ -1,10 +1,11 @@
 <resources xmlns:tools="http://schemas.android.com/tools">
-    <!-- Base application theme. -->
-    <style name="Theme.MarriageCalculator" parent="Theme.Material3.DayNight.NoActionBar">
-        <!-- Status bar color. -->
-        <item name="android:statusBarColor">@android:color/transparent</item>
-        <item name="android:navigationBarColor">@android:color/transparent</item>
-        <item name="android:windowTranslucentStatus">false</item>
-        <item name="android:windowDrawsSystemBarBackgrounds">true</item>
-    </style>
+    <!-- Base application theme.
+
+         Deliberately sets no system-bar colours. The activity calls
+         enableEdgeToEdge(), and android:statusBarColor / navigationBarColor /
+         windowTranslucentStatus / windowDrawsSystemBarBackgrounds are deprecated
+         in API 35 and no-ops on API 36, which this app targets. Status-bar icon
+         contrast is handled per palette in ui/theme/Theme.kt via
+         WindowCompat.getInsetsController(...).isAppearanceLightStatusBars. See #149. -->
+    <style name="Theme.MarriageCalculator" parent="Theme.Material3.DayNight.NoActionBar" />
 </resources>

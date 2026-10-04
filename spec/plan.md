@@ -720,3 +720,15 @@ Play Console recommended "Improve your app's memory and performance with R8 opti
 - **Left alone**: `android.r8.optimizedResourceShrinking=false` in `gradle.properties`, deliberately unchanged — one variable at a time.
 - **Risk note for future work**: any new runtime resource lookup (`getIdentifier`, `android.resource://` URIs, names built from strings) must be added to `keep.xml` or it will be stripped and fail silently in release only.
 - **COMMIT**: "perf(android): enable resource shrinking for release builds (#150)"
+
+---
+
+## Phase 58: Remove Deprecated Edge-to-Edge APIs (Issue #149, Complete)
+Play Console flagged two edge-to-edge recommendations against release 10 (1.0.9). `MainActivity` already called `enableEdgeToEdge()` correctly; the theme then worked against it with APIs deprecated in API 35 and **no-ops on API 36**, the level this app targets.
+- [x] Step 58.1: **Themes** — removed `android:statusBarColor`, `android:navigationBarColor`, `android:windowTranslucentStatus` and `android:windowDrawsSystemBarBackgrounds` from `res/values/themes.xml` and `res/values-night/themes.xml`.
+- [x] Step 58.2: **Compose theme** — removed the `window.statusBarColor = Color.Transparent.toArgb()` assignment from `ui/theme/Theme.kt`. Kept `WindowCompat.getInsetsController(...).isAppearanceLightStatusBars`, which is the current API and is what actually keeps status-bar icons legible per palette.
+- [x] Step 58.3: **Dead imports** — `androidx.compose.ui.graphics.Color` and `.toArgb` became unused in `Theme.kt` and were removed.
+- [x] Step 58.4: **Device verification** — signed release build on emulator: system bars transparent, content draws behind them, status-bar icons legible on the dark palette, no crash, 0 FATAL in logcat.
+- **Note**: these were Play *recommendations*, not policy violations — unrelated to the Broken Functionality strike fixed in 1.0.10. Because the removed attributes were already no-ops on API 36, there is no user-visible behaviour change; this removes dead configuration that Play would otherwise flag on every release.
+- **Also assessed and dismissed**: "Remove resizability and orientation restrictions" — the merged manifest contains no `screenOrientation`, `resizeableActivity` or `maxAspectRatio`, and the app reports `isResizeable=true` on device, so there is nothing to act on. "Bitmap downsampling" — the single `Bitmap.createBitmap` in `MatchShareHelper` is created at a chosen size for share images, and image loading goes through Coil which downsamples; nothing decodes oversized files.
+- **COMMIT**: "fix(android): remove deprecated edge-to-edge APIs (#149)"
