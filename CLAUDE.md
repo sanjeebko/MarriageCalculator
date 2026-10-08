@@ -13,7 +13,7 @@
 - Mobile: Native Android/Kotlin (`MarriageCalculator/Android`)
 - Shared models: `MarriageCalculator.Core` — pure .NET 10, NO dependencies
 - **Firebase is Auth (Google sign-in) + FCM notifications ONLY — never the backend or database. Do not propose Cloud Functions or Firestore.**
-- App is NOT on Google Play Store yet (direct APK distribution)
+- App is live on Google Play: https://play.google.com/store/apps/details?id=np.com.sanjeeb.marriagecalculator (package `np.com.sanjeeb.marriagecalculator`)
 - `archive.MarriageCalculator.MAUI` is frozen — do not modify
 - New docs go in `documentations/`; no loose .md files in code folders
 - After code changes: run the build command for that project (see agent.md §5)
