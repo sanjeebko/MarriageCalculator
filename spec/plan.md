@@ -3,8 +3,8 @@
 ## Problem Statement
 Build a full-featured Android (Kotlin/Compose) app for the Marriage card game calculator, backed by the existing .NET API. The app must handle 2-6 players with efficient screen space usage, support offline/online modes, real-time score display, and integrate with the C# API hosted on Kubernetes. The Maui version is archived and replaced by this native Android app.
 
-## Status: Phases 1-35 COMPLETE ✅ (except 25.9: Android invite-code UI, pending)
-- 44 C# tests (12 Core + 32 API) + 74 Android unit tests all passing
+## Status: Phases 1-58 COMPLETE ✅ (26 and 27 still await device verification)
+- 115 C# tests (48 Core + 67 API) + 172 Android unit tests all passing (re-counted 2026-10-09, #155)
 - Android APK builds successfully (`assembleDebug`)
 - .NET API builds successfully
 - **Docker**: Production-ready for API deployment.
@@ -299,7 +299,7 @@ User self-implemented the client-side "Add Friends" feature (actionable Accept/D
 
 ---
 
-## Phase 25: Private Friend Discovery — Invite Codes & Email Invites (API complete, Android pending)
+## Phase 25: Private Friend Discovery — Invite Codes & Email Invites (Complete)
 Per requirement §4.4 "Private Friend Discovery": open user search is a privacy leak (partial-match harvesting of emails/names, and "User not found" errors let callers probe which emails are registered). Replaced by two private paths: a shareable 7-day multi-use invite code (redeeming = instant, auto-accepted friendship) and complete-email requests (pending request if registered, invitation email + claimable invite if not — identical response either way).
 - [x] Step 25.1: **Core** — `FriendInviteCode` and `PendingEmailInvite` models; `Friendship.Source` (optional: "Code" | "Email"); DTOs (`InviteCodeDto`, `RedeemInviteCodeDto`, `RedeemInviteCodeResultDto`, `FriendRequestResultDto`, `ClaimInvitesResultDto`).
 - [x] Step 25.2: **API data** — `friendInviteCodes` + `pendingEmailInvites` collections in `MongoDbContext`; startup `EnsureIndexesAsync` (unique code, TTL on both `ExpiresAt` fields, invitee-email lookup index) called from `InitializeDatabaseAsync`.
@@ -423,16 +423,17 @@ Replaced the simplistic circular drawing with a photorealistic casino poker tabl
 
 ---
 
-## Phase 36: Continue / Reopen Previous Round When New Round Is Not Started (Issue #42, In Progress)
+## Phase 36: Continue / Reopen Previous Round When New Round Is Not Started (Issue #42, Complete)
 Enables hosts to undo advancing to a new round and continue playing the previous round if no games have been recorded in the new round yet.
-- [ ] Step 36.1: **DAO & Offline Repository Support** — Add `RoundDao.reopenRoundAt(id)` clearing `closesRound = 0` on the round's closing game. Add `OfflineGameRepository.reopenCurrentRound(gameSetId)` to reset `closesRound` on the latest game.
-- [ ] Step 36.2: **C# API Reopen Endpoint** — Add `POST /api/MarriageGameSets/{id}/rounds/{roundId}/reopen` in `MarriageGameSetsController` and `MarriageGameSetService.ReopenRoundAsync(gameSetId, roundId, hostUserId)` that verifies host permissions and that no subsequent round with games exists, then updates `round.Completed = false`. Add controller unit tests.
-- [ ] Step 36.3: **Android API & Repository Integration** — Add `reopenRound` in `MarriageGameSetApiService` and `GameSetRepository`.
-- [ ] Step 36.4: **PlayGameViewModel Integration** — Add `reopenRound(gameSetIdStr, roundId)` handling both online and offline game modes, reloading game state upon completion.
-- [ ] Step 36.5: **PlayGameScreen UI & Controls** — In `CompactRoundsTable` and `RoundBlock`:
+- [x] Step 36.1: **DAO & Offline Repository Support** — Add `RoundDao.reopenRoundAt(id)` clearing `closesRound = 0` on the round's closing game. Add `OfflineGameRepository.reopenCurrentRound(gameSetId)` to reset `closesRound` on the latest game.
+- [x] Step 36.2: **C# API Reopen Endpoint** — Add `POST /api/MarriageGameSets/{id}/rounds/{roundId}/reopen` in `MarriageGameSetsController` and `MarriageGameSetService.ReopenRoundAsync(gameSetId, roundId, hostUserId)` that verifies host permissions and that no subsequent round with games exists, then updates `round.Completed = false`. Add controller unit tests.
+- [x] Step 36.3: **Android API & Repository Integration** — Add `reopenRound` in `MarriageGameSetApiService` and `GameSetRepository`.
+- [x] Step 36.4: **PlayGameViewModel Integration** — Add `reopenRound(gameSetIdStr, roundId)` handling both online and offline game modes, reloading game state upon completion.
+- [x] Step 36.5: **PlayGameScreen UI & Controls** — In `CompactRoundsTable` and `RoundBlock`:
   - Show "Continue Round N" action with undo icon on unstarted round header ("Round N+1 · not started") if the previous round was closed early.
   - Show "Continue Round" action on the completed round header if it is the latest round with games and the subsequent round has not yet started.
-- [ ] Step 36.6: **Verification & Testing** — Automated unit tests in Android (`OfflineGameRepositoryTest`) and .NET API (`ControllersTests`). Emulator walkthrough verifying reopening round, restoring pending game row, and adding subsequent games.
+- [x] Step 36.6: **Verification & Testing** — Automated unit tests in Android (`OfflineGameRepositoryTest`) and .NET API (`ControllersTests`). Emulator walkthrough verifying reopening round, restoring pending game row, and adding subsequent games.
+- **Shipped** in PR #43 (merged). Status markers above were corrected after the fact in #155 — the plan had not been updated at merge time. Tests present in `ControllersTests.cs`, `OfflineGameRepositoryTest.kt` and `PlayGameViewModelTest.kt`; no emulator walkthrough was recorded.
 
 ---
 
@@ -610,7 +611,7 @@ Polished History navigation integration and cleaned up unused route definitions.
 
 ---
 
-## Phase 50: Friends Added to a Game Can View It (Issue #121, In Review)
+## Phase 50: Friends Added to a Game Can View It (Issue #121, Complete)
 Bug: host added two friends to a game and submitted scores, but the friends saw nothing in Joined Games. Requirement: every real-user participant can view the game and its submitted scores (read-only); only the host edits.
 - [x] Step 50.1: **Root cause** — Game Setup uses a friend's **User** document id as the player id, so `MarriageGameSet.PlayerIds` holds User ids for friends (`MapToDtoAsync` already renders these). But `ResolveParticipantPlayerIdsAsync` only collected **Player** ids matched by the caller's email, so a friend never matched — empty Joined Games, and `GET MarriageGameSets/{id}` denied them.
 - [x] Step 50.2: **API fix** — `ResolveParticipantPlayerIdsAsync` always loads the caller's User record and includes its `_id` alongside email-matched Player ids. Retroactive for existing games (no migration). Host-only writes unchanged (submit/update/delete all check `HostUserId`).
