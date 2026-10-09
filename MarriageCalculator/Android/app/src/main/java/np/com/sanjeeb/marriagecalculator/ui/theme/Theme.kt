@@ -8,8 +8,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.staticCompositionLocalOf
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalView
 import androidx.core.view.WindowCompat
 
@@ -32,7 +30,9 @@ fun MarriageCalculatorTheme(
     if (!view.isInEditMode) {
         SideEffect {
             val window = (view.context as Activity).window
-            window.statusBarColor = Color.Transparent.toArgb()
+            // No statusBarColor assignment: deprecated in API 35, a no-op on the
+            // targeted API 36, and the activity already calls enableEdgeToEdge().
+            // Icon contrast still has to follow the palette though. See #149.
             WindowCompat.getInsetsController(window, view).isAppearanceLightStatusBars = !palette.isDark
         }
     }
